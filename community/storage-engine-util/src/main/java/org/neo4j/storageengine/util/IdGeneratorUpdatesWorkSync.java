@@ -89,7 +89,22 @@ public class IdGeneratorUpdatesWorkSync {
                 return AsyncApply.EMPTY;
             }
             applyInternal();
-            return this::awaitApply;
+            return new AsyncApply() {
+                @Override
+                public void await() throws ExecutionException {
+                    awaitApply();
+                }
+
+                @Override
+                public boolean tryComplete() throws ExecutionException {
+                    for (var idChanges : idUpdatesMap.values()) {
+                        if (!idChanges.tryComplete()) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            };
         }
 
         public void apply() throws ExecutionException {
@@ -103,7 +118,7 @@ public class IdGeneratorUpdatesWorkSync {
             // Wait for all id updates to complete
             for (Map.Entry<IdGenerator, ChangedIds> idChanges : idUpdatesMap.entrySet()) {
                 ChangedIds unit = idChanges.getValue();
-                unit.awaitApply();
+                unit.await();
             }
         }
 
@@ -124,7 +139,7 @@ public class IdGeneratorUpdatesWorkSync {
         }
     }
 
-    private static class ChangedIds {
+    private static class ChangedIds implements AsyncApply {
         // The order in which IDs come in, used vs. unused must be kept and therefore all IDs must reside in the same
         // list
         private final MutableLongList ids = LongLists.mutable.empty();
@@ -165,8 +180,14 @@ public class IdGeneratorUpdatesWorkSync {
             asyncApply = workSync.applyAsync(new IdGeneratorUpdateWork(this));
         }
 
-        void awaitApply() throws ExecutionException {
+        @Override
+        public void await() throws ExecutionException {
             asyncApply.await();
+        }
+
+        @Override
+        public boolean tryComplete() throws ExecutionException {
+            return asyncApply.tryComplete();
         }
     }
 
