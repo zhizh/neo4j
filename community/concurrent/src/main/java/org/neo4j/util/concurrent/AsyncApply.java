@@ -38,5 +38,28 @@ public interface AsyncApply {
      */
     void await() throws ExecutionException;
 
-    AsyncApply EMPTY = () -> {};
+    /**
+     * Tries to complete application of the work submitted to a {@link WorkSync}.
+     * <p>
+     * If the work is already done, then this method returns {@code true} immediately.
+     * <p>
+     * If the work has not been done, then this method will attempt to grab the {@code WorkSync} lock to complete the
+     * work, or if it couldn't grab the lock return {@code false} whereby the caller of this method will have
+     * to call either {@link #tryComplete()} or {@link #await()} at a later point to ensure the work gets completed.
+     * @return {@code true} if the work is already done, or was completed as part of this call, otherwise
+     * {@code false}.
+     * @throws ExecutionException if this thread ends up performing the work, and an exception is thrown from the
+     * attempt to apply the work.
+     */
+    boolean tryComplete() throws ExecutionException;
+
+    AsyncApply EMPTY = new AsyncApply() {
+        @Override
+        public void await() {}
+
+        @Override
+        public boolean tryComplete() {
+            return true;
+        }
+    };
 }

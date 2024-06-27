@@ -432,4 +432,27 @@ class WorkSyncTest {
         assertThat(sum.sum()).isEqualTo(11L);
         assertThat(count.sum()).isEqualTo(2L);
     }
+
+    @Test
+    void tryCompleteShouldCompleteWorkOnlyIfLockAvailable() throws Exception {
+        // given
+        var stuckSemaphore = makeWorkStuckAtSemaphore(1);
+        var a = sync.applyAsync(new AddWork(1));
+        var b = sync.applyAsync(new AddWork(1));
+        var c = sync.applyAsync(new AddWork(1));
+        assertThat(a.tryComplete()).isFalse();
+        assertThat(b.tryComplete()).isFalse();
+        assertThat(c.tryComplete()).isFalse();
+
+        // when
+        semaphore.release(2);
+        stuckSemaphore.get();
+        assertThat(a.tryComplete()).isTrue();
+
+        // then
+        assertThat(sum.sum()).isEqualTo(4L);
+        assertThat(count.sum()).isEqualTo(2L);
+        assertThat(b.tryComplete()).isTrue();
+        assertThat(c.tryComplete()).isTrue();
+    }
 }

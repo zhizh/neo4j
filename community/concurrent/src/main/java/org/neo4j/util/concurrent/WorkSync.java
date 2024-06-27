@@ -118,11 +118,19 @@ public class WorkSync<Material, W extends Work<Material, W>> {
 
             @Override
             public void await() throws ExecutionException {
-
                 checkFailure(throwable);
                 while (!unit.isDone()) {
                     checkFailure(throwable = tryDoWork(unit, true));
                 }
+            }
+
+            @Override
+            public boolean tryComplete() throws ExecutionException {
+                checkFailure(throwable);
+                if (!unit.isDone()) {
+                    checkFailure(throwable = tryDoWork(unit, false));
+                }
+                return unit.isDone();
             }
         };
     }
