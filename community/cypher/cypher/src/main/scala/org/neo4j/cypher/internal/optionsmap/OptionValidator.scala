@@ -23,11 +23,13 @@ import org.neo4j.configuration.Config
 import org.neo4j.configuration.GraphDatabaseInternalSettings
 import org.neo4j.configuration.GraphDatabaseSettings
 import org.neo4j.cypher.internal.MapValueOps.Ops
+import org.neo4j.dbms.systemgraph.allocation.DatabaseAllocationHints
 import org.neo4j.gqlstatus.GqlHelper.getGql22N27
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException
 import org.neo4j.storageengine.api.StorageEngineFactory
 import org.neo4j.storageengine.api.StorageEngineFactory.allAvailableStorageEngines
 import org.neo4j.values.AnyValue
+import org.neo4j.values.storable.IntValue
 import org.neo4j.values.storable.NoValue
 import org.neo4j.values.storable.TextValue
 import org.neo4j.values.utils.PrettyPrinter
@@ -57,6 +59,21 @@ sealed trait OptionValidator[T] {
   }
 }
 
+trait MapOptionValidator extends OptionValidator[MapValue] {
+
+  protected def validateContent(value: MapValue, config: Option[Config])(implicit operation: String): Unit
+
+  override protected def validate(value: AnyValue, config: Option[Config])(implicit operation: String): MapValue = {
+    value match {
+      case mapValue: MapValue =>
+        validateContent(mapValue, config)
+        mapValue
+      case _ =>
+        throw new InvalidArgumentsException(s"Could not $operation with specified $KEY '$value', Map expected.")
+    }
+  }
+}
+
 trait StringOptionValidator extends OptionValidator[String] {
 
   protected def validateContent(value: String, config: Option[Config])(implicit operation: String): Unit
@@ -71,6 +88,21 @@ trait StringOptionValidator extends OptionValidator[String] {
         value.writeTo(pp)
         val gql = getGql22N27(pp.value, KEY, java.util.List.of("STRING"))
         throw new InvalidArgumentsException(gql, s"Could not $operation with specified $KEY '$value', String expected.")
+    }
+  }
+}
+
+trait IntOptionValidator extends OptionValidator[Int] {
+
+  protected def validateContent(value: Int, config: Option[Config])(implicit operation: String): Unit
+
+  override protected def validate(value: AnyValue, config: Option[Config])(implicit operation: String): Int = {
+    value match {
+      case intValue: IntValue =>
+        validateContent(intValue.intValue, config)
+        intValue.intValue
+      case _ =>
+        throw new InvalidArgumentsException(s"Could not $operation with specified $KEY '$value', Integer expected.")
     }
   }
 }
@@ -205,5 +237,21 @@ object LogEnrichmentOption extends StringOptionValidator {
         s"Could not $operation with specified $KEY '$value', Expected one of ${validValues.mkString("'", "', '", "'")}"
       )
     }
+  }
+
+}
+
+object AllocationHintsOption extends MapOptionValidator {
+  override val KEY: String = "allocationHints"
+
+  override protected def validateContent(value: MapValue, config: Option[Config])(implicit operation: String): Unit = {
+    value.foreach((k, v) => {
+      try {
+        DatabaseAllocationHints.validate(k, v)
+      } catch {
+        case e: IllegalArgumentException =>
+          throw new InvalidArgumentsException(s"Could not $operation with specified $KEY '$value'. ${e.getMessage}'")
+      }
+    })
   }
 }

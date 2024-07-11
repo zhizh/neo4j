@@ -262,9 +262,10 @@ public interface TopologyGraphDbmsModel {
     String SUPPORTED_COMPONENT_VERSIONS_UUID_PROPERTY = "__uuid";
     RelationshipType LATEST_SUPPORTED_COMPONENT_VERSIONS_RELATIONSHIP =
             RelationshipType.withName("LATEST_SUPPORTED_VERSIONS");
-
     RelationshipType HAS_SHARD = RelationshipType.withName("HAS_SHARD");
     String HAS_SHARD_INDEX_PROPERTY = "index";
+    Label ALLOCATION_HINTS_LABEL = Label.label("AllocationHints");
+    RelationshipType HAS_ALLOCATION_HINTS_RELATIONSHIP = RelationshipType.withName("HAS_ALLOCATION_HINTS");
 
     /**
      * Fetches the {@link NamedDatabaseId} corresponding to the provided alias, if one exists in this DBMS.
