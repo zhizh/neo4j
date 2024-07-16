@@ -24,6 +24,7 @@ import static java.lang.System.lineSeparator;
 import java.util.Optional;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -32,6 +33,7 @@ public class SyntaxException extends Neo4jException {
     private final transient Optional<Integer> offset;
     private final String query;
 
+    @Deprecated
     public SyntaxException(String message, String query, Optional<Integer> offset, Throwable cause) {
         super(message, cause);
         this.offset = offset;
@@ -50,6 +52,7 @@ public class SyntaxException extends Neo4jException {
         this.query = query;
     }
 
+    @Deprecated
     public SyntaxException(String message, String query, int offset) {
         this(message, query, Optional.of(offset), null);
     }
@@ -58,6 +61,7 @@ public class SyntaxException extends Neo4jException {
         this(gqlStatusObject, message, query, Optional.of(offset), null);
     }
 
+    @Deprecated
     public SyntaxException(String message, String query, int offset, Throwable cause) {
         this(message, query, Optional.of(offset), cause);
     }
@@ -67,6 +71,7 @@ public class SyntaxException extends Neo4jException {
         this(gqlStatusObject, message, query, Optional.of(offset), cause);
     }
 
+    @Deprecated
     public SyntaxException(String message, Throwable cause) {
         this(message, "", Optional.empty(), cause);
     }
@@ -75,6 +80,7 @@ public class SyntaxException extends Neo4jException {
         this(gqlStatusObject, message, "", Optional.empty(), cause);
     }
 
+    @Deprecated
     public SyntaxException(String message) {
         this(message, "", Optional.empty(), null);
     }
@@ -93,6 +99,18 @@ public class SyntaxException extends Neo4jException {
                 String.format(
                         "To find a shortest path, both ends of the path need to be provided. Couldn't find `%s`",
                         start));
+    }
+
+    public static SyntaxException variableAlreadyBound(String variable, String clause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N78)
+                .withParam(GqlParams.StringParam.variable, variable)
+                .withParam(GqlParams.StringParam.clause, clause)
+                .build();
+        return new SyntaxException(
+                gql,
+                String.format(
+                        "Can't create node `%s` with labels or properties here. The variable is already declared in this context",
+                        variable));
     }
 
     @Override

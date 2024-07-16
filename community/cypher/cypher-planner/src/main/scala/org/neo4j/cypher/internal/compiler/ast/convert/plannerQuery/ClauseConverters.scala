@@ -411,14 +411,12 @@ object ClauseConverters {
 
       // CREATE (n)-[r: R]->(m)
       case PathPatternPart(pattern: RelationshipChain) =>
-        allCreatePatternsInOrderAndDeduped(pattern).foreach {
+        allCreatePatternsInOrderAndDeduped(pattern, clause.name).foreach {
           case CreateNodeCommand(create, _) =>
             if (seenPatternNodes.add(create.variable)) {
               commands += create
             } else if (create.labels.nonEmpty || create.properties.nonEmpty) {
-              throw new SyntaxException(
-                s"Can't create node `${create.variable.name}` with labels or properties here. The variable is already declared in this context"
-              )
+              throw SyntaxException.variableAlreadyBound(create.variable.name, clause.name)
             }
           case CreateRelCommand(create, _) =>
             commands += create
@@ -462,23 +460,25 @@ object ClauseConverters {
     case _ => throw new InternalException("All nodes must be named at this instance")
   }
 
-  private def allCreatePatternsInOrderAndDeduped(chain: RelationshipChain): Seq[CreateEntityCommand] = {
-    allCreatePatternsInOrderAndDeduped(chain, Vector.empty, Set.empty)._1
+  private def allCreatePatternsInOrderAndDeduped(
+    chain: RelationshipChain,
+    clauseName: String
+  ): Seq[CreateEntityCommand] = {
+    allCreatePatternsInOrderAndDeduped(chain, Vector.empty, Set.empty, clauseName)._1
   }
 
   private def allCreatePatternsInOrderAndDeduped(
     element: PatternElement,
     acc: Vector[CreateEntityCommand],
-    seenNodes: Set[LogicalVariable]
+    seenNodes: Set[LogicalVariable],
+    clauseName: String
   ): (Vector[CreateEntityCommand], Set[LogicalVariable], LogicalVariable) = {
     def addNode(node: NodePattern): Vector[CreateEntityCommand] = {
       // avoid loops such as CREATE (a)-[:R]->(a)
       if (seenNodes.contains(node.variable.get)) {
         if (node.labelExpression.nonEmpty || node.properties.nonEmpty) {
           // reused patterns must be pure variable
-          throw new SyntaxException(
-            s"Can't create node `${node.variable.get.name}` with labels or properties here. The variable is already declared in this context"
-          )
+          throw SyntaxException.variableAlreadyBound(node.variable.get.name, clauseName)
         }
         acc
       } else {
@@ -498,8 +498,8 @@ object ClauseConverters {
           RelationshipPattern(Some(relVar), Some(Leaf(relType: RelTypeName, _)), _, properties, _, direction),
           rightNode @ NodePattern(Some(rightVar), _, _, _)
         ) =>
-        val (addLeft, seenLeft, leftNode) = allCreatePatternsInOrderAndDeduped(left, acc, seenNodes)
-        val (addRight, seenRight, _) = allCreatePatternsInOrderAndDeduped(rightNode, addLeft, seenLeft)
+        val (addLeft, seenLeft, leftNode) = allCreatePatternsInOrderAndDeduped(left, acc, seenNodes, clauseName)
+        val (addRight, seenRight, _) = allCreatePatternsInOrderAndDeduped(rightNode, addLeft, seenLeft, clauseName)
 
         val newR = CreateRelCommand(
           CreateRelationship(relVar, leftNode, relType, rightVar, direction, properties),
@@ -799,9 +799,9 @@ object ClauseConverters {
       // MERGE (n)-[r: R]->(m)
       case PathPatternPart(pattern: RelationshipChain) =>
         val (nodes, rels) =
-          allCreatePatternsInOrderAndDeduped(pattern).foldRight((
+          allCreatePatternsInOrderAndDeduped(pattern, clause.name).foldRight((
             Seq.empty[CreateNodeCommand],
-            Seq.empty[CreateRelCommand]
+            Seq.empty[CreateRelCommand],
           )) { case (e, (ns, rs)) =>
             e match {
               case n: CreateNodeCommand => (n +: ns, rs)
@@ -819,9 +819,7 @@ object ClauseConverters {
 
         nodesCreatedBefore.collectFirst {
           case CreateNodeCommand(c, _) if c.labels.nonEmpty || c.properties.nonEmpty =>
-            throw new SyntaxException(
-              s"Can't create node `${c.variable.name}` with labels or properties here. The variable is already declared in this context"
-            )
+            throw SyntaxException.variableAlreadyBound(c.variable.name, clause.name)
         }
 
         val hasLabels = nodes.flatMap {
