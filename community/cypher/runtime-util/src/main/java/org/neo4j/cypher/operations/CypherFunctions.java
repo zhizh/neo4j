@@ -936,7 +936,7 @@ public final class CypherFunctions {
         try {
             form = Normalizer.Form.valueOf(asTextValue(normalForm).stringValue());
         } catch (IllegalArgumentException e) {
-            throw InvalidArgumentException.unknownNormalForm();
+            throw InvalidArgumentException.unknownNormalForm(String.valueOf(normalForm));
         }
 
         String normalized = Normalizer.normalize(asTextValue(input).stringValue(), form);
@@ -1871,7 +1871,7 @@ public final class CypherFunctions {
             try {
                 form = Normalizer.Form.valueOf(normalForm.description());
             } catch (IllegalArgumentException e) {
-                throw InvalidArgumentException.unknownNormalForm();
+                throw InvalidArgumentException.unknownNormalForm(String.valueOf(normalForm));
             }
             boolean normalized = Normalizer.isNormalized(asText.stringValue(), form);
             return Values.booleanValue(normalized);

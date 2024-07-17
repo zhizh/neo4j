@@ -19,7 +19,11 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class InvalidArgumentException extends Neo4jException {
@@ -46,7 +50,14 @@ public class InvalidArgumentException extends Neo4jException {
         return Status.Statement.ArgumentError;
     }
 
-    public static InvalidArgumentException unknownNormalForm() {
-        return new InvalidArgumentException("Unknown normal form. Valid values are: NFC, NFD, NFKC, NFKD.");
+    public static InvalidArgumentException unknownNormalForm(String normalForm) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N49)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.input, normalForm)
+                        .build())
+                .build();
+        return new InvalidArgumentException(gql, "Unknown normal form. Valid values are: NFC, NFD, NFKC, NFKD.");
     }
 }
