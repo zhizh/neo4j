@@ -389,15 +389,31 @@ public class PointValue extends HashMemoizingScalarValue implements Point, Compa
                         gql, "A point must contain either 'x' and 'y' or 'latitude' and 'longitude'");
             }
 
-            throw new InvalidArgumentException(String.format(
-                    "A %s point must contain %s",
-                    crs,
+            var mandatoryKeys =
                     switch (crs) {
                         case CARTESIAN -> "'x' and 'y'";
                         case CARTESIAN_3D -> "'x', 'y' and 'z'";
                         case WGS_84 -> "'latitude' and 'longitude'";
                         case WGS_84_3D -> "'latitude', 'longitude' and 'height'";
-                    }));
+                    };
+
+            var mandatoryKeysList =
+                    switch (crs) {
+                        case CARTESIAN -> List.of("x", "y");
+                        case CARTESIAN_3D -> List.of("x", "y", "z");
+                        case WGS_84 -> List.of("latitude", "longitude");
+                        case WGS_84_3D -> List.of("latitude", "longitude", "height");
+                    };
+
+            var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                    .withClassification(ErrorClassification.CLIENT_ERROR)
+                    .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N18)
+                            .withClassification(ErrorClassification.CLIENT_ERROR)
+                            .withParam(GqlParams.StringParam.crs, String.valueOf(crs))
+                            .withParam(GqlParams.ListParam.mapKeyList, mandatoryKeysList)
+                            .build())
+                    .build();
+            throw new InvalidArgumentException(gql, String.format("A %s point must contain %s", crs, mandatoryKeys));
         }
 
         if (crs.getDimension() != coordinates.length) {
