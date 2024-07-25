@@ -968,7 +968,7 @@ case class Match(
         if !containsLabelOrRelTypePredicate(variable, labelOrRelTypeName) =>
         SemanticError(getMissingEntityKindError(variable, labelOrRelTypeName, hint), hint.position)
       case hint @ UsingJoinHint(_) if pattern.length == 0 =>
-        SemanticError("Cannot use join hint for single node pattern.", hint.position)
+        SemanticError.cannotUseJoinHint(hint, hintPrettifier.asString(hint))
     }
     SemanticCheckResult(semanticState, error.toSeq)
   }

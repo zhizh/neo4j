@@ -20,15 +20,22 @@
 package org.neo4j.exceptions;
 
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class JoinHintException extends Neo4jException {
-    public JoinHintException(String message) {
-        super(message);
+
+    private JoinHintException(ErrorGqlStatusObject gqlStatusObject, String message) {
+        super(gqlStatusObject, message);
     }
 
-    public JoinHintException(ErrorGqlStatusObject gqlStatusObject, String message) {
-        super(gqlStatusObject, message);
+    public static JoinHintException unableToPlanHashJoin(String hint, String plan) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N76)
+                .withParam(GqlParams.StringParam.hint, hint)
+                .build();
+        return new JoinHintException(gql, String.format("Unable to plan hash join. Instead, constructed%n%s", plan));
     }
 
     @Override

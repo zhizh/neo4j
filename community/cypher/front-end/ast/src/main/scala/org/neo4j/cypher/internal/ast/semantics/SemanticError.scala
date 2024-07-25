@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.ast.semantics
 
+import org.neo4j.cypher.internal.ast.UsingJoinHint
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
@@ -54,6 +55,14 @@ object SemanticError {
       s"`$graphFunction` is only allowed at the first position of a USE clause.",
       pos
     )
+  }
+
+  def cannotUseJoinHint(hint: UsingJoinHint, prettifiedHint: String): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N76)
+      .withParam(GqlParams.StringParam.hint, prettifiedHint)
+      .atPosition(hint.position.line, hint.position.column, hint.position.offset)
+      .build()
+    SemanticError(gql, "Cannot use join hint for single node pattern.", hint.position)
   }
 
   def legacyRelationShipDisjunction(
