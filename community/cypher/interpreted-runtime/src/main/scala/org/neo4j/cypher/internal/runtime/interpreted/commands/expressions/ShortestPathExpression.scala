@@ -128,7 +128,14 @@ case class ShortestPathExpression(
       }
     } catch {
       case _: NotFoundException =>
+        val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N33)
+            .withClassification(ErrorClassification.CLIENT_ERROR)
+            .build())
+          .build()
         throw new SyntaxException(
+          gql,
           s"To find a shortest path, both ends of the path need to be provided. Couldn't find `$start`"
         )
     }
