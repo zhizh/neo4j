@@ -23,14 +23,26 @@ import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.exceptions.PatternException
+import org.neo4j.gqlstatus.ErrorClassification
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.values.AnyValue
 
 case class SortItem(expression: Expression, ascending: Boolean) {
 
   def apply(ctx: CypherRow, state: QueryState): AnyValue =
-    if (!expression.isDeterministic)
-      throw new PatternException("ORDER BY expressions must be deterministic. " +
-        "For instance, you cannot use the rand() function in the expression")
-    else
+    if (!expression.isDeterministic) {
+      val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+        .withClassification(ErrorClassification.CLIENT_ERROR)
+        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N32)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .build())
+        .build()
+      throw new PatternException(
+        gql,
+        "ORDER BY expressions must be deterministic. " +
+          "For instance, you cannot use the rand() function in the expression"
+      )
+    } else
       expression.apply(ctx, state)
 }
