@@ -179,7 +179,7 @@ public class ProcedureRegistry {
     public ProcedureHandle procedure(QualifiedName name, QueryLanguage scope) throws ProcedureException {
         CallableProcedure proc = procedures.getByKey(name, scope);
         if (proc == null) {
-            throw noSuchProcedure(name);
+            throw ProcedureException.noSuchProcedure(name);
         }
         return new ProcedureHandle(proc.signature(), procedures.idOfKey(name, scope));
     }
@@ -222,7 +222,7 @@ public class ProcedureRegistry {
             }
             verifyDBType(ctx, proc);
         } catch (IndexOutOfBoundsException e) {
-            throw noSuchProcedure(id);
+            throw ProcedureException.noSuchProcedure(id);
         }
         return proc.apply(ctx, input, resourceMonitor);
     }
@@ -242,7 +242,7 @@ public class ProcedureRegistry {
         try {
             func = functions.getById(functionId);
         } catch (IndexOutOfBoundsException e) {
-            throw noSuchFunction(functionId);
+            throw ProcedureException.noSuchFunction(functionId);
         }
         return func.apply(ctx, input);
     }
@@ -252,31 +252,8 @@ public class ProcedureRegistry {
             CallableUserAggregationFunction func = aggregationFunctions.getById(id);
             return func.createReducer(ctx);
         } catch (IndexOutOfBoundsException e) {
-            throw noSuchFunction(id);
+            throw ProcedureException.noSuchFunction(id);
         }
-    }
-
-    private ProcedureException noSuchProcedure(QualifiedName name) {
-        return new ProcedureException(
-                Status.Procedure.ProcedureNotFound,
-                "There is no procedure with the name `%s` registered for this database instance. "
-                        + "Please ensure you've spelled the procedure name correctly and that the "
-                        + "procedure is properly deployed.",
-                name);
-    }
-
-    private ProcedureException noSuchProcedure(int id) {
-        return new ProcedureException(
-                Status.Procedure.ProcedureNotFound,
-                "There is no procedure with the internal id `%d` registered for this database instance.",
-                id);
-    }
-
-    private ProcedureException noSuchFunction(int id) {
-        return new ProcedureException(
-                Status.Procedure.ProcedureNotFound,
-                "There is no function with the internal id `%d` registered for this database instance.",
-                id);
     }
 
     public Stream<ProcedureSignature> getAllProcedures(QueryLanguage scope) {

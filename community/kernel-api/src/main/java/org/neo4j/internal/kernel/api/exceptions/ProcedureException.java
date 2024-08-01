@@ -31,6 +31,7 @@ import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.procs.DescribedSignature;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
+import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Name;
@@ -60,6 +61,53 @@ public class ProcedureException extends KernelException {
     public ProcedureException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Object... parameters) {
         super(gqlStatusObject, statusCode, message, parameters);
+    }
+
+    public static ProcedureException noSuchProcedure(QualifiedName name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.procFun, name.toString())
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureNotFound,
+                "There is no procedure with the name `%s` registered for this database instance. "
+                        + "Please ensure you've spelled the procedure name correctly and that the "
+                        + "procedure is properly deployed.",
+                name);
+    }
+
+    public static ProcedureException noSuchProcedure(int id) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.procFun, Integer.toString(id))
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureNotFound,
+                "There is no procedure with the internal id `%d` registered for this database instance.",
+                id);
+    }
+
+    public static ProcedureException noSuchFunction(int id) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.procFun, Integer.toString(id))
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureNotFound,
+                "There is no function with the internal id `%d` registered for this database instance.",
+                id);
     }
 
     public static ProcedureException noSuchProcedureOrFunction(String name) {
