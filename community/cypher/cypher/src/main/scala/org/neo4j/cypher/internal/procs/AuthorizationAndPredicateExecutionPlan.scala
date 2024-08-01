@@ -74,7 +74,7 @@ object AuthorizationAndPredicateExecutionPlan {
         messageGenerator(state, actions.map(_._1))
       }.mkString("; ")
     securityAuthorizationHandler.logAndGetAuthorizationException(securityContext, errorMsgs)
-    throw new AuthorizationViolationException(errorMsgs)
+    throw AuthorizationViolationException.authorizationViolation(errorMsgs)
   }
 
   private def checkToPredicate(

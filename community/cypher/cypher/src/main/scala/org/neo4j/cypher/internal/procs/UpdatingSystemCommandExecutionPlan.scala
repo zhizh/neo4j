@@ -146,9 +146,7 @@ abstract class UpdatingSystemCommandExecutionPlanBase(
   private def withFullDatabaseAccess(tc: TransactionalContext)(elevatedWork: () => RuntimeResult): RuntimeResult = {
     val securityContext = tc.securityContext()
     if (securityContext.impersonating()) {
-      throw new AuthorizationViolationException(
-        "Not allowed to run updating system commands when impersonating a user."
-      )
+      throw AuthorizationViolationException.updatesWhenImpersonating()
     }
     if (checkCredentialsExpired) securityContext.assertCredentialsNotExpired(securityAuthorizationHandler)
     Using.resource(tc.kernelTransaction().overrideWith(securityContext.withMode(AccessMode.Static.FULL))) { _ =>

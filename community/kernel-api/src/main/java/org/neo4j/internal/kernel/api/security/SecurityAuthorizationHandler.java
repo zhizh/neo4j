@@ -251,7 +251,7 @@ public class SecurityAuthorizationHandler {
     public AuthorizationViolationException logAndGetAuthorizationException(
             SecurityContext securityContext, String message) {
         securityLog.error(securityContext, message);
-        return new AuthorizationViolationException(message);
+        return AuthorizationViolationException.authorizationViolation(message);
     }
 
     public AuthorizationViolationException logAndGetAuthorizationException(

@@ -53,16 +53,53 @@ public class AuthorizationViolationException extends GqlRuntimeException impleme
         statusCode = Status.Security.Forbidden;
     }
 
-    public AuthorizationViolationException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    private AuthorizationViolationException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
         statusCode = Status.Security.Forbidden;
     }
 
-    public static AuthorizationViolationException permissionDenied() {
+    public static AuthorizationViolationException authorizationViolation(String message) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+
+        return new AuthorizationViolationException(gql, message);
+    }
+
+    public static AuthorizationViolationException permissionDeniedUnauthorized() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new AuthorizationViolationException(gql, PERMISSION_DENIED, Status.Security.Unauthorized);
+    }
+
+    public static AuthorizationViolationException permissionDeniedForbidden() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new AuthorizationViolationException(gql, PERMISSION_DENIED, Status.Security.Forbidden);
+    }
+
+    public static AuthorizationViolationException updatesWhenImpersonating() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new AuthorizationViolationException(
+                gql, "Not allowed to run updating system commands when impersonating a user.");
+    }
+
+    public static AuthorizationViolationException revokingImmutablePrivileges() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new AuthorizationViolationException(gql, "Immutable privileges cannot be revoked.");
+    }
+
+    public static AuthorizationViolationException grantingImmutablePrivileges(String action) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new AuthorizationViolationException(gql, String.format("Permission cannot be granted for %s.", action));
     }
 
     /** The Neo4j status code associated with this exception type. */

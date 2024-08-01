@@ -218,7 +218,7 @@ public class ProcedureRegistry {
                 ctx.dependencyResolver()
                         .resolveDependency(AbstractSecurityLog.class)
                         .error(ctx.securityContext(), message);
-                throw new AuthorizationViolationException(message);
+                throw AuthorizationViolationException.authorizationViolation(message);
             }
             verifyDBType(ctx, proc);
         } catch (IndexOutOfBoundsException e) {
