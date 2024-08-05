@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.neo4j.common.EntityType;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 /**
@@ -37,16 +40,7 @@ public class IndexHintException extends Neo4jException {
         POINT
     }
 
-    public IndexHintException(
-            String variableName,
-            String labelOrRelType,
-            List<String> properties,
-            EntityType entityType,
-            IndexHintIndexType indexType) {
-        super(msg(variableName, labelOrRelType, properties, entityType, indexType));
-    }
-
-    public IndexHintException(
+    private IndexHintException(
             ErrorGqlStatusObject gqlStatusObject,
             String variableName,
             String labelOrRelType,
@@ -59,6 +53,23 @@ public class IndexHintException extends Neo4jException {
     @Override
     public Status status() {
         return Status.Schema.IndexNotFound;
+    }
+
+    public static IndexHintException indexNotFound(
+            String variableName,
+            String labelOrRelType,
+            List<String> properties,
+            EntityType entityType,
+            IndexHintIndexType indexType,
+            String formattedIndex) {
+
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42002)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N69)
+                        .withParam(GqlParams.StringParam.idxDescrOrName, formattedIndex)
+                        .build())
+                .build();
+
+        return new IndexHintException(gql, variableName, labelOrRelType, properties, entityType, indexType);
     }
 
     private static String msg(

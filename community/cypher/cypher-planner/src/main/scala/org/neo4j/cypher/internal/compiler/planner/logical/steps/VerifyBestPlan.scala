@@ -182,12 +182,20 @@ object VerifyBestPlan {
         case UsingRangeIndexType => IndexHintIndexType.RANGE
         case UsingPointIndexType => IndexHintIndexType.POINT
       }
-      new IndexHintException(
+      val formattedIndex = IndexHintException.indexFormatString(
         hint.variable.name,
         hint.labelOrRelType.name,
         hint.properties.map(_.name).asJava,
         entityType,
         exceptionIndexType
+      )
+      IndexHintException.indexNotFound(
+        hint.variable.name,
+        hint.labelOrRelType.name,
+        hint.properties.map(_.name).asJava,
+        entityType,
+        exceptionIndexType,
+        formattedIndex
       )
     }
   }
