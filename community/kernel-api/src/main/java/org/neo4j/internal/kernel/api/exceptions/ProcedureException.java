@@ -62,6 +62,18 @@ public class ProcedureException extends KernelException {
         super(gqlStatusObject, statusCode, message, parameters);
     }
 
+    public static ProcedureException noSuchProcedureOrFunction(String name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.procFun, name)
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureCallFailed,
+                "There is no `%s` in the current procedure call context.",
+                name);
+    }
+
     public static ProcedureException noSuchConstituentGraph(String graphName, String ctxDatabaseName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42002)
                 .withClassification(ErrorClassification.CLIENT_ERROR)

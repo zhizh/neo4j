@@ -31,7 +31,6 @@ import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.ProcedureCallContext;
 import org.neo4j.internal.kernel.api.security.SecurityContext;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.impl.api.ClockContext;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.impl.newapi.ProcedureTransactionImpl;
@@ -153,10 +152,7 @@ public class BasicContext implements Context {
 
     private static <T, U> T throwIfNull(String name, U value, Function<U, T> producer) throws ProcedureException {
         if (value == null) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureCallFailed,
-                    "There is no `%s` in the current procedure call context.",
-                    name);
+            throw ProcedureException.noSuchProcedureOrFunction(name);
         }
         return producer.apply(value);
     }
