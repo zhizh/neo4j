@@ -2009,7 +2009,13 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
     expectErrorsFrom(
       query,
-      Set(SemanticError("Subquery expressions are not allowed in a MERGE clause.", InputPosition(33, 1, 34)))
+      Set(
+        SemanticError(
+          GqlHelper.getGql42001_42I48(1, 34, 33),
+          "Subquery expressions are not allowed in a MERGE clause.",
+          InputPosition(33, 1, 34)
+        )
+      )
     )
   }
 
@@ -2018,7 +2024,13 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
     expectErrorsFrom(
       query,
-      Set(SemanticError("Subquery expressions are not allowed in a MERGE clause.", InputPosition(16, 1, 17)))
+      Set(
+        SemanticError(
+          GqlHelper.getGql42001_42I48(1, 17, 16),
+          "Subquery expressions are not allowed in a MERGE clause.",
+          InputPosition(16, 1, 17)
+        )
+      )
     )
   }
 
@@ -2027,7 +2039,13 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
     expectErrorsFrom(
       query,
-      Set(SemanticError("Subquery expressions are not allowed in a MERGE clause.", InputPosition(33, 1, 34)))
+      Set(
+        SemanticError(
+          GqlHelper.getGql42001_42I48(1, 34, 33),
+          "Subquery expressions are not allowed in a MERGE clause.",
+          InputPosition(33, 1, 34)
+        )
+      )
     )
   }
 
