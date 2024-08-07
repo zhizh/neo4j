@@ -33,6 +33,9 @@ import org.neo4j.configuration.Config;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
+import org.neo4j.gqlstatus.ErrorClassification;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status.Routing;
 import org.neo4j.kernel.database.DatabaseReference;
 import org.neo4j.kernel.database.DatabaseReferenceImpl;
@@ -94,7 +97,10 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
 
     private void assertNotInPanic() throws RoutingException {
         if (panicReason != null) {
-            throw new RoutingException(Routing.DbmsInPanic, panicReason.toString());
+            var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N32)
+                    .withClassification(ErrorClassification.CLIENT_ERROR)
+                    .build();
+            throw new RoutingException(gql, Routing.DbmsInPanic, panicReason.toString());
         }
     }
 
