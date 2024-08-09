@@ -23,6 +23,26 @@ import java.util.List;
 
 public class GqlHelper {
 
+    public static ErrorGqlStatusObject getGql22G12_22N41(String nodeVarName) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22G12)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N41)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.variable, nodeVarName)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql22G12_22N42(String relVarName) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22G12)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N42)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.variable, relVarName)
+                        .build())
+                .build();
+    }
+
     public static ErrorGqlStatusObject getGql22N27(String input, String variable, List<String> validTypes) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N27)
                 .withClassification(ErrorClassification.CLIENT_ERROR)

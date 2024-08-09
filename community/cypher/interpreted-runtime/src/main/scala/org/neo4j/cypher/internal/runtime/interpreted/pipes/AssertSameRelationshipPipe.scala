@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.exceptions.MergeConstraintConflictException.relationshipConflict
+import org.neo4j.gqlstatus.GqlHelper.getGql22G12_22N42
 import org.neo4j.values.virtual.VirtualRelationshipValue
 
 case class AssertSameRelationshipPipe(source: Pipe, inner: Pipe, relationship: String)(val id: Id = Id.INVALID_ID)
@@ -35,7 +36,7 @@ case class AssertSameRelationshipPipe(source: Pipe, inner: Pipe, relationship: S
   ): ClosingIterator[CypherRow] = {
     val rhsResults = inner.createResults(state)
     if (input.isEmpty != rhsResults.isEmpty) {
-      relationshipConflict(relationship)
+      relationshipConflict(getGql22G12_22N42(relationship), relationship)
     }
 
     input.map { leftRow =>
@@ -43,7 +44,7 @@ case class AssertSameRelationshipPipe(source: Pipe, inner: Pipe, relationship: S
       rhsResults.foreach { rightRow =>
         val rhsRelationship = CastSupport.castOrFail[VirtualRelationshipValue](rightRow.getByName(relationship))
         if (lhsRelationship.id != rhsRelationship.id) {
-          relationshipConflict(relationship)
+          relationshipConflict(getGql22G12_22N42(relationship), relationship)
         }
       }
 

@@ -25,6 +25,7 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class MergeConstraintConflictException extends Neo4jException {
+    @Deprecated
     public MergeConstraintConflictException(String message) {
         super(message);
     }
@@ -38,15 +39,19 @@ public class MergeConstraintConflictException extends Neo4jException {
         return Status.Schema.ConstraintValidationFailed;
     }
 
-    public static <T> T nodeConflict(String node) {
-        throw new MergeConstraintConflictException(format(
-                "Merge did not find a matching node %s and can not create a new node due to conflicts with existing unique nodes",
-                node));
+    public static <T> T nodeConflict(ErrorGqlStatusObject gql, String node) {
+        throw new MergeConstraintConflictException(
+                gql,
+                format(
+                        "Merge did not find a matching node %s and can not create a new node due to conflicts with existing unique nodes",
+                        node));
     }
 
-    public static <T> T relationshipConflict(String relationship) {
-        throw new MergeConstraintConflictException(format(
-                "Merge did not find a matching relationship %s and can not create a new relationship due to conflicts with existing unique relationships",
-                relationship));
+    public static <T> T relationshipConflict(ErrorGqlStatusObject gql, String relationship) {
+        throw new MergeConstraintConflictException(
+                gql,
+                format(
+                        "Merge did not find a matching relationship %s and can not create a new relationship due to conflicts with existing unique relationships",
+                        relationship));
     }
 }

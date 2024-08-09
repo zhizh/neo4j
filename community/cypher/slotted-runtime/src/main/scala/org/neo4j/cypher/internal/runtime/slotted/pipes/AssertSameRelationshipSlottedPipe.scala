@@ -28,6 +28,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.pipes.PipeWithSource
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.exceptions.MergeConstraintConflictException.relationshipConflict
+import org.neo4j.gqlstatus.GqlHelper.getGql22G12_22N42
 
 case class AssertSameRelationshipSlottedPipe(source: Pipe, inner: Pipe, relationship: String, relSlot: Slot)(
   val id: Id = Id.INVALID_ID
@@ -41,7 +42,7 @@ case class AssertSameRelationshipSlottedPipe(source: Pipe, inner: Pipe, relation
   ): ClosingIterator[CypherRow] = {
     val rhsResults = inner.createResults(state)
     if (input.isEmpty != rhsResults.isEmpty) {
-      relationshipConflict(relationship)
+      relationshipConflict(getGql22G12_22N42(relationship), relationship)
     }
 
     input.map { leftRow =>
@@ -49,7 +50,7 @@ case class AssertSameRelationshipSlottedPipe(source: Pipe, inner: Pipe, relation
       rhsResults.foreach { rightRow =>
         val rhsRelationship = getRelFunction.applyAsLong(rightRow)
         if (lhsRelationship != rhsRelationship) {
-          relationshipConflict(relationship)
+          relationshipConflict(getGql22G12_22N42(relationship), relationship)
         }
       }
 

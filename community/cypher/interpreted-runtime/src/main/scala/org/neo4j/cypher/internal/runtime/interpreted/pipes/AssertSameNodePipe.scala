@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.exceptions.MergeConstraintConflictException.nodeConflict
+import org.neo4j.gqlstatus.GqlHelper.getGql22G12_22N41
 import org.neo4j.values.virtual.VirtualNodeValue
 
 case class AssertSameNodePipe(source: Pipe, inner: Pipe, node: String)(val id: Id = Id.INVALID_ID)
@@ -35,7 +36,7 @@ case class AssertSameNodePipe(source: Pipe, inner: Pipe, node: String)(val id: I
   ): ClosingIterator[CypherRow] = {
     val rhsResults = inner.createResults(state)
     if (input.isEmpty != rhsResults.isEmpty) {
-      nodeConflict(node)
+      nodeConflict(getGql22G12_22N41(node), node)
     }
 
     input.map { leftRow =>
@@ -43,7 +44,7 @@ case class AssertSameNodePipe(source: Pipe, inner: Pipe, node: String)(val id: I
       rhsResults.foreach { rightRow =>
         val rhsNode = CastSupport.castOrFail[VirtualNodeValue](rightRow.getByName(node))
         if (lhsNode.id != rhsNode.id) {
-          nodeConflict(node)
+          nodeConflict(getGql22G12_22N41(node), node)
         }
       }
 
