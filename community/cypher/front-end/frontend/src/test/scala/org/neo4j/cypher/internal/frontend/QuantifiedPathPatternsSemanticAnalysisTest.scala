@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.frontend
 
+import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.frontend.label_expressions.UpdateStatement
 import org.neo4j.cypher.internal.util.InputPosition
@@ -24,6 +25,7 @@ import org.neo4j.cypher.internal.util.symbols.CTList
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.cypher.internal.util.test_helpers.TestName
+import org.neo4j.gqlstatus.GqlHelper
 
 abstract class QuantifiedPathPatternsInDifferentClausesSemanticAnalysisTest(statement: UpdateStatement)
     extends CypherFunSuite
@@ -401,8 +403,10 @@ class QuantifiedPathPatternsSemanticAnalysisTest extends NameBasedSemanticAnalys
   }
 
   test("MATCH (p = (a)-->(b)) ((x)-->(y))* RETURN x") {
-    runSemanticAnalysis().errorMessages shouldBe Seq(
-      "Sub-path assignment is currently not supported."
+    runSemanticAnalysis().error shouldBe SemanticError(
+      GqlHelper.getGql42001_42N42(1, 8, 7),
+      "Sub-path assignment is currently not supported.",
+      InputPosition(7, 1, 8)
     )
   }
 
