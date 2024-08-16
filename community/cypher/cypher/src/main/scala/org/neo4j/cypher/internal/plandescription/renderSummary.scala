@@ -20,13 +20,15 @@
 package org.neo4j.cypher.internal.plandescription
 
 import org.neo4j.cypher.internal.plandescription.Arguments.GlobalMemory
+import org.neo4j.cypher.internal.plandescription.Arguments.AvailableWorkers
 import org.neo4j.cypher.internal.plandescription.InternalPlanDescription.TotalHits
 
 object renderSummary extends (InternalPlanDescription => String) {
 
   def apply(plan: InternalPlanDescription): String = {
     val memStr = memory(plan).map(bytes => s", total allocated memory: $bytes").getOrElse("")
-    s"Total database accesses: ${dbhits(plan)}$memStr"
+    val workersStr = availableWorkers(plan).map(nWorkers => s", number of available workers: $nWorkers").getOrElse("")
+    s"Total database accesses: ${dbhits(plan)}$memStr$workersStr"
   }
 
   private def dbhits(plan: InternalPlanDescription): String = {
@@ -41,6 +43,12 @@ object renderSummary extends (InternalPlanDescription => String) {
   private def memory(plan: InternalPlanDescription): Option[String] = {
     plan.arguments.collectFirst {
       case GlobalMemory(x) => x.toString
+    }
+  }
+
+  private def availableWorkers(plan: InternalPlanDescription): Option[String] = {
+    plan.arguments.collectFirst {
+      case AvailableWorkers(x) => x.toString
     }
   }
 }

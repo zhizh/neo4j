@@ -40,6 +40,10 @@ public interface QueryProfile {
      */
     long maxAllocatedMemory();
 
+    default int numberOfAvailableWorkers() {
+        return 1;
+    }
+
     QueryProfile NONE = new QueryProfile() {
         @Override
         public OperatorProfile operatorProfile(int operatorId) {

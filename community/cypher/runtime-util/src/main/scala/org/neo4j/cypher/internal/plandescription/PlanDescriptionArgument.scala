@@ -81,6 +81,8 @@ object Arguments {
 
   case class GlobalMemory(value: Long) extends Argument
 
+  case class AvailableWorkers(value: Int) extends Argument
+
   case class Order(order: PrettyString) extends Argument
 
   case class Distinctness(distinctness: PrettyString) extends Argument

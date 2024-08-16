@@ -43,6 +43,7 @@ import org.neo4j.cypher.internal.plandescription.Arguments.SourceCode
 import org.neo4j.cypher.internal.plandescription.Arguments.StringRepresentation
 import org.neo4j.cypher.internal.plandescription.Arguments.Time
 import org.neo4j.cypher.internal.plandescription.Arguments.Version
+import org.neo4j.cypher.internal.plandescription.Arguments.AvailableWorkers
 import org.neo4j.cypher.internal.plandescription.asPrettyString.PrettyStringMaker
 import org.neo4j.cypher.internal.util.attribution.Id
 
@@ -54,6 +55,7 @@ object PlanDescriptionArgumentSerializer {
       case DbHits(value)                          => Long.box(value)
       case Memory(value)                          => Long.box(value)
       case GlobalMemory(value)                    => Long.box(value)
+      case AvailableWorkers(value)                => Int.box(value)
       case PageCacheHits(value)                   => Long.box(value)
       case PageCacheMisses(value)                 => Long.box(value)
       case Rows(value)                            => Long.box(value)
