@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
+import org.eclipse.collections.api.IntIterable;
+import org.eclipse.collections.impl.factory.primitive.IntLists;
 import org.neo4j.storageengine.api.RelationshipDirection;
 import org.neo4j.storageengine.api.RelationshipVisitorWithProperties;
 import org.neo4j.storageengine.api.StorageProperty;
@@ -48,6 +50,12 @@ public class FlatRelationshipModifications implements RelationshipModifications 
     public FlatRelationshipModifications(RelationshipData[] creations, RelationshipData[] deletions) {
         mapData(creations, NodeData::creations);
         mapData(deletions, NodeData::deletions);
+    }
+
+    public FlatRelationshipModifications(
+            RelationshipData[] creations, RelationshipData[] deletions, RelationshipData[] updates) {
+        this(creations, deletions);
+        mapData(updates, NodeData::updates);
     }
 
     private void mapData(
@@ -80,6 +88,11 @@ public class FlatRelationshipModifications implements RelationshipModifications 
     @Override
     public RelationshipBatch deletions() {
         return allAsBatch(NodeData::deletions);
+    }
+
+    @Override
+    public RelationshipBatch updates() {
+        return allAsBatch(NodeData::updates);
     }
 
     private FlatRelationshipBatch allAsBatch(
@@ -115,6 +128,11 @@ public class FlatRelationshipModifications implements RelationshipModifications 
                 }
 
                 @Override
+                public boolean hasUpdates() {
+                    return !nodeData.updates.isEmpty();
+                }
+
+                @Override
                 public RelationshipBatch creations() {
                     return new FlatRelationshipBatch(nodeData.creations.values().stream()
                             .flatMap(Collection::stream)
@@ -145,14 +163,34 @@ public class FlatRelationshipModifications implements RelationshipModifications 
                         }
                     }
                 }
+
+                @Override
+                public void forEachUpdateSplitInterruptible(InterruptibleTypeIdsVisitor visitor) {
+                    for (Map.Entry<Integer, List<RelationshipData>> entry : nodeData.updates.entrySet()) {
+                        if (visitor.test(new FlatNodeRelationshipTypeIds(entry.getKey(), entry.getValue(), nodeId))) {
+                            break;
+                        }
+                    }
+                }
             });
         });
     }
 
     public record RelationshipData(
-            long id, int type, long startNode, long endNode, Collection<StorageProperty> properties) {
+            long id,
+            int type,
+            long startNode,
+            long endNode,
+            Collection<StorageProperty> addedProperties,
+            Collection<StorageProperty> changedProperties,
+            IntIterable removedProperties) {
         public RelationshipData(long id, int type, long startNode, long endNode) {
             this(id, type, startNode, endNode, Collections.emptyList());
+        }
+
+        public RelationshipData(
+                long id, int type, long startNode, long endNode, Collection<StorageProperty> addedProperties) {
+            this(id, type, startNode, endNode, addedProperties, Collections.emptyList(), IntLists.immutable.empty());
         }
 
         public RelationshipDirection direction(long fromNodePov) {
@@ -210,6 +248,21 @@ public class FlatRelationshipModifications implements RelationshipModifications 
         return new FlatRelationshipModifications(relationships(), relationships(relationship));
     }
 
+    public static RelationshipModifications singleUpdate(
+            long id,
+            int type,
+            long startNode,
+            long endNode,
+            Collection<StorageProperty> added,
+            Collection<StorageProperty> changed,
+            IntIterable removed) {
+        return singleUpdate(new RelationshipData(id, type, startNode, endNode, added, changed, removed));
+    }
+
+    public static RelationshipModifications singleUpdate(RelationshipData relationship) {
+        return new FlatRelationshipModifications(relationships(), relationships(), relationships(relationship));
+    }
+
     public static RelationshipData[] relationships(RelationshipData... relationships) {
         return relationships;
     }
@@ -229,7 +282,14 @@ public class FlatRelationshipModifications implements RelationshipModifications 
         @Override
         public <E extends Exception> void forEach(RelationshipVisitorWithProperties<E> relationship) throws E {
             for (RelationshipData rel : relationships) {
-                relationship.visit(rel.id, rel.type, rel.startNode, rel.endNode, rel.properties);
+                relationship.visit(
+                        rel.id,
+                        rel.type,
+                        rel.startNode,
+                        rel.endNode,
+                        rel.addedProperties,
+                        rel.changedProperties,
+                        rel.removedProperties);
             }
         }
     }
@@ -237,6 +297,7 @@ public class FlatRelationshipModifications implements RelationshipModifications 
     private static class NodeData {
         final SortedMap<Integer, List<RelationshipData>> creations = new TreeMap<>();
         final SortedMap<Integer, List<RelationshipData>> deletions = new TreeMap<>();
+        final SortedMap<Integer, List<RelationshipData>> updates = new TreeMap<>();
 
         SortedMap<Integer, List<RelationshipData>> creations() {
             return creations;
@@ -244,6 +305,10 @@ public class FlatRelationshipModifications implements RelationshipModifications 
 
         SortedMap<Integer, List<RelationshipData>> deletions() {
             return deletions;
+        }
+
+        SortedMap<Integer, List<RelationshipData>> updates() {
+            return updates;
         }
     }
 

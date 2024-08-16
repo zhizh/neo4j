@@ -26,6 +26,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.eclipse.collections.api.iterator.LongIterator;
 import org.eclipse.collections.api.set.primitive.LongSet;
+import org.eclipse.collections.impl.factory.primitive.IntLists;
 import org.neo4j.storageengine.api.RelationshipDirection;
 import org.neo4j.storageengine.api.RelationshipVisitor;
 import org.neo4j.storageengine.api.RelationshipVisitorWithProperties;
@@ -67,7 +68,8 @@ public interface RelationshipModifications {
         return new IdDataDecorator() {
             @Override
             public <E extends Exception> void accept(long id, RelationshipVisitorWithProperties<E> visitor) throws E {
-                visitor.visit(id, -1, -1, -1, Collections.emptyList());
+                visitor.visit(
+                        id, -1, -1, -1, Collections.emptyList(), Collections.emptyList(), IntLists.immutable.empty());
             }
         };
     }
@@ -125,6 +127,11 @@ public interface RelationshipModifications {
      */
     RelationshipBatch deletions();
 
+    /**
+     * @return all updated relationships.
+     */
+    RelationshipBatch updates();
+
     interface IdsVisitor extends Consumer<NodeRelationshipIds> {}
 
     interface TypeIdsVisitor extends Consumer<NodeRelationshipTypeIds> {}
@@ -154,6 +161,11 @@ public interface RelationshipModifications {
          * @return whether or not there are deleted relationships for this node.
          */
         boolean hasDeletions();
+
+        /**
+         * @return whether or not there are updated relationships for this node.
+         */
+        boolean hasUpdates();
 
         /**
          * @return created relationships for this node.
@@ -198,6 +210,23 @@ public interface RelationshipModifications {
          * @see #forEachCreationSplit(TypeIdsVisitor)
          */
         void forEachDeletionSplitInterruptible(InterruptibleTypeIdsVisitor visitor);
+
+        /**
+         * Visits all updated relationships for this node, split by type.
+         * @param visitor to receive the relationship data.
+         */
+        default void forEachUpdateSplit(TypeIdsVisitor visitor) {
+            forEachUpdateSplitInterruptible(byType -> {
+                visitor.accept(byType);
+                return false;
+            });
+        }
+
+        /**
+         * Can be interrupted earlier if the provided visitor decides to, instead of forcing it to be exhausted.
+         * @see #forEachCreationSplit(TypeIdsVisitor)
+         */
+        void forEachUpdateSplitInterruptible(InterruptibleTypeIdsVisitor visitor);
     }
 
     interface NodeRelationshipTypeIds {
@@ -282,8 +311,8 @@ public interface RelationshipModifications {
                 return false;
             }
             MutableBoolean contains = new MutableBoolean();
-            forEach((relationshipId, typeId, startNodeId, endNodeId, addedProperties) -> {
-                if (relationshipId == id) {
+            forEach((rId, type, start, end, addedProps, changedProps, removedProps) -> {
+                if (rId == id) {
                     contains.setTrue();
                 }
             });
@@ -297,9 +326,9 @@ public interface RelationshipModifications {
         default long first() {
             Preconditions.checkState(!isEmpty(), "No ids");
             MutableLong first = new MutableLong(-1);
-            forEach((relationshipId, typeId, startNodeId, endNodeId, addedProperties) -> {
+            forEach((rId, type, start, end, addedProps, changedProps, removedProps) -> {
                 if (first.longValue() == -1) {
-                    first.setValue(relationshipId);
+                    first.setValue(rId);
                 }
             });
             return first.longValue();

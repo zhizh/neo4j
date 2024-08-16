@@ -26,48 +26,52 @@ import org.neo4j.collection.factory.CollectionsFactory;
 import org.neo4j.memory.HeapEstimator;
 import org.neo4j.memory.MemoryTracker;
 
-/**
- * This class works around the fact that create-delete in the same transaction is a no-op in {@link MutableDiffSetsImpl},
- * whereas we need to know total number of explicit removals.
- */
-public class RemovalsCountingDiffSets extends MutableLongDiffSetsImpl {
-    private static final long REMOVALS_COUNTING_DIFF_SET_SHALLOW_SIZE =
-            HeapEstimator.shallowSizeOfInstance(RemovalsCountingDiffSets.class);
-
+public class ChangeCountingDiffSet extends RemovalsCountingDiffSets {
+    private static final long CHANGE_COUNTING_DIFF_SET_SHALLOW_SIZE =
+            HeapEstimator.shallowSizeOfInstance(ChangeCountingDiffSet.class);
     private final CollectionsFactory collectionsFactory;
     private final MemoryTracker memoryTracker;
-    private MutableLongSet removedFromAdded;
 
-    static RemovalsCountingDiffSets newRemovalsCountingDiffSets(
+    static ChangeCountingDiffSet newRemovalsCountingDiffSets(
             CollectionsFactory collectionsFactory, MemoryTracker memoryTracker) {
-        memoryTracker.allocateHeap(REMOVALS_COUNTING_DIFF_SET_SHALLOW_SIZE);
-        return new RemovalsCountingDiffSets(collectionsFactory, memoryTracker);
+        memoryTracker.allocateHeap(CHANGE_COUNTING_DIFF_SET_SHALLOW_SIZE);
+        return new ChangeCountingDiffSet(collectionsFactory, memoryTracker);
     }
 
-    protected RemovalsCountingDiffSets(CollectionsFactory collectionsFactory, MemoryTracker memoryTracker) {
+    private MutableLongSet changed;
+
+    private ChangeCountingDiffSet(CollectionsFactory collectionsFactory, MemoryTracker memoryTracker) {
         super(collectionsFactory, memoryTracker);
         this.collectionsFactory = collectionsFactory;
         this.memoryTracker = memoryTracker;
     }
 
+    public LongSet getChanged() {
+        return changed != null ? changed : LongSets.immutable.empty();
+    }
+
+    public void change(long element) {
+        assert !isAdded(element);
+        assert !isRemoved(element);
+        if (changed == null) {
+            changed = collectionsFactory.newLongSet(memoryTracker);
+        }
+        changed.add(element);
+    }
+
+    public void unchange(long element) {
+        assert !isAdded(element);
+        assert !isRemoved(element);
+        if (changed != null) {
+            changed.remove(element);
+        }
+    }
+
     @Override
     public boolean remove(long elem) {
-        if (isAdded(elem) && super.remove(elem)) {
-            if (removedFromAdded == null) {
-                removedFromAdded = collectionsFactory.newLongSet(memoryTracker);
-            }
-            removedFromAdded.add(elem);
-            return true;
+        if (changed != null) {
+            changed.remove(elem);
         }
         return super.remove(elem);
-    }
-
-    @Override
-    public LongSet getRemovedFromAdded() {
-        return removedFromAdded != null ? removedFromAdded : LongSets.immutable.empty();
-    }
-
-    public boolean wasRemoved(long id) {
-        return (removedFromAdded != null && removedFromAdded.contains(id)) || super.isRemoved(id);
     }
 }

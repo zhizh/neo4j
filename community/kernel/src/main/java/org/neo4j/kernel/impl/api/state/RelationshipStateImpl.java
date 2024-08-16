@@ -24,6 +24,7 @@ import static java.util.Collections.emptyList;
 import org.eclipse.collections.api.IntIterable;
 import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.neo4j.collection.factory.CollectionsFactory;
+import org.neo4j.internal.kernel.api.TokenRead;
 import org.neo4j.memory.HeapEstimator;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.RelationshipVisitor;
@@ -49,6 +50,11 @@ class RelationshipStateImpl extends EntityStateImpl implements RelationshipState
         @Override
         public long getStartNodeId() {
             throw new UnsupportedOperationException("startNodeId not defined");
+        }
+
+        @Override
+        public long getEndNodeId() {
+            throw new UnsupportedOperationException("endNodeId not defined");
         }
 
         @Override
@@ -106,6 +112,7 @@ class RelationshipStateImpl extends EntityStateImpl implements RelationshipState
     private final long endNode;
     private final int type;
     private boolean deleted;
+    private boolean created;
 
     static RelationshipStateImpl createRelationshipStateImpl(
             long id,
@@ -131,6 +138,14 @@ class RelationshipStateImpl extends EntityStateImpl implements RelationshipState
         this.endNode = endNode;
     }
 
+    void setCreated() {
+        this.created = true;
+    }
+
+    boolean isCreated() {
+        return this.created;
+    }
+
     void setDeleted() {
         this.deleted = true;
     }
@@ -150,8 +165,13 @@ class RelationshipStateImpl extends EntityStateImpl implements RelationshipState
     }
 
     @Override
+    public long getEndNodeId() {
+        return endNode;
+    }
+
+    @Override
     public <EX extends Exception> boolean accept(RelationshipVisitor<EX> visitor) throws EX {
-        if (type != -1) {
+        if (type != TokenRead.NO_TOKEN) {
             visitor.visit(getId(), type, startNode, endNode);
             return true;
         }
@@ -160,8 +180,9 @@ class RelationshipStateImpl extends EntityStateImpl implements RelationshipState
 
     @Override
     public <EX extends Exception> boolean accept(RelationshipVisitorWithProperties<EX> visitor) throws EX {
-        if (type != -1) {
-            visitor.visit(getId(), type, startNode, endNode, addedProperties());
+        if (type != TokenRead.NO_TOKEN) {
+            visitor.visit(
+                    getId(), type, startNode, endNode, addedProperties(), changedProperties(), removedProperties());
             return true;
         }
         return false;

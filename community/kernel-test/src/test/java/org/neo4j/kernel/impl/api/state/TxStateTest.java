@@ -45,6 +45,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
@@ -52,7 +53,9 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.eclipse.collections.api.IntIterable;
 import org.eclipse.collections.api.set.primitive.LongSet;
+import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.impl.UnmodifiableMap;
+import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.eclipse.collections.impl.factory.primitive.LongSets;
 import org.eclipse.collections.impl.set.mutable.primitive.LongHashSet;
 import org.junit.jupiter.api.AfterEach;
@@ -72,6 +75,7 @@ import org.neo4j.collection.factory.CollectionsFactory;
 import org.neo4j.common.EntityType;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.function.Predicates;
+import org.neo4j.internal.helpers.collection.Iterables;
 import org.neo4j.internal.helpers.collection.Iterators;
 import org.neo4j.internal.helpers.collection.Pair;
 import org.neo4j.internal.kernel.api.exceptions.DeletedNodeStillHasRelationshipsException;
@@ -90,6 +94,8 @@ import org.neo4j.kernel.impl.transaction.tracing.TransactionEvent;
 import org.neo4j.kernel.impl.util.collection.CollectionsFactorySupplier;
 import org.neo4j.memory.LocalMemoryTracker;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.storageengine.api.PropertyKeyValue;
+import org.neo4j.storageengine.api.RelationshipVisitorWithProperties;
 import org.neo4j.storageengine.api.StorageProperty;
 import org.neo4j.storageengine.api.enrichment.ApplyEnrichmentStrategy;
 import org.neo4j.storageengine.api.txstate.RelationshipModifications;
@@ -641,11 +647,12 @@ abstract class TxStateTest {
             public void visitRelationshipModifications(RelationshipModifications modifications) {
                 modifications
                         .creations()
-                        .forEach((id, type, startNode, endNode, addedProps) ->
+                        .forEach((id, type, startNode, endNode, addedProps, changedProperties, removedProperties) ->
                                 assertEquals(1, id, "Should not create any other relationship than 1"));
                 modifications
                         .deletions()
-                        .forEach((id, type, startNode, endNode, noProps) -> fail("Should not delete any relationship"));
+                        .forEach((id, type, startNode, endNode, noProps, changedProperties, removedProperties) ->
+                                fail("Should not delete any relationship"));
             }
         });
     }
@@ -708,7 +715,7 @@ abstract class TxStateTest {
                 // Then
                 assertThat(ids.deletions().size()).isEqualTo(1);
                 ids.deletions()
-                        .forEach((id, type, start, end, noProps) ->
+                        .forEach((id, type, start, end, noProps, changedProperties, removedProperties) ->
                                 assertEquals(42, id, "Wrong deleted relationship id"));
             }
         });
@@ -1101,20 +1108,20 @@ abstract class TxStateTest {
         state.accept(new TxStateVisitor.Adapter() {
             @Override
             public void visitRelationshipModifications(RelationshipModifications modifications) {
-                modifications.deletions().forEach((relationshipId, typeId, startNodeId, endNodeId, addedProperties) -> {
+                modifications.deletions().forEach((rId, typeId, start, end, aP, cP, rP) -> {
                     assertThat(found.booleanValue()).isFalse();
                     found.setTrue();
 
                     if (keepDeletedRelationshipMetaData) {
-                        assertThat(relationshipId).isEqualTo(id);
+                        assertThat(rId).isEqualTo(id);
                         assertThat(typeId).isEqualTo(type);
-                        assertThat(startNodeId).isEqualTo(startNode);
-                        assertThat(endNodeId).isEqualTo(endNode);
+                        assertThat(start).isEqualTo(startNode);
+                        assertThat(end).isEqualTo(endNode);
                     } else {
-                        assertThat(relationshipId).isEqualTo(id);
+                        assertThat(rId).isEqualTo(id);
                         assertThat(typeId).isEqualTo(-1);
-                        assertThat(startNodeId).isEqualTo(-1);
-                        assertThat(endNodeId).isEqualTo(-1);
+                        assertThat(start).isEqualTo(-1);
+                        assertThat(end).isEqualTo(-1);
                     }
                 });
             }
@@ -1190,6 +1197,285 @@ abstract class TxStateTest {
         // WHEN
         assertThatThrownBy(() -> state.accept(new TxStateVisitor.Adapter() {}))
                 .isInstanceOf(DeletedNodeStillHasRelationshipsException.class);
+    }
+
+    @Test
+    void shouldGetChangedRelationshipPropertiesOnExistingRel() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+        state.addProp(1, 1);
+        state.changeProp(2, 1);
+
+        assertThat(state.hasStateChanges()).isTrue();
+        assertRelModificationsMatch(state);
+    }
+
+    @Test
+    void shouldGetChangedRelationshipPropertiesOnNewRel() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+        state.create(1);
+        state.addProp(1, 1);
+        state.changeProp(2, 1);
+
+        assertThat(state.hasStateChanges()).isTrue();
+        assertRelModificationsMatch(state);
+    }
+
+    @Test
+    void shouldGetRemovedPropertiesOnExistingRel() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+        state.removeProp(1, 1);
+
+        assertThat(state.hasStateChanges()).isTrue();
+        assertRelModificationsMatch(state);
+    }
+
+    @Test
+    void shouldGetRemovedPropertiesOnNewRel() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+        state.create(1);
+        state.removeProp(1, 1);
+
+        assertThat(state.hasStateChanges()).isTrue();
+        assertRelModificationsMatch(state);
+    }
+
+    @Test
+    void shouldNotGetAddedThenRemovedRelationshipProperty() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+        state.addProp(1, 1);
+        state.removeProp(1, 1);
+
+        assertThat(state.hasStateChanges()).isFalse();
+        assertRelModificationsMatch(state);
+    }
+
+    @Test
+    void shouldNotGetAddedRelationshipPropertiesOnDeletedRel() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+        state.addProp(1, 1);
+        state.delete(1);
+
+        assertThat(state.created).isEmpty();
+        assertThat(state.updated).isEmpty();
+        assertThat(state.deleted).isNotEmpty();
+        assertRelModificationsMatch(state);
+    }
+
+    @Test
+    void shouldNotGetAnythingOnAddedThenDeletedRelationship() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+        state.create(1);
+        state.addProp(1, 1);
+        state.delete(1);
+
+        assertThat(state.hasStateChanges()).isFalse();
+        assertRelModificationsMatch(state);
+    }
+
+    @Test
+    void shouldDealWithRandomRelUpdates() throws Exception {
+        RelTxStateMirror state = new RelTxStateMirror();
+
+        for (long id = 0; id < 100; id++) {
+            if (random.nextInt(4) == 0) {
+                state.create(id);
+            }
+            for (int key = 0; key < 10; key++) {
+                switch (random.nextInt(3)) {
+                    case 0 -> state.addProp(id, key);
+                    case 1 -> state.changeProp(id, key);
+                    case 2 -> state.removeProp(id, key);
+                }
+            }
+
+            if (random.nextInt(4) == 0) {
+                state.delete(id);
+            }
+        }
+        assertRelModificationsMatch(state);
+    }
+
+    private class RelTxStateMirror {
+        private final Map<Long, RelData> created = new HashMap<>();
+        private final Map<Long, RelData> deleted = new HashMap<>();
+        private final Map<Long, RelData> updated = new HashMap<>();
+
+        void create(long id) {
+            assertThat(created).doesNotContainKey(id);
+            assertThat(updated).doesNotContainKey(id);
+            assertThat(deleted).doesNotContainKey(id);
+            RelData data = new RelData(id, random);
+            created.put(id, data);
+            state.relationshipDoCreate(data.id, data.type, data.startNode, data.endNode);
+        }
+
+        void addProp(long id, int key) {
+            setProp(id, key, true);
+        }
+
+        void changeProp(long id, int key) {
+            setProp(id, key, false);
+        }
+
+        private void setProp(long id, int key, boolean added) {
+            assertThat(deleted).doesNotContainKey(id);
+
+            RelData data = created.get(id);
+            if (data == null) {
+                data = updated.get(id);
+                if (data == null) {
+                    data = new RelData(id, random);
+                    updated.put(id, data);
+                }
+            }
+            PropertyKeyValue prop = new PropertyKeyValue(key, Values.intValue(1));
+            if (added) {
+                data.addedProperties.add(prop);
+            } else {
+                data.changedProperties.add(prop);
+            }
+
+            state.relationshipDoReplaceProperty(
+                    data.id,
+                    data.type,
+                    data.startNode,
+                    data.endNode,
+                    prop.propertyKeyId(),
+                    added ? Values.NO_VALUE : Values.stringValue("prev"),
+                    prop.value());
+        }
+
+        void removeProp(long id, int key) {
+            assertThat(deleted).doesNotContainKey(id);
+
+            RelData data = created.get(id);
+            if (data == null) {
+                data = updated.get(id);
+            }
+            if (data == null) {
+                data = new RelData(id, random);
+                updated.put(id, data);
+            }
+            boolean removed = data.addedProperties.removeIf(storageProperty -> storageProperty.propertyKeyId() == key)
+                    || data.changedProperties.removeIf(storageProperty -> storageProperty.propertyKeyId() == key);
+            if (!removed) {
+                data.removedProperties.add(key);
+            } else {
+                if (data.changedProperties.isEmpty()
+                        && data.addedProperties.isEmpty()
+                        && data.removedProperties.isEmpty()) {
+                    updated.remove(id);
+                }
+            }
+            state.relationshipDoRemoveProperty(data.id, data.type, data.startNode, data.endNode, key);
+        }
+
+        void delete(long id) {
+            RelData data;
+            if (created.containsKey(id)) {
+                assertThat(updated.containsKey(id)).isFalse();
+                data = created.remove(id);
+            } else {
+                data = updated.remove(id);
+                // Deletions are visited without data, only ID
+                deleted.put(id, new RelData(id, -1, -1, -1, new HashSet<>(), new HashSet<>(), IntSets.mutable.empty()));
+            }
+
+            state.relationshipDoDelete(data.id, data.type, data.startNode, data.endNode);
+        }
+
+        boolean hasStateChanges() {
+            return !created.isEmpty() || !deleted.isEmpty() || !updated.isEmpty();
+        }
+    }
+
+    private void assertRelModificationsMatch(RelTxStateMirror txStateMirror) throws KernelException {
+        assertRelModificationsMatch(
+                new HashSet<>(txStateMirror.created.values()),
+                new HashSet<>(txStateMirror.updated.values()),
+                new HashSet<>(txStateMirror.deleted.values()));
+    }
+
+    private void assertRelModificationsMatch(
+            Set<RelData> createdExpected, Set<RelData> updatedExpected, Set<RelData> deletedExpected)
+            throws KernelException {
+        Set<RelData> created = new HashSet<>();
+        Set<RelData> deleted = new HashSet<>();
+        Set<RelData> updated = new HashSet<>();
+        Set<RelData> createdSplitIn = new HashSet<>();
+        Set<RelData> createdSplitOut = new HashSet<>();
+        Set<RelData> deletedSplitIn = new HashSet<>();
+        Set<RelData> deletedSplitOut = new HashSet<>();
+        Set<RelData> updatedSplitIn = new HashSet<>();
+        Set<RelData> updatedSplitOut = new HashSet<>();
+
+        // WHEN
+        state.accept(new TxStateVisitor.Adapter() {
+            @Override
+            public void visitRelationshipModifications(RelationshipModifications modifications) {
+                modifications.updates().forEach(collector(updated));
+                modifications.creations().forEach(collector(created));
+                modifications.deletions().forEach(collector(deleted));
+
+                modifications.forEachSplit(node -> {
+                    node.forEachUpdateSplit(type -> {
+                        type.in().forEach(collector(updatedSplitIn));
+                        type.out().forEach(collector(updatedSplitOut));
+                        type.loop().forEach(collector(updatedSplitIn));
+                        type.loop().forEach(collector(updatedSplitOut));
+                    });
+                    node.forEachCreationSplit(type -> {
+                        type.in().forEach(collector(createdSplitIn));
+                        type.out().forEach(collector(createdSplitOut));
+                        type.loop().forEach(collector(createdSplitIn));
+                        type.loop().forEach(collector(createdSplitOut));
+                    });
+                    node.forEachDeletionSplit(type -> {
+                        type.in().forEach(collector(deletedSplitIn));
+                        type.out().forEach(collector(deletedSplitOut));
+                        type.loop().forEach(collector(deletedSplitIn));
+                        type.loop().forEach(collector(deletedSplitOut));
+                    });
+                });
+            }
+        });
+
+        assertThat(created).isEqualTo(createdSplitIn).isEqualTo(createdSplitOut).isEqualTo(createdExpected);
+        assertThat(deleted).isEqualTo(deletedSplitIn).isEqualTo(deletedSplitOut).isEqualTo(deletedExpected);
+        assertThat(updated).isEqualTo(updatedSplitIn).isEqualTo(updatedSplitOut).isEqualTo(updatedExpected);
+    }
+
+    record RelData(
+            long id,
+            int type,
+            long startNode,
+            long endNode,
+            Set<StorageProperty> addedProperties,
+            Set<StorageProperty> changedProperties,
+            MutableIntSet removedProperties) {
+        RelData(long id, RandomSupport random) {
+            this(
+                    id,
+                    random.nextInt(3),
+                    random.nextInt(10),
+                    random.nextInt(10),
+                    new HashSet<>(),
+                    new HashSet<>(),
+                    IntSets.mutable.empty());
+        }
+    }
+
+    RelationshipVisitorWithProperties<RuntimeException> collector(Set<RelData> into) {
+        return (id, type, start, end, addedProps, changedProperties, removedProperties) -> assertThat(
+                        into.add(new RelData(
+                                id,
+                                type,
+                                start,
+                                end,
+                                Iterables.asSet(addedProps),
+                                Iterables.asSet(changedProperties),
+                                IntSets.mutable.ofAll(removedProperties))))
+                .isTrue();
     }
 
     private LongDiffSets addedNodes(long... added) {

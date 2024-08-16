@@ -37,6 +37,7 @@ import org.neo4j.internal.helpers.collection.Iterators;
 import org.neo4j.kernel.api.txstate.TransactionState;
 import org.neo4j.storageengine.api.PropertyKeyValue;
 import org.neo4j.storageengine.api.StorageProperty;
+import org.neo4j.storageengine.api.txstate.RelationshipModifications;
 import org.neo4j.storageengine.api.txstate.TxStateVisitor;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
@@ -154,15 +155,11 @@ class TxStateVisitorTest {
         }
 
         @Override
-        public void visitRelPropertyChanges(
-                long id,
-                int type,
-                long startNode,
-                long endNode,
-                Iterable<StorageProperty> added,
-                Iterable<StorageProperty> changed,
-                IntIterable removed) {
-            relPropertyChanges.add(new PropertyChange(id, added.iterator(), changed.iterator(), removed));
+        public void visitRelationshipModifications(RelationshipModifications modifications) {
+            modifications
+                    .updates()
+                    .forEach((id, typeId, startNodeId, endNodeId, added, changed, removed) -> relPropertyChanges.add(
+                            new PropertyChange(id, added.iterator(), changed.iterator(), removed)));
         }
     }
 }

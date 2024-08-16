@@ -460,11 +460,11 @@ class RelationshipModifierTest {
         this.lockTracking.preModify(true);
         modifications
                 .creations()
-                .forEach((id, type, start, end, addedProperties) ->
+                .forEach((id, type, start, end, addedProperties, changedProperties, removedProperties) ->
                         context.acquireRelationshipCreationLock(NONE, start, end, false, false));
         modifications
                 .deletions()
-                .forEach((id, type, start, end, noProperties) ->
+                .forEach((id, type, start, end, noProperties, changedProperties, removedProperties) ->
                         context.acquireRelationshipDeletionLock(NONE, start, end, id, false, false, false));
         this.lockTracking.preModify(false);
 
@@ -554,12 +554,12 @@ class RelationshipModifierTest {
             RelationshipModifications modifications, List<RelationshipData> expectedRelationships) {
         modifications
                 .creations()
-                .forEach((relationshipId, typeId, startNodeId, endNodeId, addedProperties) -> expectedRelationships.add(
-                        new RelationshipData(relationshipId, typeId, startNodeId, endNodeId)));
+                .forEach((id, type, start, end, aP, cP, rP) ->
+                        expectedRelationships.add(new RelationshipData(id, type, start, end)));
         modifications
                 .deletions()
-                .forEach((relationshipId, typeId, startNodeId, endNodeId, noProperties) -> expectedRelationships.remove(
-                        new RelationshipData(relationshipId, typeId, startNodeId, endNodeId)));
+                .forEach((id, type, start, end, aP, cP, rP) ->
+                        expectedRelationships.remove(new RelationshipData(id, type, start, end)));
     }
 
     private static class GroupUpdater implements DegreeUpdater {

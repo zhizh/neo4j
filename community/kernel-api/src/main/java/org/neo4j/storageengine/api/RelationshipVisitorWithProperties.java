@@ -19,26 +19,32 @@
  */
 package org.neo4j.storageengine.api;
 
+import org.eclipse.collections.api.IntIterable;
+
 /**
  * Visitor of relationship data.
  *
- * @param <EXCEPTION> exception thrown from the {@link #visit(long, int, long, long, Iterable)} method.
+ * @param <EXCEPTION> exception thrown from the {@link #visit(long, int, long, long, Iterable, Iterable, IntIterable)} method.
  */
 public interface RelationshipVisitorWithProperties<EXCEPTION extends Exception> {
     /**
      * Visits data about a relationship.
      *
-     * @param relationshipId relationship id to visit data for.
-     * @param typeId relationship type id for the relationship.
-     * @param startNodeId id of start node of the relationship.
-     * @param endNodeId id of the end node of the relationship.
-     * @param addedProperties added properties for this relationship.
+     * @param relationshipId    relationship id to visit data for.
+     * @param typeId            relationship type id for the relationship.
+     * @param startNodeId       id of start node of the relationship.
+     * @param endNodeId         id of the end node of the relationship.
+     * @param addedProperties   added properties for this relationship.
+     * @param changedProperties changed properties for this relationship.
+     * @param removedProperties removed properties for this relationship.
      */
     void visit(
             long relationshipId,
             int typeId,
             long startNodeId,
             long endNodeId,
-            Iterable<StorageProperty> addedProperties)
+            Iterable<StorageProperty> addedProperties,
+            Iterable<StorageProperty> changedProperties,
+            IntIterable removedProperties)
             throws EXCEPTION;
 }

@@ -97,8 +97,8 @@ public class RelationshipCreator {
             RecordAccessSet recordChanges,
             DegreeUpdater groupDegreesUpdater,
             NodeDataLookup nodeDataLookup) {
-        creations.forEach((id, type, firstNodeId, secondNodeId, addedProperties) -> relationshipCreate(
-                id, type, firstNodeId, secondNodeId, recordChanges, groupDegreesUpdater, nodeDataLookup));
+        creations.forEach((id, type, start, end, addedProps, changedProps, removedProps) ->
+                relationshipCreate(id, type, start, end, recordChanges, groupDegreesUpdater, nodeDataLookup));
     }
 
     /**

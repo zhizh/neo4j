@@ -141,6 +141,7 @@ class NodeStateImpl extends EntityStateImpl implements NodeState {
     private MutableLongDiffSets labelDiffSets;
     private RelationshipChangesForNode relationshipsAdded;
     private RelationshipChangesForNode relationshipsRemoved;
+    private RelationshipChangesForNode relationshipsUpdated;
     private boolean deleted;
 
     static NodeStateImpl createNodeState(
@@ -185,10 +186,34 @@ class NodeStateImpl extends EntityStateImpl implements NodeState {
                 return;
             }
         }
+        if (hasUpdatedRelationships()) {
+            if (relationshipsUpdated.removeRelationship(relId, typeId, direction)) {
+                if (relationshipsUpdated.isEmpty()) {
+                    relationshipsUpdated = null;
+                }
+            }
+        }
+
         if (!hasRemovedRelationships()) {
             relationshipsRemoved = createRelationshipChangesForNode(DiffStrategy.REMOVE, memoryTracker);
         }
         relationshipsRemoved.addRelationship(relId, typeId, direction);
+    }
+
+    public void updateRelationship(
+            long relId, int typeId, RelationshipDirection direction, boolean hasPropertyChanges) {
+        if (hasPropertyChanges) {
+            if (!hasUpdatedRelationships()) {
+                relationshipsUpdated = createRelationshipChangesForNode(DiffStrategy.IGNORE, memoryTracker);
+            }
+            relationshipsUpdated.addRelationship(relId, typeId, direction);
+        } else if (hasUpdatedRelationships()) {
+            if (relationshipsUpdated.removeRelationship(relId, typeId, direction)) {
+                if (relationshipsUpdated.isEmpty()) {
+                    relationshipsUpdated = null;
+                }
+            }
+        }
     }
 
     @Override
@@ -245,6 +270,14 @@ class NodeStateImpl extends EntityStateImpl implements NodeState {
 
     boolean hasRemovedRelationships() {
         return relationshipsRemoved != null && !relationshipsRemoved.isEmpty();
+    }
+
+    boolean hasUpdatedRelationships() {
+        return relationshipsUpdated != null;
+    }
+
+    boolean hasRelationshipChanges() {
+        return hasAddedRelationships() || hasRemovedRelationships() || hasUpdatedRelationships();
     }
 
     @Override
@@ -312,6 +345,14 @@ class NodeStateImpl extends EntityStateImpl implements NodeState {
     void visitRemovedIdsSplit(RelationshipModifications.InterruptibleTypeIdsVisitor visitor) {
         if (hasRemovedRelationships()) {
             relationshipsRemoved.visitIdsSplit(visitor, RelationshipModifications.noAdditionalDataDecorator());
+        }
+    }
+
+    void visitUpdatedIdsSplit(
+            RelationshipModifications.InterruptibleTypeIdsVisitor visitor,
+            RelationshipModifications.IdDataDecorator relationshipVisit) {
+        if (hasUpdatedRelationships()) {
+            relationshipsUpdated.visitIdsSplit(visitor, relationshipVisit);
         }
     }
 

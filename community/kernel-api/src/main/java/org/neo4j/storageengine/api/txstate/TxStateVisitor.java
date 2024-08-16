@@ -43,20 +43,6 @@ public interface TxStateVisitor extends AutoCloseable {
             long id, Iterable<StorageProperty> added, Iterable<StorageProperty> changed, IntIterable removed)
             throws ConstraintValidationException;
 
-    /**
-     * Only called for property changes on existing relationships. For created relationships the relationship properties will be trickle in
-     * via {@link #visitRelationshipModifications(RelationshipModifications)}.
-     */
-    void visitRelPropertyChanges(
-            long id,
-            int type,
-            long startNode,
-            long endNode,
-            Iterable<StorageProperty> added,
-            Iterable<StorageProperty> changed,
-            IntIterable removed)
-            throws ConstraintValidationException;
-
     void visitNodeLabelChanges(long id, LongSet added, LongSet removed) throws ConstraintValidationException;
 
     void visitAddedIndex(IndexDescriptor element) throws KernelException;
@@ -92,17 +78,6 @@ public interface TxStateVisitor extends AutoCloseable {
         @Override
         public void visitNodePropertyChanges(
                 long id, Iterable<StorageProperty> added, Iterable<StorageProperty> changed, IntIterable removed)
-                throws ConstraintValidationException {}
-
-        @Override
-        public void visitRelPropertyChanges(
-                long id,
-                int type,
-                long startNode,
-                long endNode,
-                Iterable<StorageProperty> added,
-                Iterable<StorageProperty> changed,
-                IntIterable removed)
                 throws ConstraintValidationException {}
 
         @Override
@@ -168,19 +143,6 @@ public interface TxStateVisitor extends AutoCloseable {
                 long id, Iterable<StorageProperty> added, Iterable<StorageProperty> changed, IntIterable removed)
                 throws ConstraintValidationException {
             actual.visitNodePropertyChanges(id, added, changed, removed);
-        }
-
-        @Override
-        public void visitRelPropertyChanges(
-                long id,
-                int type,
-                long startNode,
-                long endNode,
-                Iterable<StorageProperty> added,
-                Iterable<StorageProperty> changed,
-                IntIterable removed)
-                throws ConstraintValidationException {
-            actual.visitRelPropertyChanges(id, type, startNode, endNode, added, changed, removed);
         }
 
         @Override

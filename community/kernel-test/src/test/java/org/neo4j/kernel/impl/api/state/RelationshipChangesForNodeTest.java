@@ -160,7 +160,7 @@ class RelationshipChangesForNodeTest {
                     dude) {
         if (dirMap.containsKey(direction)) {
             dude.apply(typeIds)
-                    .forEach((id, type, startNode, endNode, props) ->
+                    .forEach((id, type, startNode, endNode, addedProps, changedProps, removedProps) ->
                             assertThat(dirMap.get(direction).remove(id)).isTrue());
             assertThat(dirMap.remove(direction).size()).isEqualTo(0);
         }

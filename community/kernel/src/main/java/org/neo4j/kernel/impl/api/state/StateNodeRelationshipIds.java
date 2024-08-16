@@ -30,6 +30,7 @@ class StateNodeRelationshipIds implements RelationshipModifications.NodeRelation
     private final NodeStateImpl nodeState;
     private final boolean hasCreations;
     private final boolean hasDeletions;
+    private final boolean hasUpdates;
     private final RelationshipModifications.IdDataDecorator relationshipVisit;
 
     static StateNodeRelationshipIds createStateNodeRelationshipIds(
@@ -45,6 +46,7 @@ class StateNodeRelationshipIds implements RelationshipModifications.NodeRelation
         this.nodeState = nodeState;
         this.hasCreations = nodeState.hasAddedRelationships();
         this.hasDeletions = nodeState.hasRemovedRelationships();
+        this.hasUpdates = nodeState.hasUpdatedRelationships();
         this.relationshipVisit = relationshipVisit;
     }
 
@@ -69,6 +71,11 @@ class StateNodeRelationshipIds implements RelationshipModifications.NodeRelation
     }
 
     @Override
+    public boolean hasUpdates() {
+        return hasUpdates;
+    }
+
+    @Override
     public RelationshipModifications.RelationshipBatch creations() {
         return nodeState.additionsAsRelationshipBatch(relationshipVisit);
     }
@@ -86,5 +93,10 @@ class StateNodeRelationshipIds implements RelationshipModifications.NodeRelation
     @Override
     public void forEachDeletionSplitInterruptible(RelationshipModifications.InterruptibleTypeIdsVisitor visitor) {
         nodeState.visitRemovedIdsSplit(visitor);
+    }
+
+    @Override
+    public void forEachUpdateSplitInterruptible(RelationshipModifications.InterruptibleTypeIdsVisitor visitor) {
+        nodeState.visitUpdatedIdsSplit(visitor, relationshipVisit);
     }
 }

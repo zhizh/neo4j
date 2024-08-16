@@ -67,6 +67,12 @@ public class RelationshipChangesForNode {
             int augmentDegree(int degree, int diff) {
                 return degree + diff;
             }
+        },
+        IGNORE {
+            @Override
+            int augmentDegree(int degree, int diff) {
+                return degree;
+            }
         };
 
         abstract int augmentDegree(int degree, int diff);

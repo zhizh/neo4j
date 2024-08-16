@@ -35,6 +35,11 @@ public class TrackableDiffSets {
         return RemovalsCountingDiffSets.newRemovalsCountingDiffSets(collectionsFactory, memoryTracker);
     }
 
+    public static ChangeCountingDiffSet newChangeCountingDiffSets(
+            CollectionsFactory collectionsFactory, MemoryTracker memoryTracker) {
+        return ChangeCountingDiffSet.newRemovalsCountingDiffSets(collectionsFactory, memoryTracker);
+    }
+
     public static <T> MutableDiffSets<T> newMutableDiffSets(MemoryTracker memoryTracker) {
         return MutableDiffSetsImpl.newMutableDiffSets(memoryTracker);
     }

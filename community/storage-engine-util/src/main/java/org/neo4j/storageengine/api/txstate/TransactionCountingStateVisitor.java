@@ -102,11 +102,12 @@ public class TransactionCountingStateVisitor extends TxStateVisitor.Delegator {
     @Override
     public void visitRelationshipModifications(RelationshipModifications ids) throws ConstraintValidationException {
         ids.creations()
-                .forEach((id, type, startNode, endNode, addedProperties) ->
+                .forEach((id, type, startNode, endNode, addedProps, changedProps, removedProps) ->
                         updateRelationshipCount(startNode, type, endNode, 1));
-        ids.deletions().forEach((id, type, startNode, endNode, noProperties) -> {
+        ids.deletions().forEach((id, type, startNode, endNode, addedProps, changedProps, removedProps) -> {
             if (type == ANY_RELATIONSHIP_TYPE) {
-                // Indication that no meta data for deleted relationships is kept, we have to look it up here instead
+                // Indication that no meta data for deleted relationships is kept, we have to look it up
+                // here instead
                 relationshipCursor.single(id);
                 if (!relationshipCursor.next()) {
                     throw new IllegalStateException(

@@ -81,10 +81,10 @@ import org.neo4j.values.storable.Value;
  *  <li>+ node
  *  <li>+ rel
  *  <li>- rel
+ *  <li>+- rel props
  *  <li>- node
  *  <li>+- node props
  *  <li>+- node labels
- *  <li>+- rel props
  * </ul>
  * The visitor builds up the changes within 4 distinct buffers:
  * <ul>
@@ -209,25 +209,46 @@ public class TxEnrichmentVisitor extends TxStateVisitor.Delegator implements Enr
     public void visitRelationshipModifications(RelationshipModifications modifications)
             throws ConstraintValidationException {
         super.visitRelationshipModifications(modifications);
-        modifications.creations().forEach((relationshipId, typeId, startNodeId, endNodeId, addedProperties) -> {
-            final var startPos =
-                    captureNodeState(startNodeId, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(startNodeId));
-            final var endPos =
-                    captureNodeState(endNodeId, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(endNodeId));
-            setRelationshipChangeType(relationshipId, DeltaType.ADDED, typeId, startPos, endPos);
-            captureRelTypeConstraints(relationshipId, typeId);
-            setRelationshipChangeDelta(
-                    relationshipId, ChangeType.PROPERTIES_STATE, captureRelationshipState(addedProperties));
+        modifications.creations().forEach((id, type, start, end, added, changed, removed) -> {
+            final var startPos = captureNodeState(start, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(start));
+            final var endPos = captureNodeState(end, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(end));
+            setRelationshipChangeType(id, DeltaType.ADDED, type, startPos, endPos);
+            captureRelTypeConstraints(id, type);
+            setRelationshipChangeDelta(id, ChangeType.PROPERTIES_STATE, captureRelationshipState(added));
         });
 
-        modifications.deletions().forEach((relationshipId, typeId, startNodeId, endNodeId, addedProperties) -> {
+        modifications.deletions().forEach((id, type, start, end, added, changed, removed) -> {
+            final var startPos = captureNodeState(start, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(start));
+            final var endPos = captureNodeState(end, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(end));
+            setRelationshipChangeType(id, DeltaType.DELETED, type, startPos, endPos);
+            captureRelTypeConstraints(id, type);
+            captureRelationshipState(id, type, start, end, PropertySelection.ALL_PROPERTIES);
+        });
+
+        modifications.updates().forEach((id, type, startNode, endNode, added, changed, removed) -> {
+            checkState(!relationshipPositions.containsKey(id), "Already tracking the relationship: " + id);
+
             final var startPos =
-                    captureNodeState(startNodeId, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(startNodeId));
-            final var endPos =
-                    captureNodeState(endNodeId, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(endNodeId));
-            setRelationshipChangeType(relationshipId, DeltaType.DELETED, typeId, startPos, endPos);
-            captureRelTypeConstraints(relationshipId, typeId);
-            captureRelationshipState(relationshipId, typeId, startNodeId, endNodeId, PropertySelection.ALL_PROPERTIES);
+                    captureNodeState(startNode, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(startNode));
+            final var endPos = captureNodeState(endNode, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(endNode));
+            setRelationshipChangeType(id, DeltaType.MODIFIED, type, startPos, endPos);
+
+            // always capture constraints - so don't inline this
+            final var constraintProps = captureRelTypeConstraints(id, type);
+            final var selection =
+                    (captureMode == CaptureMode.FULL) ? PropertySelection.ALL_PROPERTIES : selection(constraintProps);
+            captureRelationshipState(id, type, startNode, endNode, selection);
+
+            final var position = changesChannel.size();
+            relCursor.single(id, startNode, type, endNode);
+
+            final var changesFlag = entityProperties(relCursor, added, changed, removed);
+            if (changesFlag == 0) {
+                setRelationshipChangeDelta(id, ChangeType.PROPERTIES_CHANGE, UNKNOWN_POSITION);
+            } else {
+                changesChannel.put(position, changesFlag);
+                setRelationshipChangeDelta(id, ChangeType.PROPERTIES_CHANGE, position);
+            }
         });
     }
 
@@ -270,42 +291,6 @@ public class TxEnrichmentVisitor extends TxStateVisitor.Delegator implements Enr
                 changesChannel.put(position, changesFlag);
                 setNodeChangeDelta(id, ChangeType.PROPERTIES_CHANGE, position);
             }
-        }
-    }
-
-    @Override
-    public void visitRelPropertyChanges(
-            long id,
-            int type,
-            long startNode,
-            long endNode,
-            Iterable<StorageProperty> added,
-            Iterable<StorageProperty> changed,
-            IntIterable removed)
-            throws ConstraintValidationException {
-        super.visitRelPropertyChanges(id, type, startNode, endNode, added, changed, removed);
-
-        checkState(!relationshipPositions.containsKey(id), "Already tracking the relationship: " + id);
-
-        final var startPos = captureNodeState(startNode, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(startNode));
-        final var endPos = captureNodeState(endNode, DeltaType.STATE, txState.nodeIsModifiedInThisBatch(endNode));
-        setRelationshipChangeType(id, DeltaType.MODIFIED, type, startPos, endPos);
-
-        // always capture constraints - so don't inline this
-        final var constraintProps = captureRelTypeConstraints(id, type);
-        final var selection =
-                (captureMode == CaptureMode.FULL) ? PropertySelection.ALL_PROPERTIES : selection(constraintProps);
-        captureRelationshipState(id, type, startNode, endNode, selection);
-
-        final var position = changesChannel.size();
-        relCursor.single(id, startNode, type, endNode);
-
-        final var changesFlag = entityProperties(relCursor, added, changed, removed);
-        if (changesFlag == 0) {
-            setRelationshipChangeDelta(id, ChangeType.PROPERTIES_CHANGE, UNKNOWN_POSITION);
-        } else {
-            changesChannel.put(position, changesFlag);
-            setRelationshipChangeDelta(id, ChangeType.PROPERTIES_CHANGE, position);
         }
     }
 
