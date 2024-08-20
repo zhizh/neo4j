@@ -2331,18 +2331,35 @@ public class Operations implements Write, SchemaWrite, Upgrade {
     private void enforceRelationshipEndpointConstraint(RelationshipEndpointConstraintDescriptor descriptor)
             throws KernelException {
         exclusiveLock(ResourceType.LABEL, new long[] {descriptor.endpointLabelId()});
-        // TODO add check for usable index for possible speedup
-        try (var allRelationshipsCursor =
-                        cursors.allocateFullAccessRelationshipScanCursor(ktx.cursorContext(), memoryTracker);
-                var nodeCursor = cursors.allocateFullAccessNodeCursor(ktx.cursorContext(), memoryTracker)) {
-            kernelRead.allRelationshipsScan(allRelationshipsCursor);
-            constraintSemantics.validateRelationshipEndpointConstraint(
-                    new FilteringRelationshipScanCursorWrapper(
-                            allRelationshipsCursor,
-                            CursorPredicates.hasType(descriptor.schema().getRelTypeId())),
-                    nodeCursor,
-                    descriptor,
-                    token);
+        var index = findUsableTokenIndex(RELATIONSHIP);
+
+        if (index != IndexDescriptor.NO_INDEX) {
+            try (var fullAccessRelationshipIndexCursor =
+                            cursors.allocateFullAccessRelationshipTypeIndexCursor(ktx.cursorContext(), memoryTracker);
+                    var nodeCursor = cursors.allocateFullAccessNodeCursor(ktx.cursorContext(), memoryTracker)) {
+                var session = kernelRead.tokenReadSession(index);
+                kernelRead.relationshipTypeScan(
+                        session,
+                        fullAccessRelationshipIndexCursor,
+                        unconstrained(),
+                        new TokenPredicate(descriptor.schema().getRelTypeId()),
+                        ktx.cursorContext());
+                constraintSemantics.validateRelationshipEndpointConstraint(
+                        fullAccessRelationshipIndexCursor, nodeCursor, descriptor, token);
+            }
+        } else {
+            try (var allRelationshipsCursor =
+                            cursors.allocateFullAccessRelationshipScanCursor(ktx.cursorContext(), memoryTracker);
+                    var nodeCursor = cursors.allocateFullAccessNodeCursor(ktx.cursorContext(), memoryTracker)) {
+                kernelRead.allRelationshipsScan(allRelationshipsCursor);
+                constraintSemantics.validateRelationshipEndpointConstraint(
+                        new FilteringRelationshipScanCursorWrapper(
+                                allRelationshipsCursor,
+                                CursorPredicates.hasType(descriptor.schema().getRelTypeId())),
+                        nodeCursor,
+                        descriptor,
+                        token);
+            }
         }
     }
 
