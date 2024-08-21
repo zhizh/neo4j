@@ -28,7 +28,8 @@ object renderSummary extends (InternalPlanDescription => String) {
   def apply(plan: InternalPlanDescription): String = {
     val memStr = memory(plan).map(bytes => s", total allocated memory: $bytes").getOrElse("")
     val workersStr = availableWorkers(plan).map(nWorkers => s", number of available workers: $nWorkers").getOrElse("")
-    s"Total database accesses: ${dbhits(plan)}$memStr$workersStr"
+    val processorsStr =  s", number of available processors: ${Runtime.getRuntime.availableProcessors()}"
+    s"Total database accesses: ${dbhits(plan)}$memStr$workersStr$processorsStr"
   }
 
   private def dbhits(plan: InternalPlanDescription): String = {
