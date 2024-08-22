@@ -19,8 +19,8 @@
  */
 package org.neo4j.cypher.internal.plandescription
 
-import org.neo4j.cypher.internal.plandescription.Arguments.GlobalMemory
 import org.neo4j.cypher.internal.plandescription.Arguments.AvailableWorkers
+import org.neo4j.cypher.internal.plandescription.Arguments.GlobalMemory
 import org.neo4j.cypher.internal.plandescription.InternalPlanDescription.TotalHits
 
 object renderSummary extends (InternalPlanDescription => String) {
@@ -28,7 +28,7 @@ object renderSummary extends (InternalPlanDescription => String) {
   def apply(plan: InternalPlanDescription): String = {
     val memStr = memory(plan).map(bytes => s", total allocated memory: $bytes").getOrElse("")
     val workersStr = availableWorkers(plan).map(nWorkers => s", number of available workers: $nWorkers").getOrElse("")
-    val processorsStr =  s", number of available processors: ${Runtime.getRuntime.availableProcessors()}"
+    val processorsStr = s", number of available processors: ${Runtime.getRuntime.availableProcessors()}"
     s"Total database accesses: ${dbhits(plan)}$memStr$workersStr$processorsStr"
   }
 
