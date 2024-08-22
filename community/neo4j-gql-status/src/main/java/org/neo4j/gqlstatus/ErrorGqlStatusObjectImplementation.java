@@ -79,10 +79,28 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         if (cause.isPresent()) {
             sb.append("\n");
             sb.append("Caused by:");
-            return sb.append(cause.get().toString().indent(4)).toString();
+
+            return sb.append(indent(4, cause.get().toString())).toString();
         } else {
             return sb.toString();
         }
+    }
+
+    public static String indent(int n, String input) {
+        String indent = " ".repeat(n);
+        String[] lines = input.split("\n");
+
+        StringBuilder sb = new StringBuilder();
+
+        for (String line : lines) {
+            sb.append(indent).append(line).append("\n");
+        }
+
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 1);
+        }
+
+        return sb.toString();
     }
 
     public static class Builder {
