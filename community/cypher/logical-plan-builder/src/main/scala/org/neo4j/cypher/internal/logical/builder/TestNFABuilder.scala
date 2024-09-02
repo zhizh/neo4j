@@ -30,8 +30,11 @@ import org.neo4j.cypher.internal.expressions.RelationshipPattern
 import org.neo4j.cypher.internal.frontend.phases.rewriting.cnf.flattenBooleanOperators
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
 import org.neo4j.cypher.internal.logical.builder.TestNFABuilder.NodePredicate
+import org.neo4j.cypher.internal.logical.builder.TestNFABuilder.unnestRelationshipChain
 import org.neo4j.cypher.internal.logical.plans.Expand
 import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
+import org.neo4j.cypher.internal.logical.plans.NFA.MultiRelationshipExpansionTransition
+import org.neo4j.cypher.internal.logical.plans.NFA.NodeExpansionPredicate
 import org.neo4j.cypher.internal.logical.plans.NFA.NodeJuxtapositionTransition
 import org.neo4j.cypher.internal.logical.plans.NFA.RelationshipExpansionPredicate
 import org.neo4j.cypher.internal.logical.plans.NFA.RelationshipExpansionTransition
@@ -44,6 +47,7 @@ import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.collection.immutable.ListSet
 import org.neo4j.cypher.internal.util.inSequence
 
+import scala.annotation.tailrec
 import scala.util.control.NonFatal
 
 object TestNFABuilder {
@@ -71,6 +75,78 @@ object TestNFABuilder {
         Some((nodeVariable, rewrittenNodeJointPredicate.map(Expand.VariablePredicate(nodeVariable, _))))
       case _ => None
     }
+  }
+
+  private def relationshipExpansionPredicate(r: RelationshipPattern): RelationshipExpansionPredicate = r match {
+    case RelationshipPattern(
+        Some(rel: LogicalVariable),
+        relTypeExpression,
+        None,
+        None,
+        relPredicate,
+        direction
+      ) =>
+      val types = LabelExpression.getRelTypes(relTypeExpression)
+      val relVariablePredicate = relPredicate.map(Expand.VariablePredicate(rel, _))
+      RelationshipExpansionPredicate(
+        rel,
+        relVariablePredicate,
+        types,
+        direction
+      )
+    case _ => throw new IllegalStateException
+  }
+
+  @tailrec
+  private def unnestRelationshipChain(
+    chain: RelationshipChain,
+    rels: List[RelationshipExpansionPredicate] = Nil,
+    nodes: List[NodeExpansionPredicate] = Nil,
+    to: Option[NodeExpansionPredicate] = None
+  ): (
+    NodeExpansionPredicate,
+    Seq[RelationshipExpansionPredicate],
+    Seq[NodeExpansionPredicate],
+    NodeExpansionPredicate
+  ) = chain match {
+    case RelationshipChain(
+        NodePattern(Some(from: LogicalVariable), None, None, None),
+        RelationshipPattern(
+          Some(rel: LogicalVariable),
+          relTypeExpression,
+          None,
+          None,
+          relPredicate,
+          direction
+        ),
+        NodePredicate(toName, toNodePredicateFromRel)
+      ) =>
+      val types = LabelExpression.getRelTypes(relTypeExpression)
+      val relVariablePredicate = relPredicate.map(Expand.VariablePredicate(rel, _))
+      val r = RelationshipExpansionPredicate(
+        rel,
+        relVariablePredicate,
+        types,
+        direction
+      )
+      val toNodePredicate = toNodePredicateFromRel
+      val n = NodeExpansionPredicate(toName, toNodePredicate)
+      (NodeExpansionPredicate(from, None), r :: rels, n :: nodes, to.getOrElse(n))
+    case RelationshipChain(
+        chain: RelationshipChain,
+        rp,
+        NodePredicate(toName, toNodePredicateFromRel)
+      ) =>
+      val r = relationshipExpansionPredicate(rp)
+      val toNodePredicate = toNodePredicateFromRel
+      val n = NodeExpansionPredicate(toName, toNodePredicate)
+      to match {
+        case Some(_) =>
+          unnestRelationshipChain(chain, r :: rels, n :: nodes, to)
+        case None =>
+          unnestRelationshipChain(chain, r :: rels, nodes, Some(n))
+      }
+    case _ => throw new IllegalStateException(s"Illegal relationship chain $chain")
   }
 }
 
@@ -104,6 +180,8 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
           throw e
       }
     parsedPattern match {
+
+      // (from)-[rel:E]-(to)
       case RelationshipChain(
           NodePattern(Some(from: LogicalVariable), None, None, None),
           RelationshipPattern(
@@ -136,6 +214,20 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
         val fromState = getOrCreateState(fromId, from)
         assertFromNameMatchesFromId(fromState, from.name)
         getOrCreateState(toId, toName, toNodePredicate)
+        addTransition(fromState, transition)
+
+      // (n1)-[r1:R]->(n2)-[r2:R]->(n3)
+      case chain: RelationshipChain =>
+        if (maybeRelPredicate.nonEmpty || maybeToPredicate.nonEmpty) {
+          throw new IllegalStateException(
+            "Multi-Relationship Expansion doesn't support manually constructed predicates"
+          )
+        }
+        val (from, rels, nodes, to) = unnestRelationshipChain(chain)
+        val fromState = getOrCreateState(fromId, from.nodeVariable)
+        assertFromNameMatchesFromId(fromState, from.nodeVariable.name)
+        val transition = MultiRelationshipExpansionTransition(rels, nodes, toId)
+        getOrCreateState(toId, to.nodeVariable, to.nodePred)
         addTransition(fromState, transition)
 
       case PathConcatenation(Seq(

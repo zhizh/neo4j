@@ -21,12 +21,14 @@
 package org.neo4j.cypher.internal.kernel.api.helpers
 
 import org.eclipse.collections.impl.stack.mutable.ArrayStack
+import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.MultiPGRelationship
+import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.NodeJuxtapositionPGRelationship
 import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.PGNode
 import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.PGRelationship
+import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.SinglePGRelationship
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.State
-import org.neo4j.kernel.api.StatementConstants.NO_SUCH_RELATIONSHIP
 import org.scalatest.matchers.MatchResult
 import org.scalatest.matchers.Matcher
 
@@ -49,13 +51,27 @@ class ProductGraph(val adjacencyLists: mutable.HashMap[PGNode, mutable.Set[PGRel
     targetNodeStateId: Int
   ): ProductGraph = {
     adjacencyLists(PGNode(sourceNodeId, sourceNodeStateId))
-      .add(PGRelationship(relId, PGNode(targetNodeId, targetNodeStateId)))
+      .add(SinglePGRelationship(relId, PGNode(targetNodeId, targetNodeStateId)))
+    this
+  }
+
+  def addMultiRelationship(
+    sourceNodeId: Long,
+    sourceNodeStateId: Int,
+    relIds: Array[Long],
+    nodeIds: Array[Long],
+    targetNodeId: Long,
+    targetNodeStateId: Int
+  ): ProductGraph = {
+
+    adjacencyLists(PGNode(sourceNodeId, sourceNodeStateId))
+      .add(MultiPGRelationship(relIds, nodeIds, PGNode(targetNodeId, targetNodeStateId)))
     this
   }
 
   def addJuxtaposition(nodeId: Long, sourceNodeStateId: Int, targetNodeStateId: Int): ProductGraph = {
     adjacencyLists(PGNode(nodeId, sourceNodeStateId))
-      .add(PGRelationship(NO_SUCH_RELATIONSHIP, PGNode(nodeId, targetNodeStateId)))
+      .add(NodeJuxtapositionPGRelationship(PGNode(nodeId, targetNodeStateId)))
     this
   }
 
@@ -115,7 +131,13 @@ object ProductGraph {
     def ids: String = "(node:" + id + ",state:" + stateId + ")"
   }
 
-  final case class PGRelationship(id: Long, targetNode: PGNode)
+  sealed trait PGRelationship {
+    def targetNode: PGNode
+  }
+
+  final case class NodeJuxtapositionPGRelationship(targetNode: PGNode) extends PGRelationship
+  final case class SinglePGRelationship(id: Long, targetNode: PGNode) extends PGRelationship
+  final case class MultiPGRelationship(rels: Seq[Long], nodes: Seq[Long], targetNode: PGNode) extends PGRelationship
 
   final private case class ToExpand(node: PGNode, state: State)
 
@@ -140,7 +162,7 @@ object ProductGraph {
           if (seen.add(newNode)) {
             queue.push(ToExpand(newNode, nodeJuxtaposition.targetState))
           }
-          relationships.add(PGRelationship(NO_SUCH_RELATIONSHIP, newNode))
+          relationships.add(NodeJuxtapositionPGRelationship(newNode))
         }
       }
 
@@ -151,7 +173,7 @@ object ProductGraph {
         if (seen.add(newNode)) {
           queue.push(ToExpand(newNode, pgCursor.targetState))
         }
-        relationships.add(PGRelationship(pgCursor.relationshipReference, newNode))
+        relationships.add(SinglePGRelationship(pgCursor.relationshipReference, newNode))
       }
       adjacencyLists.put(toExpand.node, relationships)
     }

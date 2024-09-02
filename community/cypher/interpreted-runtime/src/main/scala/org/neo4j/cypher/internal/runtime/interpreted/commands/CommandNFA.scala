@@ -27,7 +27,8 @@ import org.neo4j.cypher.internal.logical.plans.NFA
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.ast.ExpressionVariable
 import org.neo4j.cypher.internal.runtime.interpreted.commands
-import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.RelationshipExpansionTransition
+import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.CommandPredicateFunction
+import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.RelationshipQualifiers
 import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.State
 import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.DirectionConverter.toGraphDb
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
@@ -36,6 +37,7 @@ import org.neo4j.function.Predicates
 import org.neo4j.internal.kernel.api.RelationshipDataReader
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.NodeJuxtaposition
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipExpansion
 import org.neo4j.values.AnyValue
@@ -46,6 +48,7 @@ import java.util.function.LongPredicate
 import java.util.function.Predicate
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 case class CommandNFA(
   states: Set[State],
@@ -62,13 +65,13 @@ case class CommandNFA(
    */
   def compile(row: CypherRow, queryState: QueryState): (productgraph.State, productgraph.State) = {
 
-    def statePredicate(state: State): LongPredicate =
-      state.predicate.fold(Predicates.ALWAYS_TRUE_LONG) { predicate => l =>
+    def statePredicate(predicate: Option[CommandPredicateFunction]): LongPredicate =
+      predicate.fold(Predicates.ALWAYS_TRUE_LONG) { predicate => l =>
         predicate(row, queryState, VirtualValues.node(l))
       }
 
-    def relPredicate(transition: RelationshipExpansionTransition): Predicate[RelationshipDataReader] =
-      transition.innerRelPred.fold(Predicates.alwaysTrue[RelationshipDataReader]()) { predicate => rel =>
+    def relPredicate(qualifiers: RelationshipQualifiers): Predicate[RelationshipDataReader] =
+      qualifiers.innerRelPred.fold(Predicates.alwaysTrue[RelationshipDataReader]()) { predicate => rel =>
         predicate(
           row,
           queryState,
@@ -87,7 +90,7 @@ case class CommandNFA(
       state -> new productgraph.State(
         state.id,
         state.slotOrName,
-        statePredicate(state),
+        statePredicate(state.predicate),
         startState == state,
         finalState == state
       )
@@ -95,6 +98,7 @@ case class CommandNFA(
 
     val reverseNJs = mutable.MultiDict.empty[productgraph.State, NodeJuxtaposition]
     val reverseREs = mutable.MultiDict.empty[productgraph.State, RelationshipExpansion]
+    val reverseMREs = mutable.MultiDict.empty[productgraph.State, MultiRelationshipExpansion]
 
     for ((state, pgState) <- stateLookup) {
       pgState.setNodeJuxtapositions(
@@ -109,16 +113,36 @@ case class CommandNFA(
         state.relTransitions.map { transition =>
           val re = new RelationshipExpansion(
             stateLookup(state),
-            relPredicate(transition),
-            if (transition.types == null) null else transition.types.types(queryState.query),
-            toGraphDb(transition.dir),
-            transition.slotOrName,
+            relPredicate(transition.relationship),
+            if (transition.relationship.types == null) null else transition.relationship.types.types(queryState.query),
+            toGraphDb(transition.relationship.dir),
+            transition.relationship.slotOrName,
             stateLookup(transition.targetState)
           )
           reverseREs += (re.targetState() -> re)
           re
         }.toArray
       )
+
+      pgState.setMultiRelationshipExpansions(state.multiRelTransitions.map { transition =>
+        val mre = new MultiRelationshipExpansion(
+          stateLookup(state),
+          transition.relationships.map(r =>
+            new MultiRelationshipExpansion.Rel(
+              relPredicate(r),
+              if (r.types == null) null else r.types.types(queryState.query),
+              toGraphDb(r.dir),
+              r.slotOrName
+            )
+          ).toArray,
+          transition.nodes.map(n =>
+            new MultiRelationshipExpansion.Node(statePredicate(n.innerNodePred), n.slotOrName)
+          ).toArray,
+          stateLookup(transition.targetState)
+        )
+        reverseMREs += (mre.targetState() -> mre)
+        mre
+      }.toArray)
     }
 
     for (pgState <- reverseNJs.keySet) {
@@ -127,6 +151,10 @@ case class CommandNFA(
 
     for (pgState <- reverseREs.keySet) {
       pgState.setReverseRelationshipExpansions(reverseREs.get(pgState).toArray)
+    }
+
+    for (pgState <- reverseMREs.keySet) {
+      pgState.setReverseMultiRelationshipExpansions(reverseMREs.get(pgState).toArray)
     }
 
     (stateLookup(startState), stateLookup(finalState))
@@ -142,18 +170,46 @@ object CommandNFA {
     val slotOrName: SlotOrName,
     val predicate: Option[CommandPredicateFunction],
     var nodeTransitions: Seq[NodeJuxtapositionTransition],
-    var relTransitions: Seq[RelationshipExpansionTransition]
+    var relTransitions: Seq[RelationshipExpansionTransition],
+    var multiRelTransitions: Seq[MultiRelationshipExpansionTransition]
   )
 
   case class NodeJuxtapositionTransition(
     targetState: State
   )
 
-  case class RelationshipExpansionTransition(
+  case class NodeQualifiers(
+    innerNodePred: Option[CommandPredicateFunction],
+    slotOrName: SlotOrName
+  )
+
+  case class RelationshipQualifiers(
     innerRelPred: Option[CommandPredicateFunction],
     slotOrName: SlotOrName,
     types: RelationshipTypes,
-    dir: SemanticDirection,
+    dir: SemanticDirection
+  )
+
+  case class RelationshipExpansionTransition(
+    relationship: RelationshipQualifiers,
+    targetState: State
+  )
+
+  object RelationshipExpansionTransition {
+
+    def apply(
+      innerRelPred: Option[CommandPredicateFunction],
+      slotOrName: SlotOrName,
+      types: RelationshipTypes,
+      dir: SemanticDirection,
+      targetState: State
+    ): RelationshipExpansionTransition =
+      new RelationshipExpansionTransition(RelationshipQualifiers(innerRelPred, slotOrName, types, dir), targetState)
+  }
+
+  case class MultiRelationshipExpansionTransition(
+    relationships: Seq[RelationshipQualifiers],
+    nodes: Seq[NodeQualifiers],
     targetState: State
   )
 
@@ -191,6 +247,33 @@ object CommandNFA {
       )
     }
 
+    def compileStubbedMultiRelationshipExpansion(
+      relPredicates: Seq[NFA.RelationshipExpansionPredicate],
+      nodePredicates: Seq[NFA.NodeExpansionPredicate],
+      end: State
+    )(implicit st: SemanticTable): MultiRelationshipExpansionTransition = {
+      val commandRelPreds = relPredicates.map(rp =>
+        RelationshipQualifiers(
+          rp.relPred.map(convertPredicate),
+          getSlotOrName(rp.relationshipVariable),
+          // In planner land, empty type seq means all types. We use null in runtime land to represent all types
+          if (rp.types.isEmpty) null else RelationshipTypes(rp.types.toArray),
+          rp.dir
+        )
+      )
+      val commandNodePreds = nodePredicates.map(np =>
+        NodeQualifiers(
+          np.nodePred.map(convertPredicate),
+          getSlotOrName(np.nodeVariable)
+        )
+      )
+      MultiRelationshipExpansionTransition(
+        commandRelPreds,
+        commandNodePreds,
+        end
+      )
+    }
+
     var startState: State = null
     var finalState: State = null
 
@@ -202,6 +285,7 @@ object CommandNFA {
         logicalState.id,
         getSlotOrName(logicalState.variable),
         logicalState.variablePredicate.map(convertPredicate),
+        null,
         null,
         null
       )
@@ -222,18 +306,25 @@ object CommandNFA {
     for (logicalState <- logicalNFA.states) {
       val transitions = logicalNFA.transitions.getOrElse(logicalState.id, Seq.empty)
 
-      val (nodeTransitions, relTransitions) = transitions.partitionMap {
+      val njs = ArrayBuffer.empty[NodeJuxtapositionTransition]
+      val res = ArrayBuffer.empty[RelationshipExpansionTransition]
+      val mres = ArrayBuffer.empty[MultiRelationshipExpansionTransition]
+      transitions.foreach {
         case NFA.NodeJuxtapositionTransition(endId) =>
           val end = logicalNFA.states(endId)
-          Left(NodeJuxtapositionTransition(stateLookup(end.id)))
-
+          njs.append(NodeJuxtapositionTransition(stateLookup(end.id)))
         case NFA.RelationshipExpansionTransition(rp: NFA.RelationshipExpansionPredicate, endId) =>
           val end = logicalNFA.states(endId)
-          Right(compileStubbedRelationshipExpansion(rp, stateLookup(end.id)))
+          res.append(compileStubbedRelationshipExpansion(rp, stateLookup(end.id)))
+        case NFA.MultiRelationshipExpansionTransition(relPredicates, nodePredicates, endId) =>
+          val end = logicalNFA.states(endId)
+          mres.append(compileStubbedMultiRelationshipExpansion(relPredicates, nodePredicates, stateLookup(end.id)))
       }
+
       val commandState = stateLookup(logicalState.id)
-      commandState.nodeTransitions = nodeTransitions.toSeq
-      commandState.relTransitions = relTransitions.toSeq
+      commandState.nodeTransitions = njs.toSeq
+      commandState.relTransitions = res.toSeq
+      commandState.multiRelTransitions = mres.toSeq
     }
 
     CommandNFA(

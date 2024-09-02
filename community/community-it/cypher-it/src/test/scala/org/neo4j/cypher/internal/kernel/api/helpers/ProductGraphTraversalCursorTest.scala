@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.kernel.api.helpers
 import org.neo4j.cypher.GraphDatabaseTestSupport
 import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.PGNode
 import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.PGRelationship
+import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.SinglePGRelationship
 import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.equalProductGraph
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.function.Predicates
@@ -34,7 +35,6 @@ import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor
 import org.neo4j.io.pagecache.context.CursorContext
-import org.neo4j.kernel.api.StatementConstants
 import org.neo4j.kernel.impl.coreapi.InternalTransaction
 import org.neo4j.memory.EmptyMemoryTracker
 
@@ -347,13 +347,15 @@ class ProductGraphTraversalCursorTest extends CypherFunSuite with GraphDatabaseT
         val expectedRelationships =
           statesSubset
             .flatMap(state => graph.adjacencyLists(PGNode(nodeId, state.id)))
-            .filter(_.id != StatementConstants.NO_SUCH_RELATIONSHIP)
+            .collect {
+              case s: SinglePGRelationship => s
+            }
 
         pgCursor.setNodeAndStates(nodeId, statesSubset.toList.asJava, TraversalDirection.FORWARD)
         val foundRelationships = new Iterator[PGRelationship] {
           def hasNext: Boolean = pgCursor.next()
 
-          def next(): PGRelationship = PGRelationship(
+          def next(): PGRelationship = SinglePGRelationship(
             pgCursor.relationshipReference,
             PGNode(pgCursor.otherNodeReference, pgCursor.targetState().id)
           )

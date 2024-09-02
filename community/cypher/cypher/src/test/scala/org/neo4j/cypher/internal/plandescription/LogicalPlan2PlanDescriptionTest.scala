@@ -289,6 +289,9 @@ import org.neo4j.cypher.internal.logical.plans.ManySeekableArgs
 import org.neo4j.cypher.internal.logical.plans.Merge
 import org.neo4j.cypher.internal.logical.plans.MultiNodeIndexSeek
 import org.neo4j.cypher.internal.logical.plans.NFA
+import org.neo4j.cypher.internal.logical.plans.NFA.MultiRelationshipExpansionTransition
+import org.neo4j.cypher.internal.logical.plans.NFA.NodeExpansionPredicate
+import org.neo4j.cypher.internal.logical.plans.NFA.RelationshipExpansionPredicate
 import org.neo4j.cypher.internal.logical.plans.NFABuilder
 import org.neo4j.cypher.internal.logical.plans.NamedScope
 import org.neo4j.cypher.internal.logical.plans.NodeByElementIdSeek
@@ -6247,6 +6250,93 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     )
   }
 
+  test("StatefulShortestPath with multi-relationship expansion") {
+    val solvedExpressionStr = "SHORTEST 5 PATHS (a)-[`  UNNAMED0`]->*(`  b@45`)"
+    val nfa = {
+      val builder = new NFABuilder(v"a")
+      builder
+        .addTransition(
+          builder.getLastState,
+          NFA.NodeJuxtapositionTransition(builder.addAndGetState(
+            v"b",
+            Some(VariablePredicate(v"b", propEquality("b", "prop", 5)))
+          ).id)
+        )
+        .addTransition(
+          builder.getLastState,
+          NFA.MultiRelationshipExpansionTransition(
+            Seq(
+              NFA.RelationshipExpansionPredicate(
+                v"r",
+                Some(VariablePredicate(v"r", propEquality("r", "prop", 5))),
+                Seq.empty,
+                SemanticDirection.OUTGOING
+              ),
+              NFA.RelationshipExpansionPredicate(
+                v"r2",
+                Some(VariablePredicate(v"r2", propEquality("r2", "prop", 5))),
+                Seq.empty,
+                SemanticDirection.OUTGOING
+              )
+            ),
+            Seq(NFA.NodeExpansionPredicate(
+              v"c",
+              Some(VariablePredicate(v"c", propEquality("c", "prop", 5)))
+            )),
+            builder.addAndGetState(
+              v"d",
+              Some(VariablePredicate(v"d", propEquality("d", "prop", 5)))
+            ).id
+          )
+        )
+        .setFinalState(builder.getLastState)
+        .build()
+    }
+    assertGood(
+      attach(
+        StatefulShortestPath(
+          lhsLP,
+          varFor("a"),
+          varFor("d"),
+          nfa,
+          ExpandAll,
+          Some(ands(
+            propGreaterThan("b", "prop", 10),
+            propGreaterThan("r", "prop", 10),
+            propGreaterThan("c", "prop", 10)
+          )),
+          Set.empty,
+          Set.empty,
+          Set.empty,
+          Set.empty,
+          Selector.Shortest(5),
+          solvedExpressionStr,
+          false,
+          LengthBounds.none
+        ),
+        2345.0
+      ),
+      planDescription(
+        id,
+        "StatefulShortestPath(All)",
+        SingleChild(lhsPD),
+        Seq(details(
+          """SHORTEST 5 PATHS (a)-[`anon_0`]->*(`b`)
+            |        expanding from: a
+            |    inlined predicates: b.prop = 5
+            |                        c.prop = 5
+            |                        d.prop = 5
+            |                        r.prop = 5
+            |                        r2.prop = 5
+            |non-inlined predicates: b.prop > 10
+            |                        c.prop > 10
+            |                        r.prop > 10""".stripMargin
+        )),
+        Set("a")
+      )
+    )
+  }
+
   test("Optional") {
     assertGood(
       attach(Optional(lhsLP, Set(varFor("a"))), 113.0),
@@ -8108,6 +8198,30 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         Set("a")
       )
     )
+  }
+
+  test("toDotString of a MultiRelationshipExpansionTransition") {
+    val mre =
+      MultiRelationshipExpansionTransition(
+        Seq(
+          RelationshipExpansionPredicate(
+            v"r1",
+            Some(VariablePredicate(v"r1", propEquality("r1", "prop", 5))),
+            Seq(relType("R")),
+            SemanticDirection.OUTGOING
+          ),
+          RelationshipExpansionPredicate(
+            v"r2",
+            Some(VariablePredicate(v"r2", propEquality("r2", "prop", 5))),
+            Seq(relType("R")),
+            SemanticDirection.OUTGOING
+          )
+        ),
+        Seq(NodeExpansionPredicate(v"n", Some(VariablePredicate(v"n", propEquality("n", "prop", 5))))),
+        2
+      )
+
+    mre.toDotString should equal("-[r1:R WHERE r1.prop = 5]->(n WHERE n.prop = 5)-[r2:R WHERE r2.prop = 5]->")
   }
 
   private def assertGood(

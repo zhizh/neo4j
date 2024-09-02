@@ -57,6 +57,8 @@ import org.neo4j.values.AnyValue
 
 import scala.language.implicitConversions
 
+//NOTE: We are not testing multi-relationship expansions in here since it is
+//not using the product graph cursor.
 class NFAToProductGraphCursorIT extends ExecutionEngineFunSuite {
 
   test("should traverse two hops") {
@@ -345,6 +347,24 @@ object NFAToProductGraphCursorIT {
 
     private def wrapState(state: NFA.State): NFAStateWrapper =
       NFAStateWrapper(state, this)
+
+    def relExpansionPredicate(
+      predicate: Option[VariablePredicate] = None,
+      types: Seq[String] = Seq.empty,
+      dir: SemanticDirection = SemanticDirection.OUTGOING
+    ): NFA.RelationshipExpansionPredicate =
+      NFA.RelationshipExpansionPredicate(
+        nextName("r"),
+        predicate,
+        types.map(RelTypeName(_)(InputPosition.NONE)),
+        dir
+      )
+
+    def nodeExpansionPredicate(predicate: Option[VariablePredicate] = None): NFA.NodeExpansionPredicate =
+      NFA.NodeExpansionPredicate(
+        nextName("n"),
+        predicate
+      )
   }
 
   private case class NFAStateWrapper(state: NFA.State, parent: NFABuilderWrapper) {
@@ -362,14 +382,20 @@ object NFAToProductGraphCursorIT {
       parent.builder.addTransition(
         state,
         NFA.RelationshipExpansionTransition(
-          NFA.RelationshipExpansionPredicate(
-            parent.nextName("r"),
-            predicate,
-            types.map(RelTypeName(_)(InputPosition.NONE)),
-            dir
-          ),
+          parent.relExpansionPredicate(predicate, types, dir),
           other.state.id
         )
+      )
+    }
+
+    def multiRelExpansion(
+      other: NFAStateWrapper,
+      relPredicates: Seq[NFA.RelationshipExpansionPredicate],
+      nodePredicates: Seq[NFA.NodeExpansionPredicate]
+    ): Unit = {
+      parent.builder.addTransition(
+        state,
+        NFA.MultiRelationshipExpansionTransition(relPredicates, nodePredicates, other.state.id)
       )
     }
   }

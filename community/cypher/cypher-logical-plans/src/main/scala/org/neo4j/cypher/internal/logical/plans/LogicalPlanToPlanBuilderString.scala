@@ -68,6 +68,8 @@ import org.neo4j.cypher.internal.ir.SimplePatternLength
 import org.neo4j.cypher.internal.ir.VarPatternLength
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpandAll
 import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
+import org.neo4j.cypher.internal.logical.plans.NFA.MultiRelationshipExpansionTransition
+import org.neo4j.cypher.internal.logical.plans.NFA.NodeExpansionPredicate
 import org.neo4j.cypher.internal.logical.plans.NFA.NodeJuxtapositionTransition
 import org.neo4j.cypher.internal.logical.plans.NFA.RelationshipExpansionPredicate
 import org.neo4j.cypher.internal.logical.plans.NFA.RelationshipExpansionTransition
@@ -1531,6 +1533,32 @@ object LogicalPlanToPlanBuilderString {
         s""" "(${escapeIdentifier(from.variable.name)})$dirStrA[${escapeIdentifier(
             relName.name
           )}$typeStr$relWhereString]$dirStrB(${escapeIdentifier(to.variable.name)}$nodeWhereString)" """.trim
+
+      case MultiRelationshipExpansionTransition(relPredicates, nodePredicates, endId) =>
+        val pattern =
+          (NodeExpansionPredicate(from.variable, from.variablePredicate) +: nodePredicates).zip(relPredicates).map {
+            case (
+                NodeExpansionPredicate(nodeVariable, nodePred),
+                RelationshipExpansionPredicate(relName, relPred, types, dir)
+              ) =>
+              val nodeWhereString =
+                nodePred.map(vp =>
+                  s" WHERE ${expressionStringifier(vp.predicate)}"
+                ).getOrElse("")
+              val relWhereString =
+                relPred.map(vp =>
+                  s" WHERE ${expressionStringifier(vp.predicate)}"
+                ).getOrElse("")
+              val (dirStrA, dirStrB) = arrows(dir)
+              val typeStr = relTypeStr(types)
+              s"(${escapeIdentifier(nodeVariable.name)}$nodeWhereString)$dirStrA[${escapeIdentifier(relName.name)}$typeStr$relWhereString]$dirStrB"
+          }.mkString("")
+        val to = nfa.states(endId)
+        val nodeWhereString =
+          to.variablePredicate.map(vp =>
+            s" WHERE ${expressionStringifier(vp.predicate)}"
+          ).getOrElse("")
+        s"""  "$pattern(${escapeIdentifier(to.variable.name)}$nodeWhereString)" """.trim
     }
     s"${indent}${indent}.addTransition(${from.id}, ${transition.endId}, $patternString)"
   }

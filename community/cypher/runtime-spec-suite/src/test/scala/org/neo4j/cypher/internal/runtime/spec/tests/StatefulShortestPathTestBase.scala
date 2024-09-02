@@ -400,6 +400,354 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
+  test("multi-hop transition outgoing") {
+    val (Seq(n1, n2, n3, n4, n5, n6), Seq(r12, r23, r54, r65)) = givenGraph {
+      // GRAPH:
+      // (n1)-[r1:R]->(n2)-[r2:R]->(n3)
+      // (n4)<-[r3:R]-(n5)-[r4:R]->(n6)
+      val Seq(n1, n2, n3, n4, n5, n6) = nodeGraph(6)
+      val r12 = n1.createRelationshipTo(n2, RelationshipType.withName("R"))
+      val r23 = n2.createRelationshipTo(n3, RelationshipType.withName("R"))
+      val r54 = n5.createRelationshipTo(n4, RelationshipType.withName("R"))
+      val r65 = n6.createRelationshipTo(n5, RelationshipType.withName("R"))
+      (Seq(n1, n2, n3, n4, n5, n6), Seq(r12, r23, r54, r65))
+    }
+
+    // pattern:
+    // (s) (n1)-[r1]->(n2)-[r2]->(n3) (t)
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)")
+      .addTransition(2, 3, "(n3_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r1", "n2", "r2", "n3", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)-[r1]->(n2)-[r]->(n3) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "n3_inner" -> "n3", "t_inner" -> "t"),
+        Set("r1_inner" -> "r1", "r2_inner" -> "r2"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](n1, n1, r12, n2, r23, n3, n3),
+      Array[Object](n6, n6, r65, n5, r54, n4, n4)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
+  test("multi-hop transition incoming") {
+
+    val (Seq(n1, n2, n3, n4, n5, n6), Seq(r12, r23, r54, r65)) = givenGraph {
+      // GRAPH:
+      // (n1)-[r1:R]->(n2)-[r2:R]->(n3)
+      // (n4)<-[r3:R]-(n5)-[r4:R]->(n6)
+      val Seq(n1, n2, n3, n4, n5, n6) = nodeGraph(6)
+      val r12 = n1.createRelationshipTo(n2, RelationshipType.withName("R"))
+      val r23 = n2.createRelationshipTo(n3, RelationshipType.withName("R"))
+      val r54 = n5.createRelationshipTo(n4, RelationshipType.withName("R"))
+      val r65 = n6.createRelationshipTo(n5, RelationshipType.withName("R"))
+      (Seq(n1, n2, n3, n4, n5, n6), Seq(r12, r23, r54, r65))
+    }
+
+    // pattern:
+    // (s) (n1)<-[r1]-(n2)<-[r2]-(n3) (t)
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addTransition(1, 2, "(n1_inner)<-[r1_inner]-(n2_inner)<-[r2_inner]-(n3_inner)")
+      .addTransition(2, 3, "(n3_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r1", "n2", "r2", "n3", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)<-[r1]->(n2)<-[r2]-(n3) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "n3_inner" -> "n3", "t_inner" -> "t"),
+        Set("r1_inner" -> "r1", "r2_inner" -> "r2"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](n3, n3, r23, n2, r12, n1, n1),
+      Array[Object](n4, n4, r54, n5, r65, n6, n6)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
+  test("multi-hop transition both") {
+    val (Seq(n1, n2, n3, n4, n5, n6), Seq(r12, r23, r54, r65)) = givenGraph {
+      // GRAPH:
+      // (n1)-[r1:R]->(n2)-[r2:R]->(n3)
+      // (n4)<-[r3:R]-(n5)-[r4:R]->(n6)
+      val Seq(n1, n2, n3, n4, n5, n6) = nodeGraph(6)
+      val r12 = n1.createRelationshipTo(n2, RelationshipType.withName("R"))
+      val r23 = n2.createRelationshipTo(n3, RelationshipType.withName("R"))
+      val r54 = n5.createRelationshipTo(n4, RelationshipType.withName("R"))
+      val r65 = n6.createRelationshipTo(n5, RelationshipType.withName("R"))
+      (Seq(n1, n2, n3, n4, n5, n6), Seq(r12, r23, r54, r65))
+    }
+
+    // pattern:
+    // (s) (n1)-[r1]-(n2)-[r2]-(n3) (t)
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]-(n2_inner)-[r2_inner]-(n3_inner)")
+      .addTransition(2, 3, "(n3_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r1", "n2", "r2", "n3", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)-[r1]-(n2)-[r2]-(n3) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "n3_inner" -> "n3", "t_inner" -> "t"),
+        Set("r1_inner" -> "r1", "r2_inner" -> "r2"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](n1, n1, r12, n2, r23, n3, n3),
+      Array[Object](n3, n3, r23, n2, r12, n1, n1),
+      Array[Object](n4, n4, r54, n5, r65, n6, n6),
+      Array[Object](n6, n6, r65, n5, r54, n4, n4)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
+  test("multi-hop transition longer pattern") {
+    val (n1, r1, n2, r2, n3, r3, n4, r4, n5) = givenGraph {
+      // GRAPH:
+      // (n1)-[r1:R]->(n2)-[r2:R]->(n3)-[r3:R]->(n3)-[r4:R]->(n4)
+      // (+ some shorter patterns)
+      val Seq(n1, n2, n3, n4, n5) = nodeGraph(5)
+      val r1 = n1.createRelationshipTo(n2, RelationshipType.withName("R"))
+      val r2 = n2.createRelationshipTo(n3, RelationshipType.withName("R"))
+      val r3 = n3.createRelationshipTo(n4, RelationshipType.withName("R"))
+      val r4 = n4.createRelationshipTo(n5, RelationshipType.withName("R"))
+
+      (1 to 100).foreach(i => {
+        val (a, b, c) = (tx.createNode(), tx.createNode(), tx.createNode())
+        a.createRelationshipTo(b, RelationshipType.withName("R"))
+        b.createRelationshipTo(c, RelationshipType.withName("R"))
+      })
+
+      (n1, r1, n2, r2, n3, r3, n4, r4, n5)
+    }
+
+    // pattern:
+    // (s) (n1)-[r1]->(n2)-[r2]->(n3)-[r3]->(n4)-[r4]->(n5) (t)
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addTransition(
+        1,
+        2,
+        "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)-[r3_inner]->(n4_inner)-[r4_inner]->(n5_inner)"
+      )
+      .addTransition(2, 3, "(n5_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r1", "n2", "r2", "n3", "r3", "n4", "r4", "n5", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)-[r1]->(n2)-[r2]->(n3)-[r3]->(n4)-[r4]->(n5) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set(
+          "n1_inner" -> "n1",
+          "n2_inner" -> "n2",
+          "n3_inner" -> "n3",
+          "n4_inner" -> "n4",
+          "n5_inner" -> "n5",
+          "t_inner" -> "t"
+        ),
+        Set("r1_inner" -> "r1", "r2_inner" -> "r2", "r3_inner" -> "r3", "r4_inner" -> "r4"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](n1, n1, r1, n2, r2, n3, r3, n4, r4, n5, n5)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
+  test("multi-hop transition in progress with predicate on inner node") {
+    val (Seq(n1, n2, n3, n4), Seq(r12, r13, r24, r34)) = givenGraph {
+      // GRAPH:
+      //               (n2 {p:1})
+      //             ↗           ↘
+      //         (n1)             (n4)
+      //             ↘           ↗
+      //               (n3 {p:2})
+      //
+      val Seq(n1, n2, n3, n4) = nodeGraph(4)
+      n2.setProperty("p", 1)
+      n3.setProperty("p", 2)
+      val r12 = n1.createRelationshipTo(n2, RelationshipType.withName("R"))
+      val r13 = n1.createRelationshipTo(n3, RelationshipType.withName("R"))
+      val r24 = n2.createRelationshipTo(n4, RelationshipType.withName("R"))
+      val r34 = n3.createRelationshipTo(n4, RelationshipType.withName("R"))
+      (Seq(n1, n2, n3, n4), Seq(r12, r13, r24, r34))
+    }
+
+    // pattern:
+    // (s) (n1)-[r1]->(n2 WHERE n2.p = 1)-[r2]->(n3) (t)
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner WHERE n2_inner.p = 1)-[r2_inner]->(n3_inner)")
+      .addTransition(2, 3, "(n3_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r1", "n2", "r2", "n3", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)-[r2]->(n2 WHERE n2.p=1)-[r2]->(n3) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "n3_inner" -> "n3", "t_inner" -> "t"),
+        Set("r1_inner" -> "r1", "r2_inner" -> "r2"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](n1, n1, r12, n2, r24, n4, n4)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
+  test("multi-hop transition in progress with predicate on inner relationship") {
+    val (Seq(n1, n2, n3, n4), Seq(r12, r13, r24, r34)) = givenGraph {
+      // GRAPH:
+      //                 (n2)
+      //             ↗   {p:1} ↘
+      //         (n1)          (n4)
+      //             ↘   {p:2} ↗
+      //                 (n3)
+      //
+      val Seq(n1, n2, n3, n4) = nodeGraph(4)
+      val r12 = n1.createRelationshipTo(n2, RelationshipType.withName("R"))
+      val r13 = n1.createRelationshipTo(n3, RelationshipType.withName("R"))
+      val r24 = n2.createRelationshipTo(n4, RelationshipType.withName("R"))
+      r24.setProperty("p", 1)
+      val r34 = n3.createRelationshipTo(n4, RelationshipType.withName("R"))
+      r34.setProperty("p", 2)
+      (Seq(n1, n2, n3, n4), Seq(r12, r13, r24, r34))
+    }
+
+    // pattern:
+    // (s) (n1)-[r1]->(n2 WHERE n2.p = 1)-[r2]->(n3) (t)
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner WHERE r2_inner.p = 1]->(n3_inner)")
+      .addTransition(2, 3, "(n3_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r1", "n2", "r2", "n3", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)-[r2]->(n2)-[r2 WHERE r2_inner.p = 1]->(n3) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "n3_inner" -> "n3", "t_inner" -> "t"),
+        Set("r1_inner" -> "r1", "r2_inner" -> "r2"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](n1, n1, r12, n2, r24, n4, n4)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
   test("one hop pattern - ExpandInto") {
 
     val (x1, y, x2) = givenGraph {

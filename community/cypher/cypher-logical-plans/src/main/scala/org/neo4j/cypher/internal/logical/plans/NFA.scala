@@ -32,6 +32,7 @@ import org.neo4j.cypher.internal.ir.QuantifiedPathPattern
 import org.neo4j.cypher.internal.ir.SimplePatternLength
 import org.neo4j.cypher.internal.ir.VarPatternLength
 import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
+import org.neo4j.cypher.internal.logical.plans.NFA.MultiRelationshipExpansionTransition
 import org.neo4j.cypher.internal.logical.plans.NFA.RelationshipExpansionTransition
 import org.neo4j.cypher.internal.logical.plans.NFA.State
 import org.neo4j.cypher.internal.logical.plans.NFA.Transition
@@ -114,8 +115,8 @@ object NFA {
      * The variable of the predicate, for conditional transitions.
      * @return
      */
-    def predicateVariable: Option[LogicalVariable]
-    def variablePredicate: Option[VariablePredicate]
+    def predicateVariables: Seq[LogicalVariable]
+    def variablePredicates: Seq[VariablePredicate]
     def toDotString: String
   }
 
@@ -123,8 +124,8 @@ object NFA {
    * A node juxtaposition transition. This transition is unconditional.
    */
   case class NodeJuxtapositionTransition(endId: Int) extends Transition {
-    override def predicateVariable: Option[LogicalVariable] = None
-    override def variablePredicate: Option[VariablePredicate] = None
+    override def predicateVariables: Seq[LogicalVariable] = Seq.empty
+    override def variablePredicates: Seq[VariablePredicate] = Seq.empty
     override def toDotString: String = ""
   }
 
@@ -135,9 +136,31 @@ object NFA {
    * @param endId     the end state of this transition.
    */
   case class RelationshipExpansionTransition(predicate: RelationshipExpansionPredicate, endId: Int) extends Transition {
-    override def predicateVariable: Option[LogicalVariable] = predicate.relPred.map(_.variable)
-    override def variablePredicate: Option[VariablePredicate] = predicate.relPred
+    override def predicateVariables: Seq[LogicalVariable] = predicate.relPred.map(_.variable).toSeq
+    override def variablePredicates: Seq[VariablePredicate] = predicate.relPred.toSeq
     override def toDotString: String = predicate.toDotString
+  }
+
+  /**
+   * A multi-relationship expansion transition. This transition can be conditional.
+   */
+  case class MultiRelationshipExpansionTransition(
+    relPredicates: Seq[RelationshipExpansionPredicate],
+    nodePredicates: Seq[NodeExpansionPredicate],
+    endId: Int
+  ) extends Transition {
+
+    override def predicateVariables: Seq[LogicalVariable] =
+      relPredicates.flatMap(_.variable) ++ nodePredicates.map(_.nodeVariable)
+
+    override def variablePredicates: Seq[VariablePredicate] =
+      relPredicates.flatMap(_.relPred) ++ nodePredicates.flatMap(_.nodePred)
+
+    override def toDotString: String = {
+      ("" +: nodePredicates.map(p => p.toDotString)).zip(relPredicates.map(p => p.toDotString)).map {
+        case (node, rel) => node + rel
+      }.mkString("")
+    }
   }
 
   /**
@@ -168,7 +191,7 @@ object NFA {
       val (dirStrA, dirStrB) = LogicalPlanToPlanBuilderString.arrows(dir)
       val typeStr = LogicalPlanToPlanBuilderString.relTypeStr(types)
       val relWhere = relPred.map(vp => s" WHERE ${State.expressionStringifier(vp.predicate)}").getOrElse("")
-      s"()$dirStrA[${relationshipVariable.name}$typeStr$relWhere]$dirStrB()"
+      s"$dirStrA[${relationshipVariable.name}$typeStr$relWhere]$dirStrB"
     }
 
     /**
@@ -178,6 +201,17 @@ object NFA {
       Option.when(types.nonEmpty)(HasTypes(relationshipVariable, types)(InputPosition.NONE))
     }
 
+  }
+
+  case class NodeExpansionPredicate(
+    nodeVariable: LogicalVariable,
+    nodePred: Option[VariablePredicate]
+  ) {
+
+    def toDotString: String = {
+      val nodeWhere = nodePred.map(vp => s" WHERE ${State.expressionStringifier(vp.predicate)}").getOrElse("")
+      s"(${nodeVariable.name}$nodeWhere)"
+    }
   }
 }
 
@@ -206,11 +240,13 @@ case class NFA(
     (states.iterator.flatMap(_.variablePredicate).map(_.predicate) ++
       transitions.values.flatten.iterator.flatMap { t =>
         val relTypePredicate = t match {
-          case _: NFA.NodeJuxtapositionTransition            => None
-          case RelationshipExpansionTransition(predicate, _) => predicate.relationshipTypePredicate
+          case _: NFA.NodeJuxtapositionTransition            => Seq.empty
+          case RelationshipExpansionTransition(predicate, _) => predicate.relationshipTypePredicate.toSeq
+          case MultiRelationshipExpansionTransition(relPredicates, _, _) =>
+            relPredicates.flatMap(_.relationshipTypePredicate)
         }
-        val variablePredicate = t.variablePredicate.map(_.predicate)
-        Seq(variablePredicate, relTypePredicate).flatten
+        val variablePredicate = t.variablePredicates.map(_.predicate)
+        variablePredicate ++ relTypePredicate
       }).toSet
 
   /**
@@ -219,7 +255,7 @@ case class NFA(
    */
   def predicateVariables: Set[LogicalVariable] =
     (states.iterator.flatMap(_.variablePredicate).map(_.variable)
-      ++ transitions.values.flatten.iterator.flatMap(_.predicateVariable)).toSet
+      ++ transitions.values.flatten.iterator.flatMap(_.predicateVariables)).toSet
 
   def nodes: Set[LogicalVariable] =
     states.map(_.variable).toSet ++ states.flatMap(_.variablePredicate).map(_.variable)
