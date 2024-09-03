@@ -1047,7 +1047,7 @@
     <profile>
       <id>test-lighthouse</id>
       <activation>
-        <activeByDefault>false</activeByDefault>
+        <activeByDefault>true</activeByDefault>
         <property>
           <name>NEO4J_PARALLEL_DISCOVERY</name>
           <value>V2_ONLY</value>
