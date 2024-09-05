@@ -149,19 +149,7 @@ object expressionVariableAllocation {
 
       case x: StatefulShortestPath =>
         outerVars =>
-          val innerVars =
-            allocateVariables(
-              outerVars,
-              (
-                x.nfa.predicateVariables ++
-                  // these are not actually required as expression variables, but they are allocated
-                  // in order to satisfy the SlottedRewriter
-                  x.singletonNodeVariables.map(_.nfaExprVar) ++
-                  x.singletonRelationshipVariables.map(_.nfaExprVar) ++
-                  x.nodeVariableGroupings.map(_.singleton) ++
-                  x.relationshipVariableGroupings.map(_.singleton)
-              )
-            )
+          val innerVars = allocateVariables(outerVars, x.nfa.predicateVariables -- x.boundNodes)
           TraverseChildrenNewAccForSiblings(innerVars, _ => outerVars)
 
       case x: NestedPlanExpression =>

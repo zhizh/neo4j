@@ -1524,8 +1524,8 @@ case class InterpretedPipeMapper(
           reverseGroupVariableProjections,
           bounds
         ) =>
-        def convertPredicate(varPred: VariablePredicate) =
-          expressionConverters.toCommandPredicate(id, varPred.predicate)
+        def convertPredicate(pred: internal.expressions.Expression) =
+          expressionConverters.toCommandPredicate(id, pred)
             .rewriteAsPredicate(KeyTokenResolver.resolveExpressions(_, tokenContext))
 
         val groupMap = (nodeVariableGroupings ++ relationshipVariableGroupings)

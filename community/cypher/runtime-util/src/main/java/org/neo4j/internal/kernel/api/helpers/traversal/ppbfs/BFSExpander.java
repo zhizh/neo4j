@@ -26,7 +26,9 @@ import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.State;
+import org.neo4j.kernel.impl.util.ValueUtils;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.values.virtual.VirtualRelationshipValue;
 
 final class BFSExpander implements AutoCloseable {
     private final MemoryTracker mt;
@@ -110,21 +112,22 @@ final class BFSExpander implements AutoCloseable {
     }
 
     private void multiHopDFS(NodeState startNode, MultiRelationshipExpansion expansion, TraversalDirection direction) {
-        var rels = new long[expansion.length()];
+        var rels = new VirtualRelationshipValue[expansion.length()];
         var nodes = new long[expansion.length() - 1];
 
         var nodeTree = new HeapTrackingLongArrayList[expansion.length() + 1];
         nodeTree[0] = HeapTrackingLongArrayList.newLongArrayList(1, mt);
         nodeTree[0].add(startNode.id());
-        var relTree = new HeapTrackingLongArrayList[expansion.length()];
+        HeapTrackingArrayList<VirtualRelationshipValue>[] relTree = new HeapTrackingArrayList[expansion.length()];
 
         int depth = 0;
         while (depth != -1) {
             assert depth <= expansion.length()
                     : "Multi-hop depth first search should never exceed total expansion length";
             if (nodeTree[depth] == null || nodeTree[depth].isEmpty()) {
+                // exhausted this branch, backtrack up by 1 level
                 if (depth > 0) {
-                    rels[direction.isBackward() ? (rels.length - depth) : depth - 1] = 0;
+                    rels[direction.isBackward() ? (rels.length - depth) : depth - 1] = null;
 
                     if (depth <= nodes.length) {
                         nodes[direction.isBackward() ? (nodes.length - depth) : depth - 1] = 0;
@@ -133,38 +136,48 @@ final class BFSExpander implements AutoCloseable {
 
                 depth--;
             } else if (depth == expansion.length()) {
+                // reached the final node of the traversal; evaluate the path and add a signpost if necessary
                 var endNode = nodeTree[depth].removeLast();
                 var rel = relTree[depth - 1].removeLast();
                 rels[direction.isBackward() ? (rels.length - depth) : depth - 1] = rel;
 
-                var nextNode = encounter(endNode, expansion.endState(direction), direction);
+                if (expansion.compoundPredicate().test(startNode.id(), rels, nodes, endNode)) {
+                    var nextNode = encounter(endNode, expansion.endState(direction), direction);
 
-                switch (direction) {
-                    case FORWARD -> {
-                        var signpost = TwoWaySignpost.fromMultiRel(
-                                mt,
-                                startNode,
-                                rels.clone(),
-                                nodes.clone(),
-                                expansion,
-                                nextNode,
-                                foundNodes.forwardDepth());
-                        if (globalState.searchMode == SearchMode.Unidirectional
-                                || !nextNode.hasSourceSignpost(signpost)) {
-                            nextNode.addSourceSignpost(signpost, foundNodes.forwardDepth());
-                        }
+                    var relIds = new long[rels.length];
+                    for (int i = 0; i < rels.length; i++) {
+                        relIds[i] = rels[i].id();
                     }
-                    case BACKWARD -> {
-                        var signpost = TwoWaySignpost.fromMultiRel(
-                                mt, nextNode, rels.clone(), nodes.clone(), expansion, startNode);
-                        if (!nextNode.hasTargetSignpost(signpost)) {
-                            var addedSignpost = startNode.upsertSourceSignpost(signpost);
-                            addedSignpost.setMinTargetDistance(
-                                    foundNodes.backwardDepth(), PGPathPropagatingBFS.Phase.Expansion);
+
+                    switch (direction) {
+                        case FORWARD -> {
+                            var signpost = TwoWaySignpost.fromMultiRel(
+                                    mt,
+                                    startNode,
+                                    relIds,
+                                    nodes.clone(),
+                                    expansion,
+                                    nextNode,
+                                    foundNodes.forwardDepth());
+                            if (globalState.searchMode == SearchMode.Unidirectional
+                                    || !nextNode.hasSourceSignpost(signpost)) {
+                                nextNode.addSourceSignpost(signpost, foundNodes.forwardDepth());
+                            }
+                        }
+                        case BACKWARD -> {
+                            var signpost = TwoWaySignpost.fromMultiRel(
+                                    mt, nextNode, relIds, nodes.clone(), expansion, startNode);
+                            if (!nextNode.hasTargetSignpost(signpost)) {
+                                var addedSignpost = startNode.upsertSourceSignpost(signpost);
+                                addedSignpost.setMinTargetDistance(
+                                        foundNodes.backwardDepth(), PGPathPropagatingBFS.Phase.Expansion);
+                            }
                         }
                     }
                 }
+
             } else {
+                // traverse deeper into the tree
                 var node = nodeTree[depth].removeLast();
                 if (depth > 0) {
                     var rel = relTree[depth - 1].removeLast();
@@ -188,12 +201,12 @@ final class BFSExpander implements AutoCloseable {
                         switch (direction) {
                             case FORWARD -> {
                                 for (int i = 0; i < depth && isUnique; i++) {
-                                    isUnique = rels[i] != relCursor.relationshipReference();
+                                    isUnique = rels[i].id() != relCursor.relationshipReference();
                                 }
                             }
                             case BACKWARD -> {
                                 for (int i = rels.length - 1; i > rels.length - depth - 1 && isUnique; i--) {
-                                    isUnique = rels[i] != relCursor.relationshipReference();
+                                    isUnique = rels[i].id() != relCursor.relationshipReference();
                                 }
                             }
                         }
@@ -205,9 +218,9 @@ final class BFSExpander implements AutoCloseable {
                             nodeTree[depth + 1].add(relCursor.otherNode());
 
                             if (relTree[depth] == null) {
-                                relTree[depth] = HeapTrackingLongArrayList.newLongArrayList(mt);
+                                relTree[depth] = HeapTrackingArrayList.newArrayList(mt);
                             }
-                            relTree[depth].add(relCursor.relationshipReference());
+                            relTree[depth].add(ValueUtils.fromRelationshipCursor(relCursor));
                             canExpand = true;
                         }
                     }

@@ -24,6 +24,7 @@ import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
 import org.neo4j.internal.kernel.api.RelationshipDataReader
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion.CompoundPredicate
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion.Node
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion.Rel
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder.BuilderState
@@ -59,9 +60,10 @@ object PGStateBuilder {
     def addMultiRelationshipExpansion(
       target: PGStateBuilder.BuilderState,
       rels: Array[Rel],
-      nodes: Array[Node]
+      nodes: Array[Node],
+      compoundPredicate: CompoundPredicate = CompoundPredicate.ALWAYS_TRUE
     ): Unit = {
-      val mre = new MultiRelationshipExpansion(this.state, rels, nodes, target.state)
+      val mre = new MultiRelationshipExpansion(this.state, rels, nodes, compoundPredicate, target.state)
       this.state.setMultiRelationshipExpansions(extend(this.state.getMultiRelationshipExpansions, mre))
       target.state.setReverseMultiRelationshipExpansions(extend(
         target.state.getReverseMultiRelationshipExpansions,

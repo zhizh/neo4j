@@ -1510,14 +1510,17 @@ object LogicalPlanToPlanBuilderString {
   }
 
   private def transitionString(nfa: NFA, from: State, transition: Transition): String = {
-    val patternString = transition match {
+    val (patternString, maybeCompoundPredicate) = transition match {
       case NodeJuxtapositionTransition(endId) =>
         val to = nfa.states(endId)
         val whereString =
           to.variablePredicate.map(vp =>
             s" WHERE ${expressionStringifier(vp.predicate)}"
           ).getOrElse("")
-        s""" "(${escapeIdentifier(from.variable.name)}) (${escapeIdentifier(to.variable.name)}$whereString)" """.trim
+        (
+          s""" "(${escapeIdentifier(from.variable.name)}) (${escapeIdentifier(to.variable.name)}$whereString)" """.trim,
+          None
+        )
       case RelationshipExpansionTransition(RelationshipExpansionPredicate(relName, relPred, types, dir), endId) =>
         val to = nfa.states(endId)
         val relWhereString =
@@ -1530,11 +1533,14 @@ object LogicalPlanToPlanBuilderString {
           ).getOrElse("")
         val (dirStrA, dirStrB) = arrows(dir)
         val typeStr = relTypeStr(types)
-        s""" "(${escapeIdentifier(from.variable.name)})$dirStrA[${escapeIdentifier(
-            relName.name
-          )}$typeStr$relWhereString]$dirStrB(${escapeIdentifier(to.variable.name)}$nodeWhereString)" """.trim
+        (
+          s""" "(${escapeIdentifier(from.variable.name)})$dirStrA[${escapeIdentifier(
+              relName.name
+            )}$typeStr$relWhereString]$dirStrB(${escapeIdentifier(to.variable.name)}$nodeWhereString)" """.trim,
+          None
+        )
 
-      case MultiRelationshipExpansionTransition(relPredicates, nodePredicates, endId) =>
+      case MultiRelationshipExpansionTransition(relPredicates, nodePredicates, compoundPredicate, endId) =>
         val pattern =
           (NodeExpansionPredicate(from.variable, from.variablePredicate) +: nodePredicates).zip(relPredicates).map {
             case (
@@ -1558,9 +1564,14 @@ object LogicalPlanToPlanBuilderString {
           to.variablePredicate.map(vp =>
             s" WHERE ${expressionStringifier(vp.predicate)}"
           ).getOrElse("")
-        s"""  "$pattern(${escapeIdentifier(to.variable.name)}$nodeWhereString)" """.trim
+        (
+          s"""  "$pattern(${escapeIdentifier(to.variable.name)}$nodeWhereString)" """.trim,
+          compoundPredicate.map(c => wrapInQuotations(expressionStringifier(c)))
+        )
     }
-    s"${indent}${indent}.addTransition(${from.id}, ${transition.endId}, $patternString)"
+
+    val compoundString = maybeCompoundPredicate.map(cp => s", compoundPredicate = $cp").getOrElse("")
+    s"${indent}${indent}.addTransition(${from.id}, ${transition.endId}, $patternString$compoundString)"
   }
 
   private def trailParametersString(

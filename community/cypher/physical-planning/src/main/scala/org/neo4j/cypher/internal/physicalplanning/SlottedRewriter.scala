@@ -54,6 +54,7 @@ import org.neo4j.cypher.internal.expressions.True
 import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.logical.plans.AbstractVarExpand
 import org.neo4j.cypher.internal.logical.plans.AggregatingPlan
+import org.neo4j.cypher.internal.logical.plans.Expand.ExpandInto
 import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.NFA
@@ -62,6 +63,7 @@ import org.neo4j.cypher.internal.logical.plans.NestedPlanExistsExpression
 import org.neo4j.cypher.internal.logical.plans.NestedPlanExpression
 import org.neo4j.cypher.internal.logical.plans.NestedPlanGetByNameExpression
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
+import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.ValueHashJoin
 import org.neo4j.cypher.internal.macros.AssertMacros.checkOnlyWhenAssertionsAreEnabled
 import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.SlotConfigurations
@@ -520,12 +522,14 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
         )
         ast.TrailRelationshipUniqueness(SlotAllocation.TRAIL_STATE_METADATA_KEY, trailId.x, innerRel)
 
-      // Inside an NFA there are cases where we need to use a VariableRef
-      case state @ NFA.State(_, Variable(name), _) =>
-        state.copy(variable = VariableRef(name))
+      case ssp: StatefulShortestPath =>
+        val nonExpressionVariables = (ssp.nfa.variables -- ssp.boundNodes).collect { case Variable(name) => name }
 
-      case re: NFA.RelationshipExpansionPredicate =>
-        re.copy(relationshipVariable = VariableRef(re.relationshipVariable))
+        val refVariables = Rewriter.lift {
+          case Variable(name) if nonExpressionVariables contains name => VariableRef(name)
+        }
+        ssp.endoRewrite(topDown(rewriter = refVariables, stopper = stopAtOtherLogicalPlans(ssp)))
+
     }
     topDown(rewriter = innerRewriter, stopper = stopAtOtherLogicalPlans(thisPlan))
   }

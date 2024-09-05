@@ -1352,7 +1352,7 @@ class SlottedPipeMapper(
 
         val commandNFA = CommandNFA.fromLogicalNFA(
           nfa,
-          vp => expressionConverters.toCommandPredicate(id, vp.predicate),
+          expressionConverters.toCommandPredicate(id, _),
           getSlot
         )
 

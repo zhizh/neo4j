@@ -307,7 +307,7 @@ class NFAToProductGraphCursorIT extends ExecutionEngineFunSuite {
             implicit val semanticTable: SemanticTable = SemanticTable()
 
             val (startState, _) = CommandNFA
-              .fromLogicalNFA(nfa.builder.build(), x => converters.toCommandPredicate(Id.INVALID_ID, x.predicate))
+              .fromLogicalNFA(nfa.builder.build(), converters.toCommandPredicate(Id.INVALID_ID, _))
               .compile(context, queryState)
 
             ProductGraph.fromCursor(start.getId, startState, pgCursor)
@@ -395,7 +395,7 @@ object NFAToProductGraphCursorIT {
     ): Unit = {
       parent.builder.addTransition(
         state,
-        NFA.MultiRelationshipExpansionTransition(relPredicates, nodePredicates, other.state.id)
+        NFA.MultiRelationshipExpansionTransition(relPredicates, nodePredicates, None, other.state.id)
       )
     }
   }

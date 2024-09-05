@@ -26,8 +26,10 @@ import org.neo4j.internal.kernel.api.RelationshipDataReader;
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection;
 import org.neo4j.storageengine.api.RelationshipSelection;
+import org.neo4j.values.virtual.VirtualRelationshipValue;
 
-public record MultiRelationshipExpansion(State sourceState, Rel[] rels, Node[] nodes, State targetState)
+public record MultiRelationshipExpansion(
+        State sourceState, Rel[] rels, Node[] nodes, CompoundPredicate compoundPredicate, State targetState)
         implements Transition {
 
     public MultiRelationshipExpansion {
@@ -64,5 +66,11 @@ public record MultiRelationshipExpansion(State sourceState, Rel[] rels, Node[] n
             return RelationshipSelection.selection(
                     types, traversalDirection == TraversalDirection.BACKWARD ? direction.reverse() : direction);
         }
+    }
+
+    public interface CompoundPredicate {
+        boolean test(long startNode, VirtualRelationshipValue[] rels, long[] interiorNodes, long endNode);
+
+        CompoundPredicate ALWAYS_TRUE = (startNode, rels, interiorNodes, endNode) -> true;
     }
 }

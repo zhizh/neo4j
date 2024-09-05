@@ -117,6 +117,9 @@ object NFA {
      */
     def predicateVariables: Seq[LogicalVariable]
     def variablePredicates: Seq[VariablePredicate]
+
+    /** All variables named in the transition regardless of whether they are part of a predicate */
+    def variables: Seq[LogicalVariable]
     def toDotString: String
   }
 
@@ -126,6 +129,7 @@ object NFA {
   case class NodeJuxtapositionTransition(endId: Int) extends Transition {
     override def predicateVariables: Seq[LogicalVariable] = Seq.empty
     override def variablePredicates: Seq[VariablePredicate] = Seq.empty
+    override def variables: Seq[LogicalVariable] = Seq.empty
     override def toDotString: String = ""
   }
 
@@ -138,15 +142,31 @@ object NFA {
   case class RelationshipExpansionTransition(predicate: RelationshipExpansionPredicate, endId: Int) extends Transition {
     override def predicateVariables: Seq[LogicalVariable] = predicate.relPred.map(_.variable).toSeq
     override def variablePredicates: Seq[VariablePredicate] = predicate.relPred.toSeq
+    override def variables: Seq[LogicalVariable] = Seq(predicate.relationshipVariable)
     override def toDotString: String = predicate.toDotString
   }
 
   /**
    * A multi-relationship expansion transition. This transition can be conditional.
+   *
+   * In this qpp, we have a repeated section with multiple relationships. That repeated section is what
+   * [[MultiRelationshipExpansionTransition]] refers to:
+   *
+   * (s) ((a:A)-[r1:R1]-(b:B)-[r2:R2]-(c:C) WHERE a.prop = c.prop)+ (t)
+   *
+   * Specifically, the transition contains the relationships and the *interior* nodes. In this case, we have
+   * - relPredicates: [ r1:R1, r2:R2 ]
+   * - nodePredicates: [ b:B ] (nb: not a or c)
+   * - compoundPredicate: a.prop = c.prop
+   *
+   * The predicate `a.prop = c.prop` applies across the whole transition and is evaluated once it has been expanded,
+   * and it can reference any node or relationship (including boundary nodes `a` and `c`) within the transition, but not those
+   * outside of it (`s` or `t`).
    */
   case class MultiRelationshipExpansionTransition(
     relPredicates: Seq[RelationshipExpansionPredicate],
     nodePredicates: Seq[NodeExpansionPredicate],
+    compoundPredicate: Option[Expression],
     endId: Int
   ) extends Transition {
 
@@ -156,10 +176,13 @@ object NFA {
     override def variablePredicates: Seq[VariablePredicate] =
       relPredicates.flatMap(_.relPred) ++ nodePredicates.flatMap(_.nodePred)
 
+    override def variables: Seq[LogicalVariable] =
+      relPredicates.map(_.relationshipVariable) ++ nodePredicates.map(_.nodeVariable)
+
     override def toDotString: String = {
       ("" +: nodePredicates.map(p => p.toDotString)).zip(relPredicates.map(p => p.toDotString)).map {
         case (node, rel) => node + rel
-      }.mkString("")
+      }.mkString("") + compoundPredicate.map(p => s" WHERE ${State.expressionStringifier(p)}").getOrElse("")
     }
   }
 
@@ -229,6 +252,13 @@ case class NFA(
   startId: Int,
   finalId: Int
 ) {
+
+  def variables: Set[LogicalVariable] = {
+    val stateNames = states.iterator.map(_.variable)
+    val transitionNames = transitions.values.flatten.iterator.flatMap(_.variables)
+    (stateNames ++ transitionNames).toSet
+  }
+
   def startState: State = states(startId)
   def finalState: State = states(finalId)
 
@@ -242,8 +272,8 @@ case class NFA(
         val relTypePredicate = t match {
           case _: NFA.NodeJuxtapositionTransition            => Seq.empty
           case RelationshipExpansionTransition(predicate, _) => predicate.relationshipTypePredicate.toSeq
-          case MultiRelationshipExpansionTransition(relPredicates, _, _) =>
-            relPredicates.flatMap(_.relationshipTypePredicate)
+          case MultiRelationshipExpansionTransition(relPredicates, _, compoundPredicate, _) =>
+            relPredicates.flatMap(_.relationshipTypePredicate) ++ compoundPredicate
         }
         val variablePredicate = t.variablePredicates.map(_.predicate)
         variablePredicate ++ relTypePredicate
@@ -253,9 +283,18 @@ case class NFA(
    * All the variables used in [[VariablePredicate]]s.
    * Note that this does not contain relationship type predicates.
    */
-  def predicateVariables: Set[LogicalVariable] =
-    (states.iterator.flatMap(_.variablePredicate).map(_.variable)
-      ++ transitions.values.flatten.iterator.flatMap(_.predicateVariables)).toSet
+  def predicateVariables: Set[LogicalVariable] = {
+    val statePredicates = states.iterator.flatMap(_.variablePredicate).map(_.variable)
+    val inlineTransitionPredicates = transitions.values.flatten.iterator.flatMap(_.predicateVariables)
+
+    val compoundPredicates = transitions.values.flatten.iterator.collect {
+      case MultiRelationshipExpansionTransition(_, _, Some(compoundPredicate), _) =>
+        compoundPredicate.dependencies intersect this.variables
+    }.flatten
+
+    val res = (statePredicates ++ inlineTransitionPredicates ++ compoundPredicates).toSet
+    res
+  }
 
   def nodes: Set[LogicalVariable] =
     states.map(_.variable).toSet ++ states.flatMap(_.variablePredicate).map(_.variable)

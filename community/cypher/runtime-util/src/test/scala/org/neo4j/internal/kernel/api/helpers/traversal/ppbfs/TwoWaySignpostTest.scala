@@ -26,6 +26,7 @@ import org.neo4j.graphdb.Direction
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion.CompoundPredicate
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder.MultiRelationshipBuilder
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipExpansion
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.State
@@ -90,7 +91,7 @@ class TwoWaySignpostTest extends CypherFunSuite {
         .n()
         .r()
 
-      new MultiRelationshipExpansion(s1, builder.rels.toArray, builder.nodes.toArray, s2)
+      new MultiRelationshipExpansion(s1, builder.rels.toArray, builder.nodes.toArray, CompoundPredicate.ALWAYS_TRUE, s2)
     }
 
     val signpost = TwoWaySignpost.fromMultiRel(mt, prevNode, Array(1L, 2L), Array(3L), mre, forwardNode, 0)

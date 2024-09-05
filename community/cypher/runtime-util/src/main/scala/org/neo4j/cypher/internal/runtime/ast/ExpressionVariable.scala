@@ -32,6 +32,12 @@ object ExpressionVariable {
           s"Error during interpreted physical planning: expression variable '$v' has not been allocated"
         )
     }
+
+  def castOpt(variable: LogicalVariable): Option[ExpressionVariable] =
+    variable match {
+      case ev: ExpressionVariable => Some(ev)
+      case _                      => None
+    }
 }
 
 case class ExpressionVariable(offset: Int, override val name: String)

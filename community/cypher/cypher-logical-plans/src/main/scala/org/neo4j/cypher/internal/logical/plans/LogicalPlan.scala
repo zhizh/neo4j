@@ -2421,6 +2421,8 @@ case class StatefulShortestPath(
     relationshipVariableGroupings.map(_.group)
 
   override val distinctness: Distinctness = NotDistinct
+
+  def boundNodes = Set(Option(sourceNode), Option.when(mode == ExpandInto)(targetNode)).flatten
 }
 
 /**

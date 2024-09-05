@@ -6283,6 +6283,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
               v"c",
               Some(VariablePredicate(v"c", propEquality("c", "prop", 5)))
             )),
+            Some(propEquality("b", "prop", prop("c", "prop"))),
             builder.addAndGetState(
               v"d",
               Some(VariablePredicate(v"d", propEquality("d", "prop", 5)))
@@ -6324,6 +6325,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           """SHORTEST 5 PATHS (a)-[`anon_0`]->*(`b`)
             |        expanding from: a
             |    inlined predicates: b.prop = 5
+            |                        b.prop = c.prop
             |                        c.prop = 5
             |                        d.prop = 5
             |                        r1.prop = 5
@@ -8218,10 +8220,13 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           )
         ),
         Seq(NodeExpansionPredicate(v"n", Some(VariablePredicate(v"n", propEquality("n", "prop", 5))))),
+        Some(propEquality("b", "prop", prop("c", "prop"))),
         2
       )
 
-    mre.toDotString should equal("-[r1:R WHERE r1.prop = 5]->(n WHERE n.prop = 5)-[r2:R WHERE r2.prop = 5]->")
+    mre.toDotString should equal(
+      "-[r1:R WHERE r1.prop = 5]->(n WHERE n.prop = 5)-[r2:R WHERE r2.prop = 5]-> WHERE b.prop = c.prop"
+    )
   }
 
   private def assertGood(
