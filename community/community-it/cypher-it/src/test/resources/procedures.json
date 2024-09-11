@@ -3751,7 +3751,7 @@
       "admin"
     ],
     "isDeprecated": true,
-    "deprecatedBy": null,
+    "deprecatedBy": "Automatic upgrade",
     "option": {
       "deprecated": true
     },
@@ -3792,7 +3792,7 @@
       "admin"
     ],
     "isDeprecated": true,
-    "deprecatedBy": null,
+    "deprecatedBy": "Automatic upgrade",
     "option": {
       "deprecated": true
     },

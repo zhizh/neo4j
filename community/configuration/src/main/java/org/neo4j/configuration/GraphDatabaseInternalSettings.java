@@ -592,6 +592,7 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
 
     @Internal
     @Description("Enable or disable the ability to execute the `dbms.upgrade` procedure.")
+    @Deprecated(since = "5.9.0")
     public static final Setting<Boolean> block_upgrade_procedures =
             newBuilder("internal.dbms.upgrade_restriction_enabled", BOOL, false).build();
 
@@ -1278,12 +1279,14 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
     @Description(
             "Whether to allow a system graph upgrade to happen automatically (and the procedures becomes no-ops), or should "
                     + "upgrades be done via procedures. Default is true for both editions and all DBMS layouts.")
+    @Deprecated(since = "5.9.0")
     public static final Setting<Boolean> automatic_upgrade_enabled =
             newBuilder("internal.dbms.automatic_upgrade.enabled", BOOL, true).build();
 
     @Internal
     @Description("The length of time to wait in the upgrade procedures for automatic upgrade to complete an upgrade "
             + "in the background, before just returning 'upgrade pending'.")
+    @Deprecated(since = "5.9.0")
     public static final Setting<Duration> upgrade_procedure_wait_timeout = newBuilder(
                     "internal.dbms.upgrade.procedure.wait_timeout", DURATION, Duration.ofSeconds(30))
             .build();

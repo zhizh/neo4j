@@ -64,9 +64,11 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.ProcedureCallContext;
 import org.neo4j.internal.kernel.api.security.SecurityContext;
+import org.neo4j.kernel.api.CypherScope;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.net.NetworkConnectionTracker;
 import org.neo4j.kernel.api.net.TrackedNetworkConnection;
+import org.neo4j.kernel.api.procedure.CypherVersionScope;
 import org.neo4j.kernel.api.procedure.SystemProcedure;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.impl.query.QueryExecutionEngine;
@@ -251,7 +253,8 @@ public class BuiltInDbmsProcedures {
     @Admin
     @SystemProcedure
     @Description("Report the current status of the system database sub-graph schema.")
-    @Procedure(name = "dbms.upgradeStatus", mode = READ)
+    @Procedure(name = "dbms.upgradeStatus", mode = READ, deprecatedBy = "Automatic upgrade")
+    @CypherVersionScope(scope = {CypherScope.CYPHER_5})
     public Stream<SystemGraphComponentStatusResult> upgradeStatus() throws ProcedureException {
         if (!callContext.isSystemDatabase()) {
             throw new ProcedureException(
@@ -265,7 +268,8 @@ public class BuiltInDbmsProcedures {
     @Admin
     @SystemProcedure
     @Description("Upgrade the system database schema if it is not the current schema.")
-    @Procedure(name = "dbms.upgrade", mode = WRITE)
+    @Procedure(name = "dbms.upgrade", mode = WRITE, deprecatedBy = "Automatic upgrade")
+    @CypherVersionScope(scope = {CypherScope.CYPHER_5})
     public Stream<SystemGraphComponentUpgradeResult> upgrade() throws ProcedureException {
         if (!callContext.isSystemDatabase()) {
             throw new ProcedureException(
