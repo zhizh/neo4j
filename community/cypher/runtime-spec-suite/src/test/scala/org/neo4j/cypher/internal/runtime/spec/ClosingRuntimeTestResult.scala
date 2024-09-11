@@ -33,7 +33,6 @@ import org.neo4j.kernel.impl.query.TransactionalContext
 import org.neo4j.util.VisibleForTesting
 
 import java.util
-import java.util.Collections
 
 /**
  * This is needed for tests, because closing is usually handled in org.neo4j.cypher.internal.result.ClosingExecutionResult,
