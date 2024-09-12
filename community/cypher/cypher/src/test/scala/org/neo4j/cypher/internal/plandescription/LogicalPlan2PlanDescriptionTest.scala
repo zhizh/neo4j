@@ -6178,7 +6178,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
   }
 
   test("StatefulShortestPath with predicates") {
-    val solvedExpressionStr = "SHORTEST 5 PATHS (a)-[`  UNNAMED0`]->*(`  b@45`)"
+    val solvedExpressionStr = "SHORTEST 5 PATHS (a)-[r1]->(b)-[r2]->(c)"
     val nfa = {
       val builder = new NFABuilder(v"a")
       builder
@@ -6236,14 +6236,14 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         "StatefulShortestPath(All)",
         SingleChild(lhsPD),
         Seq(details(
-          """SHORTEST 5 PATHS (a)-[`anon_0`]->*(`b`)
-            |        expanding from: a
-            |    inlined predicates: b.prop = 5
-            |                        c.prop = 5
-            |                        r.prop = 5
-            |non-inlined predicates: b.prop > 10
-            |                        c.prop > 10
-            |                        r.prop > 10""".stripMargin
+          s"""$solvedExpressionStr
+             |        expanding from: a
+             |    inlined predicates: b.prop = 5
+             |                        c.prop = 5
+             |                        r.prop = 5
+             |non-inlined predicates: b.prop > 10
+             |                        c.prop > 10
+             |                        r.prop > 10""".stripMargin
         )),
         Set("a")
       )
@@ -6267,8 +6267,8 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           NFA.MultiRelationshipExpansionTransition(
             Seq(
               NFA.RelationshipExpansionPredicate(
-                v"r",
-                Some(VariablePredicate(v"r", propEquality("r", "prop", 5))),
+                v"r1",
+                Some(VariablePredicate(v"r1", propEquality("r1", "prop", 5))),
                 Seq.empty,
                 SemanticDirection.OUTGOING
               ),
@@ -6302,7 +6302,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           ExpandAll,
           Some(ands(
             propGreaterThan("b", "prop", 10),
-            propGreaterThan("r", "prop", 10),
+            propGreaterThan("r1", "prop", 10),
             propGreaterThan("c", "prop", 10)
           )),
           Set.empty,
@@ -6326,11 +6326,11 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
             |    inlined predicates: b.prop = 5
             |                        c.prop = 5
             |                        d.prop = 5
-            |                        r.prop = 5
+            |                        r1.prop = 5
             |                        r2.prop = 5
             |non-inlined predicates: b.prop > 10
             |                        c.prop > 10
-            |                        r.prop > 10""".stripMargin
+            |                        r1.prop > 10""".stripMargin
         )),
         Set("a")
       )
