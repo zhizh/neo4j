@@ -35,8 +35,6 @@ public record MultiRelationshipExpansion(
     public MultiRelationshipExpansion {
         assert nodes.length == rels.length - 1
                 : "There must be exactly one fewer interior nodes than relationships in a MultiRelationshipExpansion";
-
-        assert rels.length > 1 : "A MultiRelationshipExpansion must have more than one hop";
     }
 
     public int length() {

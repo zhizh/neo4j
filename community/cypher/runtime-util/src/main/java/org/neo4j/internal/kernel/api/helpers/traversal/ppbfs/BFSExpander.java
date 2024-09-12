@@ -238,14 +238,6 @@ final class BFSExpander implements AutoCloseable {
         var direction = foundNodes.getNextExpansionDirection();
         hooks.expand(direction, foundNodes);
 
-        // look in the priority queue to see if there are any var-length transitions to expand at this depth.
-        // if there are then run DFS on them and add the final node states to the collection
-        for (var mre = foundNodes.dequeueScheduled(direction);
-                mre != null;
-                mre = foundNodes.dequeueScheduled(direction)) {
-            multiHopDFS(mre.start(), mre.expansion(), direction);
-        }
-
         for (var pair : foundNodes.frontier(direction).keyValuesView()) {
             var dbNodeId = pair.getOne();
             var statesById = pair.getTwo();
@@ -302,6 +294,14 @@ final class BFSExpander implements AutoCloseable {
                 }
                 ;
             }
+        }
+
+        // look in the priority queue to see if there are any var-length transitions to expand at this depth.
+        // if there are then run DFS on them and add the final node states to the collection
+        for (var mre = foundNodes.dequeueScheduled(direction);
+                mre != null;
+                mre = foundNodes.dequeueScheduled(direction)) {
+            multiHopDFS(mre.start(), mre.expansion(), direction);
         }
 
         foundNodes.commitBuffer(direction);

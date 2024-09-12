@@ -1077,6 +1077,115 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     runtimeResult should beColumns(vars: _*).withRows(rowCount(1))
   }
 
+  test("multi-hop transition for one hop pattern") {
+
+    val (x1, y, x2) = givenGraph {
+      // GRAPH:
+      // (x1)-[y:R]->(x2)
+
+      val Seq(x1, x2) = nodeGraph(2)
+      val y = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
+      (x1, y, x2)
+    }
+
+    // pattern:
+    // (s) (n1)-[r]->(n2) (t)
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addMultiRelationshipTransition(1, 2, "(n1_inner)-[r_inner]->(n2_inner)")
+      .addTransition(2, 3, "(n2_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r", "n2", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)-[r]->(n2) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "t_inner" -> "t"),
+        Set("r_inner" -> "r"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](x1, x1, y, x2, x2)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
+  test("multi-hop transition for one hop pattern with compound node predicate") {
+    val (Seq(n1, n2, n3, n4), Seq(r12, r43)) = givenGraph {
+      // GRAPH:
+      // (n1 {foo: 1})-[r1:R]->(n2 {foo: 1})
+      // (n3 {foo: 1}))<-[r2:R]-(n4 {foo: 2}))
+      val Seq(n1, n2, n3, n4) = nodeGraph(4)
+      n1.setProperty("foo", 1)
+      n2.setProperty("foo", 1)
+      n3.setProperty("foo", 1)
+      n4.setProperty("foo", 2)
+      val r12 = n1.createRelationshipTo(n2, RelationshipType.withName("R"))
+      val r43 = n4.createRelationshipTo(n3, RelationshipType.withName("R"))
+      (Seq(n1, n2, n3, n4), Seq(r12, r43))
+    }
+
+    // pattern:
+    // (s) (n1)-[r1]->(n2)-[r2]->(n3) (t) WHERE n.1.foo = n3.foo
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addMultiRelationshipTransition(
+        1,
+        2,
+        "(n1_inner)-[r1_inner]->(n2_inner)",
+        compoundPredicate = "n1_inner.foo = n2_inner.foo"
+      )
+      .addTransition(2, 3, "(n2_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val vars = Seq("s", "n1", "r1", "n2", "t")
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults(vars: _*)
+      .statefulShortestPath(
+        "s",
+        "t",
+        "(s) (n1)-[r1]->(n2) (t)",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "t_inner" -> "t"),
+        Set("r1_inner" -> "r1"),
+        Selector.Shortest(Int.MaxValue),
+        nfa,
+        ExpandAll
+      )
+      .allNodeScan("s")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    // then
+    val expected = Seq(
+      Array[Object](n1, n1, r12, n2, n2)
+    )
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
+  }
+
   test("one hop pattern - ExpandInto") {
 
     val (x1, y, x2) = givenGraph {

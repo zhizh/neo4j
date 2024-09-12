@@ -131,7 +131,12 @@ object TestNFABuilder {
       )
       val toNodePredicate = toNodePredicateFromRel
       val n = NodeExpansionPredicate(toName, toNodePredicate)
-      (NodeExpansionPredicate(from, None), r :: rels, n :: nodes, to.getOrElse(n))
+      to match {
+        case Some(t) =>
+          (NodeExpansionPredicate(from, None), r :: rels, n :: nodes, t)
+        case None =>
+          (NodeExpansionPredicate(from, None), r :: rels, nodes, n)
+      }
     case RelationshipChain(
         chain: RelationshipChain,
         rp,
@@ -164,23 +169,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
     compoundPredicate: String = ""
   ): TestNFABuilder = {
 
-    def assertFromNameMatchesFromId(actualState: State, specifiedName: String): Unit = {
-      if (actualState.variable.name != specifiedName) {
-        throw new IllegalArgumentException(
-          s"For id $fromId in pattern '$pattern': expected '${actualState.variable.name}' but was '$specifiedName'"
-        )
-      }
-    }
-
-    val parsedPattern =
-      try {
-        Parser.parsePatternElement(pattern)
-      } catch {
-        case NonFatal(e) =>
-          println("Error parsing pattern: " + pattern)
-          throw e
-      }
-    parsedPattern match {
+    parsePattern(pattern) match {
 
       // (from)-[rel:E]-(to)
       case RelationshipChain(
@@ -213,7 +202,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
           case None               => toNodePredicateFromRel
         }
         val fromState = getOrCreateState(fromId, from)
-        assertFromNameMatchesFromId(fromState, from.name)
+        assertFromNameMatchesFromId(fromState, from.name, fromId, pattern)
         getOrCreateState(toId, toName, toNodePredicate)
         addTransition(fromState, transition)
 
@@ -227,7 +216,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
         val (from, rels, nodes, to) = unnestRelationshipChain(chain)
         val compoundPred = if (compoundPredicate == "") None else Some(Parser.parseExpression(compoundPredicate))
         val fromState = getOrCreateState(fromId, from.nodeVariable)
-        assertFromNameMatchesFromId(fromState, from.nodeVariable.name)
+        assertFromNameMatchesFromId(fromState, from.nodeVariable.name, fromId, pattern)
         val transition = MultiRelationshipExpansionTransition(rels, nodes, compoundPred, toId)
         getOrCreateState(toId, to.nodeVariable, to.nodePred)
         addTransition(fromState, transition)
@@ -237,7 +226,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
           NodePredicate(to, toNodePredicateFromPattern)
         )) =>
         val fromState = getOrCreateState(fromId, from)
-        assertFromNameMatchesFromId(fromState, from.name)
+        assertFromNameMatchesFromId(fromState, from.name, fromId, pattern)
         val transition = NodeJuxtapositionTransition(toId)
         val toNodePredicate = maybeToPredicate match {
           case somePred @ Some(_) => somePred
@@ -251,9 +240,54 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
     this
   }
 
+  def addMultiRelationshipTransition(
+    fromId: Int,
+    toId: Int,
+    pattern: String,
+    compoundPredicate: String = ""
+  ): TestNFABuilder = {
+
+    parsePattern(pattern) match {
+      // (n1)-[r1:R]->(n2)-[r2:R]->(n3)
+      case chain: RelationshipChain =>
+        val (from, rels, nodes, to) = unnestRelationshipChain(chain)
+        val compoundPred = if (compoundPredicate == "") None else Some(Parser.parseExpression(compoundPredicate))
+        val fromState = getOrCreateState(fromId, from.nodeVariable)
+        assertFromNameMatchesFromId(fromState, from.nodeVariable.name, fromId, pattern)
+        val transition = MultiRelationshipExpansionTransition(rels, nodes, compoundPred, toId)
+        getOrCreateState(toId, to.nodeVariable, to.nodePred)
+        addTransition(fromState, transition)
+
+      case _ => throw new IllegalArgumentException(s"Expected path pattern or two juxtaposed nodes but was: $pattern")
+    }
+    this
+  }
+
   def setFinalState(id: Int): TestNFABuilder = {
     val state = getState(id)
     setFinalState(state)
     this
   }
+
+  private def assertFromNameMatchesFromId(
+    actualState: State,
+    specifiedName: String,
+    fromId: Int,
+    pattern: String
+  ): Unit = {
+    if (actualState.variable.name != specifiedName) {
+      throw new IllegalArgumentException(
+        s"For id $fromId in pattern '$pattern': expected '${actualState.variable.name}' but was '$specifiedName'"
+      )
+    }
+  }
+
+  private def parsePattern(pattern: String) =
+    try {
+      Parser.parsePatternElement(pattern)
+    } catch {
+      case NonFatal(e) =>
+        println("Error parsing pattern: " + pattern)
+        throw e
+    }
 }
