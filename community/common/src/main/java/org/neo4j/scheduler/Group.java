@@ -159,7 +159,7 @@ public enum Group {
             "GdsClusterWrite",
             ExecutorServiceFactory.cached(),
             Runtime.getRuntime().availableProcessors()),
-    GDS_WRITE_PROCEDURE("GdsWriteProcedure"),
+    GDS_ASYNC_PROCEDURE("GdsAsyncProcedure"),
 
     // TESTING
     TESTING("TestingGroup", ExecutorServiceFactory.callingThread());
