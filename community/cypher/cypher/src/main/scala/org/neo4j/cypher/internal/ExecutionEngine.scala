@@ -33,6 +33,7 @@ import org.neo4j.cypher.internal.util.InternalNotification
 import org.neo4j.cypher.internal.util.InternalNotificationLogger
 import org.neo4j.cypher.internal.util.RecordingNotificationLogger
 import org.neo4j.exceptions.ParameterNotFoundException
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.internal.kernel.api.security.AccessMode
 import org.neo4j.kernel.GraphDatabaseQueryService
 import org.neo4j.kernel.api.exceptions.Status
@@ -230,13 +231,27 @@ abstract class ExecutionEngine(
       try {
         getOrCompile(context, query, tracer, params, notificationLogger)
       } catch {
+        case gqlException: ErrorGqlStatusObject =>
+          if (isOutermostQuery) {
+            val status = gqlException match {
+              case withStatus: HasStatus => withStatus.status()
+              case _                     => null
+            }
+            queryMonitor.endFailure(
+              context.executingQuery(),
+              gqlException.getMessage,
+              status,
+              gqlException
+            )
+          }
+          throw gqlException
         case up: Throwable =>
           if (isOutermostQuery) {
             val status = up match {
               case withStatus: HasStatus => withStatus.status()
               case _                     => null
             }
-            queryMonitor.endFailure(context.executingQuery(), up.getMessage, status)
+            queryMonitor.endFailure(context.executingQuery(), up.getMessage, status, null)
           }
           throw up
       }

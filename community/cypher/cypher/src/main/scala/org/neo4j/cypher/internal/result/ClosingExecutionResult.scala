@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.result
 import org.neo4j.cypher.internal.NonFatalCypherError
 import org.neo4j.cypher.internal.runtime.ExecutionMode
 import org.neo4j.cypher.internal.runtime.InternalQueryType
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.graphdb.ExecutionPlanDescription
 import org.neo4j.graphdb.GqlStatusObject
 import org.neo4j.internal.helpers.Exceptions
@@ -84,7 +85,7 @@ class ClosingExecutionResult private (
       inner.close(reason)
       reason match {
         case Success  => monitor.endSuccess(query)
-        case Failure  => monitor.endFailure(query, null, Failure.status)
+        case Failure  => monitor.endFailure(query, null, Failure.status, null)
         case Error(t) => monitor.endFailure(query, t)
       }
     } catch {
@@ -165,7 +166,16 @@ class ClosingExecutionResult private (
       if (errorDeliveredToSubscriber == null && inner.getError.isEmpty) {
         monitor.endSuccess(query)
       } else if (errorDeliveredToSubscriber != null && errorDeliveredToSubscriber.isInstanceOf[HasStatus]) {
-        monitor.endFailure(query, null, errorDeliveredToSubscriber.asInstanceOf[HasStatus].status())
+        val errorGqlStatusObject: ErrorGqlStatusObject = errorDeliveredToSubscriber match {
+          case gql: ErrorGqlStatusObject => gql
+          case _                         => null
+        }
+        monitor.endFailure(
+          query,
+          null,
+          errorDeliveredToSubscriber.asInstanceOf[HasStatus].status(),
+          errorGqlStatusObject
+        )
       } else {
         monitor.endFailure(query, null)
       }

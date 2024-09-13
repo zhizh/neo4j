@@ -3442,7 +3442,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_50N42(
             new GqlStatus("50N42"),
             """
-                    Unexpected error has occured. See debug log for details.""",
+                    Unexpected error has occurred. See debug log for details.""",
             new GqlParams.GqlParam[] {},
             emptyMap(),
             Condition.GENERAL_PROCESSING_EXCEPTION,

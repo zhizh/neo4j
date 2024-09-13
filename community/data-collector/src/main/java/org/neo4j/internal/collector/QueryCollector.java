@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException;
 import org.neo4j.kernel.api.query.ExecutingQuery;
 import org.neo4j.kernel.api.query.QuerySnapshot;
@@ -109,7 +110,11 @@ class QueryCollector extends CollectorStateMachine<Iterator<TruncatedQuerySnapsh
     public void endFailure(ExecutingQuery query, Throwable failure) {}
 
     @Override
-    public void endFailure(ExecutingQuery query, String reason, org.neo4j.kernel.api.exceptions.Status status) {}
+    public void endFailure(
+            ExecutingQuery query,
+            String reason,
+            org.neo4j.kernel.api.exceptions.Status status,
+            ErrorGqlStatusObject errorGqlStatusObject) {}
 
     @Override
     public void endSuccess(ExecutingQuery query) {

@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.result
 
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.kernel.api.exceptions.Status
 import org.neo4j.kernel.api.query.ExecutingQuery
 import org.neo4j.kernel.impl.query.QueryExecutionMonitor
@@ -32,10 +33,15 @@ case class OnlyOnceQueryExecutionMonitor(monitor: QueryExecutionMonitor) extends
       monitor.endFailure(query, failure)
     }
 
-  override def endFailure(query: ExecutingQuery, reason: String, status: Status): Unit =
+  override def endFailure(
+    query: ExecutingQuery,
+    reason: String,
+    status: Status,
+    errorGqlStatusObject: ErrorGqlStatusObject
+  ): Unit =
     if (!closed) {
       closed = true
-      monitor.endFailure(query, reason, status)
+      monitor.endFailure(query, reason, status, errorGqlStatusObject)
     }
 
   override def endSuccess(query: ExecutingQuery): Unit =

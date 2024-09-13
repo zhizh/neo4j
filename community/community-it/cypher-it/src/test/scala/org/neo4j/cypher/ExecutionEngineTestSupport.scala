@@ -33,6 +33,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.TransactionBoundQueryContex
 import org.neo4j.cypher.internal.runtime.interpreted.TransactionBoundQueryContext.IndexSearchMonitor
 import org.neo4j.cypher.internal.runtime.interpreted.TransactionalContextWrapper
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.graphdb.GraphDatabaseService
 import org.neo4j.graphdb.Result
 import org.neo4j.kernel.DeadlockDetectedException
@@ -251,6 +252,12 @@ case object DummyQueryExecutionMonitor extends QueryExecutionMonitor {
   override def startProcessing(query: ExecutingQuery): Unit = {}
   override def startExecution(query: ExecutingQuery): Unit = {}
   override def endFailure(query: ExecutingQuery, failure: Throwable): Unit = {}
-  override def endFailure(query: ExecutingQuery, reason: String, status: Status): Unit = {}
+
+  override def endFailure(
+    query: ExecutingQuery,
+    reason: String,
+    status: Status,
+    errorGqlStatusObject: ErrorGqlStatusObject
+  ): Unit = {}
   override def endSuccess(query: ExecutingQuery): Unit = {}
 }

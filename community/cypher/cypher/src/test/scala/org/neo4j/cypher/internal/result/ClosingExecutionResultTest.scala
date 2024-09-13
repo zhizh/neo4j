@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.runtime.ExecutionMode
 import org.neo4j.cypher.internal.runtime.InternalQueryType
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.exceptions.Neo4jException
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.graphdb.GqlStatusObject
 import org.neo4j.kernel.api.exceptions.Status
 import org.neo4j.kernel.api.query.ExecutingQuery
@@ -234,7 +235,12 @@ class ClosingExecutionResultTest extends CypherFunSuite {
       nEndCalls += 1
     }
 
-    override def endFailure(query: ExecutingQuery, reason: String, status: Status): Unit = {
+    override def endFailure(
+      query: ExecutingQuery,
+      reason: String,
+      status: Status,
+      errorGqlStatusObject: ErrorGqlStatusObject
+    ): Unit = {
       this.query = query
       endReason = Failure
       nEndCalls += 1
