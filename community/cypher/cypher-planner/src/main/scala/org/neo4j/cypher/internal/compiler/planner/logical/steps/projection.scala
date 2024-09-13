@@ -19,7 +19,9 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps
 
+import org.neo4j.cypher.internal.compiler.planner.logical.CachePropertiesRewritableExpressions
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
+import org.neo4j.cypher.internal.compiler.planner.logical.RemoteBatchingResult
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.ir.QueryProjection
@@ -49,9 +51,18 @@ object projection {
       // Note, if keepAllColumns == false there might be some cases when runtime would benefit from planning a projection anyway to get rid of unused columns
       context.staticComponents.logicalPlanProducer.planStarProjection(plan, projectionsToMarkSolved)
     } else {
+
+      val RemoteBatchingResult(CachePropertiesRewritableExpressions(_, rewrittenProjections), planWithProperties) =
+        context.settings.remoteBatchPropertiesStrategy.planBatchProperties(
+          context.plannerState.contextualPropertyAccess.horizon ++ context.plannerState.contextualPropertyAccess.interestingOrder,
+          plan,
+          context,
+          CachePropertiesRewritableExpressions(projections = projectionsDiff)
+        )
+
       context.staticComponents.logicalPlanProducer.planRegularProjection(
-        plan,
-        projectionsDiff,
+        planWithProperties,
+        rewrittenProjections,
         projectionsToMarkSolved,
         context
       )

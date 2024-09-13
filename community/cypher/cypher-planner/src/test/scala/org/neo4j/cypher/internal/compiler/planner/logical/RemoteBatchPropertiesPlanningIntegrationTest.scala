@@ -67,7 +67,8 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
       .setRelationshipCardinality("(:Comment)-[:COMMENT_HAS_CREATOR]->()", 2052169)
       .setRelationshipCardinality("()-[:COMMENT_HAS_CREATOR]->(:Person)", 2052169)
       .setRelationshipCardinality("(:Message)-[:COMMENT_HAS_CREATOR]->(:Person)", 2052169)
-      .addNodeIndex("Person", List("id"), existsSelectivity = 1.0, uniqueSelectivity = 1.0, isUnique = true)
+      .addNodeIndex("Person", List("id"), existsSelectivity = 1.0, uniqueSelectivity = 1.0 / 9892.0, isUnique = true)
+      .addNodeIndex("Person", List("firstName"), existsSelectivity = 1.0, uniqueSelectivity = 1 / 1323.0)
       .addNodeIndex("Message", List("creationDate"), existsSelectivity = 1.0, uniqueSelectivity = 3033542.0 / 3055774.0)
       .build()
 
@@ -128,6 +129,7 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
   test("should also batch properties used in filters, even if just once") {
     val query =
       """MATCH (person:Person)-[knows:KNOWS]->(friend:Person)
+        |  USING INDEX person:Person(firstName)
         |  WHERE person.firstName = friend.firstName AND knows.creationDate < $max_creation_date
         |RETURN person.lastName AS personLastName,
         |       friend.lastName AS friendLastName,
@@ -144,13 +146,12 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
         "cacheR[knows.creationDate] AS knowsSince"
       )
       .remoteBatchProperties("cacheNFromStore[person.lastName]", "cacheNFromStore[friend.lastName]")
-      .filter("cacheN[person.firstName] = cacheN[friend.firstName]", "person:Person")
-      .remoteBatchPropertiesWithFilter("cacheRFromStore[knows.creationDate]", "cacheNFromStore[person.firstName]")(
+      .filter("cacheN[person.firstName] = cacheN[friend.firstName]", "friend:Person")
+      .remoteBatchPropertiesWithFilter("cacheRFromStore[knows.creationDate]", "cacheNFromStore[friend.firstName]")(
         "cacheRFromStore[knows.creationDate] < $max_creation_date"
       )
-      .expandAll("(friend)<-[knows:KNOWS]-(person)")
-      .remoteBatchProperties("cacheNFromStore[friend.firstName]")
-      .nodeByLabelScan("friend", "Person")
+      .expandAll("(person)-[knows:KNOWS]->(friend)")
+      .nodeIndexOperator("person:Person(firstName)", getValue = Map("firstName" -> GetValue))
       .build()
 
     plan shouldEqual expected

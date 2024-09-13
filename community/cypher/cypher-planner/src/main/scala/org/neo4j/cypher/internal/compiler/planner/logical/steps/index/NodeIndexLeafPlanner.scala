@@ -26,7 +26,6 @@ import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.ordering.InterestingOrderConfig
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.DynamicPropertyNotifier
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexLeafPlanner.IndexCompatiblePredicate
-import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexLeafPlanner.getValueBehaviors
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexLeafPlanner.implicitIsNotNullPredicates
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexLeafPlanner.predicatesForIndex
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.NodeIndexLeafPlanner.findIndexMatchesForQueryGraph
@@ -73,7 +72,7 @@ case class NodeIndexLeafPlanner(planProviders: Seq[NodeIndexPlanProvider], restr
       } else {
         for {
           provider <- planProviders
-          plan <- provider.createPlans(indexMatches, qg.hints, qg.argumentIds, restrictions, context)
+          plan <- provider.createPlans(indexMatches, qg, restrictions, context)
         } yield plan
       }.toSet
 
@@ -100,14 +99,22 @@ object NodeIndexLeafPlanner extends IndexCompatiblePredicatesProvider {
 
     override def predicateSet(
       newPredicates: Seq[IndexCompatiblePredicate],
-      exactPredicatesCanGetValue: Boolean
+      exactPredicatesCanGetValue: Boolean,
+      context: LogicalPlanningContext,
+      queryGraph: QueryGraph
     ): PredicateSet =
       NodePredicateSet(
         variable,
         labelPredicate,
         labelName,
         newPredicates,
-        getValueBehaviors(indexDescriptor, newPredicates, exactPredicatesCanGetValue)
+        context.settings.remoteBatchPropertiesStrategy.getValueFromIndexBehaviors(
+          indexDescriptor,
+          newPredicates,
+          exactPredicatesCanGetValue,
+          context.plannerState.contextualPropertyAccess,
+          queryGraph
+        )
       )
   }
 

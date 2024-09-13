@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps.index
 
-import org.neo4j.cypher.internal.ast.Hint
 import org.neo4j.cypher.internal.ast.UsingIndexHint
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexSeekPlanProvider.mergeQueryExpressionsToSingleOne
@@ -28,6 +27,7 @@ import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.NodeIndexL
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LabelToken
 import org.neo4j.cypher.internal.expressions.LogicalVariable
+import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.logical.plans.IndexOrder
 import org.neo4j.cypher.internal.logical.plans.IndexedProperty
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
@@ -59,13 +59,17 @@ abstract class AbstractNodeIndexSeekPlanProvider extends NodeIndexPlanProvider {
 
   def createSolution(
     indexMatch: NodeIndexMatch,
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     context: LogicalPlanningContext
   ): Option[Solution] = {
 
     val predicateSet =
-      indexMatch.predicateSet(predicatesForIndexSeek(indexMatch.propertyPredicates), exactPredicatesCanGetValue = true)
+      indexMatch.predicateSet(
+        predicatesForIndexSeek(indexMatch.propertyPredicates),
+        exactPredicatesCanGetValue = true,
+        context,
+        queryGraph
+      )
 
     if (predicateSet.propertyPredicates.forall(_.isExists)) {
       None
@@ -77,7 +81,7 @@ abstract class AbstractNodeIndexSeekPlanProvider extends NodeIndexPlanProvider {
       val properties = predicateSet.indexedProperties(context)
 
       val hint = predicateSet
-        .fulfilledHints(hints, indexMatch.indexDescriptor.indexType, planIsScan = false)
+        .fulfilledHints(queryGraph.hints, indexMatch.indexDescriptor.indexType, planIsScan = false)
         .headOption
 
       val supportsPartitionedScans = queryExpression match {
@@ -95,7 +99,7 @@ abstract class AbstractNodeIndexSeekPlanProvider extends NodeIndexPlanProvider {
         indexMatch.indexDescriptor.isUnique,
         queryExpression,
         hint,
-        argumentIds,
+        queryGraph.argumentIds,
         indexMatch.providedOrder,
         indexMatch.indexOrder,
         predicateSet.allSolvedPredicates,

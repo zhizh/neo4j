@@ -98,6 +98,7 @@ import org.neo4j.cypher.internal.logical.plans.PartialSort
 import org.neo4j.cypher.internal.logical.plans.PartitionedScanPlan
 import org.neo4j.cypher.internal.logical.plans.ProcedureCall
 import org.neo4j.cypher.internal.logical.plans.ProjectEndpoints
+import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.Selection
 import org.neo4j.cypher.internal.logical.plans.SingleFromRightLogicalPlan
@@ -586,6 +587,9 @@ object CardinalityCostModel {
 
       case _: PartitionedScanPlan =>
         throw new IllegalStateException("partitioned scans should only be planned at physical planning")
+
+      case _: RemoteBatchProperties =>
+        0.9 // TODO
 
       case _ // Default
         => DEFAULT_COST_PER_ROW

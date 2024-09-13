@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps.index
 
-import org.neo4j.cypher.internal.ast.Hint
 import org.neo4j.cypher.internal.compiler.planner.logical.LeafPlanRestrictions
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexScanPlanProvider.Solution
@@ -29,6 +28,7 @@ import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityInde
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.NodeIndexLeafPlanner.NodeIndexMatch
 import org.neo4j.cypher.internal.expressions.LabelToken
 import org.neo4j.cypher.internal.expressions.LogicalVariable
+import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.logical.plans.IndexOrder
 import org.neo4j.cypher.internal.logical.plans.IndexedProperty
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
@@ -50,8 +50,7 @@ object nodeIndexScanPlanProvider extends NodeIndexPlanProvider {
 
   override def createPlans(
     indexMatches: Set[NodeIndexMatch],
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     restrictions: LeafPlanRestrictions,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = {
@@ -59,7 +58,7 @@ object nodeIndexScanPlanProvider extends NodeIndexPlanProvider {
     val solutions = for {
       indexMatch <- indexMatches
       if isAllowedByRestrictions(indexMatch.variable, restrictions)
-    } yield createSolution(indexMatch, hints, argumentIds, context)
+    } yield createSolution(indexMatch, queryGraph, context)
 
     val distinctSolutions = mergeSolutions(solutions)
 
@@ -82,18 +81,19 @@ object nodeIndexScanPlanProvider extends NodeIndexPlanProvider {
 
   private def createSolution(
     indexMatch: NodeIndexMatch,
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     context: LogicalPlanningContext
   ): Solution[NodeIndexScanParameters] = {
     val predicateSet =
       indexMatch.predicateSet(
         predicatesForIndexScan(indexMatch.indexDescriptor.indexType, indexMatch.propertyPredicates),
-        exactPredicatesCanGetValue = false
+        exactPredicatesCanGetValue = false,
+        context,
+        queryGraph
       )
 
     val hint = predicateSet
-      .fulfilledHints(hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
+      .fulfilledHints(queryGraph.hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
       .headOption
 
     Solution(
@@ -101,7 +101,7 @@ object nodeIndexScanPlanProvider extends NodeIndexPlanProvider {
         variable = indexMatch.variable,
         token = indexMatch.labelToken,
         properties = predicateSet.indexedProperties(context),
-        argumentIds = argumentIds,
+        argumentIds = queryGraph.argumentIds,
         indexOrder = indexMatch.indexOrder,
         indexMatch.indexDescriptor.maybeKernelIndexCapability.exists(_.supportPartitionedScan(allEntries()))
       ),

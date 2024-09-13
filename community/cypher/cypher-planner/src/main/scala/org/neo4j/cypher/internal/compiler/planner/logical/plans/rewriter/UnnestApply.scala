@@ -36,6 +36,7 @@ import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.LogicalUnaryPlan
 import org.neo4j.cypher.internal.logical.plans.OptionalExpand
 import org.neo4j.cypher.internal.logical.plans.Projection
+import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
 import org.neo4j.cypher.internal.logical.plans.Selection
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.VarExpand
@@ -206,13 +207,14 @@ object UnnestApply {
      * E.g., Distinct is NOT unnestable because on RHS of Apply it returns distinct rows PER ARGUMENT, where on LHS they are globally distinct.
      */
     def unapply(p: LogicalPlan): Option[LogicalUnaryPlan] = p match {
-      case p: Selection            => Some(p)
-      case p: Projection           => Some(p)
-      case p: Expand               => Some(p)
-      case p: VarExpand            => Some(p)
-      case p: StatefulShortestPath => Some(p)
-      case p: FindShortestPaths    => Some(p)
-      case _                       => None
+      case p: Selection             => Some(p)
+      case p: Projection            => Some(p)
+      case p: Expand                => Some(p)
+      case p: VarExpand             => Some(p)
+      case p: StatefulShortestPath  => Some(p)
+      case p: FindShortestPaths     => Some(p)
+      case p: RemoteBatchProperties => Some(p)
+      case _                        => None
     }
   }
 

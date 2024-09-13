@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.compiler
 
 import org.neo4j.configuration.Config
 import org.neo4j.configuration.GraphDatabaseInternalSettings
+import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchPropertiesImplementation
 import org.neo4j.configuration.GraphDatabaseSettings
 import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.compiler.phases.CompilationPhases.planPipeLine
@@ -316,6 +317,13 @@ class CypherPlannerConfiguration(
       !GraphDatabaseInternalSettings.planning_cache_properties_for_entities_enabled.dynamic()
     )
     () => config.cachePropertiesForEntities
+  }
+
+  val remoteBatchPropertiesImplementation: () => RemoteBatchPropertiesImplementation = {
+    AssertMacros.checkOnlyWhenAssertionsAreEnabled(
+      !GraphDatabaseInternalSettings.cypher_remote_batch_properties_implementation.dynamic()
+    )
+    () => config.remoteBatchPropertiesImplementation
   }
 
   val cachePropertiesForEntitiesWithFilter: () => Boolean = {

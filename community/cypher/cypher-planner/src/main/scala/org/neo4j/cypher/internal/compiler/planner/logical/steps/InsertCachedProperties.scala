@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps
 
+import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchPropertiesImplementation
 import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.compiler.phases.CompilationContains
@@ -137,7 +138,14 @@ case class InsertCachedProperties(pushdownPropertyReads: Boolean)
 
   override def process(from: LogicalPlanState, context: PlannerContext): LogicalPlanState = {
 
-    if (context.materializedEntitiesMode) {
+    val remoteBatchPropertiesImplementation =
+      from.maybeRemoteBatchPropertiesImplementation.getOrElse(throw new IllegalStateException(
+        "Expected the remote batch properties implementation in the logical plan state, but found nothing."
+      ))
+
+    if (
+      context.materializedEntitiesMode || remoteBatchPropertiesImplementation == RemoteBatchPropertiesImplementation.PLANNER
+    ) {
       // When working with materialized entities only, caching properties is not useful.
       // Moreover, the runtime implementation of CachedProperty does not work with virtual entities.
       return from
@@ -145,7 +153,10 @@ case class InsertCachedProperties(pushdownPropertyReads: Boolean)
 
     val logicalPlan =
       // always push down property reads in a sharded properties database
-      if (pushdownPropertyReads || context.planContext.databaseMode == DatabaseMode.SHARDED) {
+      if (
+        pushdownPropertyReads ||
+        context.planContext.databaseMode == DatabaseMode.SHARDED && remoteBatchPropertiesImplementation == RemoteBatchPropertiesImplementation.REWRITER
+      ) {
         val effectiveCardinalities = from.planningAttributes.effectiveCardinalities
         val attributes = from.planningAttributes.asAttributes(context.logicalPlanIdGen)
         val newPlan = PushdownPropertyReads.pushdown(

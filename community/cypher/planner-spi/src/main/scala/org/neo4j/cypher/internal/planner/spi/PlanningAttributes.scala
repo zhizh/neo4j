@@ -20,9 +20,11 @@
 package org.neo4j.cypher.internal.planner.spi
 
 import org.neo4j.cypher.internal.ir.PlannerQuery
+import org.neo4j.cypher.internal.logical.plans.CachedProperties
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.Selection.LabelAndRelTypeInfo
 import org.neo4j.cypher.internal.logical.plans.ordering.ProvidedOrder
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
@@ -43,6 +45,7 @@ object PlanningAttributes {
   class ProvidedOrders extends Attribute[LogicalPlan, ProvidedOrder]
   class LeveragedOrders extends PartialAttribute[LogicalPlan, Boolean](false)
   class LabelAndRelTypeInfos extends PartialAttribute[LogicalPlan, Option[LabelAndRelTypeInfo]](None)
+  class CachedPropertiesPerPlan extends PartialAttribute[LogicalPlan, CachedProperties](CachedProperties.empty)
 
   def newAttributes: PlanningAttributes = PlanningAttributes(
     new Solveds,
@@ -50,12 +53,13 @@ object PlanningAttributes {
     new EffectiveCardinalities,
     new ProvidedOrders,
     new LeveragedOrders,
-    new LabelAndRelTypeInfos
+    new LabelAndRelTypeInfos,
+    new CachedPropertiesPerPlan
   )
 }
 
 /**
- * 
+ *
  * @param solveds the planner query that each plan solves.
  * @param cardinalities cardinality estimation for each plan.
  * @param effectiveCardinalities effective cardinality estimation (taking LIMIT into account) for each plan.
@@ -70,7 +74,8 @@ case class PlanningAttributes(
   effectiveCardinalities: EffectiveCardinalities,
   providedOrders: ProvidedOrders,
   leveragedOrders: LeveragedOrders,
-  labelAndRelTypeInfos: LabelAndRelTypeInfos
+  labelAndRelTypeInfos: LabelAndRelTypeInfos,
+  cachedPropertiesPerPlan: CachedPropertiesPerPlan
 ) {
   private val attributes = productIterator.asInstanceOf[Iterator[Attribute[LogicalPlan, _]]].toSeq
 
@@ -84,7 +89,8 @@ case class PlanningAttributes(
       effectiveCardinalities.clone[EffectiveCardinalities],
       providedOrders.clone[ProvidedOrders],
       leveragedOrders.clone[LeveragedOrders],
-      labelAndRelTypeInfos.clone[LabelAndRelTypeInfos]
+      labelAndRelTypeInfos.clone[LabelAndRelTypeInfos],
+      cachedPropertiesPerPlan.clone[CachedPropertiesPerPlan]
     )
 
   def hasEqualSizeAttributes: Boolean = {
@@ -92,9 +98,13 @@ case class PlanningAttributes(
     fullAttributes.tail.forall(_.size == fullAttributes.head.size)
   }
 
-  def cacheKey: PlanningAttributesCacheKey = {
-    PlanningAttributesCacheKey(cardinalities, effectiveCardinalities, providedOrders, leveragedOrders)
-  }
+  def cacheKey: PlanningAttributesCacheKey =
+    PlanningAttributesCacheKey(
+      cardinalities,
+      effectiveCardinalities,
+      providedOrders,
+      leveragedOrders
+    )
 }
 
 /**

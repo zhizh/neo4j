@@ -1448,6 +1448,21 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
                     "internal.dbms.seed_with_metadata_timeout", DURATION, Duration.ofSeconds(60))
             .build();
 
+    public enum RemoteBatchPropertiesImplementation {
+        PLANNER,
+        REWRITER,
+        SKIP_REMOTE_BATCHING
+    }
+
+    @Internal
+    @Description("Choose the remote batch properties implementation")
+    public static final Setting<RemoteBatchPropertiesImplementation> cypher_remote_batch_properties_implementation =
+            newBuilder(
+                            "internal.cypher.remote_batch_properties_implementation",
+                            ofEnum(RemoteBatchPropertiesImplementation.class),
+                            RemoteBatchPropertiesImplementation.REWRITER)
+                    .build();
+
     @Internal
     @Description("Allow duplicated setting declarations when strict validation is enabled.")
     public static final Setting<Boolean> strict_config_validation_allow_duplicates = newBuilder(

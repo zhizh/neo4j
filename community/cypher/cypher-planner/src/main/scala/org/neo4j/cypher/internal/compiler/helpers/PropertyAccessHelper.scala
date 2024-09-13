@@ -36,6 +36,20 @@ object PropertyAccessHelper {
 
   case class PropertyAccess(variable: LogicalVariable, propertyName: String)
 
+  case class ContextualPropertyAccess(
+    queryGraph: Set[PropertyAccess],
+    horizon: Set[PropertyAccess],
+    interestingOrder: Set[PropertyAccess]
+  ) {
+    def allPropertyAccesses: Set[PropertyAccess] = queryGraph ++ horizon ++ interestingOrder
+  }
+
+  object ContextualPropertyAccess {
+
+    def empty: ContextualPropertyAccess =
+      ContextualPropertyAccess(Set.empty, Set.empty, Set.empty)
+  }
+
   /*
    * Find all direct property accesses in the head of this planner query. Used when selecting between index plans.
    */
@@ -46,6 +60,20 @@ object PropertyAccessHelper {
       query.interestingOrder
     )
 
+    propertyAccessLocations.folder.treeFold(Set[PropertyAccess]()) {
+      case Property(v: Variable, PropertyKeyName(propName)) => set =>
+          SkipChildren(set + PropertyAccess(v, propName))
+    }
+  }
+
+  def findLocalPropertyAccessesWithContext(query: SinglePlannerQuery): ContextualPropertyAccess =
+    ContextualPropertyAccess(
+      queryGraph = findPropertyAccesses(Seq(query.queryGraph)),
+      horizon = findPropertyAccesses(Seq(query.horizon)),
+      interestingOrder = findPropertyAccesses(Seq(query.interestingOrder))
+    )
+
+  def findPropertyAccesses(propertyAccessLocations: Seq[Any]): Set[PropertyAccess] = {
     propertyAccessLocations.folder.treeFold(Set[PropertyAccess]()) {
       case Property(v: Variable, PropertyKeyName(propName)) => set =>
           SkipChildren(set + PropertyAccess(v, propName))

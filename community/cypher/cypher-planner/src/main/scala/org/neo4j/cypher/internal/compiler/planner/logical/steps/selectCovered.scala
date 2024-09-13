@@ -19,7 +19,9 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps
 
+import org.neo4j.cypher.internal.compiler.planner.logical.CachePropertiesRewritableExpressions
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
+import org.neo4j.cypher.internal.compiler.planner.logical.RemoteBatchingResult
 import org.neo4j.cypher.internal.compiler.planner.logical.ordering.InterestingOrderConfig
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.ir.QueryGraph
@@ -39,12 +41,24 @@ case object selectCovered extends SelectionCandidateGenerator {
       unsolvedPredicates.filterNot(_.folder(context.staticComponents.cancellationChecker).treeExists {
         case _: IRExpression => true
       })
-
     if (unsolvedScalarPredicates.isEmpty) {
       Iterator.empty
     } else {
-      val plan =
-        context.staticComponents.logicalPlanProducer.planSelection(input, unsolvedScalarPredicates.toVector, context)
+      val RemoteBatchingResult(CachePropertiesRewritableExpressions(rewrittenPredicates, _), planWithProperties) =
+        context.settings.remoteBatchPropertiesStrategy.planBatchPropertiesForSelections(
+          queryGraph,
+          input,
+          context,
+          unsolvedScalarPredicates
+        )
+
+      val plan = context.staticComponents.logicalPlanProducer.planSelectionWithSolvedPredicates(
+        planWithProperties,
+        rewrittenPredicates.toVector,
+        unsolvedScalarPredicates.toVector,
+        context
+      )
+
       Iterator(SelectionCandidate(plan, unsolvedScalarPredicates))
     }
   }

@@ -30,6 +30,7 @@ import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.Relationsh
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.ir.PatternRelationship
+import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.QueryExpression
 import org.neo4j.cypher.internal.logical.plans.RangeQueryExpression
@@ -40,19 +41,27 @@ object RelationshipIndexSeekPlanProvider extends RelationshipIndexPlanProvider {
 
   override def createPlans(
     indexMatches: Set[RelationshipIndexMatch],
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     restrictions: LeafPlanRestrictions,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = for {
     indexMatch <- indexMatches
     if isAllowedByRestrictions(indexMatch.propertyPredicates, restrictions)
-    plan <- doCreatePlans(indexMatch, hints, argumentIds, context)
+    plan <- doCreatePlans(indexMatch, queryGraph, context)
   } yield plan
 
-  private def predicateSetToSolve(indexMatch: RelationshipIndexMatch): Option[PredicateSet] = {
+  private def predicateSetToSolve(
+    indexMatch: RelationshipIndexMatch,
+    context: LogicalPlanningContext,
+    queryGraph: QueryGraph
+  ): Option[PredicateSet] = {
     val predicateSet =
-      indexMatch.predicateSet(predicatesForIndexSeek(indexMatch.propertyPredicates), exactPredicatesCanGetValue = true)
+      indexMatch.predicateSet(
+        predicatesForIndexSeek(indexMatch.propertyPredicates),
+        exactPredicatesCanGetValue = true,
+        context,
+        queryGraph
+      )
     if (predicateSet.propertyPredicates.forall(_.isExists))
       None
     else
@@ -61,12 +70,11 @@ object RelationshipIndexSeekPlanProvider extends RelationshipIndexPlanProvider {
 
   private def doCreatePlans(
     indexMatch: RelationshipIndexMatch,
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = {
-    val predicateSet = predicateSetToSolve(indexMatch)
-    predicateSet.map(constructPlan(_, indexMatch, hints, argumentIds, context)).toSet
+    val predicateSet = predicateSetToSolve(indexMatch, context, queryGraph)
+    predicateSet.map(constructPlan(_, indexMatch, queryGraph.hints, queryGraph.argumentIds, context)).toSet
   }
 
   private def constructPlan(

@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps.index
 
-import org.neo4j.cypher.internal.ast.Hint
 import org.neo4j.cypher.internal.compiler.planner.logical.LeafPlanRestrictions
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.RelationshipLeafPlanner.planHiddenSelectionAndRelationshipLeafPlan
@@ -32,6 +31,7 @@ import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.RelationshipTypeToken
 import org.neo4j.cypher.internal.ir.PatternRelationship
+import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.logical.plans.IndexOrder
 import org.neo4j.cypher.internal.logical.plans.IndexedProperty
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
@@ -54,8 +54,7 @@ object RelationshipIndexScanPlanProvider extends RelationshipIndexPlanProvider {
 
   override def createPlans(
     indexMatches: Set[RelationshipIndexMatch],
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     restrictions: LeafPlanRestrictions,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = {
@@ -63,7 +62,7 @@ object RelationshipIndexScanPlanProvider extends RelationshipIndexPlanProvider {
     val solutions = for {
       indexMatch <- indexMatches
       if isAllowedByRestrictions(indexMatch.variable, restrictions)
-    } yield createSolution(indexMatch, hints, argumentIds, context)
+    } yield createSolution(indexMatch, queryGraph, context)
 
     def provideRelationshipLeafPlan(solution: Solution[RelationshipIndexScanParameters])(
       patternForLeafPlan: PatternRelationship,
@@ -79,7 +78,7 @@ object RelationshipIndexScanPlanProvider extends RelationshipIndexPlanProvider {
         solvedPredicates = solution.solvedPredicates,
         solvedHint = solution.solvedHint,
         hiddenSelections = hiddenSelections,
-        argumentIds = argumentIds,
+        argumentIds = queryGraph.argumentIds,
         providedOrder = solution.providedOrder,
         indexOrder = solution.indexScanParameters.indexOrder,
         context = context,
@@ -89,7 +88,7 @@ object RelationshipIndexScanPlanProvider extends RelationshipIndexPlanProvider {
 
     mergeSolutions(solutions) map { solution =>
       planHiddenSelectionAndRelationshipLeafPlan(
-        argumentIds,
+        queryGraph.argumentIds,
         solution.indexScanParameters.patternRelationship,
         context,
         provideRelationshipLeafPlan(solution) _
@@ -99,18 +98,19 @@ object RelationshipIndexScanPlanProvider extends RelationshipIndexPlanProvider {
 
   private def createSolution(
     indexMatch: RelationshipIndexMatch,
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     context: LogicalPlanningContext
   ): Solution[RelationshipIndexScanParameters] = {
     val predicateSet =
       indexMatch.predicateSet(
         predicatesForIndexScan(indexMatch.indexDescriptor.indexType, indexMatch.propertyPredicates),
-        exactPredicatesCanGetValue = false
+        exactPredicatesCanGetValue = false,
+        context,
+        queryGraph
       )
 
     val hint = predicateSet
-      .fulfilledHints(hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
+      .fulfilledHints(queryGraph.hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
       .headOption
 
     Solution(
@@ -119,7 +119,7 @@ object RelationshipIndexScanPlanProvider extends RelationshipIndexPlanProvider {
         token = indexMatch.relationshipTypeToken,
         patternRelationship = indexMatch.patternRelationship,
         properties = predicateSet.indexedProperties(context),
-        argumentIds = argumentIds,
+        argumentIds = queryGraph.argumentIds,
         indexOrder = indexMatch.indexOrder,
         supportPartitionedScan =
           indexMatch.indexDescriptor.maybeKernelIndexCapability.exists(_.supportPartitionedScan(allEntries()))

@@ -46,7 +46,7 @@ import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.PropertyKeyToken
 import org.neo4j.cypher.internal.expressions.SymbolicName
 import org.neo4j.cypher.internal.frontend.helpers.SeqCombiner
-import org.neo4j.cypher.internal.logical.plans.CanGetValue
+import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.logical.plans.CompositeQueryExpression
 import org.neo4j.cypher.internal.logical.plans.ExistenceQueryExpression
 import org.neo4j.cypher.internal.logical.plans.GetValueFromIndexBehavior
@@ -323,19 +323,6 @@ object EntityIndexLeafPlanner {
     }
   }
 
-  private[index] def getValueBehaviors(
-    indexDescriptor: IndexDescriptor,
-    propertyPredicates: Seq[IndexCompatiblePredicate],
-    exactPredicatesCanGetValue: Boolean
-  ): Seq[GetValueFromIndexBehavior] = {
-    val propertyBehaviorFromIndex = indexDescriptor.valueCapability
-
-    propertyPredicates.map {
-      case predicate if predicate.predicateExactness.isExact && exactPredicatesCanGetValue => CanGetValue
-      case _                                                                               => propertyBehaviorFromIndex
-    }
-  }
-
   case class PredicatesForIndex(
     predicatesInOrder: Seq[IndexCompatiblePredicate],
     providedOrder: ProvidedOrder,
@@ -357,7 +344,13 @@ object EntityIndexLeafPlanner {
 trait IndexMatch {
   def propertyPredicates: Seq[IndexCompatiblePredicate]
   def indexDescriptor: IndexDescriptor
-  def predicateSet(newPredicates: Seq[IndexCompatiblePredicate], exactPredicatesCanGetValue: Boolean): PredicateSet
+
+  def predicateSet(
+    newPredicates: Seq[IndexCompatiblePredicate],
+    exactPredicatesCanGetValue: Boolean,
+    context: LogicalPlanningContext,
+    queryGraph: QueryGraph
+  ): PredicateSet
   def variable: LogicalVariable
 }
 

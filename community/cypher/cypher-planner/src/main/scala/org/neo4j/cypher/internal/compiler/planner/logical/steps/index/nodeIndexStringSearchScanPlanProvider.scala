@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps.index
 
-import org.neo4j.cypher.internal.ast.Hint
 import org.neo4j.cypher.internal.compiler.planner.logical.LeafPlanRestrictions
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexLeafPlanner.IndexCompatiblePredicate
@@ -27,15 +26,14 @@ import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.NodeIndexL
 import org.neo4j.cypher.internal.expressions.Contains
 import org.neo4j.cypher.internal.expressions.EndsWith
 import org.neo4j.cypher.internal.expressions.Expression
-import org.neo4j.cypher.internal.expressions.LogicalVariable
+import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 
 object nodeIndexStringSearchScanPlanProvider extends NodeIndexPlanProvider {
 
   override def createPlans(
     indexMatches: Set[NodeIndexMatch],
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     restrictions: LeafPlanRestrictions,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = for {
@@ -46,20 +44,19 @@ object nodeIndexStringSearchScanPlanProvider extends NodeIndexPlanProvider {
       indexMatch.propertyPredicates,
       restrictions
     ) && indexMatch.indexDescriptor.properties.size == 1
-    plan <- doCreatePlans(indexMatch, hints, argumentIds, context)
+    plan <- doCreatePlans(indexMatch, queryGraph, context)
   } yield plan
 
   private def doCreatePlans(
     indexMatch: NodeIndexMatch,
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = {
     def indexableExprWithSearchMode(indexPredicate: IndexCompatiblePredicate): Option[(Expression, StringSearchMode)] =
       indexPredicate.predicate match {
-        case Contains(_, valueExpr) if valueExpr.dependencies.subsetOf(argumentIds) =>
+        case Contains(_, valueExpr) if valueExpr.dependencies.subsetOf(queryGraph.argumentIds) =>
           Some((valueExpr, ContainsSearchMode))
-        case EndsWith(_, valueExpr) if valueExpr.dependencies.subsetOf(argumentIds) =>
+        case EndsWith(_, valueExpr) if valueExpr.dependencies.subsetOf(queryGraph.argumentIds) =>
           Some((valueExpr, EndsWithSearchMode))
         case _ => None
       }
@@ -67,10 +64,11 @@ object nodeIndexStringSearchScanPlanProvider extends NodeIndexPlanProvider {
     indexMatch.propertyPredicates.flatMap { indexPredicate =>
       indexableExprWithSearchMode(indexPredicate).map {
         case (valueExpr: Expression, stringSearchMode: StringSearchMode) =>
-          val singlePredicateSet = indexMatch.predicateSet(Seq(indexPredicate), exactPredicatesCanGetValue = false)
+          val singlePredicateSet =
+            indexMatch.predicateSet(Seq(indexPredicate), exactPredicatesCanGetValue = false, context, queryGraph)
 
           val hint = singlePredicateSet
-            .fulfilledHints(hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
+            .fulfilledHints(queryGraph.hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
             .headOption
 
           context.staticComponents.logicalPlanProducer.planNodeIndexStringSearchScan(
@@ -81,7 +79,7 @@ object nodeIndexStringSearchScanPlanProvider extends NodeIndexPlanProvider {
             solvedPredicates = singlePredicateSet.allSolvedPredicates,
             solvedHint = hint,
             valueExpr = valueExpr,
-            argumentIds = argumentIds,
+            argumentIds = queryGraph.argumentIds,
             providedOrder = indexMatch.providedOrder,
             indexOrder = indexMatch.indexOrder,
             context = context,

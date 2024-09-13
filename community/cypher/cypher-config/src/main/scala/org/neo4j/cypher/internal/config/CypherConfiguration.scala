@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.config
 import org.neo4j.configuration.Config
 import org.neo4j.configuration.GraphDatabaseInternalSettings
 import org.neo4j.configuration.GraphDatabaseInternalSettings.ExtractLiteral
+import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchPropertiesImplementation
 import org.neo4j.configuration.GraphDatabaseSettings
 import org.neo4j.cypher.internal.config.CypherConfiguration.statsDivergenceFromConfig
 import org.neo4j.cypher.internal.options.CypherEagerAnalyzerOption
@@ -179,6 +180,9 @@ class CypherConfiguration private (val config: Config) {
 
   val cachePropertiesForEntities: Boolean =
     config.get(GraphDatabaseInternalSettings.planning_cache_properties_for_entities_enabled)
+
+  val remoteBatchPropertiesImplementation: RemoteBatchPropertiesImplementation =
+    config.get(GraphDatabaseInternalSettings.cypher_remote_batch_properties_implementation)
 
   val cachePropertiesForEntitiesWithFilter: Boolean =
     config.get(GraphDatabaseInternalSettings.push_predicates_into_remote_batch_properties)

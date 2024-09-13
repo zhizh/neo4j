@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical
 
+import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchPropertiesImplementation
 import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.compiler.helpers.PropertyAccessHelper.PropertyAccess
@@ -45,6 +46,7 @@ import org.neo4j.cypher.internal.ir.UnionQuery
 import org.neo4j.cypher.internal.ir.ast.IRExpression
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.options.CypherEagerAnalyzerOption
+import org.neo4j.cypher.internal.planner.spi.DatabaseMode.SHARDED
 import org.neo4j.cypher.internal.planner.spi.GraphStatistics
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
@@ -71,7 +73,9 @@ case object QueryPlanner
 
     from.copy(
       maybeLogicalPlan = Some(logicalPlan),
-      maybeSemanticTable = Some(logicalPlanningContext.semanticTable)
+      maybeSemanticTable = Some(logicalPlanningContext.semanticTable),
+      maybeRemoteBatchPropertiesImplementation =
+        Some(remoteBatchPropertiesImplementation(from.query, context))
     )
   }
 
@@ -110,11 +114,21 @@ case object QueryPlanner
       eagerAnalyzer = from.maybeEagerAnalyzerOption.getOrElse(context.eagerAnalyzer),
       statefulShortestPlanningRewriteQuantifiersAbove =
         context.config.statefulShortestPlanningRewriteQuantifiersAbove(),
-      planVarExpandInto = context.planVarExpandInto
+      planVarExpandInto = context.planVarExpandInto,
+      remoteBatchPropertiesStrategy = RemoteBatchingStrategy.fromConfig(from.query, context)
     )
 
     LogicalPlanningContext(staticComponents, settings)
   }
+
+  private def remoteBatchPropertiesImplementation(
+    query: PlannerQuery,
+    context: PlannerContext
+  ): RemoteBatchPropertiesImplementation =
+    if (query.readOnly && context.planContext.databaseMode == SHARDED)
+      context.config.remoteBatchPropertiesImplementation()
+    else
+      RemoteBatchPropertiesImplementation.SKIP_REMOTE_BATCHING
 
   private def getMetricsFrom(context: PlannerContext) =
     if (context.debugOptions.inverseCostEnabled) {

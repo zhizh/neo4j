@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.compiler.phases
 
+import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchPropertiesImplementation
 import org.neo4j.cypher.internal.ast.Query
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
@@ -58,7 +59,8 @@ case class LogicalPlanState(
   hasLoadCSV: Boolean = false,
   maybeReturnColumns: Option[Seq[String]] = None,
   maybeObfuscationMetadata: Option[ObfuscationMetadata] = None,
-  maybeEagerAnalyzerOption: Option[CypherEagerAnalyzerOption] = None
+  maybeEagerAnalyzerOption: Option[CypherEagerAnalyzerOption] = None,
+  maybeRemoteBatchPropertiesImplementation: Option[RemoteBatchPropertiesImplementation] = None
 ) extends BaseState {
 
   def query: PlannerQuery = maybeQuery getOrElse fail("The planner query")
@@ -98,6 +100,9 @@ case class LogicalPlanState(
 
   override def withProcedureSignatureVersion(generation: Option[Long]): LogicalPlanState =
     copy(maybeProcedureSignatureVersion = generation)
+
+  def withRemoteBatchPropertiesImplementation(remoteBatchPropertiesImplementation: RemoteBatchPropertiesImplementation)
+    : LogicalPlanState = copy(maybeRemoteBatchPropertiesImplementation = Some(remoteBatchPropertiesImplementation))
 }
 
 object LogicalPlanState {

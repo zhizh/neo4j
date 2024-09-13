@@ -25,6 +25,7 @@ import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.compiler.ExecutionModel
 import org.neo4j.cypher.internal.compiler.UpdateStrategy
 import org.neo4j.cypher.internal.compiler.defaultUpdateStrategy
+import org.neo4j.cypher.internal.compiler.helpers.PropertyAccessHelper.ContextualPropertyAccess
 import org.neo4j.cypher.internal.compiler.helpers.PropertyAccessHelper.PropertyAccess
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext.PlannerState
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext.Settings
@@ -136,7 +137,8 @@ object LogicalPlanningContext {
     eagerAnalyzer: CypherEagerAnalyzerOption = CypherEagerAnalyzerOption.default,
     statefulShortestPlanningRewriteQuantifiersAbove: Int =
       GraphDatabaseInternalSettings.stateful_shortest_planning_rewrite_quantifiers_above.defaultValue(),
-    planVarExpandInto: CypherPlanVarExpandInto = CypherPlanVarExpandInto.default
+    planVarExpandInto: CypherPlanVarExpandInto = CypherPlanVarExpandInto.default,
+    remoteBatchPropertiesStrategy: RemoteBatchingStrategy = RemoteBatchingStrategy.defaultValue()
   ) {
 
     private def cacheKey(): Seq[Any] = this match {
@@ -156,7 +158,8 @@ object LogicalPlanningContext {
           planningSubtractionScansEnabled: Boolean,
           eagerAnalyzer: CypherEagerAnalyzerOption,
           statefulShortestPlanningRewriteQuantifiersAbove: Int,
-          planVarExpandInto: CypherPlanVarExpandInto
+          planVarExpandInto: CypherPlanVarExpandInto,
+          remoteBatchPropertiesStrategy: RemoteBatchingStrategy
         ) =>
         val builder = Seq.newBuilder[Any]
 
@@ -195,6 +198,9 @@ object LogicalPlanningContext {
         if (GraphDatabaseInternalSettings.plan_var_expand_into.dynamic())
           builder.addOne(planVarExpandInto)
 
+        if (GraphDatabaseInternalSettings.cypher_remote_batch_properties_implementation.dynamic())
+          builder.addOne(remoteBatchPropertiesStrategy)
+
         builder.result()
     }
 
@@ -229,6 +235,7 @@ object LogicalPlanningContext {
     indexCompatiblePredicatesProviderContext: IndexCompatiblePredicatesProviderContext =
       IndexCompatiblePredicatesProviderContext.default,
     accessedProperties: Set[PropertyAccess] = Set.empty,
+    contextualPropertyAccess: ContextualPropertyAccess = ContextualPropertyAccess.empty,
     config: QueryPlannerConfiguration = QueryPlannerConfiguration.default
   ) {
 
@@ -248,6 +255,9 @@ object LogicalPlanningContext {
 
     def withFusedLabelInfo(newLabelInfo: LabelInfo): PlannerState =
       copy(input = input.withFusedLabelInfo(newLabelInfo))
+
+    def withContextualPropertyAccess(contextualPropertyAccess: ContextualPropertyAccess): PlannerState =
+      copy(contextualPropertyAccess = contextualPropertyAccess)
 
     /**
      * When planning tails, the outer plan gives contextual information about the plan of the so-far solved

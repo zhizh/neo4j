@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps
 
-import org.neo4j.cypher.internal.ast.Hint
 import org.neo4j.cypher.internal.ast.UsingIndexHint
 import org.neo4j.cypher.internal.compiler.planner.logical.LeafPlanRestrictions
 import org.neo4j.cypher.internal.compiler.planner.logical.LeafPlanner
@@ -94,8 +93,7 @@ object relationshipSingleUniqueIndexSeekPlanProvider extends RelationshipIndexPl
 
   override def createPlans(
     indexMatches: Set[RelationshipIndexMatch],
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     restrictions: LeafPlanRestrictions,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] =
@@ -104,10 +102,10 @@ object relationshipSingleUniqueIndexSeekPlanProvider extends RelationshipIndexPl
       if isAllowedByRestrictions(indexMatch.propertyPredicates, restrictions) && indexMatch.indexDescriptor.isUnique
       propertyPredicates = predicatesForIndexSeek(indexMatch.propertyPredicates)
       queryExpression <- propertyPredicatesQueryExpression(propertyPredicates)
-      predicateSet = indexMatch.predicateSet(propertyPredicates, exactPredicatesCanGetValue = true)
+      predicateSet = indexMatch.predicateSet(propertyPredicates, exactPredicatesCanGetValue = true, context, queryGraph)
       indexType = indexMatch.indexDescriptor.indexType
     } yield createPlan(
-      argumentIds = argumentIds,
+      argumentIds = queryGraph.argumentIds,
       patternRelationship = indexMatch.patternRelationship,
       variable = indexMatch.variable,
       relationshipTypeToken = indexMatch.relationshipTypeToken,
@@ -115,7 +113,7 @@ object relationshipSingleUniqueIndexSeekPlanProvider extends RelationshipIndexPl
       queryExpression = queryExpression,
       indexOrder = indexMatch.indexOrder,
       solvedPredicates = predicateSet.allSolvedPredicates,
-      solvedHint = predicateSet.fulfilledHints(hints, indexType, planIsScan = false).headOption,
+      solvedHint = predicateSet.fulfilledHints(queryGraph.hints, indexType, planIsScan = false).headOption,
       providedOrder = indexMatch.providedOrder,
       indexType = indexType,
       context = context

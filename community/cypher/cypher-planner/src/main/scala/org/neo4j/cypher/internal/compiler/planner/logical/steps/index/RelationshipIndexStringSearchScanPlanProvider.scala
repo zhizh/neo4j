@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps.index
 
-import org.neo4j.cypher.internal.ast.Hint
 import org.neo4j.cypher.internal.compiler.planner.logical.LeafPlanRestrictions
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.RelationshipLeafPlanner.planHiddenSelectionAndRelationshipLeafPlan
@@ -27,8 +26,8 @@ import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.Relationsh
 import org.neo4j.cypher.internal.expressions.Contains
 import org.neo4j.cypher.internal.expressions.EndsWith
 import org.neo4j.cypher.internal.expressions.Expression
-import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.ir.PatternRelationship
+import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.exceptions.InternalException
 
@@ -36,8 +35,7 @@ object RelationshipIndexStringSearchScanPlanProvider extends RelationshipIndexPl
 
   override def createPlans(
     indexMatches: Set[RelationshipIndexMatch],
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     restrictions: LeafPlanRestrictions,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = for {
@@ -48,13 +46,12 @@ object RelationshipIndexStringSearchScanPlanProvider extends RelationshipIndexPl
       indexMatch.propertyPredicates,
       restrictions
     ) && indexMatch.indexDescriptor.properties.size == 1
-    plan <- doCreatePlans(indexMatch, hints, argumentIds, context)
+    plan <- doCreatePlans(indexMatch, queryGraph, context)
   } yield plan
 
   private def doCreatePlans(
     indexMatch: RelationshipIndexMatch,
-    hints: Set[Hint],
-    argumentIds: Set[LogicalVariable],
+    queryGraph: QueryGraph,
     context: LogicalPlanningContext
   ): Set[LogicalPlan] = {
     indexMatch.propertyPredicates.flatMap { indexPredicate =>
@@ -67,7 +64,8 @@ object RelationshipIndexStringSearchScanPlanProvider extends RelationshipIndexPl
               (endsWith.rhs, EndsWithSearchMode)
             case x => throw new InternalException(s"Expected Contains or EndsWith but was ${x.getClass}")
           }
-          val singlePredicateSet = indexMatch.predicateSet(Seq(indexPredicate), exactPredicatesCanGetValue = false)
+          val singlePredicateSet =
+            indexMatch.predicateSet(Seq(indexPredicate), exactPredicatesCanGetValue = false, context, queryGraph)
 
           def provideRelationshipLeafPlan(
             patternForLeafPlan: PatternRelationship,
@@ -76,7 +74,7 @@ object RelationshipIndexStringSearchScanPlanProvider extends RelationshipIndexPl
           ): LogicalPlan = {
 
             val hint = singlePredicateSet
-              .fulfilledHints(hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
+              .fulfilledHints(queryGraph.hints, indexMatch.indexDescriptor.indexType, planIsScan = true)
               .headOption
 
             context.staticComponents.logicalPlanProducer.planRelationshipIndexStringSearchScan(
@@ -90,7 +88,7 @@ object RelationshipIndexStringSearchScanPlanProvider extends RelationshipIndexPl
               solvedHint = hint,
               hiddenSelections = hiddenSelections,
               valueExpr = valueExpr,
-              argumentIds = argumentIds,
+              argumentIds = queryGraph.argumentIds,
               providedOrder = indexMatch.providedOrder,
               indexOrder = indexMatch.indexOrder,
               context = context,
@@ -99,7 +97,7 @@ object RelationshipIndexStringSearchScanPlanProvider extends RelationshipIndexPl
           }
 
           Some(planHiddenSelectionAndRelationshipLeafPlan(
-            argumentIds,
+            queryGraph.argumentIds,
             indexMatch.patternRelationship,
             context,
             provideRelationshipLeafPlan
