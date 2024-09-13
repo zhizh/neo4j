@@ -26,7 +26,7 @@ import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.Parameter
 import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlMessageParams
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.internal.kernel.api.Procedures
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException
@@ -58,7 +58,7 @@ class AliasMapSettingsEvaluator(procedures: Procedures) {
       case e: EvaluationException =>
         val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N89)
           .withClassification(ErrorClassification.CLIENT_ERROR)
-          .withParam(GqlMessageParams.cause, e.getMessage)
+          .withParam(GqlParams.StringParam.cause, e.getMessage)
           .build()
         throw new InvalidArgumentsException(gql, s"Failed evaluating the given driver settings.", e)
     }

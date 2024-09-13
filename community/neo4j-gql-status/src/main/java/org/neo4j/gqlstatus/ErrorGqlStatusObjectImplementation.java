@@ -27,12 +27,12 @@ import java.util.Optional;
 public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImplementation
         implements ErrorGqlStatusObject {
     private final Optional<ErrorGqlStatusObject> cause;
-    private final Map<GqlMessageParams, Object> paramMap;
+    private final Map<GqlParams.GqlParam, Object> paramMap;
     private final GqlStatusInfoCodes gqlStatusInfoCode;
 
     private ErrorGqlStatusObjectImplementation(
             GqlStatusInfoCodes gqlStatusInfoCode,
-            Map<GqlMessageParams, Object> parameters,
+            Map<GqlParams.GqlParam, Object> parameters,
             ErrorGqlStatusObject cause,
             DiagnosticRecord diagnosticRecord) {
         super(gqlStatusInfoCode, diagnosticRecord, parameters);
@@ -87,7 +87,7 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
 
     public static class Builder {
         private ErrorGqlStatusObject cause = null;
-        private final Map<GqlMessageParams, Object> paramMap = new HashMap<>();
+        private final Map<GqlParams.GqlParam, Object> paramMap = new HashMap<>();
         private final GqlStatusInfoCodes gqlStatusInfoCode;
         private final DiagnosticRecord.Builder diagnosticRecordBuilder = DiagnosticRecord.from();
 
@@ -95,23 +95,23 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
             this.gqlStatusInfoCode = gqlStatusInfo;
         }
 
-        public Builder withParam(GqlMessageParams key, String value) {
-            paramMap.put(key, value);
+        public Builder withParam(GqlParams.StringParam param, String value) {
+            this.paramMap.put(param, value);
             return this;
         }
 
-        public Builder withParam(GqlMessageParams key, Integer value) {
-            paramMap.put(key, value);
+        public Builder withParam(GqlParams.BooleanParam param, boolean value) {
+            this.paramMap.put(param, value);
             return this;
         }
 
-        public Builder withParam(GqlMessageParams key, List<String> value) {
-            paramMap.put(key, value);
+        public Builder withParam(GqlParams.NumberParam param, Number value) {
+            this.paramMap.put(param, value);
             return this;
         }
 
-        public Builder withParam(GqlMessageParams key, Boolean value) {
-            paramMap.put(key, value);
+        public Builder withParam(GqlParams.ListParam param, List<?> value) {
+            this.paramMap.put(param, value);
             return this;
         }
 

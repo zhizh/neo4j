@@ -36,7 +36,7 @@ class GqlStatusTest {
         paramList.add("param2");
         paramList.add("param3");
         String message = statusCode.getMessage(paramList.toArray());
-        assertEquals("Execution of the procedure `param1` failed due to `param2`: `param3`", message);
+        assertEquals("Execution of the procedure param1() failed due to param2: param3", message);
     }
 
     @Test

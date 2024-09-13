@@ -27,13 +27,13 @@ class ErrorGqlStatusObjectImplementationTest {
     @Test
     void shouldHandleErrorWithDuplicatedParameter() {
         var errorBuilder = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N02);
-        errorBuilder.withParam(GqlMessageParams.dbName, "my_db"); // this parameter occurs twice in the message
-        errorBuilder.withParam(GqlMessageParams.routingEnabledSetting, "my_setting");
+        errorBuilder.withParam(GqlParams.StringParam.db, "my_db"); // this parameter occurs twice in the message
+        errorBuilder.withParam(GqlParams.StringParam.cfgSetting, "my_setting");
         var error = errorBuilder.build();
 
         assertThat(error.statusDescription())
                 .isEqualTo(
-                        "error: connection exception - unable to route to database. Unable to connect to database `my_db`. Server-side routing is disabled. Either connect to `my_db` directly, or enable server-side routing by setting `my_setting=true`.");
+                        "error: connection exception - unable to route to database. Unable to connect to database `my_db`. Server-side routing is disabled. Either connect to `my_db` directly, or enable server-side routing by setting 'my_setting=true'.");
     }
 
     @Test
@@ -43,29 +43,29 @@ class ErrorGqlStatusObjectImplementationTest {
 
         assertThat(error.statusDescription())
                 .isEqualTo(
-                        "error: procedure exception - procedure execution error. Execution of the procedure `$proc` failed.");
+                        "error: procedure exception - procedure execution error. Execution of the procedure $proc() failed.");
     }
 
     @Test
     void shouldNotFailOnErrorWithTooManyParameters() {
         var errorBuilder = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02);
-        errorBuilder.withParam(GqlMessageParams.key, "bar");
-        errorBuilder.withParam(GqlMessageParams.proc, "my_proc");
+        errorBuilder.withParam(GqlParams.StringParam.propKey, "bar");
+        errorBuilder.withParam(GqlParams.StringParam.proc, "my_proc");
         var error = errorBuilder.build();
 
         assertThat(error.statusDescription())
                 .isEqualTo(
-                        "error: procedure exception - procedure execution error. Execution of the procedure `my_proc` failed.");
+                        "error: procedure exception - procedure execution error. Execution of the procedure my_proc() failed.");
     }
 
     @Test
     void shouldNotFailOnErrorWithWrongParameter() {
         var errorBuilder = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02);
-        errorBuilder.withParam(GqlMessageParams.key, "bar");
+        errorBuilder.withParam(GqlParams.StringParam.propKey, "bar");
         var error = errorBuilder.build();
 
         assertThat(error.statusDescription())
                 .isEqualTo(
-                        "error: procedure exception - procedure execution error. Execution of the procedure `$proc` failed.");
+                        "error: procedure exception - procedure execution error. Execution of the procedure $proc() failed.");
     }
 }

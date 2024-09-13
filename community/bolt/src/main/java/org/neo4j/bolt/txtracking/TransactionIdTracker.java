@@ -30,7 +30,7 @@ import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.dbms.api.DatabaseNotFoundException;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
-import org.neo4j.gqlstatus.GqlMessageParams;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.database.AbstractDatabase;
 import org.neo4j.kernel.database.NamedDatabaseId;
@@ -204,9 +204,9 @@ public class TransactionIdTracker {
             AbstractDatabase db, long lastTransactionId, long oldestAcceptableTxId, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N13)
                 .withClassification(ErrorClassification.TRANSIENT_ERROR)
-                .withParam(GqlMessageParams.dbName, db.getNamedDatabaseId().name())
-                .withParam(GqlMessageParams.oldestAcceptableTxId, String.valueOf(oldestAcceptableTxId))
-                .withParam(GqlMessageParams.latestTransactionId, String.valueOf(lastTransactionId))
+                .withParam(GqlParams.StringParam.db, db.getNamedDatabaseId().name())
+                .withParam(GqlParams.StringParam.transactionId1, String.valueOf(oldestAcceptableTxId))
+                .withParam(GqlParams.StringParam.transactionId2, String.valueOf(lastTransactionId))
                 .build();
         return new TransactionIdTrackerException(
                 gql,

@@ -27,7 +27,7 @@ import java.util.OptionalInt;
 import org.apache.lucene.search.Query;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
-import org.neo4j.gqlstatus.GqlMessageParams;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.helpers.collection.BoundedIterable;
 import org.neo4j.internal.kernel.api.IndexQueryConstraints;
@@ -111,9 +111,9 @@ class VectorIndexReader extends AbstractLuceneIndexReader {
             if (dimensions.isPresent() && queryVector.length != dimensions.getAsInt()) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N65)
                         .withClassification(ErrorClassification.CLIENT_ERROR)
-                        .withParam(GqlMessageParams.indexName, indexName())
-                        .withParam(GqlMessageParams.indexDim, queryVector.length)
-                        .withParam(GqlMessageParams.vectorsDim, dimensions.getAsInt())
+                        .withParam(GqlParams.StringParam.idx, indexName())
+                        .withParam(GqlParams.NumberParam.dim1, queryVector.length)
+                        .withParam(GqlParams.NumberParam.dim2, dimensions.getAsInt())
                         .build();
                 throw new IndexNotApplicableKernelException(
                         gql,

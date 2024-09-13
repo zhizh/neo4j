@@ -80,7 +80,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N02.getStatusString,
-          "warn: feature deprecated without replacement. `oldProcNotReplaced` is deprecated and will be removed without a replacement.",
+          "warn: feature deprecated without replacement. oldProcNotReplaced is deprecated and will be removed without a replacement.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -100,7 +100,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `oldProc` is deprecated. It is replaced by `newProc`.",
+          "warn: feature deprecated with replacement. oldProc is deprecated. It is replaced by newProc.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -126,7 +126,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N03.getStatusString,
-          "warn: procedure field deprecated. `oldField` for procedure `changedProc` is deprecated.",
+          "warn: procedure field deprecated. The field `oldField` of procedure changedProc() is deprecated.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -201,7 +201,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       ),
       TestGqlStatusObject(
         STATUS_01N02.getStatusString,
-        "warn: feature deprecated without replacement. `org.example.com.oldFuncNotReplaced` is deprecated and will be removed without a replacement.",
+        "warn: feature deprecated without replacement. org.example.com.oldFuncNotReplaced is deprecated and will be removed without a replacement.",
         SeverityLevel.WARNING,
         NotificationClassification.DEPRECATION
       ),
@@ -241,7 +241,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N02.getStatusString,
-          "warn: feature deprecated without replacement. `org.example.com.oldFuncNotReplaced` is deprecated and will be removed without a replacement.",
+          "warn: feature deprecated without replacement. org.example.com.oldFuncNotReplaced is deprecated and will be removed without a replacement.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -266,7 +266,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `org.example.com.oldFunc` is deprecated. It is replaced by `org.example.com.newFunc`.",
+          "warn: feature deprecated with replacement. org.example.com.oldFunc is deprecated. It is replaced by org.example.com.newFunc.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -290,7 +290,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `org.example.com.oldAggFunc` is deprecated. It is replaced by `org.example.com.newAggFunc`.",
+          "warn: feature deprecated with replacement. org.example.com.oldAggFunc is deprecated. It is replaced by org.example.com.newAggFunc.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -334,25 +334,25 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `:A|:B|:C` is deprecated. It is replaced by `:A|B|C`.",
+          "warn: feature deprecated with replacement. :A|:B|:C is deprecated. It is replaced by :A|B|C.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
         TestGqlStatusObject(
           STATUS_01N51.getStatusString,
-          "warn: unknown relationship type. The relationship type `A` does not exist. Verify that the spelling is correct.",
+          "warn: relationship type does not exist. The relationship type `A` does not exist. Verify that the spelling is correct.",
           SeverityLevel.WARNING,
           NotificationClassification.UNRECOGNIZED
         ),
         TestGqlStatusObject(
           STATUS_01N51.getStatusString,
-          "warn: unknown relationship type. The relationship type `B` does not exist. Verify that the spelling is correct.",
+          "warn: relationship type does not exist. The relationship type `B` does not exist. Verify that the spelling is correct.",
           SeverityLevel.WARNING,
           NotificationClassification.UNRECOGNIZED
         ),
         TestGqlStatusObject(
           STATUS_01N51.getStatusString,
-          "warn: unknown relationship type. The relationship type `C` does not exist. Verify that the spelling is correct.",
+          "warn: relationship type does not exist. The relationship type `C` does not exist. Verify that the spelling is correct.",
           SeverityLevel.WARNING,
           NotificationClassification.UNRECOGNIZED
         ),
@@ -372,7 +372,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `SET g = r` is deprecated. It is replaced by `SET g = properties(r)`.",
+          "warn: feature deprecated with replacement. SET g = r is deprecated. It is replaced by SET g = properties(r).",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -387,7 +387,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `SET g = k` is deprecated. It is replaced by `SET g = properties(k)`.",
+          "warn: feature deprecated with replacement. SET g = k is deprecated. It is replaced by SET g = properties(k).",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -402,7 +402,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `SET g += r` is deprecated. It is replaced by `SET g += properties(r)`.",
+          "warn: feature deprecated with replacement. SET g += r is deprecated. It is replaced by SET g += properties(r).",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -417,7 +417,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `SET g += k` is deprecated. It is replaced by `SET g += properties(k)`.",
+          "warn: feature deprecated with replacement. SET g += k is deprecated. It is replaced by SET g += properties(k).",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -459,7 +459,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `allShortestPaths((a)-[r]->(b))` is deprecated. It is replaced by `allShortestPaths((a)-[r*1..1]->(b))`.",
+          "warn: feature deprecated with replacement. allShortestPaths((a)-[r]->(b)) is deprecated. It is replaced by allShortestPaths((a)-[r*1..1]->(b)).",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -479,13 +479,13 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `shortestPath((a)<-[r:TYPE]-(b))` is deprecated. It is replaced by `shortestPath((a)<-[r:TYPE*1..1]-(b))`.",
+          "warn: feature deprecated with replacement. shortestPath((a)<-[r:TYPE]-(b)) is deprecated. It is replaced by shortestPath((a)<-[r:TYPE*1..1]-(b)).",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
         TestGqlStatusObject(
           STATUS_01N51.getStatusString,
-          "warn: unknown relationship type. The relationship type `TYPE` does not exist. Verify that the spelling is correct.",
+          "warn: relationship type does not exist. The relationship type `TYPE` does not exist. Verify that the spelling is correct.",
           SeverityLevel.WARNING,
           NotificationClassification.UNRECOGNIZED
         ),
@@ -507,7 +507,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. `text-1.0` is deprecated. It is replaced by `text-2.0`.",
+          "warn: feature deprecated with replacement. text-1.0 is deprecated. It is replaced by text-2.0.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -658,7 +658,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N02.getStatusString,
-          "warn: feature deprecated without replacement. `id` is deprecated and will be removed without a replacement.",
+          "warn: feature deprecated without replacement. id is deprecated and will be removed without a replacement.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -679,7 +679,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N02.getStatusString,
-          "warn: feature deprecated without replacement. `connectComponentsPlanner` is deprecated and will be removed without a replacement.",
+          "warn: feature deprecated without replacement. connectComponentsPlanner is deprecated and will be removed without a replacement.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -901,7 +901,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
         ),
         TestGqlStatusObject(
           STATUS_01N60.getStatusString,
-          s"warn: parameter missing. The query plan cannot be cached and is not executable without `EXPLAIN` due to the undefined parameter(s) `$$a${unicode}bc`. Provide the parameter(s).",
+          s"warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$$$$a${unicode}bc`. Provide the parameter(s).",
           SeverityLevel.WARNING,
           NotificationClassification.GENERIC
         ),
@@ -1001,7 +1001,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       ),
       TestGqlStatusObject(
         STATUS_01N60.getStatusString,
-        "warn: parameter missing. The query plan cannot be cached and is not executable without `EXPLAIN` due to the undefined parameter(s) `$\u2e2fb\u206Ec`. Provide the parameter(s).",
+        "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$$\u2e2fb\u206Ec`. Provide the parameter(s).",
         SeverityLevel.WARNING,
         NotificationClassification.GENERIC
       ),
@@ -1083,7 +1083,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
         ),
         TestGqlStatusObject(
           STATUS_01N60.getStatusString,
-          "warn: parameter missing. The query plan cannot be cached and is not executable without `EXPLAIN` due to the undefined parameter(s) `$\u2e2fbc`. Provide the parameter(s).",
+          "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$$\u2e2fbc`. Provide the parameter(s).",
           SeverityLevel.WARNING,
           NotificationClassification.GENERIC
         ),

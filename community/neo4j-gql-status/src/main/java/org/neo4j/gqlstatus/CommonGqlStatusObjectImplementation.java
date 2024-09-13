@@ -46,7 +46,7 @@ public class CommonGqlStatusObjectImplementation implements CommonGqlStatusObjec
     public CommonGqlStatusObjectImplementation(
             GqlStatusInfo gqlStatusInfo,
             DiagnosticRecord diagnosticRecord,
-            Map<GqlMessageParams, Object> messageParameters) {
+            Map<GqlParams.GqlParam, Object> messageParameters) {
         this.gqlStatusInfo = gqlStatusInfo;
         this.diagnosticRecord = diagnosticRecord;
         this.messageWithParameters = insertMessageParameters(messageParameters);
@@ -87,7 +87,7 @@ public class CommonGqlStatusObjectImplementation implements CommonGqlStatusObjec
     protected String insertMessageParameters(Object[] parameterValues) {
         if (gqlStatusInfo.parameterCount() != parameterValues.length) {
             final var keys = gqlStatusInfo.getStatusParameterKeys().stream()
-                    .map(Enum::name)
+                    .map(GqlParams.GqlParam::name)
                     .toArray();
             throw new IllegalArgumentException(String.format(
                     "Expected parameterKeys: %s and parameterValues: %s to have the same length.",
@@ -101,7 +101,7 @@ public class CommonGqlStatusObjectImplementation implements CommonGqlStatusObjec
      * Insert the message parameter values in the message and
      * check the types of the statusParameters map for the diagnostic record
      */
-    protected String insertMessageParameters(Map<GqlMessageParams, Object> parameters) {
+    protected String insertMessageParameters(Map<GqlParams.GqlParam, Object> parameters) {
         diagnosticRecord.setStatusParameters(gqlStatusInfo.parameterMap(parameters));
         return gqlStatusInfo.getMessage(parameters);
     }

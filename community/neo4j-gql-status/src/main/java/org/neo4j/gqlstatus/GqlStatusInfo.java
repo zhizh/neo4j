@@ -25,7 +25,7 @@ import java.util.Map;
 public sealed interface GqlStatusInfo permits GqlStatusInfoCodes {
     String getMessage(Object[] params);
 
-    String getMessage(Map<GqlMessageParams, Object> params);
+    String getMessage(Map<GqlParams.GqlParam, Object> params);
 
     Condition getCondition();
 
@@ -37,9 +37,9 @@ public sealed interface GqlStatusInfo permits GqlStatusInfoCodes {
 
     Map<String, Object> parameterMap(Object[] params);
 
-    Map<String, Object> parameterMap(Map<GqlMessageParams, Object> params);
+    Map<String, Object> parameterMap(Map<GqlParams.GqlParam, Object> params);
 
     int parameterCount();
 
-    List<GqlMessageParams> getStatusParameterKeys();
+    List<GqlParams.GqlParam> getStatusParameterKeys();
 }

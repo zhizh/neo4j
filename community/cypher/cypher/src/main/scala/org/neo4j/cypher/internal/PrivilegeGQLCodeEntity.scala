@@ -23,7 +23,7 @@ import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.DATABASE_LABEL
 import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlMessageParams
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.graphdb.Label
 import org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.ROLE_LABEL
@@ -52,30 +52,48 @@ object PrivilegeGQLCodeEntity {
     privilegeGQLCodeEntity: PrivilegeGQLCodeEntity,
     value: String
   ): ErrorGqlStatusObject = {
-    val statusCode = privilegeGQLCodeEntity match {
-      case PrivilegeGQLCodeEntity.User()     => GqlStatusInfoCodes.STATUS_42N09
-      case PrivilegeGQLCodeEntity.Role()     => GqlStatusInfoCodes.STATUS_42N10
-      case PrivilegeGQLCodeEntity.Database() => GqlStatusInfoCodes.STATUS_22N51
+    privilegeGQLCodeEntity match {
+      case PrivilegeGQLCodeEntity.User() =>
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N09)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .withParam(GqlParams.StringParam.user, value)
+          .build()
+      case PrivilegeGQLCodeEntity.Role() =>
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N10)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .withParam(GqlParams.StringParam.role, value)
+          .build()
+      case PrivilegeGQLCodeEntity.Database() =>
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N51)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .withParam(GqlParams.StringParam.db, value)
+          .build()
     }
-    ErrorGqlStatusObjectImplementation.from(statusCode)
-      .withClassification(ErrorClassification.CLIENT_ERROR)
-      .withParam(GqlMessageParams.name, value)
-      .build()
   }
 
   def entityAlreadyExistsGqlStatus(
     privilegeGQLCodeEntity: PrivilegeGQLCodeEntity,
     value: String
   ): ErrorGqlStatusObject = {
-    val statusCode = privilegeGQLCodeEntity match {
-      case PrivilegeGQLCodeEntity.User()     => GqlStatusInfoCodes.STATUS_42N12
-      case PrivilegeGQLCodeEntity.Role()     => GqlStatusInfoCodes.STATUS_42N13
-      case PrivilegeGQLCodeEntity.Database() => GqlStatusInfoCodes.STATUS_42N11
+    privilegeGQLCodeEntity match {
+      case PrivilegeGQLCodeEntity.User() =>
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N12)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .withParam(GqlParams.StringParam.user, value)
+          .build()
+      case PrivilegeGQLCodeEntity.Role() =>
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N13)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .withParam(GqlParams.StringParam.role, value)
+          .build()
+      case PrivilegeGQLCodeEntity.Database() =>
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N11)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .withParam(GqlParams.StringParam.db, value)
+          .build()
+
     }
-    ErrorGqlStatusObjectImplementation.from(statusCode)
-      .withClassification(ErrorClassification.CLIENT_ERROR)
-      .withParam(GqlMessageParams.name, value)
-      .build()
+
   }
 
 }
