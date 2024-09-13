@@ -33,7 +33,6 @@ import static org.neo4j.values.virtual.VirtualValues.EMPTY_LIST;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -507,43 +506,33 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         private final ListValue[] lists;
         private final ValueRepresentation itemValueRepresentation;
         private volatile long size = -1;
+        private final IterationPreference iterationPreference;
 
         ConcatList(ListValue[] lists) {
             ValueRepresentation representation = ValueRepresentation.ANYTHING;
+            var pref = lists.length < 10 ? RANDOM_ACCESS : ITERATION;
             for (ListValue list : lists) {
                 representation = representation.coerce(list.itemValueRepresentation());
+                if (list.iterationPreference() == ITERATION) {
+                    pref = ITERATION;
+                }
             }
+            this.iterationPreference = pref;
             this.itemValueRepresentation = representation;
             this.lists = lists;
         }
 
         @Override
         public IterationPreference iterationPreference() {
-            return ITERATION;
+            return iterationPreference;
         }
 
         @Override
         public Iterator<AnyValue> iterator() {
-            if (lists.length == 0) {
-                return Collections.emptyIterator();
+            if (iterationPreference == RANDOM_ACCESS) {
+                return new RandomAccessIterator(this);
             } else {
-                return new PrefetchingIterator<AnyValue>() {
-                    private int index = 1;
-                    private Iterator<AnyValue> inner = lists[0].iterator();
-
-                    @Override
-                    protected AnyValue fetchNextOrNull() {
-                        while (true) {
-                            if (inner.hasNext()) {
-                                return inner.next();
-                            } else if (index < lists.length) {
-                                inner = lists[index++].iterator();
-                            } else {
-                                return null;
-                            }
-                        }
-                    }
-                };
+                return new ConcatListIterator();
             }
         }
 
@@ -602,6 +591,24 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         @Override
         public ValueRepresentation itemValueRepresentation() {
             return itemValueRepresentation;
+        }
+
+        private final class ConcatListIterator extends PrefetchingIterator<AnyValue> {
+            private int index = 1;
+            private Iterator<AnyValue> inner = lists[0].iterator();
+
+            @Override
+            protected AnyValue fetchNextOrNull() {
+                while (true) {
+                    if (inner.hasNext()) {
+                        return inner.next();
+                    } else if (index < lists.length) {
+                        inner = lists[index++].iterator();
+                    } else {
+                        return null;
+                    }
+                }
+            }
         }
     }
 
