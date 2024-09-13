@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.result
 
 import org.neo4j.cypher.internal.plandescription.InternalPlanDescription
+import org.neo4j.cypher.internal.runtime.ExplainMode
 import org.neo4j.cypher.internal.runtime.InternalQueryType
 import org.neo4j.cypher.internal.runtime.QueryStatistics
 import org.neo4j.graphdb.GqlStatusObject
@@ -33,7 +34,7 @@ class ExplainExecutionResult(
   queryType: InternalQueryType,
   notifications: Set[NotificationImplementation],
   subscriber: QuerySubscriber
-) extends EmptyExecutionResult(fieldNames, planDescription, queryType, notifications) {
+) extends EmptyExecutionResult(fieldNames, planDescription, queryType, notifications, ExplainMode) {
 
   override def request(numberOfRecords: Long): Unit = {
     subscriber.onResult(0)

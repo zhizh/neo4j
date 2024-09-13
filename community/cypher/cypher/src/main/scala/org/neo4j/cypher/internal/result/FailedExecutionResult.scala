@@ -20,16 +20,22 @@
 package org.neo4j.cypher.internal.result
 
 import org.neo4j.cypher.internal.plandescription.InternalPlanDescription
+import org.neo4j.cypher.internal.runtime.ExecutionMode
 import org.neo4j.cypher.internal.runtime.InternalQueryType
 import org.neo4j.graphdb.GqlStatusObject
 import org.neo4j.kernel.impl.query.QuerySubscriber
 
-class FailedExecutionResult(fieldNames: Array[String], queryType: InternalQueryType, subscriber: QuerySubscriber)
-    extends EmptyExecutionResult(
+class FailedExecutionResult(
+  fieldNames: Array[String],
+  queryType: InternalQueryType,
+  subscriber: QuerySubscriber,
+  executionMode: ExecutionMode
+) extends EmptyExecutionResult(
       fieldNames,
       InternalPlanDescription.error("Query has failed, no plan available"),
       queryType,
-      Set.empty
+      Set.empty,
+      executionMode
     ) {
 
   override def request(numberOfRecords: Long): Unit = {

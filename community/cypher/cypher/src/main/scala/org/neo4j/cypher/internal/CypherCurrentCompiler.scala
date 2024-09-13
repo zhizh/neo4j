@@ -55,6 +55,7 @@ import org.neo4j.cypher.internal.result.Success
 import org.neo4j.cypher.internal.result.TaskCloser
 import org.neo4j.cypher.internal.runtime.DBMS
 import org.neo4j.cypher.internal.runtime.DBMS_READ
+import org.neo4j.cypher.internal.runtime.ExecutionMode
 import org.neo4j.cypher.internal.runtime.ExplainMode
 import org.neo4j.cypher.internal.runtime.InputDataStream
 import org.neo4j.cypher.internal.runtime.InternalQueryType
@@ -479,7 +480,12 @@ object CypherCurrentCompiler {
           taskCloser.close(Error(e))
           // NOTE: We leave it up to outer layers to rollback on failure
           outerCloseable.close()
-          new FailedExecutionResult(columnNames(logicalPlan), internalQueryType, subscriber)
+          new FailedExecutionResult(
+            columnNames(logicalPlan),
+            internalQueryType,
+            subscriber,
+            runtimeExecutionMode(queryOptions)
+          )
       }
     }
 
@@ -497,12 +503,7 @@ object CypherCurrentCompiler {
       isOutermostQuery: Boolean
     ): InternalExecutionResult = {
 
-      val innerExecutionMode = queryOptions.queryOptions.executionMode match {
-        case CypherExecutionMode.explain => ExplainMode
-        case CypherExecutionMode.profile => ProfileMode
-        case CypherExecutionMode.default => NormalMode
-      }
-
+      val innerExecutionMode = runtimeExecutionMode(queryOptions)
       val monitor = if (isOutermostQuery) queryMonitor else QueryExecutionMonitor.NO_OP
       monitor.startExecution(transactionalContext.executingQuery())
 
@@ -561,6 +562,14 @@ object CypherCurrentCompiler {
         monitor,
         subscriber
       )
+    }
+
+    private def runtimeExecutionMode(queryOptions: QueryOptions): ExecutionMode = {
+      queryOptions.queryOptions.executionMode match {
+        case CypherExecutionMode.explain => ExplainMode
+        case CypherExecutionMode.profile => ProfileMode
+        case CypherExecutionMode.default => NormalMode
+      }
     }
 
     private def filterNotifications(

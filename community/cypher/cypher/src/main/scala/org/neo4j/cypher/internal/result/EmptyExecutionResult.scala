@@ -21,7 +21,6 @@ package org.neo4j.cypher.internal.result
 
 import org.neo4j.cypher.internal.plandescription.InternalPlanDescription
 import org.neo4j.cypher.internal.runtime.ExecutionMode
-import org.neo4j.cypher.internal.runtime.ExplainMode
 import org.neo4j.cypher.internal.runtime.InternalQueryType
 import org.neo4j.notifications.NotificationImplementation
 
@@ -29,7 +28,8 @@ abstract class EmptyExecutionResult(
   val fieldNames: Array[String],
   val planDescription: InternalPlanDescription,
   val queryType: InternalQueryType,
-  val notifications: Set[NotificationImplementation]
+  val notifications: Set[NotificationImplementation],
+  val executionMode: ExecutionMode
 ) extends InternalExecutionResult {
 
   override def initiate(): Unit = {}
@@ -39,8 +39,6 @@ abstract class EmptyExecutionResult(
   override def getError: Option[Throwable] = None
 
   override def close(reason: CloseReason): Unit = {}
-
-  override def executionMode: ExecutionMode = ExplainMode
 
   override def executionPlanDescription(): InternalPlanDescription = planDescription
 }
