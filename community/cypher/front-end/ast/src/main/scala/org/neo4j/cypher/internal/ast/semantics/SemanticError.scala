@@ -17,6 +17,7 @@
 package org.neo4j.cypher.internal.ast.semantics
 
 import org.neo4j.cypher.internal.util.InputPosition
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 
 sealed trait SemanticErrorDef {
   def msg: String
@@ -24,13 +25,39 @@ sealed trait SemanticErrorDef {
   def withMsg(message: String): SemanticErrorDef
 }
 
-final case class SemanticError(msg: String, position: InputPosition) extends SemanticErrorDef {
-  override def withMsg(message: String): SemanticError = SemanticError(message, position)
+final case class SemanticError(gqlStatusObject: ErrorGqlStatusObject, msg: String, position: InputPosition)
+    extends SemanticErrorDef {
+  def this(msg: String, position: InputPosition) = this(null, msg, position)
+  override def withMsg(message: String): SemanticError = copy(msg = message)
+}
+
+object SemanticError {
+
+  def apply(msg: String, position: InputPosition): SemanticError = new SemanticError(null, msg, position)
+
+  def unapply(errorDef: SemanticErrorDef): Option[(String, InputPosition)] = Some((errorDef.msg, errorDef.position))
+
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef
 
-final case class FeatureError(msg: String, feature: SemanticFeature, position: InputPosition)
-    extends UnsupportedOpenCypher {
+final case class FeatureError(
+  gqlStatusObject: ErrorGqlStatusObject,
+  msg: String,
+  feature: SemanticFeature,
+  position: InputPosition
+) extends UnsupportedOpenCypher {
+
+  def this(msg: String, featureError: SemanticFeature, position: InputPosition) =
+    this(null, msg, featureError, position)
   override def withMsg(message: String): FeatureError = copy(msg = message)
+}
+
+object FeatureError {
+
+  def apply(msg: String, featureError: SemanticFeature, position: InputPosition): FeatureError =
+    new FeatureError(null, msg, featureError, position)
+
+  def unapply(errorDef: FeatureError): Option[(String, SemanticFeature, InputPosition)] =
+    Some((errorDef.msg, errorDef.feature, errorDef.position))
 }

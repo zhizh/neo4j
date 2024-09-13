@@ -18,19 +18,31 @@ package org.neo4j.cypher.internal.util
 
 import org.neo4j.cypher.internal.util.OpenCypherExceptionFactory.ArithmeticException
 import org.neo4j.cypher.internal.util.OpenCypherExceptionFactory.SyntaxException
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 
 object OpenCypherExceptionFactory {
 
-  class ArithmeticException private[OpenCypherExceptionFactory] (message: String, cause: Throwable = null)
-      extends CypherException(message, cause)
+  class ArithmeticException private[OpenCypherExceptionFactory] (
+    gqlStatusObject: ErrorGqlStatusObject,
+    message: String,
+    cause: Throwable = null
+  ) extends CypherException(message, cause) {
+    def this(message: String, cause: Throwable) = this(null, message, cause)
+  }
 
-  class SyntaxException private[OpenCypherExceptionFactory] (message: String, val pos: InputPosition)
-      extends CypherException(message) {
+  class SyntaxException private[OpenCypherExceptionFactory] (
+    gqlStatusObject: ErrorGqlStatusObject,
+    message: String,
+    val pos: InputPosition
+  ) extends CypherException(message) {
+
+    def this(message: String, pos: InputPosition) = this(null, message, pos)
 
     override def getMessage: String = {
       s"$message ($pos)"
     }
   }
+
 }
 
 case class OpenCypherExceptionFactory(preParserOffset: Option[InputPosition]) extends CypherExceptionFactory {
@@ -38,8 +50,25 @@ case class OpenCypherExceptionFactory(preParserOffset: Option[InputPosition]) ex
   override def arithmeticException(message: String, cause: Exception): CypherException =
     new ArithmeticException(message, cause)
 
+  override def arithmeticException(
+    gqlStatusObject: ErrorGqlStatusObject,
+    message: String,
+    cause: Exception
+  ): CypherException = {
+    new ArithmeticException(gqlStatusObject, message, cause)
+  }
+
   override def syntaxException(message: String, pos: InputPosition): CypherException = {
     val adjustedPosition = pos.withOffset(preParserOffset)
     new SyntaxException(message, adjustedPosition)
+  }
+
+  override def syntaxException(
+    gqlStatusObject: ErrorGqlStatusObject,
+    message: String,
+    pos: InputPosition
+  ): CypherException = {
+    val adjustedPosition = pos.withOffset(preParserOffset)
+    new SyntaxException(gqlStatusObject, message, adjustedPosition)
   }
 }

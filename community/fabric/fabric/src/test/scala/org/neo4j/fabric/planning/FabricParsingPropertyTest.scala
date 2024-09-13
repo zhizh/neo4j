@@ -60,6 +60,7 @@ import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.cypher.internal.util.test_helpers.CypherScalaCheckDrivenPropertyChecks
 import org.neo4j.cypher.messages.MessageUtilProvider
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.monitoring.Monitors
 
@@ -100,8 +101,21 @@ class FabricParsingPropertyTest extends CypherFunSuite
   class DummyException() extends RuntimeException
 
   private val dummyExceptionFactory = new CypherExceptionFactory {
+
+    override def arithmeticException(
+      gqlStatusObject: ErrorGqlStatusObject,
+      message: String,
+      cause: Exception
+    ): RuntimeException = new DummyException
     override def arithmeticException(message: String, cause: Exception): RuntimeException = new DummyException
     override def syntaxException(message: String, pos: InputPosition): RuntimeException = new DummyException
+
+    override def syntaxException(
+      gqlStatusObject: ErrorGqlStatusObject,
+      message: String,
+      pos: InputPosition
+    ): RuntimeException = new DummyException
+
   }
 
   // The result of fabricParsing gets prettified later on in FabricStitcher.

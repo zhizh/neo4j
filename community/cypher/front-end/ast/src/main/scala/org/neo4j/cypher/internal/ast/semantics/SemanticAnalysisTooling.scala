@@ -30,6 +30,7 @@ import org.neo4j.cypher.internal.util.InternalNotification
 import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.cypher.internal.util.symbols.CypherType
 import org.neo4j.cypher.internal.util.symbols.TypeSpec
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 
 /**
  * This class holds methods for performing semantic analysis.
@@ -314,6 +315,9 @@ trait SemanticAnalysisTooling {
     }
 
   def error(msg: String, position: InputPosition): SemanticCheck = SemanticCheck.error(SemanticError(msg, position))
+
+  def error(gqlStatusObject: ErrorGqlStatusObject, msg: String, position: InputPosition): SemanticCheck =
+    SemanticCheck.error(SemanticError(gqlStatusObject, msg, position))
 
   def warn(notification: InternalNotification): SemanticCheck = SemanticCheck.warn(notification)
 

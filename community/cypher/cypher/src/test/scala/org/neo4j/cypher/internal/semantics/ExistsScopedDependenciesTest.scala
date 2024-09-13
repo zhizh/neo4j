@@ -43,6 +43,7 @@ import org.neo4j.cypher.internal.util.InternalNotificationLogger
 import org.neo4j.cypher.internal.util.devNullLogger
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.cypher.messages.MessageUtilProvider
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.monitoring.Monitors
 
@@ -53,8 +54,21 @@ class ExistsScopedDependenciesTest extends CypherFunSuite with AstConstructionTe
   private val parsing = CompilationPhases.parsing(ParsingConfig(CypherVersion.Default)) andThen Namespacer
 
   private val dummyExceptionFactory = new CypherExceptionFactory {
+
+    override def arithmeticException(
+      gqlStatusObject: ErrorGqlStatusObject,
+      message: String,
+      cause: Exception
+    ): RuntimeException = new DummyException
     override def arithmeticException(message: String, cause: Exception): RuntimeException = new DummyException
     override def syntaxException(message: String, pos: InputPosition): RuntimeException = new DummyException
+
+    override def syntaxException(
+      gqlStatusObject: ErrorGqlStatusObject,
+      message: String,
+      pos: InputPosition
+    ): RuntimeException = new DummyException
+
   }
 
   val context = new BaseContext {
