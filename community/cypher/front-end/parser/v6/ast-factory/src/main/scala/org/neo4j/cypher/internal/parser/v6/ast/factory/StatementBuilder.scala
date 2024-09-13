@@ -110,8 +110,6 @@ import org.neo4j.cypher.internal.parser.ast.util.Util.inputText
 import org.neo4j.cypher.internal.parser.ast.util.Util.lastChild
 import org.neo4j.cypher.internal.parser.ast.util.Util.nodeChild
 import org.neo4j.cypher.internal.parser.ast.util.Util.pos
-import org.neo4j.cypher.internal.parser.common.ast.factory.ASTExceptionFactory
-import org.neo4j.cypher.internal.parser.common.ast.factory.HintIndexType
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser
 import org.neo4j.cypher.internal.parser.v6.Cypher6ParserListener
 import org.neo4j.cypher.internal.parser.v6.ast.factory.Cypher6AstUtil.nonEmptyPropertyKeyName
@@ -352,10 +350,6 @@ trait StatementBuilder extends Cypher6ParserListener {
     val secondToken = nodeChild(ctx, 1).getSymbol
     ctx.ast = secondToken.getType match {
       case Cypher6Parser.INDEX => indexHint(ctx, UsingAnyIndexType)
-      case Cypher6Parser.BTREE => throw exceptionFactory.syntaxException(
-          ASTExceptionFactory.invalidHintIndexType(HintIndexType.BTREE),
-          pos(secondToken)
-        )
       case Cypher6Parser.TEXT  => indexHint(ctx, UsingTextIndexType)
       case Cypher6Parser.RANGE => indexHint(ctx, UsingRangeIndexType)
       case Cypher6Parser.POINT => indexHint(ctx, UsingPointIndexType)

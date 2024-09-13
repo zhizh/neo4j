@@ -26,6 +26,7 @@ import org.neo4j.cypher.internal.ast.UsingIndexHint.UsingRangeIndexType
 import org.neo4j.cypher.internal.ast.UsingIndexHint.UsingTextIndexType
 import org.neo4j.cypher.internal.ast.factory.neo4j.Neo4jASTConstructionException
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher6
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.exceptions.SyntaxException
 
@@ -45,19 +46,27 @@ class HintsParserTest extends AstParsingTestBase {
 
   test("MATCH (n) USING BTREE INDEX n:N(p)") {
     failsParsing[Statements]
-      .withMessageStart("Index type BTREE is no longer supported for USING index hint. Use TEXT, RANGE or POINT")
       .in {
-        case Cypher5JavaCc => _.throws[Neo4jASTConstructionException]
-        case _             => _.throws[SyntaxException]
+        case Cypher6 => _.throws[SyntaxException].withMessageStart("Invalid input 'BTREE'")
+        case _ =>
+          _.withMessageStart("Index type BTREE is no longer supported for USING index hint. Use TEXT, RANGE or POINT")
+            .in {
+              case Cypher5JavaCc => _.throws[Neo4jASTConstructionException]
+              case _             => _.throws[SyntaxException]
+            }
       }
   }
 
   test("MATCH (n) USING BTREE INDEX SEEK n:N(p)") {
     failsParsing[Statements]
-      .withMessageStart("Index type BTREE is no longer supported for USING index hint. Use TEXT, RANGE or POINT")
       .in {
-        case Cypher5JavaCc => _.throws[Neo4jASTConstructionException]
-        case _             => _.throws[SyntaxException]
+        case Cypher6 => _.throws[SyntaxException].withMessageStart("Invalid input 'BTREE'")
+        case _ =>
+          _.withMessageStart("Index type BTREE is no longer supported for USING index hint. Use TEXT, RANGE or POINT")
+            .in {
+              case Cypher5JavaCc => _.throws[Neo4jASTConstructionException]
+              case _             => _.throws[SyntaxException]
+            }
       }
   }
 

@@ -29,9 +29,7 @@ import org.neo4j.cypher.internal.parser.ast.util.Util.cast
 import org.neo4j.cypher.internal.parser.ast.util.Util.ctxChild
 import org.neo4j.cypher.internal.parser.ast.util.Util.nodeChild
 import org.neo4j.cypher.internal.parser.ast.util.Util.pos
-import org.neo4j.cypher.internal.parser.common.ast.factory.ASTExceptionFactory
 import org.neo4j.cypher.internal.parser.common.ast.factory.ConstraintType
-import org.neo4j.cypher.internal.parser.common.ast.factory.HintIndexType
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.ConstraintIsNotNullContext
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.ConstraintIsUniqueContext
@@ -81,7 +79,6 @@ final class Cypher6SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
       case Cypher6Parser.RULE_insertNodeLabelExpression        => checkInsertLabelConjunction(cast(ctx))
       case Cypher6Parser.RULE_functionInvocation               => checkFunctionInvocation(cast(ctx))
       case Cypher6Parser.RULE_typePart                         => checkTypePart(cast(ctx))
-      case Cypher6Parser.RULE_hint                             => checkHint(cast(ctx))
       case Cypher6Parser.RULE_symbolicAliasNameOrParameter     => checkSymbolicAliasNameOrParameter(cast(ctx))
       case _                                                   =>
     }
@@ -496,16 +493,6 @@ final class Cypher6SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
         "Closed Dynamic Union Types can not be appended with `NOT NULL`, specify `NOT NULL` on all inner types instead.",
         pos(ctx.typeNullability())
       )
-    }
-  }
-
-  private def checkHint(ctx: Cypher6Parser.HintContext): Unit = {
-    nodeChild(ctx, 1).getSymbol.getType match {
-      case Cypher6Parser.BTREE => _errors :+= exceptionFactory.syntaxException(
-          ASTExceptionFactory.invalidHintIndexType(HintIndexType.BTREE),
-          pos(nodeChild(ctx, 1))
-        )
-      case _ =>
     }
   }
 }

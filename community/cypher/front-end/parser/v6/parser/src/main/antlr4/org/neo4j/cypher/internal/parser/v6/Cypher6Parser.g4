@@ -164,7 +164,6 @@ matchMode
 hint
    : USING (((
       INDEX
-      | BTREE INDEX
       | TEXT INDEX
       | RANGE INDEX
       | POINT INDEX
