@@ -44,6 +44,7 @@ public class DefaultHelloMessageDecoderTest extends AbstractHelloMessageDecoderT
         return DefaultHelloMessageDecoder.getInstance();
     }
 
+    @Override
     protected void appendRequiredFields(MapValueBuilder meta) {
         // HELLO no longer includes authentication information
         meta.add("user_agent", Values.stringValue("Example/1.0 (+https://github.com/neo4j)"));
@@ -53,7 +54,7 @@ public class DefaultHelloMessageDecoderTest extends AbstractHelloMessageDecoderT
     }
 
     @Test
-    void shouldReadMessage() throws PackstreamReaderException {
+    public void shouldReadMessage() throws PackstreamReaderException {
         var buf = PackstreamBuf.allocUnpooled();
         var reader = Mockito.mock(PackstreamValueReader.class);
 

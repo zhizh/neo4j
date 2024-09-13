@@ -46,6 +46,11 @@ public interface TransactionTracer extends TransactionLogCounters {
         }
 
         @Override
+        public TransactionRollbackEvent beginAsyncRollback() {
+            return TransactionRollbackEvent.NULL;
+        }
+
+        @Override
         public long appendedBytes() {
             return 0;
         }
@@ -106,4 +111,10 @@ public interface TransactionTracer extends TransactionLogCounters {
      * @return An event that represents the commit.
      */
     TransactionWriteEvent beginAsyncCommit();
+
+    /**
+     * Rollback event of transaction that is replicated in a cluster commit.
+     * @return rollback event
+     */
+    TransactionRollbackEvent beginAsyncRollback();
 }

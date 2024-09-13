@@ -19,21 +19,23 @@
  */
 package org.neo4j.kernel.impl.api;
 
+import org.neo4j.storageengine.api.StorageEngineTransaction;
+
 /**
- * Serves as a reusable utility for building a chain of {@link CompleteTransaction} instances,
+ * Serves as a reusable utility for building a chain of {@link StorageEngineTransaction} instances,
  * where the instances themselves form the linked list. This utility is just for easily being able
  * to append to the end and then at regular intervals batch through the whole queue.
  */
 public class TransactionQueue {
     @FunctionalInterface
     public interface Applier {
-        void apply(CompleteTransaction tx) throws Exception;
+        void apply(StorageEngineTransaction tx) throws Exception;
     }
 
     private final int maxSize;
     private final Applier applier;
-    private CompleteTransaction tail;
-    private CompleteTransaction head;
+    private StorageEngineTransaction tail;
+    private StorageEngineTransaction head;
     private int size;
 
     public TransactionQueue(int maxSize, Applier applier) {
@@ -41,7 +43,7 @@ public class TransactionQueue {
         this.applier = applier;
     }
 
-    public void queue(CompleteTransaction transaction) throws Exception {
+    public void queue(StorageEngineTransaction transaction) throws Exception {
         if (isNotEmpty()) {
             tail.next(transaction);
         } else {

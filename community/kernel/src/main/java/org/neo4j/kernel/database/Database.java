@@ -378,6 +378,7 @@ public class Database extends AbstractDatabase {
         databaseDependencies.satisfyDependency(tracers.getPageCacheTracer());
         databaseDependencies.satisfyDependency(storageEngineFactory);
         databaseDependencies.satisfyDependencies(mode);
+        databaseDependencies.satisfyDependencies(commandCommitListeners);
 
         recoveryCleanupWorkCollector = life.add(new GroupingRecoveryCleanupWorkCollector(
                 scheduler, INDEX_CLEANUP, INDEX_CLEANUP_WORK, databaseLayout.getDatabaseName()));
@@ -975,6 +976,7 @@ public class Database extends AbstractDatabase {
                 commandCommitListeners);
         var rollbackProcess =
                 commitProcessFactory.createRollbackProcess(storageEngine, logsModule.getLogicalTransactionStore());
+        databaseDependencies.satisfyDependency(rollbackProcess);
         var transactionValidatorFactory = storageEngine.createTransactionValidatorFactory(databaseConfig);
 
         /*

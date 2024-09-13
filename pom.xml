@@ -156,8 +156,8 @@
     <metrics.version>4.2.26</metrics.version>
     <scala.target.vm>${vm.target.version}</scala.target.vm>
     <jersey.version>2.43</jersey.version>
-    <junit.version>5.10.3</junit.version>
-    <junit.platform.version>1.10.3</junit.platform.version>
+    <junit.version>5.11.0</junit.version>
+    <junit.platform.version>1.11.0</junit.platform.version>
     <mockito.version>5.12.0</mockito.version>
     <opencypher.version>1.0.0-M23</opencypher.version>
     <caffeine.version>3.1.8</caffeine.version>

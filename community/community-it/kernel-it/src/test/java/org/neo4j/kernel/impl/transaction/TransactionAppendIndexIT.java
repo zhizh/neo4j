@@ -33,7 +33,7 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.kernel.impl.api.CommandCommitListener;
 import org.neo4j.kernel.impl.api.CommandCommitListeners;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.neo4j.storageengine.api.CommandBatch;
+import org.neo4j.storageengine.api.StorageEngineTransaction;
 import org.neo4j.storageengine.api.TransactionIdStore;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import org.neo4j.test.extension.DbmsExtension;
@@ -106,12 +106,12 @@ class TransactionAppendIndexIT {
         private final CopyOnWriteArrayList<Long> observedBatches = new CopyOnWriteArrayList<>();
 
         @Override
-        public void onCommandBatchCommitFailure(CommandBatch commandBatch, Exception exception) {}
+        public void onCommandBatchCommitFailure(StorageEngineTransaction transaction, Exception exception) {}
 
         @Override
-        public void onCommandBatchCommitSuccess(CommandBatch commandBatch, long lastAppendIndex) {
+        public void onCommandBatchCommitSuccess(StorageEngineTransaction transaction) {
             if (enabledCheck.get()) {
-                observedBatches.add(commandBatch.appendIndex());
+                observedBatches.add(transaction.commandBatch().appendIndex());
             }
         }
 

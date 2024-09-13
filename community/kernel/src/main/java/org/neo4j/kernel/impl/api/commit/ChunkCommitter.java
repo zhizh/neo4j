@@ -165,12 +165,10 @@ public final class ChunkCommitter implements TransactionCommitter {
 
                     ChunkedCommandBatch chunk = new ChunkedCommandBatch(extractedCommands, chunkMetadata);
                     transaction.init(chunk);
-                    long appendIndex = commitProcess.commit(transaction, transactionWriteEvent, mode);
+                    commitProcess.commit(transaction, transactionWriteEvent, mode);
 
                     // transaction chunk commit completed
                     transactionPayload = transaction;
-                    // TODO: misha this works even less for now
-                    transactionPayload.updateClusteredTransactionId(appendIndex);
 
                     validationLockDumper.dumpLocks(
                             transactionValidator, lockClient, chunkNumber, transactionPayload.transactionId());

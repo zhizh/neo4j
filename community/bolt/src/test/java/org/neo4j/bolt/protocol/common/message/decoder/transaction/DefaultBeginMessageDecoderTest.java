@@ -52,7 +52,7 @@ public class DefaultBeginMessageDecoderTest extends AbstractBeginMessageDecoderT
     }
 
     @Test
-    void shouldReadMessage() throws PackstreamReaderException {
+    public void shouldReadMessage() throws PackstreamReaderException {
         var buf = PackstreamBuf.allocUnpooled();
         var reader = Mockito.mock(PackstreamValueReader.class);
 

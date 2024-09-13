@@ -38,7 +38,8 @@ import org.neo4j.values.virtual.MapValueBuilder;
 public class HelloMessageDecoderV53Test extends DefaultHelloMessageDecoderTest {
 
     @Test
-    void shouldReadMessage() throws PackstreamReaderException {
+    @Override
+    public void shouldReadMessage() throws PackstreamReaderException {
         var buf = PackstreamBuf.allocUnpooled();
         var reader = Mockito.mock(PackstreamValueReader.class);
 

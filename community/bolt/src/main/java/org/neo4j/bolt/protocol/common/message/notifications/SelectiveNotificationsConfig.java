@@ -122,7 +122,11 @@ public final class SelectiveNotificationsConfig implements NotificationsConfig {
 
     @Override
     public String toString() {
-        return "{ minimumSeverity=" + minimumSeverity.toString() + ", categoriesToIgnore="
-                + categoriesToIgnore.toString() + " }";
+        return "{ minimumSeverity=" + nullSafeToString(minimumSeverity) + ", categoriesToIgnore="
+                + nullSafeToString(categoriesToIgnore) + " }";
+    }
+
+    private static String nullSafeToString(Object object) {
+        return object != null ? object.toString() : null;
     }
 }

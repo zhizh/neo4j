@@ -83,6 +83,8 @@ public interface TransactionIdStore {
 
     long UNKNOWN_TX_ID = BASE_TX_ID - 1;
 
+    long UNKNOWN_TX_SEQUENCE_NUMBER = -1;
+
     TransactionId UNKNOWN_TRANSACTION_ID = new TransactionId(
             UNKNOWN_TX_ID,
             UNKNOWN_APPEND_INDEX,

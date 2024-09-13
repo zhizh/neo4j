@@ -76,6 +76,11 @@ public class DefaultTracer implements DatabaseTracer {
     }
 
     @Override
+    public TransactionRollbackEvent beginAsyncRollback() {
+        return transactionRollbackEvent;
+    }
+
+    @Override
     public long appendedBytes() {
         return appendedBytes.longValue();
     }

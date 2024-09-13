@@ -106,6 +106,11 @@ public interface DatabaseTracer extends TransactionTracer, CheckPointTracer {
         }
 
         @Override
+        public TransactionRollbackEvent beginAsyncRollback() {
+            return TransactionRollbackEvent.NULL;
+        }
+
+        @Override
         public long appendedBytes() {
             return 0;
         }

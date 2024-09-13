@@ -86,7 +86,7 @@ class InternalTransactionCommitProcessTest {
 
         assertThat(exception.getMessage()).contains("Could not append transaction: ");
         assertTrue(contains(exception, rootCause.getMessage(), rootCause.getClass()));
-        verify(commandCommitListeners).registerFailure(mockedTransaction.commandBatch(), exception);
+        verify(commandCommitListeners).registerFailure(mockedTransaction, exception);
     }
 
     @Test
@@ -112,7 +112,7 @@ class InternalTransactionCommitProcessTest {
                 () -> commitProcess.commit(transaction, transactionWriteEvent, INTERNAL));
         assertThat(exception.getMessage()).contains("Could not apply the transaction:");
         assertTrue(contains(exception, rootCause.getMessage(), rootCause.getClass()));
-        verify(commandCommitListeners).registerFailure(transaction.commandBatch(), exception);
+        verify(commandCommitListeners).registerFailure(transaction, exception);
         verify(commandCommitListeners, never()).registerSuccess(any(), anyLong());
 
         // THEN
@@ -207,7 +207,7 @@ class InternalTransactionCommitProcessTest {
                         FakeCommitment.TIMESTAMP,
                         FakeCommitment.CONSENSUS_INDEX);
         verify(commandCommitListeners, never()).registerFailure(any(), any());
-        verify(commandCommitListeners).registerSuccess(transactionToApply.commandBatch(), appendIndex);
+        verify(commandCommitListeners).registerSuccess(transactionToApply, appendIndex);
     }
 
     @Test
@@ -229,7 +229,7 @@ class InternalTransactionCommitProcessTest {
         // FIXME ODP this is not the status we should end up with in the end
         assertThat(exception.status()).isEqualTo(Status.General.UnknownError);
         assertTrue(contains(exception, "test out of disk", OutOfDiskSpaceException.class));
-        verify(commandCommitListeners).registerFailure(transaction.commandBatch(), exception);
+        verify(commandCommitListeners).registerFailure(transaction, exception);
     }
 
     @Test
@@ -250,7 +250,7 @@ class InternalTransactionCommitProcessTest {
         assertThat(exception.getMessage()).contains("Could not preallocate disk space ");
         assertThat(exception.status()).isEqualTo(Status.Transaction.TransactionCommitFailed);
         assertTrue(contains(exception, "IO exception other than out of disk", IOException.class));
-        verify(commandCommitListeners).registerFailure(transaction.commandBatch(), exception);
+        verify(commandCommitListeners).registerFailure(transaction, exception);
     }
 
     @Test

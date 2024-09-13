@@ -19,7 +19,7 @@
  */
 package org.neo4j.kernel.impl.api;
 
-import org.neo4j.storageengine.api.CommandBatch;
+import org.neo4j.storageengine.api.StorageEngineTransaction;
 
 /**
  * This is a listener for events happening inside the commit process. Processes which must react to failures or successful commits deep down in kernel commit process (for example InternalTransactionCommitProcess) can listen to these
@@ -32,12 +32,12 @@ public interface CommandCommitListener {
      * @param commandBatch the first command in a batch which failed at commit. Note that this is the first command in a failing batch, might not necessarily mean this command in particular failed. Only that this was the first one in the failing chain.
      * @param exception the exception that occurred while committing to kernel.
      */
-    void onCommandBatchCommitFailure(CommandBatch commandBatch, Exception exception);
+    void onCommandBatchCommitFailure(StorageEngineTransaction commandBatch, Exception exception);
 
     /**
      * Notifies listeners that the entire commandBatch committed successfully.
+     *
      * @param commandBatch the first command in a batch which committed fully, i.e. all commands in the batch committed successfully.
-     * @param lastAppendIndex the last committed append index after all commands in the batch committed successfully.
      */
-    void onCommandBatchCommitSuccess(CommandBatch commandBatch, long lastAppendIndex);
+    void onCommandBatchCommitSuccess(StorageEngineTransaction commandBatch);
 }

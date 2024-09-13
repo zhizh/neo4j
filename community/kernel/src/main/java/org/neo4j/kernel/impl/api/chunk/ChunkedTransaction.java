@@ -21,6 +21,7 @@ package org.neo4j.kernel.impl.api.chunk;
 
 import static org.neo4j.storageengine.AppendIndexProvider.UNKNOWN_APPEND_INDEX;
 import static org.neo4j.storageengine.api.TransactionIdStore.UNKNOWN_TX_ID;
+import static org.neo4j.storageengine.api.TransactionIdStore.UNKNOWN_TX_SEQUENCE_NUMBER;
 
 import java.util.function.LongConsumer;
 import org.neo4j.common.Subject;
@@ -65,13 +66,35 @@ public class ChunkedTransaction implements StorageEngineTransaction {
             CommittedCommandBatchRepresentation committedCommandBatchRepresentation,
             CursorContext cursorContext,
             StoreCursors storeCursors) {
-        this(committedCommandBatchRepresentation.txId(), cursorContext, storeCursors);
+        this(committedCommandBatchRepresentation.txId(), UNKNOWN_TX_SEQUENCE_NUMBER, cursorContext, storeCursors);
         init((ChunkedCommandBatch) committedCommandBatchRepresentation.commandBatch());
     }
 
-    public ChunkedTransaction(long transactionId, CursorContext cursorContext, StoreCursors storeCursors) {
-        this(cursorContext, -1, storeCursors, Commitment.NO_COMMITMENT, TransactionIdGenerator.EXTERNAL_ID);
+    public ChunkedTransaction(
+            long transactionId,
+            long transactionSequenceNumber,
+            CursorContext cursorContext,
+            StoreCursors storeCursors) {
+        this(
+                cursorContext,
+                transactionSequenceNumber,
+                storeCursors,
+                Commitment.NO_COMMITMENT,
+                TransactionIdGenerator.EXTERNAL_ID);
         this.transactionId = transactionId;
+        this.idGenerated = true;
+    }
+
+    public ChunkedTransaction(
+            long transactionId,
+            long appendIndex,
+            long transactionSequenceNumber,
+            CursorContext cursorContext,
+            StoreCursors storeCursors,
+            Commitment commitment) {
+        this(cursorContext, transactionSequenceNumber, storeCursors, commitment, TransactionIdGenerator.EXTERNAL_ID);
+        this.transactionId = transactionId;
+        this.lastBatchAppendIndex = appendIndex;
         this.idGenerated = true;
     }
 
@@ -180,14 +203,22 @@ public class ChunkedTransaction implements StorageEngineTransaction {
                 + transactionId + ", chunkId=" + chunk.chunkMetadata().chunkId() + '}';
     }
 
+    public long getTransactionSequenceNumber() {
+        return transactionSequenceNumber;
+    }
+
     /**
      * While we are talking how data about chunked transactions be transferred in clusters we at least need to make sure that tx ids are aligned,
      * otherwise tx id sequences will go completely out of sync
      */
-    public void updateClusteredTransactionId(long transactionId) {
+    @Override
+    public void updateClusteredInfo(long transactionId, long appendIndex) {
         if (!idGenerated) {
             this.transactionId = transactionId;
+            this.firstAppendIndex = appendIndex;
+            cursorContext.getVersionContext().initWrite(transactionId);
             idGenerated = true;
         }
+        lastBatchAppendIndex = appendIndex;
     }
 }

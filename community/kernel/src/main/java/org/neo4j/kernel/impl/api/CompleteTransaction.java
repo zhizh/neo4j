@@ -162,10 +162,16 @@ public class CompleteTransaction implements StorageEngineTransaction {
     }
 
     @Override
+    public void updateClusteredInfo(long transactionId, long appendIndex) {
+        // no op, there is nothing we are doing with this information for default complete transaction
+    }
+
+    @Override
     public StorageEngineTransaction next() {
         return next;
     }
 
+    @Override
     public void onClose(LongConsumer closedCallback) {
         this.closedCallback = closedCallback;
     }

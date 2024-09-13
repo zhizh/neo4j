@@ -20,7 +20,7 @@
 package org.neo4j.kernel.impl.api;
 
 import java.util.List;
-import org.neo4j.storageengine.api.CommandBatch;
+import org.neo4j.storageengine.api.StorageEngineTransaction;
 
 public class CommandCommitListeners {
     public static final CommandCommitListeners NO_LISTENERS = new CommandCommitListeners();
@@ -30,15 +30,15 @@ public class CommandCommitListeners {
         this.listeners = List.of(listeners);
     }
 
-    public void registerFailure(CommandBatch commandBatch, Exception exception) {
+    public void registerFailure(StorageEngineTransaction commandBatch, Exception exception) {
         for (CommandCommitListener listener : listeners) {
             listener.onCommandBatchCommitFailure(commandBatch, exception);
         }
     }
 
-    public void registerSuccess(CommandBatch commandBatch, long lastCommittedTx) {
+    public void registerSuccess(StorageEngineTransaction commandBatch, long lastAppendIndex) {
         for (CommandCommitListener listener : listeners) {
-            listener.onCommandBatchCommitSuccess(commandBatch, lastCommittedTx);
+            listener.onCommandBatchCommitSuccess(commandBatch);
         }
     }
 }

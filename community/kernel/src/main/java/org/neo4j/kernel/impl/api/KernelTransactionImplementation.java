@@ -1301,6 +1301,10 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         return lockClient;
     }
 
+    public LeaseClient leaseClient() {
+        return leaseClient;
+    }
+
     @Override
     public CursorFactory cursors() {
         return operations.cursors();
