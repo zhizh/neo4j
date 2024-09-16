@@ -29,7 +29,7 @@ import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.internal.helpers.collection.Iterables;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 
-abstract class MultiPropertyConstraintDefinition extends PropertyConstraintDefinition {
+abstract class MultiPropertyConstraintDefinition extends BaseConstraintDefinition {
     protected final String[] propertyKeys;
 
     MultiPropertyConstraintDefinition(

@@ -26,11 +26,11 @@ import org.neo4j.graphdb.schema.ConstraintType;
 import org.neo4j.graphdb.schema.PropertyType;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 
-public abstract class PropertyConstraintDefinition implements ConstraintDefinition {
+public abstract class BaseConstraintDefinition implements ConstraintDefinition {
     protected final InternalSchemaActions actions;
     protected ConstraintDescriptor constraint;
 
-    PropertyConstraintDefinition(InternalSchemaActions actions, ConstraintDescriptor constraint) {
+    BaseConstraintDefinition(InternalSchemaActions actions, ConstraintDescriptor constraint) {
         this.actions = requireNonNull(actions);
         this.constraint = requireNonNull(constraint);
     }
