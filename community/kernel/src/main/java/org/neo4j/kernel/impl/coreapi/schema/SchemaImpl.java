@@ -572,6 +572,23 @@ public class SchemaImpl implements Schema {
                         new IndexDefinitionImpl(
                                 actions, null, new RelationshipType[] {relationshipType}, propertyKeys, true));
             }
+        } else if (constraint.isRelationshipEndpointLabelConstraint()) {
+            final var relationshipEndpointConstraint = constraint.asRelationshipEndpointLabelConstraint();
+            final var constrainedRelationshipType = withName(tokenRead.relationshipTypeGetName(
+                    relationshipEndpointConstraint.schema().getRelTypeId()));
+            final var requiredLabel = label(tokenRead.labelGetName(relationshipEndpointConstraint.endpointLabelId()));
+            return new RelationshipEndpointLabelConstraintDefinition(
+                    actions,
+                    constraint,
+                    constrainedRelationshipType,
+                    requiredLabel,
+                    relationshipEndpointConstraint.endpointType());
+        } else if (constraint.isNodeLabelExistenceConstraint()) {
+            final var labelCoexistenceConstraint = constraint.asNodeLabelExistenceConstraint();
+            final var constrainedLabel = label(
+                    tokenRead.labelGetName(labelCoexistenceConstraint.schema().getLabelId()));
+            final var requiredLabel = label(tokenRead.labelGetName(labelCoexistenceConstraint.requiredLabelId()));
+            return new NodeLabelExistenceConstraintDefinition(actions, constraint, constrainedLabel, requiredLabel);
         }
         throw new IllegalArgumentException("Unknown constraint " + constraint);
     }

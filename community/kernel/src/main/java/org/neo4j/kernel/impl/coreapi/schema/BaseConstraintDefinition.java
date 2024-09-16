@@ -21,6 +21,8 @@ package org.neo4j.kernel.impl.coreapi.schema;
 
 import static java.util.Objects.requireNonNull;
 
+import org.neo4j.graphdb.Label;
+import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.schema.ConstraintDefinition;
 import org.neo4j.graphdb.schema.ConstraintType;
 import org.neo4j.graphdb.schema.PropertyType;
@@ -40,7 +42,22 @@ public abstract class BaseConstraintDefinition implements ConstraintDefinition {
     }
 
     @Override
-    public abstract Iterable<String> getPropertyKeys();
+    public Label getLabel() {
+        assertInUnterminatedTransaction();
+        throw new IllegalStateException("Constraint is associated with relationships");
+    }
+
+    @Override
+    public RelationshipType getRelationshipType() {
+        assertInUnterminatedTransaction();
+        throw new IllegalStateException("Constraint is associated with nodes");
+    }
+
+    @Override
+    public Iterable<String> getPropertyKeys() {
+        assertInUnterminatedTransaction();
+        throw new IllegalStateException("Constraint is not associated with properties");
+    }
 
     @Override
     public boolean isConstraintType(ConstraintType type) {

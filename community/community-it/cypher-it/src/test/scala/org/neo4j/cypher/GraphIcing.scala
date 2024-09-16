@@ -684,9 +684,9 @@ trait GraphIcing {
       val constraint = tx.schema().getConstraintByName(name)
       val properties = constraint.getPropertyKeys.asScala.toList
       val labelOrRelType = constraint.getConstraintType match {
-        case ConstraintType.NODE_PROPERTY_EXISTENCE | ConstraintType.NODE_KEY | ConstraintType.UNIQUENESS | ConstraintType.NODE_PROPERTY_TYPE =>
+        case ConstraintType.NODE_PROPERTY_EXISTENCE | ConstraintType.NODE_KEY | ConstraintType.UNIQUENESS | ConstraintType.NODE_PROPERTY_TYPE | ConstraintType.NODE_LABEL_EXISTENCE =>
           constraint.getLabel.name()
-        case ConstraintType.RELATIONSHIP_PROPERTY_EXISTENCE | ConstraintType.RELATIONSHIP_KEY | ConstraintType.RELATIONSHIP_UNIQUENESS | ConstraintType.RELATIONSHIP_PROPERTY_TYPE =>
+        case ConstraintType.RELATIONSHIP_PROPERTY_EXISTENCE | ConstraintType.RELATIONSHIP_KEY | ConstraintType.RELATIONSHIP_UNIQUENESS | ConstraintType.RELATIONSHIP_PROPERTY_TYPE | ConstraintType.RELATIONSHIP_SOURCE_LABEL | ConstraintType.RELATIONSHIP_TARGET_LABEL =>
           constraint.getRelationshipType.name()
       }
       (labelOrRelType, properties)

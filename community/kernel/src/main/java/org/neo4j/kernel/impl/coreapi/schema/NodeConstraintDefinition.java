@@ -25,7 +25,6 @@ import static org.neo4j.kernel.impl.coreapi.schema.IndexDefinitionImpl.labelName
 
 import java.util.Arrays;
 import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 
@@ -54,12 +53,6 @@ abstract class NodeConstraintDefinition extends MultiPropertyConstraintDefinitio
     public Label getLabel() {
         assertInUnterminatedTransaction();
         return label;
-    }
-
-    @Override
-    public RelationshipType getRelationshipType() {
-        assertInUnterminatedTransaction();
-        throw new IllegalStateException("Constraint is associated with nodes");
     }
 
     @Override

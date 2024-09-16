@@ -24,7 +24,6 @@ import static org.neo4j.internal.helpers.collection.Iterables.single;
 import static org.neo4j.kernel.impl.coreapi.schema.IndexDefinitionImpl.relTypeNameList;
 
 import java.util.Arrays;
-import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.internal.schema.ConstraintDescriptor;
@@ -51,12 +50,6 @@ abstract class RelationshipConstraintDefinition extends MultiPropertyConstraintD
                             + relTypeNameList(indexDefinition.getRelationshipTypes(), "", "."));
         }
         this.relationshipType = single(indexDefinition.getRelationshipTypes());
-    }
-
-    @Override
-    public Label getLabel() {
-        assertInUnterminatedTransaction();
-        throw new IllegalStateException("Constraint is associated with relationships");
     }
 
     @Override

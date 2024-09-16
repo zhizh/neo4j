@@ -2401,7 +2401,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             return constraint;
         } catch (SchemaKernelException e) {
             exclusiveSchemaUnlock(schemaDescriptor);
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 
@@ -2450,7 +2450,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             return constraint;
         } catch (SchemaKernelException e) {
             exclusiveSchemaUnlock(schemaDescriptor);
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 

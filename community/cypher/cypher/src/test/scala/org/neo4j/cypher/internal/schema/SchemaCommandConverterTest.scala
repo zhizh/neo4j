@@ -2054,6 +2054,9 @@ class SchemaCommandConverterTest extends CypherFunSuite {
               false,
               util.Optional.empty()
             )
+          case ConstraintType.RELATIONSHIP_SOURCE_LABEL => fail("Not yet supported - waiting for graph type syntax")
+          case ConstraintType.RELATIONSHIP_TARGET_LABEL => fail("Not yet supported - waiting for graph type syntax")
+          case ConstraintType.NODE_LABEL_EXISTENCE      => fail("Not yet supported - waiting for graph type syntax")
         }))
       }
 
@@ -2118,6 +2121,9 @@ class SchemaCommandConverterTest extends CypherFunSuite {
               true,
               util.Optional.empty()
             )
+          case ConstraintType.RELATIONSHIP_SOURCE_LABEL => fail("Not yet supported - waiting for graph type syntax")
+          case ConstraintType.RELATIONSHIP_TARGET_LABEL => fail("Not yet supported - waiting for graph type syntax")
+          case ConstraintType.NODE_LABEL_EXISTENCE      => fail("Not yet supported - waiting for graph type syntax")
         }))
       }
   }
