@@ -62,18 +62,9 @@ class StoragePathTest {
 
     @Test
     void isStorageDir() {
-
-        // When the backend doesn't support real directories, each dir is a storage dir
-        when(system.supportsEmptyDirs()).thenReturn(false);
         assertThat(StoragePath.isStorageDir(path("/"))).isTrue();
         assertThat(StoragePath.isStorageDir(path("/file"))).isFalse();
         assertThat(StoragePath.isStorageDir(path("/dir/"))).isTrue();
-
-        // When the backend doesn't support real directories, nothing is a storage dir
-        when(system.supportsEmptyDirs()).thenReturn(true);
-        assertThat(StoragePath.isStorageDir(path("/"))).isFalse();
-        assertThat(StoragePath.isStorageDir(path("/file"))).isFalse();
-        assertThat(StoragePath.isStorageDir(path("/dir/"))).isFalse();
 
         // When testing real paths (i.e., non-cloud storage), nothing is a storage dir
         assertThat(StoragePath.isStorageDir(Path.of("/"))).isFalse();

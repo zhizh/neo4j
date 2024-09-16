@@ -257,7 +257,6 @@ class SchemeFileSystemAbstractionTest {
         verifyFileSystemCall("fileExists", FS_PATH);
         verifyFileSystemCall("fileExists", schemePath);
 
-        when(storageSystem.supportsEmptyDirs()).thenReturn(false);
         assertThat(schemeFs.fileExists(newSchemePath("/some-dir/"))).isTrue();
     }
 
