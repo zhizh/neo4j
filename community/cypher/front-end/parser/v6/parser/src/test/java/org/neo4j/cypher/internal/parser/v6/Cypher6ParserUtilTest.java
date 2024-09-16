@@ -42,8 +42,8 @@ class Cypher6ParserUtilTest {
 				        }
 				    }
 				""";
-
-        assertThat(readGeneratedParserSourceFile()).contains(expectedDFAImplementation.replace("    ", "\t"));
+        var formattedExpectedDFAImplementation = expectedDFAImplementation.replace("    ", "\t");
+        assertThat(readGeneratedParserSourceFile()).containsIgnoringNewLines(formattedExpectedDFAImplementation);
     }
 
     private String readGeneratedParserSourceFile() throws IOException {
