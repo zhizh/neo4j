@@ -28,6 +28,7 @@ import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
 import org.neo4j.cypher.internal.runtime.spec.RowCount
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
 import org.neo4j.graphdb.RelationshipType
+import org.neo4j.values.storable.NoValue
 
 abstract class UnionTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
@@ -941,6 +942,52 @@ abstract class UnionTestBase[CONTEXT <: RuntimeContext](
 
     // then
     runtimeResult should beColumns("bar").withRows(singleColumn(Seq("foo")))
+  }
+
+  test("should union on nullable node variable") {
+
+    val (_, endNodes) = givenGraph {
+      bipartiteGraph(10, "Entity", "Entity", "REL")
+    }
+
+    val query = new LogicalQueryBuilder(this)
+      .produceResults("x")
+      .distinct("x AS x")
+      .union()
+      .|.projection("ex AS x")
+      .|.optionalExpandAll("(e)-[:REL]->(ex)")
+      .|.nodeByLabelScan("e", "Entity")
+      .projection("NULL AS x")
+      .argument()
+      .build()
+
+    val result = execute(query, runtime)
+
+    val expectedRows = NoValue.NO_VALUE +: endNodes
+    result should beColumns("x").withRows(singleColumn(expectedRows))
+  }
+
+  test("should union on nullable relationship variable") {
+
+    val (_, rels) = givenGraph {
+      lineGraph(10, "REL", "Entity")
+    }
+
+    val query = new LogicalQueryBuilder(this)
+      .produceResults("x")
+      .distinct("x AS x")
+      .union()
+      .|.projection("rx AS x")
+      .|.optionalExpandAll("(e)-[rx:REL]->()")
+      .|.nodeByLabelScan("e", "Entity")
+      .projection("NULL AS x")
+      .argument()
+      .build()
+
+    val result = execute(query, runtime)
+
+    val expectedRows = NoValue.NO_VALUE +: rels
+    result should beColumns("x").withRows(singleColumn(expectedRows))
   }
 
   private def sizeHintAlignedToMorselSize: Int = {
