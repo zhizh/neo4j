@@ -27,6 +27,7 @@ import org.neo4j.common.TokenNameLookup
 import org.neo4j.configuration.Config
 import org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME
 import org.neo4j.csv.reader.CharReadable
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.expressions.SemanticDirection.BOTH
 import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
@@ -204,7 +205,8 @@ sealed class TransactionBoundQueryContext(
   override def validateIndexProvider(
     schemaDescription: String,
     providerString: String,
-    indexType: IndexType
+    indexType: IndexType,
+    version: CypherVersion
   ): IndexProviderDescriptor = {
     val schemaWrite = transactionalContext.schemaWrite
     try {
@@ -228,11 +230,13 @@ sealed class TransactionBoundQueryContext(
       case e: IndexProviderNotFoundException =>
         val indexProviders =
           schemaWrite.indexProvidersByType(indexType).asScala.toList.map(_.name()).mkString("['", "', '", "']")
-        // Throw nicer error on old providers
+        // Throw nicer error on old providers in Cypher 5
         val message =
           if (
-            providerString.equalsIgnoreCase("native-btree-1.0") ||
-            providerString.equalsIgnoreCase("lucene+native-3.0")
+            version == CypherVersion.Cypher5 && (
+              providerString.equalsIgnoreCase("native-btree-1.0") ||
+                providerString.equalsIgnoreCase("lucene+native-3.0")
+            )
           )
             s"""Could not create $schemaDescription with specified index provider '$providerString'.
                |Invalid index type b-tree, use range, point or text index instead.

@@ -885,7 +885,6 @@ showIndexCommand
 
 showIndexType
     : ALL
-    | BTREE
     | FULLTEXT
     | LOOKUP
     | POINT
@@ -995,8 +994,7 @@ dropConstraint
    ;
 
 createIndex
-   : BTREE INDEX createIndex_
-   | RANGE INDEX createIndex_
+   : RANGE INDEX createIndex_
    | TEXT INDEX createIndex_
    | POINT INDEX createIndex_
    | VECTOR INDEX createIndex_
@@ -1774,7 +1772,6 @@ unescapedLabelSymbolicNameString
    | BOOSTED
    | BOTH
    | BREAK
-   | BTREE
    | BUILT
    | BY
    | CALL

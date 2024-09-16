@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.optionsmap
 
 import org.neo4j.configuration.Config
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
 import org.neo4j.internal.schema.IndexConfig
 import org.neo4j.internal.schema.IndexProviderDescriptor
@@ -35,8 +36,12 @@ case class CreateFulltextIndexOptionsConverter(context: IndexProviderContext)
     extends IndexOptionsConverter[CreateIndexWithFullOptions] {
   private val schemaType = "fulltext index"
 
-  override def convert(options: MapValue, config: Option[Config]): CreateIndexWithFullOptions = {
-    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.FULLTEXT)
+  override def convert(
+    options: MapValue,
+    config: Option[Config],
+    version: CypherVersion
+  ): CreateIndexWithFullOptions = {
+    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.FULLTEXT, version)
     CreateIndexWithFullOptions(indexProvider, indexConfig)
   }
 

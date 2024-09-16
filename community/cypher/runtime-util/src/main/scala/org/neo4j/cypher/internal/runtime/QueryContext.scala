@@ -25,6 +25,7 @@ import org.neo4j.collection.ResourceRawIterator
 import org.neo4j.common.EntityType
 import org.neo4j.configuration.Config
 import org.neo4j.csv.reader.CharReadable
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.logical.plans.IndexOrder
 import org.neo4j.cypher.internal.planner.spi.ReadTokenContext
@@ -510,7 +511,8 @@ trait IndexProviderContext {
   def validateIndexProvider(
     schemaDescription: String,
     providerString: String,
-    indexType: IndexType
+    indexType: IndexType,
+    version: CypherVersion
   ): IndexProviderDescriptor
 }
 

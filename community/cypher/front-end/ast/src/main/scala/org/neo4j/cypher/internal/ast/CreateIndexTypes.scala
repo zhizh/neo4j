@@ -24,14 +24,6 @@ sealed trait CreateIndexType {
   def singlePropertyOnly: Boolean
 }
 
-case object BtreeCreateIndex extends CreateIndexType {
-  override val command: String = "BTREE INDEX"
-  override val nodeDescription: String = "btree node index"
-  override val relDescription: String = "btree relationship index"
-  override val allDescription: String = "btree indexes"
-  override val singlePropertyOnly: Boolean = false
-}
-
 case object FulltextCreateIndex extends CreateIndexType {
   override val command: String = "FULLTEXT INDEX"
   override val nodeDescription: String = "fulltext node index"

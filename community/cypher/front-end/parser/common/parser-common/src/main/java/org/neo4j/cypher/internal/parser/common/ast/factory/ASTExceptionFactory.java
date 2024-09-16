@@ -45,6 +45,8 @@ public interface ASTExceptionFactory {
         return String.format("Filter type %s is not defined for show %s command.", got.description(), command);
     }
 
+    String invalidShowBtreeIndexes = "Invalid index type b-tree, please omit the `BTREE` filter.";
+
     String invalidExistsForShowConstraints =
             "`SHOW CONSTRAINTS` no longer allows the `EXISTS` keyword, please use `EXIST` or `PROPERTY EXISTENCE` instead.";
 
@@ -59,6 +61,8 @@ please omit `BRIEF` and use `YIELD *` instead of `VERBOSE`.""",
     static String invalidCreateIndexType(CreateIndexTypes got) {
         return String.format("Index type %s is not defined for create index command.", got.description());
     }
+
+    String getInvalidCreateBtreeIndexes = "Invalid index type b-tree, use range, point or text index instead.";
 
     // gives back error message if the command is invalid, null if valid
     static String checkForInvalidCreateConstraint(

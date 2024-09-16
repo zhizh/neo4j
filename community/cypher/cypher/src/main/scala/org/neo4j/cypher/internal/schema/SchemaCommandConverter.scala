@@ -103,7 +103,7 @@ class SchemaCommandConverter(
 
   private val ERROR_SUFFIX = " in import schema commands."
 
-  private val providerContext: IndexProviderContext = (_, providerString: String, indexType: IndexType) => {
+  private val providerContext: IndexProviderContext = (_, providerString: String, indexType: IndexType, _) => {
     val details = providerDescriptorDetails(providerString).orElseThrow(() =>
       new IndexProviderNotFoundException("Unable to find the IndexProviderDescriptor for the name: " + providerString)
     )

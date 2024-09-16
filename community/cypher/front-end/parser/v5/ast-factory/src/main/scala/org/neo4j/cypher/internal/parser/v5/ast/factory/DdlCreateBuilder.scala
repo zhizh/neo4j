@@ -234,27 +234,8 @@ trait DdlCreateBuilder extends Cypher5ParserListener {
 
     ctx.ast = token match {
       case Cypher5Parser.BTREE =>
-        if (isNode) {
-          val label = labelOrRelType.asInstanceOf[LabelName]
-          CreateIndex.createBtreeNodeIndex(
-            variable,
-            label,
-            propertyList,
-            indexName,
-            existsDo,
-            options
-          )(pos(grandparent))
-        } else {
-          val relType = labelOrRelType.asInstanceOf[RelTypeName]
-          CreateIndex.createBtreeRelationshipIndex(
-            variable,
-            relType,
-            propertyList,
-            indexName,
-            existsDo,
-            options
-          )(pos(grandparent))
-        }
+        // Btree indexes error in SyntaxChecker
+        null
       case Cypher5Parser.RANGE | Cypher5Parser.INDEX =>
         if (isNode) {
           val label = labelOrRelType.asInstanceOf[LabelName]

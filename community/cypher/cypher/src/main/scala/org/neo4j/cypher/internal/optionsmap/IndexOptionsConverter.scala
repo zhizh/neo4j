@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.optionsmap
 
 import Ordering.comparatorToOrdering
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.MapValueOps.Ops
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
 import org.neo4j.graphdb.schema.IndexSetting
@@ -59,7 +60,8 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
   protected def getOptionsParts(
     options: MapValue,
     schemaType: String,
-    indexType: IndexType
+    indexType: IndexType,
+    version: CypherVersion
   ): (Option[IndexProviderDescriptor], IndexConfig) = {
 
     if (options.exists { case (k, _) => !k.equalsIgnoreCase("indexProvider") && !k.equalsIgnoreCase("indexConfig") }) {
@@ -71,7 +73,7 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
     // If there are mandatory options we should call convert with empty options to throw expected errors
     val maybeConfig = options.getOption("indexconfig").orElse(Option.when(hasMandatoryOptions)(VirtualValues.EMPTY_MAP))
 
-    val indexProvider = maybeIndexProvider.map(assertValidIndexProvider(_, schemaType, indexType))
+    val indexProvider = maybeIndexProvider.map(assertValidIndexProvider(_, schemaType, indexType, version))
     val indexConfig =
       maybeConfig.map(assertValidAndTransformConfig(_, schemaType, indexProvider)).getOrElse(IndexConfig.empty)
 
@@ -90,10 +92,11 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
   private def assertValidIndexProvider(
     indexProvider: AnyValue,
     schemaType: String,
-    indexType: IndexType
+    indexType: IndexType,
+    version: CypherVersion
   ): IndexProviderDescriptor = indexProvider match {
     case indexProviderValue: TextValue =>
-      context.validateIndexProvider(schemaType, indexProviderValue.stringValue(), indexType)
+      context.validateIndexProvider(schemaType, indexProviderValue.stringValue(), indexType, version)
     case _ =>
       throw new InvalidArgumentsException(
         s"Could not create $schemaType with specified index provider '$indexProvider'. Expected String value."

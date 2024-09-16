@@ -1209,28 +1209,6 @@ class SchemaCommandConverterTest extends CypherFunSuite {
   }
 
   Seq(
-    ("(v:L)", "node", btreeNodeIndex: CreateBTreeIndexFunction),
-    ("()-[v:R]-()", "relationship", btreeRelIndex: CreateBTreeIndexFunction)
-  ).foreach {
-    case (pattern, entityType, createIndex: CreateBTreeIndexFunction) =>
-      test(s"CREATE BTREE INDEX FOR $pattern ON (v.name)") {
-        val error = intercept[SchemaCommandReaderException] {
-          converter.apply(createIndex(
-            List(prop("name")),
-            Some(Right(parameter)),
-            ast.IfExistsThrowError,
-            ast.NoOptions
-          ))
-        }
-        error.getMessage should includeAllOf(
-          "Parameters are not allowed to be used as a btree",
-          entityType,
-          "index name in import schema commands"
-        )
-      }
-  }
-
-  Seq(
     ("(v)", "labels(v)", "node", lookupNodeIndex: CreateLookupIndexFunction),
     ("()-[v]-()", "type(v)", "relationship", lookupRelIndex: CreateLookupIndexFunction)
   ).foreach {
@@ -2326,36 +2304,6 @@ class SchemaCommandConverterTest extends CypherFunSuite {
     ast.IfExistsDo,
     ast.Options
   ) => ast.CreateIndex
-
-  private def btreeNodeIndex(
-    props: List[Property],
-    name: Option[Either[String, Parameter]],
-    ifExistsDo: ast.IfExistsDo,
-    options: ast.Options
-  ): ast.CreateIndex =
-    ast.CreateIndex.createBtreeNodeIndex(
-      v,
-      label,
-      props,
-      name,
-      ifExistsDo,
-      options
-    )(InputPosition.NONE)
-
-  private def btreeRelIndex(
-    props: List[Property],
-    name: Option[Either[String, Parameter]],
-    ifExistsDo: ast.IfExistsDo,
-    options: ast.Options
-  ): ast.CreateIndex =
-    ast.CreateIndex.createBtreeRelationshipIndex(
-      v,
-      relType,
-      props,
-      name,
-      ifExistsDo,
-      options
-    )(InputPosition.NONE)
 
   type CreateIndexFunction = (
     List[Property],

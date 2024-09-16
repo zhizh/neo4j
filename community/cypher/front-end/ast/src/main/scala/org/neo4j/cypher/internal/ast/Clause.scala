@@ -2130,10 +2130,6 @@ case class ShowIndexesClause(
     DefaultOrAllShowColumns(useAllColumns, briefColumns, allColumns)
 
   override def moveWhereToProjection: CommandClause = copy(where = None)(position)
-
-  override def clauseSpecificSemanticCheck: SemanticCheck =
-    if (indexType == BtreeIndexes) error("Invalid index type b-tree, please omit the `BTREE` filter.", position)
-    else super.clauseSpecificSemanticCheck
 }
 
 object ShowIndexesClause {

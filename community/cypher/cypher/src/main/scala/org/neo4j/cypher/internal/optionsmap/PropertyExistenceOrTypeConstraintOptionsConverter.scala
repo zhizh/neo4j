@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.optionsmap
 
 import org.neo4j.configuration.Config
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
 import org.neo4j.internal.schema.IndexConfig
 import org.neo4j.internal.schema.IndexProviderDescriptor
@@ -34,7 +35,7 @@ case class PropertyExistenceOrTypeConstraintOptionsConverter(
 ) extends IndexOptionsConverter[CreateWithNoOptions] {
   // Property existence and property type constraints are not index-backed and do not have any valid options, but allows for an empty options map
 
-  override def convert(options: MapValue, config: Option[Config]): CreateWithNoOptions = {
+  override def convert(options: MapValue, config: Option[Config], version: CypherVersion): CreateWithNoOptions = {
     if (!options.isEmpty)
       throw new InvalidArgumentsException(
         s"Could not create $entity property $constraintType constraint: property $constraintType constraints have no valid options values."

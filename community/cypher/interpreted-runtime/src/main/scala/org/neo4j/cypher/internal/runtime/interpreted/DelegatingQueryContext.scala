@@ -24,6 +24,7 @@ import org.eclipse.collections.api.set.primitive.IntSet
 import org.neo4j.common.EntityType
 import org.neo4j.configuration.Config
 import org.neo4j.csv.reader.CharReadable
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.logical.plans.IndexOrder
 import org.neo4j.cypher.internal.runtime.ClosingIterator
@@ -224,9 +225,10 @@ abstract class DelegatingQueryContext(val inner: QueryContext) extends QueryCont
   override def validateIndexProvider(
     schemaDescription: String,
     providerString: String,
-    indexType: IndexType
+    indexType: IndexType,
+    version: CypherVersion
   ): IndexProviderDescriptor =
-    singleDbHit(inner.validateIndexProvider(schemaDescription, providerString, indexType))
+    singleDbHit(inner.validateIndexProvider(schemaDescription, providerString, indexType, version))
 
   override def addRangeIndexRule(
     entityId: Int,

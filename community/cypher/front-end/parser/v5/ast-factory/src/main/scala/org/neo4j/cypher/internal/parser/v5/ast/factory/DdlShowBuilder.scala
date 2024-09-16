@@ -22,7 +22,6 @@ import org.neo4j.cypher.internal.ast.AllConstraints
 import org.neo4j.cypher.internal.ast.AllDatabasesScope
 import org.neo4j.cypher.internal.ast.AllFunctions
 import org.neo4j.cypher.internal.ast.AllIndexes
-import org.neo4j.cypher.internal.ast.BtreeIndexes
 import org.neo4j.cypher.internal.ast.BuiltInFunctions
 import org.neo4j.cypher.internal.ast.Clause
 import org.neo4j.cypher.internal.ast.CommandClause
@@ -257,8 +256,8 @@ trait DdlShowBuilder extends Cypher5ParserListener {
       }
       ctx.showIndexesNoBrief().ast[ShowWrapper].buildIndexClauses(indexType, parentPos)
     } else {
-      val indexType = if (ctx.BTREE() != null) BtreeIndexes else AllIndexes
-      ctx.showIndexesAllowBrief().ast[ShowWrapper].buildIndexClauses(indexType, parentPos)
+      // Btree indexes error in SyntaxChecker
+      ctx.showIndexesAllowBrief().ast[ShowWrapper].buildIndexClauses(AllIndexes, parentPos)
     }
   }
 

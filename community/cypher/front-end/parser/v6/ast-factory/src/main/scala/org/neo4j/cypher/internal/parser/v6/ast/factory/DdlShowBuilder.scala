@@ -22,7 +22,6 @@ import org.neo4j.cypher.internal.ast.AllConstraints
 import org.neo4j.cypher.internal.ast.AllDatabasesScope
 import org.neo4j.cypher.internal.ast.AllFunctions
 import org.neo4j.cypher.internal.ast.AllIndexes
-import org.neo4j.cypher.internal.ast.BtreeIndexes
 import org.neo4j.cypher.internal.ast.BuiltInFunctions
 import org.neo4j.cypher.internal.ast.Clause
 import org.neo4j.cypher.internal.ast.CommandClause
@@ -238,7 +237,6 @@ trait DdlShowBuilder extends Cypher6ParserListener {
   ): Unit = {
     ctx.ast = nodeChild(ctx, 0).getSymbol.getType match {
       case Cypher6Parser.ALL      => AllIndexes
-      case Cypher6Parser.BTREE    => BtreeIndexes
       case Cypher6Parser.FULLTEXT => FulltextIndexes
       case Cypher6Parser.LOOKUP   => LookupIndexes
       case Cypher6Parser.POINT    => PointIndexes

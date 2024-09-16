@@ -709,270 +709,124 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
       }
   }
 
-  // btree loop (will fail in semantic checking)
+  // btree loop (fails with nice error in Cypher 5 and just fails to parse in Cypher 6)
   Seq(
-    ("(n1:Person)", btreeNodeIndex: CreateIndexFunction),
-    ("()-[n1:R]-()", btreeRelIndex: CreateIndexFunction),
-    ("()-[n1:R]->()", btreeRelIndex: CreateIndexFunction),
-    ("()<-[n1:R]-()", btreeRelIndex: CreateIndexFunction)
-  ).foreach {
-    case (pattern, createIndex: CreateIndexFunction) =>
-      test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(pos))
-      }
+    "(n1:Person)",
+    "()-[n1:R]-()",
+    "()-[n1:R]->()",
+    "()<-[n1:R]-()"
+  ).foreach { pattern =>
+    test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"USE neo4j CREATE BTREE INDEX FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](
-          createIndex(List(prop("n2", "name")), None, posN2(testName), ast.IfExistsThrowError, ast.NoOptions).withGraph(
-            Some(use(List("neo4j")))
-          )
-        )
-      }
+    test(s"USE neo4j CREATE BTREE INDEX FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name, n3.age)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name"), prop("n3", "age")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name, n3.age)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX my_index FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          Some(Left("my_index")),
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX my_index FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX my_index FOR $pattern ON (n2.name, n3.age)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name"), prop("n3", "age")),
-          Some(Left("my_index")),
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX my_index FOR $pattern ON (n2.name, n3.age)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX `$$my_index` FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          Some("$my_index"),
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX `$$my_index` FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE OR REPLACE BTREE INDEX FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsReplace,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE OR REPLACE BTREE INDEX FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree(true)
+    }
 
-      test(s"CREATE OR REPLACE BTREE INDEX my_index FOR $pattern ON (n2.name, n3.age)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name"), prop("n3", "age")),
-          Some(Left("my_index")),
-          posN2(testName),
-          ast.IfExistsReplace,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE OR REPLACE BTREE INDEX my_index FOR $pattern ON (n2.name, n3.age)") {
+      assertFailsOnBtree(true)
+    }
 
-      test(s"CREATE OR REPLACE BTREE INDEX IF NOT EXISTS FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsInvalidSyntax,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE OR REPLACE BTREE INDEX IF NOT EXISTS FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree(true)
+    }
 
-      test(s"CREATE OR REPLACE BTREE INDEX my_index IF NOT EXISTS FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          Some(Left("my_index")),
-          posN2(testName),
-          ast.IfExistsInvalidSyntax,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE OR REPLACE BTREE INDEX my_index IF NOT EXISTS FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree(true)
+    }
 
-      test(s"CREATE BTREE INDEX IF NOT EXISTS FOR $pattern ON (n2.name, n3.age)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name"), prop("n3", "age")),
-          None,
-          posN2(testName),
-          ast.IfExistsDoNothing,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX IF NOT EXISTS FOR $pattern ON (n2.name, n3.age)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX my_index IF NOT EXISTS FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          Some(Left("my_index")),
-          posN2(testName),
-          ast.IfExistsDoNothing,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX my_index IF NOT EXISTS FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexProvider : 'native-btree-1.0'}") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.OptionsMap(Map("indexProvider" -> literalString("native-btree-1.0")))
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexProvider : 'native-btree-1.0'}") {
+      assertFailsOnBtree()
+    }
 
-      test(
-        s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexProvider : 'native-btree-1.0', indexConfig : {`spatial.cartesian.max`: [100.0,100.0], `spatial.cartesian.min`: [-100.0,-100.0] }}"
-      ) {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.OptionsMap(Map(
-            "indexProvider" -> literalString("native-btree-1.0"),
-            "indexConfig" -> mapOf(
-              "spatial.cartesian.max" -> listOf(literalFloat(100.0), literalFloat(100.0)),
-              "spatial.cartesian.min" -> listOf(literalFloat(-100.0), literalFloat(-100.0))
-            )
-          ))
-        )(pos))
-      }
+    test(
+      s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexProvider : 'native-btree-1.0', indexConfig : {`spatial.cartesian.max`: [100.0,100.0], `spatial.cartesian.min`: [-100.0,-100.0] }}"
+    ) {
+      assertFailsOnBtree()
+    }
 
-      test(
-        s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexConfig : {`spatial.cartesian.max`: [100.0,100.0], `spatial.cartesian.min`: [-100.0,-100.0] }, indexProvider : 'native-btree-1.0'}"
-      ) {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.OptionsMap(Map(
-            "indexProvider" -> literalString("native-btree-1.0"),
-            "indexConfig" -> mapOf(
-              "spatial.cartesian.max" -> listOf(literalFloat(100.0), literalFloat(100.0)),
-              "spatial.cartesian.min" -> listOf(literalFloat(-100.0), literalFloat(-100.0))
-            )
-          ))
-        )(pos))
-      }
+    test(
+      s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexConfig : {`spatial.cartesian.max`: [100.0,100.0], `spatial.cartesian.min`: [-100.0,-100.0] }, indexProvider : 'native-btree-1.0'}"
+    ) {
+      assertFailsOnBtree()
+    }
 
-      test(
-        s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexConfig : {`spatial.wgs-84.max`: [60.0,60.0], `spatial.wgs-84.min`: [-40.0,-40.0] }}"
-      ) {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.OptionsMap(Map("indexConfig" -> mapOf(
-            "spatial.wgs-84.max" -> listOf(literalFloat(60.0), literalFloat(60.0)),
-            "spatial.wgs-84.min" -> listOf(literalFloat(-40.0), literalFloat(-40.0))
-          )))
-        )(pos))
-      }
+    test(
+      s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {indexConfig : {`spatial.wgs-84.max`: [60.0,60.0], `spatial.wgs-84.min`: [-40.0,-40.0] }}"
+    ) {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS $$options") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.OptionsParam(parameter("options", CTMap))
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS $$options") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {nonValidOption : 42}") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          None,
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.OptionsMap(Map("nonValidOption" -> literalInt(42)))
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX FOR $pattern ON (n2.name) OPTIONS {nonValidOption : 42}") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX my_index FOR $pattern ON (n2.name) OPTIONS {}") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          Some(Left("my_index")),
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.OptionsMap(Map.empty)
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX my_index FOR $pattern ON (n2.name) OPTIONS {}") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX $$my_index FOR $pattern ON (n2.name)") {
-        parsesTo[ast.Statements](createIndex(
-          List(prop("n2", "name")),
-          Some(Right(stringParam("my_index"))),
-          posN2(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(pos))
-      }
+    test(s"CREATE BTREE INDEX $$my_index FOR $pattern ON (n2.name)") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX FOR $pattern ON n2.name") {
-        assertAst(createIndex(
-          List(prop("n2", "name", posN2(testName))),
-          None,
-          posN1(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(defaultPos))
-      }
+    test(s"CREATE BTREE INDEX FOR $pattern ON n2.name") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX my_index FOR $pattern ON n2.name") {
-        assertAst(createIndex(
-          List(prop("n2", "name", posN2(testName))),
-          Some(Left("my_index")),
-          posN1(testName),
-          ast.IfExistsThrowError,
-          ast.NoOptions
-        )(defaultPos))
-      }
+    test(s"CREATE BTREE INDEX my_index FOR $pattern ON n2.name") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE OR REPLACE BTREE INDEX IF NOT EXISTS FOR $pattern ON n2.name") {
-        assertAst(createIndex(
-          List(prop("n2", "name", posN2(testName))),
-          None,
-          posN1(testName),
-          ast.IfExistsInvalidSyntax,
-          ast.NoOptions
-        )(defaultPos))
-      }
+    test(s"CREATE OR REPLACE BTREE INDEX IF NOT EXISTS FOR $pattern ON n2.name") {
+      assertFailsOnBtree(true)
+    }
 
-      test(s"CREATE BTREE INDEX FOR $pattern ON (n.name) {indexProvider : 'native-btree-1.0'}") {
-        failsParsing[ast.Statements].withMessageStart("Invalid input '{'")
-      }
+    test(s"CREATE BTREE INDEX FOR $pattern ON (n.name) {indexProvider : 'native-btree-1.0'}") {
+      assertFailsOnBtree()
+    }
 
-      test(s"CREATE BTREE INDEX FOR $pattern ON (n.name) OPTIONS") {
-        failsParsing[ast.Statements].withMessageStart("Invalid input ''")
-      }
+    test(s"CREATE BTREE INDEX FOR $pattern ON (n.name) OPTIONS") {
+      failsParsing[ast.Statements]
+        .in {
+          case Cypher5JavaCc | Cypher5 =>
+            _.withMessageStart("Invalid input ''")
+          case _ =>
+            _.withSyntaxErrorContaining("Invalid input 'INDEX': expected a graph pattern")
+        }
+    }
   }
 
   // lookup loop
@@ -3606,38 +3460,6 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     ast.Options
   ) => InputPosition => ast.CreateIndex
 
-  private def btreeNodeIndex(
-    props: List[Property],
-    name: Option[Either[String, Parameter]],
-    varPos: InputPosition,
-    ifExistsDo: ast.IfExistsDo,
-    options: ast.Options
-  ): InputPosition => ast.CreateIndex =
-    ast.CreateIndex.createBtreeNodeIndex(
-      Variable("n1")(varPos),
-      LabelName("Person")(increasePos(varPos, 3)),
-      props,
-      name,
-      ifExistsDo,
-      options
-    )
-
-  private def btreeRelIndex(
-    props: List[Property],
-    name: Option[Either[String, Parameter]],
-    varPos: InputPosition,
-    ifExistsDo: ast.IfExistsDo,
-    options: ast.Options
-  ): InputPosition => ast.CreateIndex =
-    ast.CreateIndex.createBtreeRelationshipIndex(
-      Variable("n1")(varPos),
-      RelTypeName("R")(increasePos(varPos, 3)),
-      props,
-      name,
-      ifExistsDo,
-      options
-    )
-
   type CreateRangeIndexFunction = (
     List[Property],
     Option[Either[String, Parameter]],
@@ -3864,4 +3686,20 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
   private def pos(offset: Int): InputPosition = (1, offset + 1, offset)
   private def posN1(query: String): InputPosition = pos(query.indexOf("n1"))
   private def posN2(query: String): InputPosition = pos(query.indexOf("n2"))
+
+  private def assertFailsOnBtree(failAsCreateCommand: Boolean = false) = {
+    failsParsing[ast.Statements]
+      .in {
+        case Cypher5JavaCc | Cypher5 =>
+          _.withSyntaxErrorContaining("Invalid index type b-tree, use range, point or text index instead.")
+        case _ if failAsCreateCommand =>
+          _.withSyntaxErrorContaining(
+            "Invalid input 'BTREE': expected 'ALIAS', 'CONSTRAINT', 'DATABASE', 'COMPOSITE DATABASE', 'INDEX', " +
+              "'FULLTEXT INDEX', 'LOOKUP INDEX', 'POINT INDEX', 'RANGE INDEX', 'TEXT INDEX', 'VECTOR INDEX', 'ROLE' or 'USER'"
+          )
+        case _ =>
+          // Since BTREE is no longer part of CREATE INDEX we fall back to regular Cypher CREATE (`CREATE btree=()-[]-()`)
+          _.withSyntaxErrorContaining("Invalid input 'INDEX': expected a graph pattern")
+      }
+  }
 }

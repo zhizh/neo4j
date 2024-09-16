@@ -72,9 +72,11 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
       case Cypher5Parser.RULE_enclosedPropertyList             => checkEnclosedPropertyList(cast(ctx))
       case Cypher5Parser.RULE_dropConstraint                   => checkDropConstraint(cast(ctx))
       case Cypher5Parser.RULE_showConstraintCommand            => checkShowConstraint(cast(ctx))
+      case Cypher5Parser.RULE_showIndexCommand                 => checkShowIndex(cast(ctx))
       case Cypher5Parser.RULE_showBriefAndYield                => checkBriefAndVerbose(cast(ctx))
       case Cypher5Parser.RULE_dropIndex                        => checkDropIndex(cast(ctx))
       case Cypher5Parser.RULE_createLookupIndex                => checkCreateLookupIndex(cast(ctx))
+      case Cypher5Parser.RULE_createIndex                      => checkCreateIndex(cast(ctx))
       case Cypher5Parser.RULE_createUser                       => checkCreateUser(cast(ctx))
       case Cypher5Parser.RULE_alterUser                        => checkAlterUser(cast(ctx))
       case Cypher5Parser.RULE_allPrivilege                     => checkAllPrivilege(cast(ctx))
@@ -539,6 +541,15 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
     }
   }
 
+  private def checkShowIndex(ctx: Cypher5Parser.ShowIndexCommandContext): Unit = {
+    if (ctx.BTREE() != null) {
+      _errors :+= exceptionFactory.syntaxException(
+        "Invalid index type b-tree, please omit the `BTREE` filter.",
+        inputPosition(ctx.BTREE().getSymbol)
+      )
+    }
+  }
+
   private def checkBriefAndVerbose(ctx: Cypher5Parser.ShowBriefAndYieldContext): Unit = {
     if (ctx.BRIEF() != null || ctx.VERBOSE() != null) {
       val posSymbol =
@@ -660,6 +671,15 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
       _errors :+= exceptionFactory.syntaxException(
         "Missing function name for the LOOKUP INDEX",
         inputPosition(ctx.LPAREN().getSymbol)
+      )
+    }
+  }
+
+  private def checkCreateIndex(ctx: Cypher5Parser.CreateIndexContext): Unit = {
+    if (ctx.BTREE() != null) {
+      _errors :+= exceptionFactory.syntaxException(
+        "Invalid index type b-tree, use range, point or text index instead.",
+        inputPosition(ctx.BTREE().getSymbol)
       )
     }
   }

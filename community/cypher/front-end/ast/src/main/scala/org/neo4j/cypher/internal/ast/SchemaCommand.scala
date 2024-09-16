@@ -113,46 +113,6 @@ object CreateIndex {
 
   // Help methods for creating the different index types
 
-  def createBtreeNodeIndex(
-    variable: Variable,
-    label: LabelName,
-    properties: List[Property],
-    name: Option[Either[String, Parameter]],
-    ifExistsDo: IfExistsDo,
-    options: Options,
-    useGraph: Option[GraphSelection] = None
-  )(position: InputPosition): CreateIndex =
-    CreateSingleLabelPropertyIndexCommand(
-      variable,
-      entityName = label,
-      properties,
-      name,
-      indexType = BtreeCreateIndex,
-      ifExistsDo,
-      options,
-      useGraph
-    )(position)
-
-  def createBtreeRelationshipIndex(
-    variable: Variable,
-    relType: RelTypeName,
-    properties: List[Property],
-    name: Option[Either[String, Parameter]],
-    ifExistsDo: IfExistsDo,
-    options: Options,
-    useGraph: Option[GraphSelection] = None
-  )(position: InputPosition): CreateIndex =
-    CreateSingleLabelPropertyIndexCommand(
-      variable,
-      entityName = relType,
-      properties,
-      name,
-      indexType = BtreeCreateIndex,
-      ifExistsDo,
-      options,
-      useGraph
-    )(position)
-
   def createFulltextNodeIndex(
     variable: Variable,
     labels: List[LabelName],
@@ -382,17 +342,12 @@ sealed trait CreateSingleLabelPropertyIndex extends CreateIndex {
     case _: RelTypeName => (false, indexType.relDescription)
   }
 
-  override def semanticCheck: SemanticCheck = {
-    if (indexType == BtreeCreateIndex)
-      error("Invalid index type b-tree, use range, point or text index instead.", position)
-    else {
-      checkOptionsMap(entityIndexDescription, options) chain
-        super.semanticCheck chain {
-          if (indexType.singlePropertyOnly) checkSingleProperty(indexType.allDescription, properties)
-          else SemanticCheck.success
-        }
-    }
-  }
+  override def semanticCheck: SemanticCheck =
+    checkOptionsMap(entityIndexDescription, options) chain
+      super.semanticCheck chain {
+        if (indexType.singlePropertyOnly) checkSingleProperty(indexType.allDescription, properties)
+        else SemanticCheck.success
+      }
 }
 
 object CreateSingleLabelPropertyIndex {

@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.optionsmap
 
 import org.eclipse.collections.api.PrimitiveIterable
 import org.neo4j.configuration.Config
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
 import org.neo4j.internal.schema.IndexConfig
 import org.neo4j.internal.schema.IndexConfigValidationRecords
@@ -54,8 +55,12 @@ case class CreateVectorIndexOptionsConverter(context: IndexProviderContext, late
 
   override protected val hasMandatoryOptions: Boolean = true
 
-  override def convert(options: MapValue, config: Option[Config]): CreateIndexWithFullOptions = {
-    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.VECTOR)
+  override def convert(
+    options: MapValue,
+    config: Option[Config],
+    version: CypherVersion
+  ): CreateIndexWithFullOptions = {
+    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.VECTOR, version)
     CreateIndexWithFullOptions(indexProvider, indexConfig)
   }
 

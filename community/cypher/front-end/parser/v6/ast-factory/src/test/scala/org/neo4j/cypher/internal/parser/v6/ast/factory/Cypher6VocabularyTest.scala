@@ -94,7 +94,6 @@ class Cypher6VocabularyTest extends CypherFunSuite {
     Cypher6Parser.BOOSTED -> "'BOOSTED'",
     Cypher6Parser.BOTH -> "'BOTH'",
     Cypher6Parser.BREAK -> "'BREAK'",
-    Cypher6Parser.BTREE -> "'BTREE'",
     Cypher6Parser.BUILT -> "'BUILT'",
     Cypher6Parser.BY -> "'BY'",
     Cypher6Parser.CALL -> "'CALL'",

@@ -199,10 +199,6 @@ BREAK
    : B R E A K
    ;
 
-BTREE
-   : B T R E E
-   ;
-
 BUILT
    : B U I L T
    ;

@@ -26,11 +26,6 @@ case object AllIndexes extends ShowIndexType {
   override val description: String = "allIndexes"
 }
 
-case object BtreeIndexes extends ShowIndexType {
-  override val prettyPrint: String = "BTREE"
-  override val description: String = "btreeIndexes"
-}
-
 case object RangeIndexes extends ShowIndexType {
   override val prettyPrint: String = "RANGE"
   override val description: String = "rangeIndexes"

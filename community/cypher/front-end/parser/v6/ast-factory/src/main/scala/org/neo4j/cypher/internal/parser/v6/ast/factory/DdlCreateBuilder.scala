@@ -223,28 +223,6 @@ trait DdlCreateBuilder extends Cypher6ParserListener {
     val token = nodeChild(parent, 0).getSymbol.getType
 
     ctx.ast = token match {
-      case Cypher6Parser.BTREE =>
-        if (isNode) {
-          val label = labelOrRelType.asInstanceOf[LabelName]
-          CreateIndex.createBtreeNodeIndex(
-            variable,
-            label,
-            propertyList,
-            indexName,
-            existsDo,
-            options
-          )(pos(grandparent))
-        } else {
-          val relType = labelOrRelType.asInstanceOf[RelTypeName]
-          CreateIndex.createBtreeRelationshipIndex(
-            variable,
-            relType,
-            propertyList,
-            indexName,
-            existsDo,
-            options
-          )(pos(grandparent))
-        }
       case Cypher6Parser.RANGE | Cypher6Parser.INDEX =>
         if (isNode) {
           val label = labelOrRelType.asInstanceOf[LabelName]

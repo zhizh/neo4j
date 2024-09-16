@@ -4797,6 +4797,12 @@ List<CLAUSE> ShowIndexesAllowBrief( Token start, ShowCommandFilterTypes indexTyp
                     start.beginOffset, start.beginLine, start.beginColumn );
         }
 
+        if (indexType == ShowCommandFilterTypes.BTREE ) {
+            throw exceptionFactory.syntaxException(
+                    new ParseException(ASTExceptionFactory.invalidShowBtreeIndexes),
+                    start.beginOffset, start.beginLine, start.beginColumn );
+        }
+
         if ( yieldClause != null )
         {
             clauses.add( astFactory.showIndexClause( pos( start ), indexType, where, yieldClause ) );
@@ -5626,6 +5632,12 @@ SCHEMA_COMMAND createIndex( Token start, boolean replace, CreateIndexTypes index
     properties=PropertyList()
     ( <OPTIONS> options=MapOrParameter() )?
     {
+        if (indexType == CreateIndexTypes.BTREE ) {
+            throw exceptionFactory.syntaxException(
+                new ParseException(ASTExceptionFactory.getInvalidCreateBtreeIndexes),
+                start.beginOffset, start.beginLine, start.beginColumn );
+        }
+
         return astFactory.createIndex( pos(start), replace, ifNotExists, isNode, indexName, variable, new StringPos<>(label.image, pos(label)), properties, options, indexType );
     }
 }

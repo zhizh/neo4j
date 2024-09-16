@@ -24,6 +24,7 @@ import org.eclipse.collections.api.set.primitive.IntSet
 import org.neo4j.common.EntityType
 import org.neo4j.configuration.Config
 import org.neo4j.csv.reader.CharReadable
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.logical.plans.IndexOrder
 import org.neo4j.cypher.internal.macros.TranslateExceptionMacros.translateException
@@ -647,9 +648,13 @@ class ExceptionTranslatingQueryContext(override val inner: QueryContext)
   override def validateIndexProvider(
     schemaDescription: String,
     providerString: String,
-    indexType: IndexType
+    indexType: IndexType,
+    version: CypherVersion
   ): IndexProviderDescriptor =
-    translateException(tokenNameLookup, inner.validateIndexProvider(schemaDescription, providerString, indexType))
+    translateException(
+      tokenNameLookup,
+      inner.validateIndexProvider(schemaDescription, providerString, indexType, version)
+    )
 
   override def addRangeIndexRule(
     entityId: Int,

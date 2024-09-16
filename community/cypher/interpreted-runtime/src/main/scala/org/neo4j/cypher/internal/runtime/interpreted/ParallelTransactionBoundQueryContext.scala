@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.runtime.interpreted
 import org.eclipse.collections.api.map.primitive.IntObjectMap
 import org.eclipse.collections.api.set.primitive.IntSet
 import org.neo4j.common.EntityType
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.runtime.ClosingLongIterator
 import org.neo4j.cypher.internal.runtime.NodeOperations
 import org.neo4j.cypher.internal.runtime.Operations
@@ -89,7 +90,8 @@ object ParallelTransactionBoundQueryContext {
     override def validateIndexProvider(
       schemaDescription: String,
       providerString: String,
-      indexType: IndexType
+      indexType: IndexType,
+      version: CypherVersion
     ): IndexProviderDescriptor = unsupported()
 
     override def addRangeIndexRule(

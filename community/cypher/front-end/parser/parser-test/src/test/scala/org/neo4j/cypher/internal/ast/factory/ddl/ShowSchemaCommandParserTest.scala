@@ -18,7 +18,6 @@ package org.neo4j.cypher.internal.ast.factory.ddl
 
 import org.neo4j.cypher.internal.ast.AllConstraints
 import org.neo4j.cypher.internal.ast.AllIndexes
-import org.neo4j.cypher.internal.ast.BtreeIndexes
 import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.FulltextIndexes
 import org.neo4j.cypher.internal.ast.KeyConstraints
@@ -596,7 +595,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
             |      ^""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """Invalid input 'UNKNOWN': expected 'ALIAS', 'ALIASES', 'ALL', 'BTREE', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
+          """Invalid input 'UNKNOWN': expected 'ALIAS', 'ALIASES', 'ALL', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
             |"SHOW UNKNOWN INDEXES"
             |      ^""".stripMargin
         )
@@ -615,50 +614,22 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
     }
   }
 
-  // Syntax to be removed (collected for ease later, can then be moved to the section below)
+  // Removed syntax (also includes parts using it that was invalid anyway)
 
   test("SHOW BTREE INDEX") {
-    assertAst(
-      singleQuery(ShowIndexesClause(
-        BtreeIndexes,
-        None,
-        List.empty,
-        yieldAll = false
-      )(defaultPos))
-    )
+    assertFailsOnBtree()
   }
 
   test("SHOW BTREE INDEXES") {
-    assertAst(
-      singleQuery(ShowIndexesClause(
-        BtreeIndexes,
-        None,
-        List.empty,
-        yieldAll = false
-      )(defaultPos))
-    )
+    assertFailsOnBtree()
   }
 
   test("SHOW BTREE INDEXES YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowIndexesClause(BtreeIndexes, None, List.empty, yieldAll = true)(pos),
-        withFromYield(returnAllItems)
-      ),
-      comparePosition = false
-    )
+    assertFailsOnBtree()
   }
 
   test("SHOW BTREE INDEXES WHERE name = 'btree'") {
-    assertAst(
-      singleQuery(ShowIndexesClause(
-        BtreeIndexes,
-        Some(where(equals(varFor("name"), literalString("btree")))),
-        List.empty,
-        yieldAll = false
-      )(pos)),
-      comparePosition = false
-    )
+    assertFailsOnBtree()
   }
 
   test("SHOW ALL BTREE INDEXES") {
@@ -684,8 +655,6 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
     }
   }
 
-  // Removed syntax (also includes parts using it that was invalid anyway)
-
   test("SHOW INDEXES BRIEF") {
     assertFailsOnBriefVerbosePreviouslyAllowed("SHOW INDEXES", "BRIEF")
   }
@@ -703,7 +672,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
   }
 
   test("SHOW BTREE INDEXES BRIEF") {
-    assertFailsOnBriefVerbosePreviouslyAllowed("SHOW INDEXES", "BRIEF")
+    assertFailsOnBriefVerbosePreviouslyAllowed("SHOW INDEXES", "BRIEF", failOnBtree = true)
   }
 
   test("SHOW INDEXES VERBOSE") {
@@ -715,7 +684,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
   }
 
   test("SHOW BTREE INDEXES VERBOSE OUTPUT") {
-    assertFailsOnBriefVerbosePreviouslyAllowed("SHOW INDEXES", "VERBOSE")
+    assertFailsOnBriefVerbosePreviouslyAllowed("SHOW INDEXES", "VERBOSE", failOnBtree = true)
   }
 
   test("SHOW INDEX OUTPUT") {
@@ -1387,7 +1356,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
              |      ^""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """|Invalid input 'NODES': expected 'ALIAS', 'ALIASES', 'ALL', 'BTREE', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
+          """|Invalid input 'NODES': expected 'ALIAS', 'ALIASES', 'ALL', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
              |"SHOW NODES EXIST CONSTRAINTS"
              |      ^""".stripMargin
         )
@@ -1457,7 +1426,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
              |      ^""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """|Invalid input 'RELATIONSHIPS': expected 'ALIAS', 'ALIASES', 'ALL', 'BTREE', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
+          """|Invalid input 'RELATIONSHIPS': expected 'ALIAS', 'ALIASES', 'ALL', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
              |"SHOW RELATIONSHIPS EXIST CONSTRAINTS"
              |      ^""".stripMargin
         )
@@ -1533,7 +1502,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
              |      ^""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """|Invalid input 'UNKNOWN': expected 'ALIAS', 'ALIASES', 'ALL', 'BTREE', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
+          """|Invalid input 'UNKNOWN': expected 'ALIAS', 'ALIASES', 'ALL', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', 'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', 'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', 'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR' (line 1, column 6 (offset: 5))
              |"SHOW UNKNOWN CONSTRAINTS"
              |      ^""".stripMargin
         )
@@ -1937,13 +1906,24 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
         case _                       => _.toAst(expected(constraintType))
       }
 
-  private def assertFailsOnBriefVerbosePreviouslyAllowed(command: String, keyword: String) = {
+  private def assertFailsOnBriefVerbosePreviouslyAllowed(
+    command: String,
+    keyword: String,
+    failOnBtree: Boolean = false
+  ) = {
     failsParsing[Statements]
       .in {
         case Cypher5JavaCc | Cypher5 =>
           _.withSyntaxErrorContaining(
             s"""`$command` no longer allows the `BRIEF` and `VERBOSE` keywords,
                |please omit `BRIEF` and use `YIELD *` instead of `VERBOSE`.""".stripMargin
+          )
+        case _ if failOnBtree =>
+          _.withSyntaxErrorContaining(
+            "Invalid input 'BTREE': expected 'ALIAS', 'ALIASES', 'ALL', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', " +
+              "'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', " +
+              "'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', " +
+              "'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR'"
           )
         case _ =>
           _.withSyntaxErrorContaining(
@@ -1986,6 +1966,21 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
         case _ =>
           _.withSyntaxErrorContaining(
             s"Invalid input '$keyword': expected 'SHOW', 'TERMINATE', 'WHERE', 'YIELD' or <EOF>"
+          )
+      }
+  }
+
+  private def assertFailsOnBtree() = {
+    failsParsing[Statements]
+      .in {
+        case Cypher5JavaCc | Cypher5 =>
+          _.withSyntaxErrorContaining("Invalid index type b-tree, please omit the `BTREE` filter.")
+        case _ =>
+          _.withSyntaxErrorContaining(
+            "Invalid input 'BTREE': expected 'ALIAS', 'ALIASES', 'ALL', 'CONSTRAINT', 'CONSTRAINTS', 'DATABASE', 'DEFAULT DATABASE', 'HOME DATABASE', 'DATABASES', " +
+              "'EXIST', 'EXISTENCE', 'FULLTEXT', 'FUNCTION', 'FUNCTIONS', 'BUILT IN', 'INDEX', 'INDEXES', 'KEY', 'LOOKUP', 'NODE', 'POINT', 'POPULATED', 'PRIVILEGE', 'PRIVILEGES', " +
+              "'PROCEDURE', 'PROCEDURES', 'PROPERTY', 'RANGE', 'REL', 'RELATIONSHIP', 'ROLE', 'ROLES', 'SERVER', 'SERVERS', 'SETTING', 'SETTINGS', 'SUPPORTED', 'TEXT', " +
+              "'TRANSACTION', 'TRANSACTIONS', 'UNIQUE', 'UNIQUENESS', 'USER', 'CURRENT USER', 'USERS' or 'VECTOR'"
           )
       }
   }

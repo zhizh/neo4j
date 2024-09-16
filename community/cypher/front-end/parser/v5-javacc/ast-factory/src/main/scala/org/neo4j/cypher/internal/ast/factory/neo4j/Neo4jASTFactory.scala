@@ -58,7 +58,6 @@ import org.neo4j.cypher.internal.ast.AssignRoleAction
 import org.neo4j.cypher.internal.ast.Auth
 import org.neo4j.cypher.internal.ast.AuthAttribute
 import org.neo4j.cypher.internal.ast.AuthId
-import org.neo4j.cypher.internal.ast.BtreeIndexes
 import org.neo4j.cypher.internal.ast.BuiltInFunctions
 import org.neo4j.cypher.internal.ast.CascadeAliases
 import org.neo4j.cypher.internal.ast.CatalogName
@@ -1684,7 +1683,6 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
   ): Clause = {
     val indexType = initialIndexType match {
       case ShowCommandFilterTypes.ALL      => AllIndexes
-      case ShowCommandFilterTypes.BTREE    => BtreeIndexes
       case ShowCommandFilterTypes.RANGE    => RangeIndexes
       case ShowCommandFilterTypes.FULLTEXT => FulltextIndexes
       case ShowCommandFilterTypes.TEXT     => TextIndexes
@@ -2125,24 +2123,6 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
           ifExistsDo(replace, ifNotExists),
           asOptionsAst(options),
           fromDefault = false
-        )(p)
-      case (CreateIndexTypes.BTREE, true) =>
-        CreateIndex.createBtreeNodeIndex(
-          variable,
-          LabelName(label.string)(label.pos),
-          properties,
-          name,
-          ifExistsDo(replace, ifNotExists),
-          asOptionsAst(options)
-        )(p)
-      case (CreateIndexTypes.BTREE, false) =>
-        CreateIndex.createBtreeRelationshipIndex(
-          variable,
-          RelTypeName(label.string)(label.pos),
-          properties,
-          name,
-          ifExistsDo(replace, ifNotExists),
-          asOptionsAst(options)
         )(p)
       case (CreateIndexTypes.TEXT, true) =>
         CreateIndex.createTextNodeIndex(
