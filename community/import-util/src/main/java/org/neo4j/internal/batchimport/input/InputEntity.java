@@ -127,11 +127,6 @@ public class InputEntity implements InputEntityVisitor {
     }
 
     @Override
-    public boolean property(String property) {
-        return delegate.property(property);
-    }
-
-    @Override
     public boolean id(long id) {
         checkClear();
         hasLongId = true;

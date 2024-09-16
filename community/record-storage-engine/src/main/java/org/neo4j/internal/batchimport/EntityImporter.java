@@ -45,7 +45,6 @@ import org.neo4j.kernel.impl.store.record.PropertyRecord;
 import org.neo4j.kernel.impl.store.record.Record;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.cursor.StoreCursors;
-import org.neo4j.token.api.TokenConstants;
 import org.neo4j.token.api.TokenHolder;
 import org.neo4j.token.api.TokenNotFoundException;
 import org.neo4j.values.storable.Value;
@@ -135,15 +134,6 @@ abstract class EntityImporter extends InputEntityVisitor.Adapter {
         hasPropertyId = true;
         propertyId = nextProp;
         return true;
-    }
-
-    @Override
-    public boolean property(String property) {
-        try {
-            return propertyKeyTokenRepository.getOrCreateId(property) != TokenConstants.NO_TOKEN;
-        } catch (KernelException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
