@@ -407,7 +407,7 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         @Override
         public Iterator<AnyValue> iterator() {
             return switch (inner.iterationPreference()) {
-                case RANDOM_ACCESS -> new RandomAccessIterator(this);
+                case RANDOM_ACCESS -> randomAccessIterator();
                 case ITERATION -> new ListSliceIterator();
             };
         }
@@ -466,7 +466,7 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         @Override
         public Iterator<AnyValue> iterator() {
             // NOTE: this is dangerous since the underlying may not prefer random access
-            return new RandomAccessIterator(this);
+            return randomAccessIterator();
         }
 
         @Override
@@ -530,7 +530,7 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         @Override
         public Iterator<AnyValue> iterator() {
             if (iterationPreference == RANDOM_ACCESS) {
-                return new RandomAccessIterator(this);
+                return randomAccessIterator();
             } else {
                 return new ConcatListIterator();
             }
@@ -539,7 +539,7 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         @Override
         public long actualSize() {
             if (size < 0) {
-                int s = 0;
+                long s = 0;
                 for (ListValue list : lists) {
                     s += list.actualSize();
                 }
@@ -706,7 +706,7 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         @Override
         public Iterator<AnyValue> iterator() {
             return switch (base.iterationPreference()) {
-                case RANDOM_ACCESS -> new RandomAccessIterator(this);
+                case RANDOM_ACCESS -> randomAccessIterator();
                 case ITERATION -> Iterators.appendTo(base.iterator(), appended);
             };
         }
@@ -813,7 +813,7 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         @Override
         public Iterator<AnyValue> iterator() {
             return switch (base.iterationPreference()) {
-                case RANDOM_ACCESS -> new RandomAccessIterator(this);
+                case RANDOM_ACCESS -> randomAccessIterator();
                 case ITERATION -> Iterators.prependTo(base.iterator(), prepended);
             };
         }
@@ -899,17 +899,52 @@ public abstract class ListValue extends VirtualValue implements SequenceValue, I
         return value(size - 1);
     }
 
-    private static class RandomAccessIterator implements Iterator<AnyValue> {
+    protected Iterator<AnyValue> randomAccessIterator() {
+        var size = actualSize();
+        if (size <= Integer.MAX_VALUE) {
+            return new IntRandomAccessIterator(this, (int) size);
+        } else {
+            return new LongRandomAccessIterator(this, size);
+        }
+    }
+
+    private static class LongRandomAccessIterator implements Iterator<AnyValue> {
         private final ListValue listValue;
+        private final long actualSize;
         private long count;
 
-        private RandomAccessIterator(ListValue listValue) {
+        private LongRandomAccessIterator(ListValue listValue, long actualSize) {
             this.listValue = listValue;
+            this.actualSize = actualSize;
         }
 
         @Override
         public boolean hasNext() {
-            return count < listValue.actualSize();
+            return count < actualSize;
+        }
+
+        @Override
+        public AnyValue next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return listValue.value(count++);
+        }
+    }
+
+    private static class IntRandomAccessIterator implements Iterator<AnyValue> {
+        private final ListValue listValue;
+        private final int actualSize;
+        private long count;
+
+        private IntRandomAccessIterator(ListValue listValue, int actualSize) {
+            this.listValue = listValue;
+            this.actualSize = actualSize;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return count < actualSize;
         }
 
         @Override
