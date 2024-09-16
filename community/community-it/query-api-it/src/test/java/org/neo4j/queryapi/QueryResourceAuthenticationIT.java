@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.EnumSet;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,15 +38,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
-import org.neo4j.configuration.connectors.BoltConnectorInternalSettings;
 import org.neo4j.configuration.connectors.ConnectorPortRegister;
 import org.neo4j.configuration.connectors.ConnectorType;
 import org.neo4j.configuration.connectors.HttpConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.kernel.api.exceptions.Status;
-import org.neo4j.server.configuration.ConfigurableServerModules;
-import org.neo4j.server.configuration.ServerSettings;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 
 class QueryResourceAuthenticationIT {
@@ -67,8 +63,6 @@ class QueryResourceAuthenticationIT {
                 .setConfig(HttpConnector.listen_address, new SocketAddress("localhost", 0))
                 .setConfig(GraphDatabaseSettings.auth_enabled, true)
                 .setConfig(BoltConnector.enabled, true)
-                .setConfig(BoltConnectorInternalSettings.enable_local_connector, true)
-                .setConfig(ServerSettings.http_enabled_modules, EnumSet.allOf(ConfigurableServerModules.class))
                 .impermanent()
                 .build();
         var portRegister = QueryApiTestUtil.resolveDependency(dbms, ConnectorPortRegister.class);

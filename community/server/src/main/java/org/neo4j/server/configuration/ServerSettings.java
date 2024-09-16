@@ -160,7 +160,7 @@ public class ServerSettings implements SettingsDeclaration {
     public static final Setting<Set<ConfigurableServerModules>> http_enabled_modules = newBuilder(
                     "server.http_enabled_modules",
                     setOfEnums(ConfigurableServerModules.class),
-                    EnumSet.complementOf(EnumSet.of(ConfigurableServerModules.QUERY_API_ENDPOINTS)))
+                    EnumSet.allOf(ConfigurableServerModules.class))
             .build();
 
     @Description("Defines the set of transports available on the HTTP server.")

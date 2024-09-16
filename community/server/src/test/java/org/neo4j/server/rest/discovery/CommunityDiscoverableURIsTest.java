@@ -43,7 +43,8 @@ class CommunityDiscoverableURIsTest {
     @Test
     void shouldAdvertiseTransactionAndManagementURIs() {
         var uris = communityDiscoverableURIs(Config.defaults(), null, null);
-        assertEquals(Map.of("transaction", "/db/{databaseName}/tx"), toMap(uris));
+        assertEquals(
+                Map.of("transaction", "/db/{databaseName}/tx", "query", "/db/{databaseName}/query/v2"), toMap(uris));
     }
 
     @Test

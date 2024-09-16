@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.EnumSet;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -44,8 +43,6 @@ import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.notifications.NotificationCodeWithDescription;
-import org.neo4j.server.configuration.ConfigurableServerModules;
-import org.neo4j.server.configuration.ServerSettings;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 
 class QueryResourceNotificationsIT {
@@ -67,8 +64,6 @@ class QueryResourceNotificationsIT {
                         BoltConnectorInternalSettings.local_channel_address,
                         QueryResourceNotificationsIT.class.getSimpleName())
                 .setConfig(BoltConnector.enabled, true)
-                .setConfig(BoltConnectorInternalSettings.enable_local_connector, true)
-                .setConfig(ServerSettings.http_enabled_modules, EnumSet.allOf(ConfigurableServerModules.class))
                 .impermanent()
                 .build();
         var portRegister = QueryApiTestUtil.resolveDependency(dbms, ConnectorPortRegister.class);

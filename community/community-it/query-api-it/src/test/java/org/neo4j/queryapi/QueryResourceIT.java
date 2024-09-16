@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.EnumSet;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,8 +46,6 @@ import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.fabric.bolt.QueryRouterBookmark;
 import org.neo4j.fabric.bookmark.BookmarkFormat;
 import org.neo4j.kernel.database.Database;
-import org.neo4j.server.configuration.ConfigurableServerModules;
-import org.neo4j.server.configuration.ServerSettings;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 
 class QueryResourceIT {
@@ -68,8 +65,6 @@ class QueryResourceIT {
                 .setConfig(HttpConnector.listen_address, new SocketAddress("localhost", 0))
                 .setConfig(BoltConnectorInternalSettings.local_channel_address, QueryResourceIT.class.getSimpleName())
                 .setConfig(BoltConnector.enabled, true)
-                .setConfig(BoltConnectorInternalSettings.enable_local_connector, true)
-                .setConfig(ServerSettings.http_enabled_modules, EnumSet.allOf(ConfigurableServerModules.class))
                 .impermanent()
                 .build();
         var portRegister = QueryApiTestUtil.resolveDependency(dbms, ConnectorPortRegister.class);
