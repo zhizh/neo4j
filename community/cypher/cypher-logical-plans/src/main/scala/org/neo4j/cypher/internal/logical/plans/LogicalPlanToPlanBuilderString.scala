@@ -1570,7 +1570,7 @@ object LogicalPlanToPlanBuilderString {
         )
     }
 
-    val compoundString = maybeCompoundPredicate.map(cp => s", compoundPredicate = $cp").getOrElse("")
+    val compoundString = maybeCompoundPredicate.map(cp => s", compoundPredicate = Some($cp)").getOrElse("")
     s"${indent}${indent}.addTransition(${from.id}, ${transition.endId}, $patternString$compoundString)"
   }
 

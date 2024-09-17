@@ -192,7 +192,7 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
             1,
             2,
             "(n1_inner)-[r1_inner]->(n2_inner WHERE n2_inner.p = 1)-[r2_inner]->(n3_inner)",
-            compoundPredicate = "n1_inner.foo = n3_inner.foo"
+            compoundPredicate = Some("n1_inner.foo = n3_inner.foo AND n1_inner.bar = n3_inner.bar")
           )
           .addTransition(2, 3, "(n3_inner) (t_inner)")
           .setFinalState(3)

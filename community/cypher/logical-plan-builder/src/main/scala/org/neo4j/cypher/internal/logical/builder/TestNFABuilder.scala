@@ -166,7 +166,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
     pattern: String,
     maybeRelPredicate: Option[VariablePredicate] = None,
     maybeToPredicate: Option[VariablePredicate] = None,
-    compoundPredicate: String = ""
+    compoundPredicate: Option[String] = None
   ): TestNFABuilder = {
 
     parsePattern(pattern) match {
@@ -214,7 +214,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
           )
         }
         val (from, rels, nodes, to) = unnestRelationshipChain(chain)
-        val compoundPred = if (compoundPredicate == "") None else Some(Parser.parseExpression(compoundPredicate))
+        val compoundPred = compoundPredicate.map(Parser.parseExpression)
         val fromState = getOrCreateState(fromId, from.nodeVariable)
         assertFromNameMatchesFromId(fromState, from.nodeVariable.name, fromId, pattern)
         val transition = MultiRelationshipExpansionTransition(rels, nodes, compoundPred, toId)
