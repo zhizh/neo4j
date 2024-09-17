@@ -157,6 +157,8 @@ public class CliArgHelper {
 
         cliArgs.setAccessMode(ns.get("access-mode"));
 
+        cliArgs.setEnableAutocompletions(ns.get("enable-autocompletions"));
+
         cliArgs.setEncryption(Encryption.parse(ns.get("encryption")));
 
         final var database = ofNullable(ns.getString("database"))
@@ -324,6 +326,11 @@ public class CliArgHelper {
                 .setConst(FAIL_AT_END)
                 .action(new StoreConstArgumentAction());
         parser.setDefault("fail-behavior", FAIL_FAST);
+
+        parser.addArgument("--enable-autocompletions")
+                .dest("enable-autocompletions")
+                .help("Whether to enable Cypher autocompletions inside the CLI, which are disabled by default")
+                .action(Arguments.storeTrue());
 
         parser.addArgument("--format")
                 .help(

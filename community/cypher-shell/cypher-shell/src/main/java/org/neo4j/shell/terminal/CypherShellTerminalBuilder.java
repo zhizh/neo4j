@@ -35,9 +35,10 @@ import org.jline.terminal.Attributes;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.neo4j.shell.commands.CommandHelper.CommandFactoryHelper;
+import org.neo4j.shell.completions.CompletionEngine;
+import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.log.Logger;
 import org.neo4j.shell.parameter.ParameterService;
-import org.neo4j.shell.parser.CypherLanguageService;
 import org.neo4j.shell.parser.ShellStatementParser;
 import org.neo4j.shell.printer.Printer;
 import org.neo4j.util.VisibleForTesting;
@@ -54,7 +55,7 @@ public class CypherShellTerminalBuilder {
     private boolean dumb;
     private ParameterService parameters;
     private Supplier<SimplePrompt> simplePromptSupplier = SimplePrompt::defaultPrompt;
-    private boolean enableCypherCompletion = false;
+    private boolean enableCypherCompletion = true;
     private Duration idleTimeout;
     private Duration idleDelay;
 
@@ -106,11 +107,12 @@ public class CypherShellTerminalBuilder {
         return this;
     }
 
-    public CypherShellTerminal build() {
+    public CypherShellTerminal build(DbInfo dbInfo, CompletionEngine completionEngine, boolean enableCompletions) {
         assert printer != null;
+        this.enableCypherCompletion = enableCompletions;
 
         try {
-            return isInteractive ? buildJlineBasedTerminal() : nonInteractiveTerminal();
+            return isInteractive ? buildJlineBasedTerminal(dbInfo, completionEngine) : nonInteractiveTerminal();
         } catch (IOException e) {
             log.warn("Fallback to non-interactive mode", e);
             if (isInteractive) {
@@ -124,7 +126,8 @@ public class CypherShellTerminalBuilder {
         return new WriteOnlyCypherShellTerminal(out != null ? new PrintStream(out) : System.out);
     }
 
-    public CypherShellTerminal buildJlineBasedTerminal() throws IOException {
+    private CypherShellTerminal buildJlineBasedTerminal(DbInfo dbInfo, CompletionEngine completionEngine)
+            throws IOException {
         var jLineTerminal = TerminalBuilder.builder();
 
         jLineTerminal.nativeSignals(true);
@@ -143,13 +146,10 @@ public class CypherShellTerminalBuilder {
             jLineTerminal.dumb(true).type(Terminal.TYPE_DUMB).attributes(attributes);
         }
 
-        var cypherLangService = CypherLanguageService.get();
-
         var reader = LineReaderBuilder.builder()
                 .terminal(jLineTerminal.build())
-                .parser(new StatementJlineParser(new ShellStatementParser(), cypherLangService))
-                .completer(new JlineCompleter(
-                        new CommandFactoryHelper(), cypherLangService, parameters, enableCypherCompletion))
+                .parser(new StatementJlineParser(new ShellStatementParser()))
+                .completer(new JlineCompleter(new CommandFactoryHelper(), completionEngine, enableCypherCompletion))
                 .history(new DefaultHistory()) // The default history is in-memory until we set history file variable
                 .expander(new JlineTerminal.EmptyExpander())
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true) // Disable '!' history expansion
@@ -160,7 +160,7 @@ public class CypherShellTerminalBuilder {
 
         bindKeyPadKeys(reader);
 
-        return new JlineTerminal(reader, isInteractive, printer, simplePromptSupplier, idleTimeout, idleDelay);
+        return new JlineTerminal(reader, isInteractive, printer, simplePromptSupplier, idleTimeout, idleDelay, dbInfo);
     }
 
     public static CypherShellTerminalBuilder terminalBuilder() {

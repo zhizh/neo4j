@@ -16,7 +16,6 @@
  */
 package org.neo4j.cypher.internal.ast.factory.neo4j.completion;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -71,19 +71,19 @@ public class CodeCompletionCore {
          * Collection of Rule candidates, each with the callstack of rules to
          * reach the candidate
          */
-        public Map<Integer, List<Integer>> rules = new HashMap<>();
-        /**
-         * Collection of matched Preferred Rules each with their start and end
-         * offsets
-         */
-        public Map<Integer, List<Integer>> rulePositions = new HashMap<>();
+        public Map<Integer, CandidateRule> rules = new HashMap<>();
 
         @Override
         public String toString() {
-            return "CandidatesCollection{" + "tokens=" + tokens + ", rules=" + rules + ", ruleStrings=" + rulePositions
-                    + '}';
+            return "CandidatesCollection{" + "tokens=" + tokens + ", rules=" + rules + '}';
         }
     }
+
+    public record RuleWithStartToken(int startTokenIndex, int ruleIndex) {}
+    ;
+
+    public record CandidateRule(int startTokenIndex, List<Integer> ruleList) {}
+    ;
 
     public static class FollowSetWithPath {
         public IntervalSet intervals;
@@ -119,9 +119,6 @@ public class CodeCompletionCore {
     private int tokenStartIndex = 0;
     private int statesProcessed = 0;
 
-    // A mapping of rule index to token stream position to end token positions.
-    // A rule which has been visited before with the same input position will always produce the same output positions.
-    private final Map<Integer, Map<Integer, Set<Integer>>> shortcutMap = new HashMap<>();
     private final CandidatesCollection candidates =
             new CandidatesCollection(); // The collected candidates (rules and tokens).
 
@@ -155,7 +152,6 @@ public class CodeCompletionCore {
      * speed up the retrieval process but might miss some candidates (if they are outside of the given context).
      */
     public CandidatesCollection collectCandidates(int caretTokenIndex, ParserRuleContext context) {
-        this.shortcutMap.clear();
         this.candidates.rules.clear();
         this.candidates.tokens.clear();
         this.statesProcessed = 0;
@@ -176,41 +172,11 @@ public class CodeCompletionCore {
         }
         tokenStream.seek(currentIndex);
 
-        LinkedList<Integer> callStack = new LinkedList<>();
+        LinkedList<RuleWithStartToken> callStack = new LinkedList<>();
         int startRule = context != null ? context.getRuleIndex() : 0;
         this.processRule(this.atn.ruleToStartState[startRule], 0, callStack, "\n");
 
         tokenStream.seek(currentIndex);
-
-        // now post-process the rule candidates and find the last occurrences
-        // of each preferred rule and extract its start and end in the input stream
-        for (int ruleId : preferredRules) {
-            final Map<Integer, Set<Integer>> shortcut = shortcutMap.get(ruleId);
-            if (shortcut == null || shortcut.isEmpty()) {
-                continue;
-            }
-            // select the right-most occurrence
-            final int startToken = Collections.max(shortcut.keySet());
-            final Set<Integer> endSet = shortcut.get(startToken);
-            final int endToken;
-            if (endSet.isEmpty()) {
-                endToken = tokens.size() - 1;
-            } else {
-                endToken = Collections.max(shortcut.get(startToken));
-            }
-            final int startOffset = tokens.get(startToken).getStartIndex();
-            final int endOffset;
-            if (tokens.get(endToken).getType() == Token.EOF) {
-                // if last token is EOF, include trailing whitespace
-                endOffset = tokens.get(endToken).getStartIndex();
-            } else {
-                // if last token is not EOF, limit to matching tokens which excludes trailing whitespace
-                endOffset = tokens.get(endToken - 1).getStopIndex() + 1;
-            }
-
-            final List<Integer> ruleStartStop = Arrays.asList(startOffset, endOffset);
-            candidates.rulePositions.put(ruleId, ruleStartStop);
-        }
 
         return this.candidates;
     }
@@ -226,31 +192,36 @@ public class CodeCompletionCore {
      * Walks the rule chain upwards to see if that matches any of the preferred rules.
      * If found, that rule is added to the collection candidates and true is returned.
      */
-    private boolean translateToRuleIndex(List<Integer> ruleStack) {
+    private boolean translateToRuleIndex(List<RuleWithStartToken> ruleStack) {
         if (this.preferredRules.isEmpty()) return false;
 
         // Loop over the rule stack from highest to lowest rule level. This way we properly handle the higher rule
         // if it contains a lower one that is also a preferred rule.
         for (int i = 0; i < ruleStack.size(); ++i) {
-            if (this.preferredRules.contains(ruleStack.get(i))) {
+            RuleWithStartToken current = ruleStack.get(i);
+            int ruleIndex = current.ruleIndex;
+            int startTokenIndex = current.startTokenIndex;
+            if (this.preferredRules.contains(ruleIndex)) {
                 // Add the rule to our candidates list along with the current rule path,
                 // but only if there isn't already an entry like that.
-                List<Integer> path = new LinkedList<>(ruleStack.subList(0, i));
+                List<Integer> path = ruleStack.subList(0, i).stream()
+                        .map(RuleWithStartToken::ruleIndex)
+                        .collect(Collectors.toCollection(LinkedList::new));
                 boolean addNew = true;
-                for (Map.Entry<Integer, List<Integer>> entry : this.candidates.rules.entrySet()) {
-                    if (!entry.getKey().equals(ruleStack.get(i))
-                            || entry.getValue().size() != path.size()) {
+                for (Map.Entry<Integer, CandidateRule> entry : this.candidates.rules.entrySet()) {
+                    if (!entry.getKey().equals(current.ruleIndex)
+                            || entry.getValue().ruleList.size() != path.size()) {
                         continue;
                     }
                     // Found an entry for this rule. Same path? If so don't add a new (duplicate) entry.
-                    if (path.equals(entry.getValue())) {
+                    if (path.equals(entry.getValue().ruleList)) {
                         addNew = false;
                         break;
                     }
                 }
 
                 if (addNew) {
-                    this.candidates.rules.put(ruleStack.get(i), path);
+                    this.candidates.rules.put(ruleIndex, new CandidateRule(startTokenIndex, path));
                 }
                 return true;
             }
@@ -371,20 +342,7 @@ public class CodeCompletionCore {
      * hit the caret position.
      */
     private Set<Integer> processRule(
-            ATNState startState, int tokenIndex, LinkedList<Integer> callStack, String indentation) {
-
-        // Start with rule specific handling before going into the ATN walk.
-
-        // Check first if we've taken this path with the same input before.
-        Map<Integer, Set<Integer>> positionMap = this.shortcutMap.get(startState.ruleIndex);
-        if (positionMap == null) {
-            positionMap = new HashMap<>();
-            this.shortcutMap.put(startState.ruleIndex, positionMap);
-        } else {
-            if (positionMap.containsKey(tokenIndex)) {
-                return positionMap.get(tokenIndex);
-            }
-        }
+            ATNState startState, int tokenIndex, LinkedList<RuleWithStartToken> callStack, String indentation) {
 
         Set<Integer> result = new HashSet<>();
 
@@ -420,10 +378,12 @@ public class CodeCompletionCore {
             followSets.combined = combined;
         }
 
-        callStack.addLast(startState.ruleIndex);
+        int startTokenIndex = this.tokens.get(tokenIndex).getTokenIndex();
+        callStack.addLast(new RuleWithStartToken(startTokenIndex, startState.ruleIndex));
         int currentSymbol = this.tokens.get(tokenIndex).getType();
 
         if (tokenIndex >= this.tokens.size() - 1) { // At caret?
+
             if (this.preferredRules.contains(startState.ruleIndex)) {
                 // No need to go deeper when collecting entries and we reach a rule that we want to collect anyway.
                 this.translateToRuleIndex(callStack);
@@ -431,8 +391,11 @@ public class CodeCompletionCore {
                 // Convert all follow sets to either single symbols or their associated preferred rule and add
                 // the result to our candidates list.
                 for (FollowSetWithPath set : followSets.sets) {
-                    LinkedList<Integer> fullPath = new LinkedList<>(callStack);
-                    fullPath.addAll(set.path);
+                    LinkedList<RuleWithStartToken> fullPath = new LinkedList<>(callStack);
+                    List<RuleWithStartToken> followSetPath = set.path.stream()
+                            .map((path) -> new RuleWithStartToken(startTokenIndex, path))
+                            .toList();
+                    fullPath.addAll(followSetPath);
                     if (!this.translateToRuleIndex(fullPath)) {
                         for (int symbol : set.intervals.toList()) {
                             if (!this.ignoredTokens.contains(symbol)) {
@@ -572,9 +535,6 @@ public class CodeCompletionCore {
         }
 
         callStack.removeLast();
-
-        // Cache the result, for later lookup to avoid duplicate walks.
-        positionMap.put(tokenIndex, result);
 
         return result;
     }

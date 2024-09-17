@@ -21,23 +21,18 @@ package org.neo4j.shell;
 
 import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.parameter.ParameterService;
-import org.neo4j.shell.prettyprint.PrettyPrinter;
-import org.neo4j.shell.printer.Printer;
-import org.neo4j.shell.state.BoltStateHandler;
 
-/**
- * This class initializes a {@link CypherShell} with a fake {@link org.neo4j.shell.state.BoltStateHandler} which allows for faked sessions and faked results to
- * test some basic shell functionality without requiring a full integration test.
- */
-public class OfflineTestShell extends CypherShell {
-
-    public OfflineTestShell(
-            Printer printer, BoltStateHandler boltStateHandler, DbInfo dbInfo, PrettyPrinter prettyPrinter) {
-        super(printer, boltStateHandler, dbInfo, prettyPrinter, ParameterService.create(boltStateHandler));
+public class StubDbInfo extends DbInfo {
+    public StubDbInfo(ParameterService parameterService) {
+        super(parameterService);
     }
 
     @Override
-    protected void addRuntimeHookToResetShell() {
-        // Do Nothing
-    }
+    public void resumePolling() {}
+
+    @Override
+    public void stopPolling() {}
+
+    @Override
+    public void close() throws Exception {}
 }

@@ -32,8 +32,6 @@ import org.jline.reader.Parser;
 import org.jline.reader.SyntaxError;
 import org.jline.reader.impl.DefaultParser;
 import org.neo4j.shell.log.Logger;
-import org.neo4j.shell.parser.CypherLanguageService;
-import org.neo4j.shell.parser.CypherLanguageService.Token;
 import org.neo4j.shell.parser.StatementParser;
 import org.neo4j.shell.parser.StatementParser.CommandStatement;
 import org.neo4j.shell.parser.StatementParser.CypherStatement;
@@ -47,12 +45,10 @@ import org.neo4j.shell.terminal.JlineTerminal.ParsedLineStatements;
 public class StatementJlineParser extends DefaultParser implements Parser {
     private static final Logger log = Logger.create();
     private final StatementParser statementParser;
-    private final CypherLanguageService cypherSyntax;
     private boolean enableStatementParsing;
 
-    public StatementJlineParser(StatementParser statementParser, CypherLanguageService cypherSyntax) {
+    public StatementJlineParser(StatementParser statementParser) {
         this.statementParser = statementParser;
-        this.cypherSyntax = cypherSyntax;
     }
 
     @Override
@@ -94,23 +90,27 @@ public class StatementJlineParser extends DefaultParser implements Parser {
         return Optional.empty();
     }
 
-    private CypherCompletion completingCypher(CypherStatement statement, String line, int cursor) {
-        var tokens = cypherSyntax.tokenize(statement.statement());
-        int statementStart = statement.beginOffset();
-
-        for (var token : tokens) {
-            var tokenStart = statementStart + token.beginOffset();
-            var tokenEnd = statementStart + token.endOffset();
-
-            if (cursor >= tokenStart && cursor - 1 <= tokenEnd) {
-                // Note, we can't use token.image because it's not always identical how it appears in the query string
-                var word = line.substring(tokenStart, tokenEnd + 1);
-                return new CypherCompletion(statement, line, cursor, tokens, word, cursor - tokenStart);
-            }
+    private String findLastToken(String query) {
+        if (query.isEmpty()) {
+            return "";
         }
 
-        // Found no token at the cursor position
-        return new CypherCompletion(statement, line, cursor, tokens, "", 0);
+        int i = query.length() - 1;
+        boolean spaceFound = false;
+
+        while (i >= 0 && !spaceFound) {
+            if (Character.isWhitespace(query.charAt(i))) {
+                spaceFound = true;
+            } else {
+                --i;
+            }
+        }
+        return query.substring(i + 1);
+    }
+
+    private CypherCompletion completingCypher(CypherStatement statement, String line, int cursor) {
+        var word = findLastToken(statement.statement());
+        return new CypherCompletion(statement, line, cursor, word, 0);
     }
 
     private ParsedStatements parse(String line) {
@@ -167,8 +167,7 @@ public class StatementJlineParser extends DefaultParser implements Parser {
 
     protected record BlankCompletion(String line, int cursor) implements NoWordsParsedLine {}
 
-    protected record CypherCompletion(
-            CypherStatement statement, String line, int cursor, List<Token> tokens, String word, int wordCursor)
+    protected record CypherCompletion(CypherStatement statement, String line, int cursor, String word, int wordCursor)
             implements CompletingWord, CompletingStatements {}
 
     protected record SimpleParsedStatements(ParsedStatements statements, String line, int cursor)

@@ -31,6 +31,7 @@ import org.neo4j.shell.CypherShell;
 import org.neo4j.shell.StringLinePrinter;
 import org.neo4j.shell.cli.AccessMode;
 import org.neo4j.shell.cli.Format;
+import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.parameter.ParameterService;
 import org.neo4j.shell.prettyprint.PrettyConfig;
 import org.neo4j.shell.prettyprint.PrettyPrinter;
@@ -92,7 +93,8 @@ class CypherShellProtocolIntegrationTest {
         var boltHandler = new BoltStateHandler(true, AccessMode.WRITE);
         var printer = new PrettyPrinter(new PrettyConfig(Format.PLAIN, true, 1000, false));
         var parameters = mock(ParameterService.class);
-        return new CypherShell(new StringLinePrinter(), boltHandler, printer, parameters);
+        var dbInfo = mock(DbInfo.class);
+        return new CypherShell(new StringLinePrinter(), boltHandler, dbInfo, printer, parameters);
     }
 
     // Here should be tests for "neo4j+s" and "bolt+s", but we don't have the infrastructure for those.

@@ -42,9 +42,18 @@ public interface IdleTimeoutService extends AutoCloseable {
      * Create a new idle timeout service in the paused state.
      * If timeout is zero or negative a noop service is returned.
      */
-    static IdleTimeoutService create(Duration idleTimeout, Duration delay) {
+    static IdleTimeoutService create(Duration idleTimeout, Duration delay, Runnable timeoutAction) {
         if (idleTimeout != null && !idleTimeout.isZero() && !idleTimeout.isNegative()) {
-            return new IdleTimeoutServiceImpl(idleTimeout, delay);
+            return new IdleTimeoutServiceImpl(idleTimeout, delay, timeoutAction, null);
+        } else {
+            return noTimeout();
+        }
+    }
+
+    static IdleTimeoutService create(
+            Duration idleTimeout, Duration delay, Runnable timeoutAction, Runnable wakeUpAction) {
+        if (idleTimeout != null && !idleTimeout.isZero() && !idleTimeout.isNegative()) {
+            return new IdleTimeoutServiceImpl(idleTimeout, delay, timeoutAction, wakeUpAction);
         } else {
             return noTimeout();
         }
@@ -75,26 +84,33 @@ class IdleTimeoutServiceImpl implements IdleTimeoutService {
     private final Ticker ticker;
     private final ScheduledExecutorService timeoutExecutor;
     private final Runnable timeoutAction;
+    private final Runnable wakeUpAction;
     private final long significantDurationNs;
 
-    IdleTimeoutServiceImpl(Duration timeout, Duration delay) {
-        this(System::nanoTime, timeout, timeout, delay, new ExitOnTimeout());
+    IdleTimeoutServiceImpl(Duration timeout, Duration delay, Runnable timeoutAction, Runnable wakeUpAction) {
+        this(System::nanoTime, timeout, timeout, delay, timeoutAction, wakeUpAction);
     }
 
     @VisibleForTesting
     IdleTimeoutServiceImpl(
-            Ticker ticker, Duration timeout, Duration initialDelay, Duration delay, Runnable timeoutAction) {
+            Ticker ticker,
+            Duration timeout,
+            Duration initialDelay,
+            Duration delay,
+            Runnable timeoutAction,
+            Runnable wakeUpAction) {
         final var actualDelayMs = calculateDelayMs(timeout.toMillis(), delay.toMillis());
         this.ticker = ticker;
         this.timeoutNs = timeout.toNanos();
         this.timeoutAction = timeoutAction;
+        this.wakeUpAction = wakeUpAction;
         this.lastSeenNs = new AtomicLong(ticker.get());
         // For testing purposes we use lower significantDurationNs with really small timeouts.
         this.significantDurationNs =
                 timeoutNs > (10 * DEFAULT_SIGNIFICANT_DURATION_NS) ? DEFAULT_SIGNIFICANT_DURATION_NS : 0;
         timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
         timeoutExecutor.scheduleWithFixedDelay(
-                this::exitOnIdleTimeout, initialDelay.toMillis(), actualDelayMs, TimeUnit.MILLISECONDS);
+                this::callIdleTimeoutAction, initialDelay.toMillis(), actualDelayMs, TimeUnit.MILLISECONDS);
     }
 
     // To not confuse users who just want to try out the feature with very low timeouts we adapt the delay here
@@ -123,12 +139,18 @@ class IdleTimeoutServiceImpl implements IdleTimeoutService {
     public void imAwake() {
         if (!paused.get() && elapsed() > significantDurationNs) {
             this.lastSeenNs.set(ticker.get());
+
+            if (wakeUpAction != null) {
+                wakeUpAction.run();
+            }
         }
     }
 
-    private void exitOnIdleTimeout() {
+    private void callIdleTimeoutAction() {
         if (!paused.get() && elapsed() > timeoutNs) {
-            timeoutAction.run();
+            if (timeoutAction != null) {
+                timeoutAction.run();
+            }
         }
     }
 
@@ -139,16 +161,6 @@ class IdleTimeoutServiceImpl implements IdleTimeoutService {
     @Override
     public void close() {
         timeoutExecutor.shutdownNow();
-    }
-
-    private static class ExitOnTimeout implements Runnable {
-
-        @Override
-        public void run() {
-            System.err.println(
-                    "Timeout after idling, avoid this by increasing --idle-timeout or omitting it completely.");
-            System.exit(124);
-        }
     }
 
     interface Ticker {

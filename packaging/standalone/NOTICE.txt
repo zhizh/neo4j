@@ -76,8 +76,12 @@ Apache Software License, Version 2.0
   protobufjs
   request
   rxjs
+  Scala Reflect
   tslib
   tunnel-agent
+
+BSD - Scala License
+  Scala Library
 
 BSD License
   ANTLR 4 Runtime

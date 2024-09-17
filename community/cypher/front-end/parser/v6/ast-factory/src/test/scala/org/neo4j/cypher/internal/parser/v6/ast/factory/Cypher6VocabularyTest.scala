@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.parser.v6.ast.factory
 
+import org.neo4j.cypher.internal.ast.factory.neo4j.completion.CodeCompletionCore.CandidateRule
 import org.neo4j.cypher.internal.ast.factory.neo4j.completion.CodeCompletionCore.CandidatesCollection
 import org.neo4j.cypher.internal.parser.CypherErrorVocabulary
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser
@@ -58,7 +59,7 @@ class Cypher6VocabularyTest extends CypherFunSuite {
 
   private def ruleDisplayName(r: Int): Seq[String] = {
     val candidates = new CandidatesCollection()
-    candidates.rules.put(java.lang.Integer.valueOf(r), java.util.List.of[java.lang.Integer]())
+    candidates.rules.put(java.lang.Integer.valueOf(r), new CandidateRule(-1, java.util.List.of[java.lang.Integer]()))
     vocab.expected(candidates)
   }
 

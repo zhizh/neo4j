@@ -49,6 +49,7 @@ public class CliArgs {
     private Format format = Format.AUTO;
     private Optional<String> cypher = Optional.empty();
     private Encryption encryption = Encryption.DEFAULT;
+    private boolean enableAutocompletions;
     private boolean nonInteractive;
     private boolean version;
     private boolean driverVersion;
@@ -143,6 +144,14 @@ public class CliArgs {
 
     public void setAccessMode(AccessMode accessMode) {
         this.accessMode = accessMode;
+    }
+
+    public void setEnableAutocompletions(boolean autocompletions) {
+        this.enableAutocompletions = autocompletions;
+    }
+
+    public boolean getEnableAutocompletions() {
+        return this.enableAutocompletions;
     }
 
     public AccessMode getAccessMode() {

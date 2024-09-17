@@ -65,9 +65,12 @@ import org.neo4j.shell.DatabaseManager;
 import org.neo4j.shell.Historian;
 import org.neo4j.shell.OfflineTestShell;
 import org.neo4j.shell.StatementExecuter;
+import org.neo4j.shell.StubDbInfo;
 import org.neo4j.shell.TransactionHandler;
 import org.neo4j.shell.UserMessagesHandler;
 import org.neo4j.shell.commands.CommandHelper;
+import org.neo4j.shell.completions.CompletionEngine;
+import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.exception.CommandException;
 import org.neo4j.shell.exception.ExitException;
 import org.neo4j.shell.exception.NoMoreInputException;
@@ -524,14 +527,18 @@ class InteractiveShellRunnerTest {
 
         Printer printer = new AnsiPrinter(Format.VERBOSE, new PrintStream(output), new PrintStream(error));
 
+        CompletionEngine mockedCompletionEngine = mock(CompletionEngine.class);
+        var dbInfo = new StubDbInfo(mock(ParameterService.class));
+
         var in = new ByteArrayInputStream(input.getBytes(UTF_8));
         var terminal = terminalBuilder()
                 .dumb()
                 .streams(in, output)
                 .interactive(true)
                 .logger(printer)
-                .build();
-        OfflineTestShell offlineTestShell = new OfflineTestShell(printer, mockedBoltStateHandler, mockedPrettyPrinter);
+                .build(dbInfo, mockedCompletionEngine, false);
+        OfflineTestShell offlineTestShell =
+                new OfflineTestShell(printer, mockedBoltStateHandler, dbInfo, mockedPrettyPrinter);
         CommandHelper commandHelper =
                 new CommandHelper(printer, Historian.empty, offlineTestShell, terminal, parameters);
         offlineTestShell.setCommandHelper(commandHelper);
@@ -654,19 +661,22 @@ class InteractiveShellRunnerTest {
 
     private CypherShellTerminal testTerminal(String input) {
         var in = new ByteArrayInputStream(input.getBytes(UTF_8));
+        CompletionEngine mockedCompletionEngine = mock(CompletionEngine.class);
+        var dbInfo = new StubDbInfo(mock(ParameterService.class));
+
         return terminalBuilder()
                 .dumb()
                 .streams(in, out)
                 .interactive(true)
                 .logger(printer)
-                .build();
+                .build(dbInfo, mockedCompletionEngine, false);
     }
 
     private static class FakeInterruptableShell extends CypherShell {
         protected final AtomicReference<Thread> executionThread = new AtomicReference<>();
 
         FakeInterruptableShell(Printer printer, BoltStateHandler boltStateHandler) {
-            super(printer, boltStateHandler, mock(PrettyPrinter.class), null);
+            super(printer, boltStateHandler, mock(DbInfo.class), mock(PrettyPrinter.class), null);
         }
 
         @Override

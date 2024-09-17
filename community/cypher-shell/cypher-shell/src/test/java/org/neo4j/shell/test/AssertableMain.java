@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 import static org.neo4j.shell.Main.EXIT_FAILURE;
 import static org.neo4j.shell.Main.EXIT_SUCCESS;
 import static org.neo4j.shell.terminal.CypherShellTerminalBuilder.terminalBuilder;
@@ -55,9 +56,11 @@ import org.neo4j.shell.CypherShell;
 import org.neo4j.shell.Environment;
 import org.neo4j.shell.Main;
 import org.neo4j.shell.ShellRunner;
+import org.neo4j.shell.StubDbInfo;
 import org.neo4j.shell.cli.CliArgHelper;
 import org.neo4j.shell.cli.CliArgs;
 import org.neo4j.shell.cli.Format;
+import org.neo4j.shell.completions.CompletionEngine;
 import org.neo4j.shell.parameter.ParameterService;
 import org.neo4j.shell.printer.AnsiPrinter;
 import org.neo4j.shell.terminal.TestSimplePrompt;
@@ -221,14 +224,15 @@ public class AssertableMain {
             var errPrintStream = new PrintStream(err);
             var args = parseArgs();
             var logger = new AnsiPrinter(Format.VERBOSE, outPrintStream, errPrintStream);
-
+            CompletionEngine mockedCompletionEngine = mock(CompletionEngine.class);
+            var dbInfo = new StubDbInfo(mock(ParameterService.class));
             var terminal = terminalBuilder()
                     .dumb()
                     .streams(in, outPrintStream)
                     .simplePromptSupplier(() -> new TestSimplePrompt(in, new PrintWriter(out)))
                     .interactive(!args.getNonInteractive())
                     .logger(logger)
-                    .build();
+                    .build(dbInfo, mockedCompletionEngine, false);
             var main = new Main(args, logger, shell, parameters, isOutputInteractive, runnerFactory, terminal);
             var exitCode = main.startShell();
 

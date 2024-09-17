@@ -29,6 +29,7 @@ import org.neo4j.shell.CypherShell;
 import org.neo4j.shell.StringLinePrinter;
 import org.neo4j.shell.cli.AccessMode;
 import org.neo4j.shell.cli.Format;
+import org.neo4j.shell.completions.DbInfoImpl;
 import org.neo4j.shell.exception.CommandException;
 import org.neo4j.shell.parameter.ParameterService;
 import org.neo4j.shell.parser.StatementParser.CypherStatement;
@@ -45,7 +46,8 @@ class CypherShellPlainIntegrationTest extends CypherShellIntegrationTest {
         var printer = new PrettyPrinter(new PrettyConfig(Format.PLAIN, true, 1000, false));
         var boltHandler = new BoltStateHandler(true, AccessMode.WRITE);
         var parameters = ParameterService.create(boltHandler);
-        shell = new CypherShell(linePrinter, boltHandler, printer, parameters);
+        var dbInfo = new DbInfoImpl(parameters, boltHandler, true);
+        shell = new CypherShell(linePrinter, boltHandler, dbInfo, printer, parameters);
         connect("neo");
     }
 

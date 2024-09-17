@@ -31,6 +31,7 @@ import org.neo4j.driver.exceptions.Neo4jException;
 import org.neo4j.driver.exceptions.ServiceUnavailableException;
 import org.neo4j.shell.cli.AccessMode;
 import org.neo4j.shell.commands.CommandHelper;
+import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.exception.CommandException;
 import org.neo4j.shell.exception.ExitException;
 import org.neo4j.shell.log.Logger;
@@ -81,6 +82,7 @@ public class CypherShell implements StatementExecuter, Connector, TransactionHan
     private final ParameterService parameters;
     private final Printer printer;
     private final BoltStateHandler boltStateHandler;
+    private final DbInfo dbInfo;
     private final PrettyPrinter prettyPrinter;
     private CommandHelper commandHelper;
     private String lastNeo4jErrorCode;
@@ -88,12 +90,14 @@ public class CypherShell implements StatementExecuter, Connector, TransactionHan
     public CypherShell(
             Printer printer,
             BoltStateHandler boltStateHandler,
+            DbInfo dbInfo,
             PrettyPrinter prettyPrinter,
             ParameterService parameters) {
         this.printer = printer;
         this.boltStateHandler = boltStateHandler;
         this.prettyPrinter = prettyPrinter;
         this.parameters = parameters;
+        this.dbInfo = dbInfo;
         addRuntimeHookToResetShell();
     }
 
@@ -164,6 +168,7 @@ public class CypherShell implements StatementExecuter, Connector, TransactionHan
      */
     @Override
     public void connect(ConnectionConfig connectionConfig) throws CommandException {
+        dbInfo.cleanDbInfo();
         boltStateHandler.connect(connectionConfig);
     }
 
@@ -291,6 +296,7 @@ public class CypherShell implements StatementExecuter, Connector, TransactionHan
 
     @Override
     public void disconnect() {
+        dbInfo.stopPolling();
         boltStateHandler.disconnect();
     }
 

@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -41,15 +40,12 @@ import static org.neo4j.shell.Conditions.notContains;
 import static org.neo4j.shell.Conditions.startsWith;
 import static org.neo4j.shell.DatabaseManager.DEFAULT_DEFAULT_DB_NAME;
 import static org.neo4j.shell.DatabaseManager.SYSTEM_DB_NAME;
-import static org.neo4j.shell.terminal.CypherShellTerminalBuilder.terminalBuilder;
 import static org.neo4j.shell.test.Util.testConnectionConfig;
 import static org.neo4j.shell.util.Versions.majorVersion;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -66,24 +62,20 @@ import org.neo4j.function.ThrowingConsumer;
 import org.neo4j.function.ThrowingFunction;
 import org.neo4j.shell.cli.AccessMode;
 import org.neo4j.shell.cli.Format;
+import org.neo4j.shell.completions.DbInfoImpl;
 import org.neo4j.shell.exception.CommandException;
-import org.neo4j.shell.log.Logger;
 import org.neo4j.shell.parameter.ParameterService;
 import org.neo4j.shell.parser.StatementParser.CypherStatement;
 import org.neo4j.shell.prettyprint.PrettyConfig;
 import org.neo4j.shell.prettyprint.PrettyPrinter;
-import org.neo4j.shell.printer.AnsiPrinter;
 import org.neo4j.shell.state.BoltStateHandler;
-import org.neo4j.shell.terminal.TestSimplePrompt;
 import org.neo4j.shell.test.AssertableMain;
 import org.neo4j.shell.util.Version;
 import org.neo4j.shell.util.Versions;
 
 // NOTE! Consider adding tests to integration-test-expect instead of here.
 @Timeout(value = 5, unit = MINUTES)
-class MainIntegrationTest {
-    private static final String USER = "neo4j";
-    private static final String PASSWORD = "neo";
+class MainIntegrationTest extends TestHarness {
     private static final String newLine = System.lineSeparator();
     private static final String GOOD_BYE = format(":exit%n%nBye!%n");
 
@@ -1672,10 +1664,6 @@ class MainIntegrationTest {
                 .assertSuccess();
     }
 
-    private AssertableMain.AssertableMainBuilder buildTest() {
-        return new TestBuilder().outputInteractive(true);
-    }
-
     private AssertableMain.AssertableMainBuilder testWithUser(
             String name, String password, boolean requirePasswordChange) {
         runInSystemDb(shell -> createOrReplaceUser(shell, name, password, requirePasswordChange));
@@ -1702,7 +1690,8 @@ class MainIntegrationTest {
             var boltHandler = new BoltStateHandler(false, AccessMode.WRITE);
             var printer = new PrettyPrinter(new PrettyConfig(Format.PLAIN, false, 100, false));
             var parameters = ParameterService.create(boltHandler);
-            shell = new CypherShell(new StringLinePrinter(), boltHandler, printer, parameters);
+            var dbInfo = new DbInfoImpl(parameters, boltHandler, true);
+            shell = new CypherShell(new StringLinePrinter(), boltHandler, dbInfo, printer, parameters);
             shell.connect(testConnectionConfig("neo4j://localhost:7687")
                     .withUsernameAndPasswordAndDatabase(USER, PASSWORD, database));
             return systemDbConsumer.apply(shell);
@@ -1775,35 +1764,6 @@ class MainIntegrationTest {
 
     private void assumeVersionBefore(String version) {
         assumeTrue(serverVersion.compareTo(Versions.version(version)) < 0);
-    }
-
-    private static class TestBuilder extends AssertableMain.AssertableMainBuilder {
-
-        @Override
-        public AssertableMain run(boolean closeMain) throws ArgumentParserException, IOException {
-            assertNull(runnerFactory);
-            assertNull(shell);
-            var args = parseArgs();
-            var outPrintStream = new PrintStream(out);
-            var errPrintStream = new PrintStream(err);
-            var logger = new AnsiPrinter(Format.VERBOSE, outPrintStream, errPrintStream);
-            var terminal = terminalBuilder()
-                    .dumb()
-                    .streams(in, outPrintStream)
-                    .simplePromptSupplier(() -> new TestSimplePrompt(in, new PrintWriter(out)))
-                    .interactive(!args.getNonInteractive())
-                    .logger(logger)
-                    .build();
-            Logger.setupLogging(args);
-            var main = new Main(args, outPrintStream, errPrintStream, isOutputInteractive, terminal);
-            var exitCode = main.startShell();
-
-            if (closeMain) {
-                main.close();
-            }
-
-            return new AssertableMain(exitCode, out, err, main.getCypherShell());
-        }
     }
 
     private static void assertFileContains(Path file, String find) throws IOException {

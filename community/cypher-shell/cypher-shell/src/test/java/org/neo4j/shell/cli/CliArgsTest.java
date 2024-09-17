@@ -109,4 +109,10 @@ class CliArgsTest {
         cliArgs.setInputFilename("foo");
         assertEquals("foo", cliArgs.getInputFilename());
     }
+
+    @Test
+    void setEnableCompletions() {
+        cliArgs.setEnableAutocompletions(false);
+        assertFalse(cliArgs.getEnableAutocompletions());
+    }
 }

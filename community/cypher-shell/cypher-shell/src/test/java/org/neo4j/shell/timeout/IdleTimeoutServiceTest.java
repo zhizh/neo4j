@@ -21,6 +21,7 @@ package org.neo4j.shell.timeout;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,8 @@ class IdleTimeoutServiceTest {
     private static final Duration DEFAULT_DELAY = Duration.ofMillis(50);
     private static final Duration DEFAULT_TIMEOUT = Duration.ofHours(3);
     private RecordingTimeout timeoutAction;
+    private AwakenAction awakenAction;
+
     private FakeTicker ticker;
     private IdleTimeoutService service;
 
@@ -47,7 +50,8 @@ class IdleTimeoutServiceTest {
         if (service != null) service.close();
         ticker = new FakeTicker();
         timeoutAction = new RecordingTimeout();
-        service = new IdleTimeoutServiceImpl(ticker, timeout, Duration.ZERO, delay, timeoutAction);
+        awakenAction = new AwakenAction();
+        service = new IdleTimeoutServiceImpl(ticker, timeout, Duration.ZERO, delay, timeoutAction, awakenAction);
         service.resume();
     }
 
@@ -102,6 +106,16 @@ class IdleTimeoutServiceTest {
     }
 
     @Test
+    void awakenActionCalled() {
+        for (int i = 0; i < 100; ++i) {
+            ticker.forward(DEFAULT_TIMEOUT);
+            service.imAwake();
+        }
+        assertNotTimedOut();
+        assertTrue(awakenAction.actionCalled.get());
+    }
+
+    @Test
     void smallTimeout() throws Exception {
         final var smallTimeout = Duration.ofSeconds(5);
         startService(smallTimeout, Duration.ofMinutes(10));
@@ -127,6 +141,15 @@ class IdleTimeoutServiceTest {
         @Override
         public void run() {
             timedOut.set(true);
+        }
+    }
+
+    private static class AwakenAction implements Runnable {
+        public final AtomicBoolean actionCalled = new AtomicBoolean(false);
+
+        @Override
+        public void run() {
+            actionCalled.set(true);
         }
     }
 

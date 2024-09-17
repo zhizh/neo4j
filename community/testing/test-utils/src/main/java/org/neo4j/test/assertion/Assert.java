@@ -36,6 +36,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.assertj.core.api.Condition;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.function.Executable;
 import org.neo4j.function.Suppliers;
 import org.neo4j.function.ThrowingAction;
@@ -76,6 +77,21 @@ public final class Assert {
             String message, Callable<T> actual, Predicate<? super T> predicate, long timeout, TimeUnit timeUnit) {
         awaitCondition(message, timeout, timeUnit)
                 .untilAsserted(() -> assertThat(actual.call()).satisfies(condition(predicate)));
+    }
+
+    public static <T> void assertNever(
+            Callable<T> actual, Predicate<? super T> predicate, long timeout, TimeUnit timeUnit) {
+        boolean timedOut = false;
+        try {
+            awaitCondition(EMPTY, timeout, timeUnit)
+                    .untilAsserted(() -> assertThat(actual.call()).satisfies(condition(predicate)));
+        } catch (ConditionTimeoutException e) {
+            timedOut = true;
+        }
+
+        if (!timedOut) {
+            throw new AssertionError("The condition that was expected to never be met was fulfilled");
+        }
     }
 
     public static <T> void assertEventually(

@@ -48,6 +48,16 @@
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
+            <artifactId>cypher-antlr-ast-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>cypher-v5-ast-factory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
             <artifactId>cypher-v5-literal-interpreter</artifactId>
             <version>${project.version}</version>
         </dependency>

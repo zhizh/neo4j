@@ -209,7 +209,7 @@ final class CypherErrorVocabulary(conf: CypherErrorStrategy.Conf) extends Vocabu
     // )
 
     val ruleNames = candidates.rules.entrySet().asScala.toSeq
-      .flatMap(e => ruleDisplayName(e.getKey, e.getValue.asScala))
+      .flatMap(e => ruleDisplayName(e.getKey, e.getValue.ruleList.asScala))
       .sorted
 
     val tokenNames = candidates.tokens.entrySet().asScala.toSeq

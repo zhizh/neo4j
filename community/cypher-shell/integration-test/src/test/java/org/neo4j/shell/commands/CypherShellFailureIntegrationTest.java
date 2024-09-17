@@ -31,6 +31,7 @@ import org.neo4j.shell.CypherShell;
 import org.neo4j.shell.StringLinePrinter;
 import org.neo4j.shell.cli.AccessMode;
 import org.neo4j.shell.cli.Format;
+import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.parameter.ParameterService;
 import org.neo4j.shell.prettyprint.PrettyConfig;
 import org.neo4j.shell.prettyprint.PrettyPrinter;
@@ -45,7 +46,8 @@ class CypherShellFailureIntegrationTest extends CypherShellIntegrationTest {
         var printer = new PrettyPrinter(new PrettyConfig(Format.VERBOSE, true, 1000, false));
         var boltHandler = new BoltStateHandler(true, AccessMode.WRITE);
         var parameters = mock(ParameterService.class);
-        shell = new CypherShell(linePrinter, boltHandler, printer, parameters);
+        var dbInfo = mock(DbInfo.class);
+        shell = new CypherShell(linePrinter, boltHandler, dbInfo, printer, parameters);
     }
 
     @AfterEach

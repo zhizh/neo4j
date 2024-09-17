@@ -323,7 +323,7 @@ class BoltStateHandlerTest {
 
     @Test
     void triesAgainOnSessionExpired() throws Exception {
-        Session sessionMock = mock(Session.class);
+        Session sessionMock = mockSessionWithLicensing("eval", 5);
         Result resultMock = mock(Result.class);
         Record recordMock = mock(Record.class);
         Value valueMock = mock(Value.class);
@@ -344,7 +344,8 @@ class BoltStateHandlerTest {
         BoltResult boltResult =
                 boltStateHandler.runUserCypher("RETURN 999", new HashMap<>()).get();
 
-        verify(driverMock, times(2)).session(any(SessionConfig.class));
+        // We have a user session and a service session
+        verify(driverMock, times(4)).session(any(SessionConfig.class));
         verify(sessionMock, times(2)).run(any(Query.class), eq(userTxConf));
 
         assertThat(boltResult.getRecords().get(0).get(0).toString()).isEqualTo("999");
@@ -394,10 +395,10 @@ class BoltStateHandlerTest {
         // given
         boltStateHandler.connect();
 
-        Session session = boltStateHandler.session;
+        Session session = boltStateHandler.userSession;
         assertThat(session).isNotNull();
         assertThat(boltStateHandler.driver).isNotNull();
-        assertThat(boltStateHandler.session.isOpen()).isTrue();
+        assertThat(boltStateHandler.userSession.isOpen()).isTrue();
 
         // when
         boltStateHandler.silentDisconnect();
@@ -501,7 +502,7 @@ class BoltStateHandlerTest {
         handler.changePassword(config, newPassword);
 
         // Then
-        assertThat(handler.session).isNull();
+        assertThat(handler.userSession).isNull();
 
         // When connecting to system db again
         handler.connect(config.withUsernameAndPasswordAndDatabase("", "", SYSTEM_DB_NAME));
@@ -645,8 +646,10 @@ class BoltStateHandlerTest {
         BoltStateHandler handler = new BoltStateHandler((s, authToken, config) -> fakeDriver, false);
         handler.connect(config);
 
-        assertThat(fakeDriver.sessionConfigs).hasSize(1);
+        // We always have a user session and a service session
+        assertThat(fakeDriver.sessionConfigs).hasSize(2);
         assertThat(fakeDriver.sessionConfigs.get(0).impersonatedUser()).isEmpty();
+        assertThat(fakeDriver.sessionConfigs.get(1).impersonatedUser()).isEmpty();
     }
 
     @Test
@@ -656,8 +659,10 @@ class BoltStateHandlerTest {
         BoltStateHandler handler = new BoltStateHandler((s, authToken, config) -> fakeDriver, false);
         handler.connect(config.withImpersonatedUser("emil"));
 
-        assertThat(fakeDriver.sessionConfigs).hasSize(1);
+        // We always have a user session and a service session
+        assertThat(fakeDriver.sessionConfigs).hasSize(2);
         assertThat(fakeDriver.sessionConfigs.get(0).impersonatedUser()).hasValue("emil");
+        assertThat(fakeDriver.sessionConfigs.get(1).impersonatedUser()).hasValue("emil");
     }
 
     @Test

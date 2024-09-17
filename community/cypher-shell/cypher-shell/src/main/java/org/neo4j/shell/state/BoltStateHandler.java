@@ -75,7 +75,8 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
     private final boolean isInteractive;
     private final Map<String, Bookmark> bookmarks = new HashMap<>();
     protected Driver driver;
-    Session session;
+    Session userSession;
+    Session serviceSession;
     private String protocolVersion;
     private String activeDatabaseNameAsSetByUser;
     private String actualDatabaseNameAsReportedByServer;
@@ -147,7 +148,7 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
         if (isTransactionOpen()) {
             throw new CommandException("There is already an open transaction");
         }
-        tx = session.beginTransaction(USER_DIRECT_TX_CONF);
+        tx = userSession.beginTransaction(USER_DIRECT_TX_CONF);
     }
 
     @Override
@@ -211,7 +212,7 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
 
     @Override
     public boolean isConnected() {
-        return session != null && session.isOpen();
+        return userSession != null && userSession.isOpen();
     }
 
     @Override
@@ -320,7 +321,9 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
 
         impersonatedUser().ifPresent(builder::withImpersonatedUser);
 
-        session = driver.session(builder.build());
+        userSession = driver.session(builder.build());
+        serviceSession =
+                driver.session(builder.withDefaultAccessMode(AccessMode.READ).build());
 
         resetActualDbName(); // Set this to null first in case run throws an exception
     }
@@ -331,18 +334,21 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
      * @param databaseName the name of the database currently connected to
      */
     private void closeSession(String databaseName) {
-        if (session != null) {
+        if (userSession != null) {
             // Save the last bookmark and close the session
-            final Bookmark bookmarkForPreviousDB = session.lastBookmark();
-            session.close();
+            final Bookmark bookmarkForPreviousDB = userSession.lastBookmark();
+            userSession.close();
             bookmarks.put(databaseName, bookmarkForPreviousDB);
+        }
+        if (serviceSession != null) {
+            serviceSession.close();
         }
     }
 
     private ThrowingAction<CommandException> getPing() {
         return () -> {
             try {
-                Result run = session.run("CALL db.ping()", SYSTEM_TX_CONF);
+                Result run = userSession.run("CALL db.ping()", SYSTEM_TX_CONF);
                 ResultSummary summary = run.consume();
                 BoltStateHandler.this.protocolVersion = summary.server().protocolVersion();
                 updateActualDbName(summary);
@@ -350,7 +356,7 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
                 log.warn("Ping failed", e);
                 // In older versions there is no db.ping procedure, use legacy method.
                 if (procedureNotFound(e)) {
-                    Result run = session.run(isSystemDb() ? "CALL db.indexes()" : "RETURN 1", SYSTEM_TX_CONF);
+                    Result run = userSession.run(isSystemDb() ? "CALL db.indexes()" : "RETURN 1", SYSTEM_TX_CONF);
                     ResultSummary summary = run.consume();
                     BoltStateHandler.this.protocolVersion = summary.server().protocolVersion();
                     updateActualDbName(summary);
@@ -363,7 +369,8 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
 
     private LicenseDetails getTrialStatus() {
         try {
-            final var record = session.run("CALL dbms.licenseAgreementDetails()", SYSTEM_TX_CONF)
+            final var record = userSession
+                    .run("CALL dbms.licenseAgreementDetails()", SYSTEM_TX_CONF)
                     .single();
             return LicenseDetails.parse(
                     record.get("status").asString(),
@@ -424,6 +431,19 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
         return runCypher(cypher, queryParams, USER_DIRECT_TX_CONF);
     }
 
+    public Optional<BoltResult> runServiceCypher(String cypher, Map<String, Value> queryParams)
+            throws CommandException {
+        if (!isConnected()) {
+            throw new CommandException("Not connected to Neo4j");
+        }
+        var statementResult = serviceSession.run(new Query(cypher, Values.value(queryParams)), SYSTEM_TX_CONF);
+        if (statementResult == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new StatementBoltResult(statementResult));
+    }
+
     @Override
     public Optional<BoltResult> runCypher(String cypher, Map<String, Value> queryParams, TransactionType type)
             throws CommandException {
@@ -474,7 +494,7 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
             try {
                 String command = "ALTER CURRENT USER SET PASSWORD FROM $o TO $n";
                 Value parameters = Values.parameters("o", connectionConfig.password(), "n", newPassword);
-                Result run = session.run(new Query(command, parameters), txConfig(TransactionType.USER_ACTION));
+                Result run = userSession.run(new Query(command, parameters), txConfig(TransactionType.USER_ACTION));
                 run.consume();
             } catch (Neo4jException e) {
                 if (isPasswordChangeRequiredException(e)) {
@@ -482,8 +502,8 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
                     // In < 4.0 versions use legacy method.
                     String oldCommand = "CALL dbms.security.changePassword($n)";
                     Value oldParameters = Values.parameters("n", newPassword);
-                    Result run =
-                            session.run(new Query(oldCommand, oldParameters), txConfig(TransactionType.USER_ACTION));
+                    Result run = userSession.run(
+                            new Query(oldCommand, oldParameters), txConfig(TransactionType.USER_ACTION));
                     run.consume();
                 } else {
                     throw e;
@@ -516,7 +536,7 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
         if (isTransactionOpen()) {
             statementResult = tx.run(new Query(cypher, Values.value(queryParams)));
         } else {
-            statementResult = session.run(new Query(cypher, Values.value(queryParams)), config);
+            statementResult = userSession.run(new Query(cypher, Values.value(queryParams)), config);
         }
 
         if (statementResult == null) {
@@ -545,7 +565,8 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
                 driver.close();
             }
         } finally {
-            session = null;
+            userSession = null;
+            serviceSession = null;
             driver = null;
             resetActualDbName();
         }
@@ -557,7 +578,7 @@ public class BoltStateHandler implements TransactionHandler, Connector, Database
     @SuppressWarnings("deprecation")
     public void reset() {
         if (isConnected()) {
-            if (session instanceof org.neo4j.driver.internal.InternalSession internalSession) {
+            if (userSession instanceof org.neo4j.driver.internal.InternalSession internalSession) {
                 internalSession.reset(); // Temporary private API to cancel queries
             }
             // Clear current state

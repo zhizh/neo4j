@@ -32,6 +32,9 @@ import org.neo4j.shell.cli.CliArgHelper;
 import org.neo4j.shell.cli.CliArgs;
 import org.neo4j.shell.cli.Format;
 import org.neo4j.shell.commands.CommandHelper;
+import org.neo4j.shell.completions.CompletionEngine;
+import org.neo4j.shell.completions.DbInfo;
+import org.neo4j.shell.completions.DbInfoImpl;
 import org.neo4j.shell.exception.CommandException;
 import org.neo4j.shell.log.Logger;
 import org.neo4j.shell.parameter.ParameterService;
@@ -64,30 +67,47 @@ public class Main implements AutoCloseable {
         this.printer = new AnsiPrinter(Format.VERBOSE, System.out, System.err);
         this.args = args;
         var boltStateHandler = new BoltStateHandler(shouldBeInteractive(args, isInteractive), args.getAccessMode());
+        var enabledCompletions = args.getEnableAutocompletions();
         this.parameters = ParameterService.create(boltStateHandler);
+        var dbInfo = new DbInfoImpl(parameters, boltStateHandler, enabledCompletions);
+        CompletionEngine completionEngine = new CompletionEngine(dbInfo);
         this.terminal = terminalBuilder()
                 .interactive(isInteractive)
                 .logger(printer)
                 .parameters(parameters)
                 .idleTimeout(args.getIdleTimeout(), args.getIdleTimeoutDelay())
-                .build();
+                .build(dbInfo, completionEngine, enabledCompletions);
         this.shell = new CypherShell(
-                printer, boltStateHandler, new PrettyPrinter(PrettyConfig.from(args, isInteractive)), parameters);
+                printer,
+                boltStateHandler,
+                dbInfo,
+                new PrettyPrinter(PrettyConfig.from(args, isInteractive)),
+                parameters);
         this.isOutputInteractive = !args.getNonInteractive() && ShellRunner.isOutputInteractive();
         this.runnerFactory = new ShellRunner.Factory();
     }
 
     @VisibleForTesting
     public Main(
-            CliArgs args, PrintStream out, PrintStream err, boolean outputInteractive, CypherShellTerminal terminal) {
+            CliArgs args,
+            PrintStream out,
+            PrintStream err,
+            boolean outputInteractive,
+            CypherShellTerminal terminal,
+            BoltStateHandler boltStateHandler,
+            DbInfo dbInfo,
+            ParameterService parameters) {
         this.terminal = terminal;
         this.args = args;
         this.printer = new AnsiPrinter(Format.VERBOSE, out, err);
         final var isInteractive = shouldBeInteractive(args, terminal.isInteractive());
-        var boltStateHandler = new BoltStateHandler(isInteractive, args.getAccessMode());
-        this.parameters = ParameterService.create(boltStateHandler);
+        this.parameters = parameters;
         this.shell = new CypherShell(
-                printer, boltStateHandler, new PrettyPrinter(PrettyConfig.from(args, isInteractive)), parameters);
+                printer,
+                boltStateHandler,
+                dbInfo,
+                new PrettyPrinter(PrettyConfig.from(args, isInteractive)),
+                parameters);
         this.isOutputInteractive = outputInteractive;
         this.runnerFactory = new ShellRunner.Factory();
     }
