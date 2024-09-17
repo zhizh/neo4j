@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package synchronization;
+package org.neo4j.graphdb.synchronization;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
