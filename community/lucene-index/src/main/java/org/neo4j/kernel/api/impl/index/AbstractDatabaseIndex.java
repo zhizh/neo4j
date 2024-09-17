@@ -118,4 +118,9 @@ abstract class AbstractDatabaseIndex<INDEX extends AbstractLuceneIndex<READER>, 
     public void markAsFailed(String failure) throws IOException {
         luceneIndex.markAsFailed(failure);
     }
+
+    @Override
+    public long sizeInBytes() {
+        return luceneIndex.sizeInBytes();
+    }
 }

@@ -421,4 +421,8 @@ public abstract class AbstractLuceneIndex<READER extends IndexReader> implements
             partition.accessClosedDirectory(visitor);
         }
     }
+
+    long sizeInBytes() {
+        return indexStorage.sizeInBytes();
+    }
 }

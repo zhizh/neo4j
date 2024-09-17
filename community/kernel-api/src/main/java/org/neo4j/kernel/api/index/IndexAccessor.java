@@ -192,9 +192,7 @@ public interface IndexAccessor extends Closeable, ConsistencyCheckable, MinimalI
      */
     long estimateNumberOfEntries(CursorContext cursorContext);
 
-    default long sizeInBytes() {
-        return 0L;
-    }
+    long sizeInBytes();
 
     /**
      * Inserts contents from another index. Any violations will be reported via the {@code conflictHandler}.
@@ -298,6 +296,11 @@ public interface IndexAccessor extends Closeable, ConsistencyCheckable, MinimalI
         @Override
         public long estimateNumberOfEntries(CursorContext cursorContext) {
             return UNKNOWN_NUMBER_OF_ENTRIES;
+        }
+
+        @Override
+        public long sizeInBytes() {
+            return 0L;
         }
 
         @Override
@@ -407,6 +410,11 @@ public interface IndexAccessor extends Closeable, ConsistencyCheckable, MinimalI
         @Override
         public long estimateNumberOfEntries(CursorContext cursorContext) {
             return delegate.estimateNumberOfEntries(cursorContext);
+        }
+
+        @Override
+        public long sizeInBytes() {
+            return delegate.sizeInBytes();
         }
 
         @Override

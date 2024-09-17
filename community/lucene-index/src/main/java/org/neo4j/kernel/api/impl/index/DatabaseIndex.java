@@ -165,4 +165,6 @@ public interface DatabaseIndex<READER extends ValueIndexReader> extends IndexFil
      * @throws IOException
      */
     void markAsFailed(String failure) throws IOException;
+
+    long sizeInBytes();
 }

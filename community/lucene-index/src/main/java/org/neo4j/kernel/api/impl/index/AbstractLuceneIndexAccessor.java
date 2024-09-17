@@ -227,6 +227,11 @@ public abstract class AbstractLuceneIndexAccessor<READER extends ValueIndexReade
         return luceneIndex.allDocumentsReader().maxCount();
     }
 
+    @Override
+    public long sizeInBytes() {
+        return luceneIndex.sizeInBytes();
+    }
+
     private static class PartitionIndexEntriesReader implements IndexEntriesReader {
         private final AtomicInteger closeCount;
         private final LuceneAllDocumentsReader allDocumentsReader;

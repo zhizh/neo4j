@@ -32,6 +32,7 @@ import org.apache.lucene.store.Directory;
 import org.neo4j.internal.helpers.collection.NumberAwareStringComparator;
 import org.neo4j.io.IOUtils;
 import org.neo4j.io.fs.FileSystemAbstraction;
+import org.neo4j.io.fs.FileSystemUtils;
 import org.neo4j.io.fs.FileUtils;
 import org.neo4j.kernel.api.impl.index.storage.layout.FolderLayout;
 import org.neo4j.kernel.api.impl.index.storage.layout.IndexFolderLayout;
@@ -216,5 +217,9 @@ public class PartitionedIndexStorage {
                 FileUtils.windowsSafeIOOperation(() -> dir.deleteFile(indexFile));
             }
         }
+    }
+
+    public long sizeInBytes() {
+        return FileSystemUtils.size(fileSystem, folderLayout.getIndexFolder());
     }
 }
