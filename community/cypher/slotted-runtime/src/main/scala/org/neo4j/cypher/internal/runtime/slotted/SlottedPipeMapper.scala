@@ -1324,7 +1324,8 @@ class SlottedPipeMapper(
           selector,
           _,
           reverseGroupVariableProjections,
-          bounds
+          bounds,
+          matchMode
         ) =>
         val groupMap = (nodeVariableGroupings ++ relationshipVariableGroupings)
           .map(grouping => grouping.singleton.name -> slots(grouping.group.name))
@@ -1370,7 +1371,8 @@ class SlottedPipeMapper(
           selector,
           groupMap.values.map(_.offset).toList,
           slots,
-          reverseGroupVariableProjections
+          reverseGroupVariableProjections,
+          matchMode
         )(id = id)
 
       case Optional(inner, symbols) =>

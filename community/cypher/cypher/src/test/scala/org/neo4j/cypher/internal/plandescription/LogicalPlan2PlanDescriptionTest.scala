@@ -394,6 +394,7 @@ import org.neo4j.cypher.internal.logical.plans.Top
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionConcurrency
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.logical.plans.TriadicBuild
 import org.neo4j.cypher.internal.logical.plans.TriadicFilter
 import org.neo4j.cypher.internal.logical.plans.TriadicSelection
@@ -6168,7 +6169,8 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           Selector.Shortest(5),
           solvedExpressionStr,
           false,
-          LengthBounds.none
+          LengthBounds.none,
+          TraversalMatchMode.Trail
         ),
         2345.0
       ),
@@ -6199,7 +6201,8 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           Selector.Shortest(5),
           solvedExpressionStr,
           false,
-          LengthBounds.none
+          LengthBounds.none,
+          TraversalMatchMode.Trail
         ),
         2345.0
       ),
@@ -6265,7 +6268,8 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           Selector.Shortest(5),
           solvedExpressionStr,
           false,
-          LengthBounds.none
+          LengthBounds.none,
+          TraversalMatchMode.Trail
         ),
         2345.0
       ),
@@ -6351,7 +6355,8 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           Selector.Shortest(5),
           solvedExpressionStr,
           false,
-          LengthBounds.none
+          LengthBounds.none,
+          TraversalMatchMode.Trail
         ),
         2345.0
       ),

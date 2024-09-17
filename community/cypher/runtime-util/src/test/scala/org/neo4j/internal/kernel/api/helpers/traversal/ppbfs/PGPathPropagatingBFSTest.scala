@@ -20,6 +20,7 @@
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs
 
 import org.neo4j.common.EntityType
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
@@ -1217,7 +1218,8 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     predicate: A => Boolean,
     mt: MemoryTracker,
     hooks: PPBFSHooks,
-    assertOpen: AssertOpen
+    assertOpen: AssertOpen,
+    matchMode: TraversalMatchMode
   ) {
 
     def withGraph(graph: TestGraph): FixtureBuilder[A] = copy(graph = graph)
@@ -1236,6 +1238,7 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
       into(intoTarget, if (intoTarget == -1L) SearchMode.Unidirectional else SearchMode.Bidirectional)
 
     def withMode(searchMode: SearchMode): FixtureBuilder[A] = copy(searchMode = searchMode)
+    def withMatchMode(mode: TraversalMatchMode): FixtureBuilder[A] = copy(matchMode = mode)
     def grouped: FixtureBuilder[A] = copy(isGroup = true)
     def withMaxDepth(maxDepth: Int): FixtureBuilder[A] = copy(maxDepth = maxDepth)
     def withK(k: Int): FixtureBuilder[A] = copy(k = k)
@@ -1257,7 +1260,8 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
         _ => true,
         mt,
         hooks,
-        assertOpen
+        assertOpen,
+        matchMode
       )
     def filter(predicate: A => Boolean): FixtureBuilder[A] = copy(predicate = predicate)
 
@@ -1443,7 +1447,8 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     predicate = _ => true,
     mt = EmptyMemoryTracker.INSTANCE,
     hooks = PPBFSHooks.NULL,
-    assertOpen = () => ()
+    assertOpen = () => (),
+    matchMode = TraversalMatchMode.Trail
   )
 }
 

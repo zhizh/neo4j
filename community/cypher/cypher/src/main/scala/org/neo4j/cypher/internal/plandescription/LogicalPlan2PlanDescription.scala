@@ -1989,6 +1989,7 @@ case class LogicalPlan2PlanDescription(
           _,
           solvedExpressionString,
           _,
+          _,
           _
         ) =>
         def predicateLines(preds: Seq[PrettyString], prefix: PrettyString): PrettyString = {

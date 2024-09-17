@@ -254,6 +254,7 @@ import org.neo4j.cypher.internal.logical.plans.Top1WithTies
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionConcurrency
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.logical.plans.TriadicSelection
 import org.neo4j.cypher.internal.logical.plans.UndirectedAllRelationshipsScan
 import org.neo4j.cypher.internal.logical.plans.UndirectedRelationshipByElementIdSeek
@@ -2799,7 +2800,8 @@ case class LogicalPlanProducer(
       selector,
       solvedExpressionAsString,
       reverseGroupVariableProjections,
-      LengthBounds(pathLength.min, pathLength.maybeMax)
+      LengthBounds(pathLength.min, pathLength.maybeMax),
+      TraversalMatchMode.Trail
     )
     annotate(plan, solved, ProvidedOrder.Left, cachedPropertiesPerPlan.get(inner.id), context)
   }

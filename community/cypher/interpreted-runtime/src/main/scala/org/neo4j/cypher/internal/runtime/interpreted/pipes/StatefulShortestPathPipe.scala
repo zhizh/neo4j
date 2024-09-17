@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath.LengthBounds
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.ClosingIterator.JavaAutoCloseableIteratorAsClosingIterator
 import org.neo4j.cypher.internal.runtime.CypherRow
@@ -50,7 +51,8 @@ case class StatefulShortestPathPipe(
   preFilters: Option[Predicate],
   selector: StatefulShortestPath.Selector,
   grouped: Set[String],
-  reverseGroupVariableProjections: Boolean
+  reverseGroupVariableProjections: Boolean,
+  matchMode: TraversalMatchMode
 )(val id: Id = Id.INVALID_ID)
     extends PipeWithSource(source) {
   self =>

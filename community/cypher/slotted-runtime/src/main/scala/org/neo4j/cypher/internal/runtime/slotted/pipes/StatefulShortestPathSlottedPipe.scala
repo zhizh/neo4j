@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath.LengthBounds
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.physicalplanning.Slot
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
 import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils.NO_ENTITY_FUNCTION
@@ -58,7 +59,8 @@ case class StatefulShortestPathSlottedPipe(
   selector: StatefulShortestPath.Selector,
   groupSlots: List[Int],
   slots: SlotConfiguration,
-  reverseGroupVariableProjections: Boolean
+  reverseGroupVariableProjections: Boolean,
+  matchMode: TraversalMatchMode
 )(val id: Id = Id.INVALID_ID) extends PipeWithSource(source) with Pipe {
   self =>
 

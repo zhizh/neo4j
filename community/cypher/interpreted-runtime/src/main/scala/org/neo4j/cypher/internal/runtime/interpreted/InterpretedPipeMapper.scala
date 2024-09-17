@@ -1523,7 +1523,8 @@ case class InterpretedPipeMapper(
           selector,
           _,
           reverseGroupVariableProjections,
-          bounds
+          bounds,
+          matchMode
         ) =>
         def convertPredicate(pred: internal.expressions.Expression) =
           expressionConverters.toCommandPredicate(id, pred)
@@ -1564,7 +1565,8 @@ case class InterpretedPipeMapper(
           commandPreFilters,
           selector,
           groupMap.values.toSet,
-          reverseGroupVariableProjections
+          reverseGroupVariableProjections,
+          matchMode
         )(id = id)
 
       case UnwindCollection(_, variable, collection) =>

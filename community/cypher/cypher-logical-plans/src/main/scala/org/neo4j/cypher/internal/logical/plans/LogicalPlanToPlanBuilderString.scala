@@ -400,7 +400,8 @@ object LogicalPlanToPlanBuilderString {
           selector,
           solvedExpressionString,
           reverseGroupVariableProjections,
-          lengthBounds
+          lengthBounds,
+          matchMode
         ) =>
         Seq(
           wrapInQuotations(from),
@@ -416,7 +417,8 @@ object LogicalPlanToPlanBuilderString {
           mode.toString,
           reverseGroupVariableProjections.toString,
           lengthBounds.min.toString,
-          lengthBounds.max.toString
+          lengthBounds.max.toString,
+          matchMode.toString
         ).mkString(s"\n${indent}", s",\n${indent}", "")
       case PruningVarExpand(_, from, dir, types, to, minLength, maxLength, nodePredicates, relationshipPredicates) =>
         val (dirStrA, dirStrB) = arrows(dir)

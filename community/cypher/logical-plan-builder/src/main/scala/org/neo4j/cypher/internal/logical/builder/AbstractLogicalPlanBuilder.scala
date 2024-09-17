@@ -643,7 +643,8 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
     mode: ExpansionMode,
     reverseGroupVariableProjections: Boolean = false,
     minLength: Int = 0,
-    maxLength: Option[Int] = None
+    maxLength: Option[Int] = None,
+    matchMode: TraversalMatchMode = TraversalMatchMode.TRAIL
   ): IMPL = {
     val nodeVariableGroupings = groupNodes.map { case (x, y) => VariableGrouping(varFor(x), varFor(y))(pos) }
     val relationshipVariableGroupings = groupRelationships.map { case (x, y) =>
@@ -686,7 +687,8 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
         selector,
         solvedExpressionString,
         reverseGroupVariableProjections,
-        LengthBounds(minLength, maxLength)
+        LengthBounds(minLength, maxLength),
+        matchMode
       )(_)
     ))
     self
@@ -706,7 +708,8 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
     mode: ExpansionMode,
     reverseGroupVariableProjections: Boolean = false,
     minLength: Int = 0,
-    maxLength: Option[Int] = None
+    maxLength: Option[Int] = None,
+    matchMode: TraversalMatchMode = TraversalMatchMode.TRAIL
   ): IMPL = {
     val predicates = nonInlinedPreFilters.map(parseExpression)
     statefulShortestPathExpr(
@@ -723,7 +726,8 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
       mode,
       reverseGroupVariableProjections,
       minLength,
-      maxLength
+      maxLength,
+      matchMode
     )
   }
 

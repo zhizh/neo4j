@@ -700,6 +700,7 @@ object ReadFinder {
           _,
           _,
           _,
+          _,
           _
         ) =>
         processStatefulShortest(
