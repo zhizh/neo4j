@@ -18,11 +18,12 @@ package org.neo4j.cypher.internal.rewriting.rewriters
 
 import org.neo4j.cypher.internal.ast
 import org.neo4j.cypher.internal.ast.AliasedReturnItem
+import org.neo4j.cypher.internal.ast.ImportingWithSubqueryCall
 import org.neo4j.cypher.internal.ast.ProjectionClause
 import org.neo4j.cypher.internal.ast.ReturnItem
 import org.neo4j.cypher.internal.ast.ReturnItems
+import org.neo4j.cypher.internal.ast.ScopeClauseSubqueryCall
 import org.neo4j.cypher.internal.ast.SingleQuery
-import org.neo4j.cypher.internal.ast.SubqueryCall
 import org.neo4j.cypher.internal.ast.With
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
 import org.neo4j.cypher.internal.expressions
@@ -72,7 +73,8 @@ case object projectNamedPaths extends Rewriter with StepSequencer.Step with ASTR
     paths: Map[Variable, PathExpression] = Map.empty,
     protectedVariables: Set[Ref[LogicalVariable]] = Set.empty,
     variableRewrites: Map[Ref[LogicalVariable], PathExpression] = Map.empty,
-    insertedWiths: Map[SingleQuery, With] = Map.empty
+    insertedWiths: Map[SingleQuery, With] = Map.empty,
+    insertedImports: Map[ScopeClauseSubqueryCall, Seq[Variable]] = Map.empty
   ) {
 
     self =>
@@ -90,6 +92,10 @@ case object projectNamedPaths extends Rewriter with StepSequencer.Step with ASTR
 
     def withInsertedWith(query: SingleQuery, wizz: With): Projectibles =
       copy(insertedWiths = insertedWiths + (query -> wizz))
+
+    def withInsertedImports(subquery: ScopeClauseSubqueryCall, imports: Seq[Variable]): Projectibles = {
+      copy(insertedImports = insertedImports + (subquery -> imports))
+    }
 
     def withVariableRewritesForExpression(expr: Expression): Projectibles =
       expr.folder.treeFold(self) {
@@ -109,7 +115,8 @@ case object projectNamedPaths extends Rewriter with StepSequencer.Step with ASTR
   def apply(input: AnyRef): AnyRef = instance(input)
 
   private val projectNamedPathsRewriter: Rewriter = input => {
-    val Projectibles(_, protectedVariables, variableRewrites, insertedWiths) = collectProjectibles(input)
+    val Projectibles(_, protectedVariables, variableRewrites, insertedWiths, insertedImports) =
+      collectProjectibles(input)
     val applicator = Rewriter.lift {
 
       case ident: Variable if !protectedVariables(Ref(ident)) =>
@@ -127,6 +134,10 @@ case object projectNamedPaths extends Rewriter with StepSequencer.Step with ASTR
       case singleQuery: SingleQuery if insertedWiths.contains(singleQuery) =>
         val newImportingWith = insertedWiths(singleQuery)
         singleQuery.copy(clauses = newImportingWith +: singleQuery.clauses)(singleQuery.position)
+
+      case subquery: ScopeClauseSubqueryCall if insertedImports.contains(subquery) =>
+        val newImports = insertedImports(subquery)
+        subquery.copy(importedVariables = newImports)(subquery.position)
     }
     topDown(applicator)(input)
   }
@@ -156,7 +167,7 @@ case object projectNamedPaths extends Rewriter with StepSequencer.Step with ASTR
         // After this projection, we remove all named paths. They have either been projected here, or they are not available in the rest of the query.
         TraverseChildrenNewAccForSiblings(projectedAcc, _.withoutNamedPaths)
 
-    case subquery: SubqueryCall =>
+    case subquery: ImportingWithSubqueryCall =>
       acc =>
         // Collect importing WITH clauses to insert into subqueries.
         // Importing with clauses cannot contain PathExpressions, so we need to add an extra WITH clause before those with all the variables from the path.
@@ -196,6 +207,30 @@ case object projectNamedPaths extends Rewriter with StepSequencer.Step with ASTR
               val newAcc = newImportingWith.map(w => innerAcc.withInsertedWith(query, w)).getOrElse(innerAcc)
               SkipChildren(newAcc)
         }
+        TraverseChildren(newAcc)
+
+    case subquery: ScopeClauseSubqueryCall =>
+      acc =>
+        // Importing clauses cannot contain PathExpressions, so we need to add all the variables from the path.
+        val imports = subquery.importedVariables
+        val (pathReturnItems, nonPathReturnItems) = imports.partition {
+          // We can assume all return items are aliased at this point
+          case v if acc.paths.keySet.contains(v) => true
+          case _                                 => false
+        }
+        val importVariablesFromPaths: Seq[Variable] =
+          acc.paths.collect {
+            case (variable, pathExpression) if pathReturnItems.contains(variable) =>
+              pathExpression.step.dependencies
+          }.flatten.map(v => Variable(v.name)(v.position)).toSeq
+
+        val newImports: Option[Seq[Variable]] = {
+          if (importVariablesFromPaths.isEmpty)
+            None
+          else
+            Some((importVariablesFromPaths ++ nonPathReturnItems).distinct)
+        }
+        val newAcc = newImports.map(i => acc.withInsertedImports(subquery, i)).getOrElse(acc)
         TraverseChildren(newAcc)
 
     case _: SingleQuery =>
