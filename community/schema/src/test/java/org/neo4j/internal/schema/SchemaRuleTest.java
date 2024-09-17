@@ -195,6 +195,20 @@ class SchemaRuleTest {
                     relTypeSchema, PropertyTypeSet.of(SchemaValueType.STRING), false)
             .withName("namedRelationshipTypeConstraint")
             .withId(11);
+    private final ConstraintDescriptor relationshipEndpointStartConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointForRelType(0, 0, EndpointType.START);
+    private final ConstraintDescriptor relationshipEndpointStartAnotherLabelConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointForRelType(0, 1, EndpointType.START);
+    private final ConstraintDescriptor relationshipEndpointStartAnotherRelTypeConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointForRelType(1, 0, EndpointType.START);
+    private final ConstraintDescriptor relationshipEndpointEndConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointForRelType(0, 0, EndpointType.END);
+    private final ConstraintDescriptor labelCoexistenceConstraint =
+            ConstraintDescriptorFactory.labelCoexistenceForLabel(0, 1);
+    private final ConstraintDescriptor labelCoexistenceAnotherConstrainedLabelConstraint =
+            ConstraintDescriptorFactory.labelCoexistenceForLabel(2, 1);
+    private final ConstraintDescriptor labelCoexistenceAnotherRequiredLabelConstraint =
+            ConstraintDescriptorFactory.labelCoexistenceForLabel(0, 2);
 
     private final InMemoryTokens lookup = new InMemoryTokens()
             .label(0, "La:bel")
@@ -233,6 +247,13 @@ class SchemaRuleTest {
         assertName(nodeTypeConstraintBoolString, "constraint_c99ece6");
         assertName(nodeTypeConstraintIntBool, "constraint_f37a6b9f");
         assertName(nodeTypeConstraintBoolInt, "constraint_f37a6b9f");
+        assertName(relationshipEndpointStartConstraint, "constraint_296e757a");
+        assertName(relationshipEndpointStartAnotherLabelConstraint, "constraint_296e757a");
+        assertName(relationshipEndpointStartAnotherRelTypeConstraint, "constraint_1a8bd035");
+        assertName(relationshipEndpointEndConstraint, "constraint_e7ebc167");
+        assertName(labelCoexistenceConstraint, "constraint_4da3555e");
+        assertName(labelCoexistenceAnotherConstrainedLabelConstraint, "constraint_c634a948");
+        assertName(labelCoexistenceAnotherRequiredLabelConstraint, "constraint_4a5a94e4");
         assertName(allLabelsPrototype, "index_343aff4e");
         assertName(allRelTypesPrototype, "index_f7700477");
         assertName(textLabelPrototype, "index_19f9e602");
