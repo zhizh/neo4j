@@ -47,6 +47,7 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
+import org.neo4j.kernel.api.exceptions.index.IndexPopulationFailedKernelException;
 import org.neo4j.kernel.api.index.BulkIndexCreationContext;
 import org.neo4j.kernel.database.MetadataCache;
 import org.neo4j.kernel.impl.api.DatabaseSchemaState;
@@ -118,7 +119,7 @@ public class BulkIndexesCreator implements IndexesCreator {
                             .map(indexingService::completeConfiguration)
                             .toArray(IndexDescriptor[]::new));
 
-            final var failed = Lists.mutable.<String>empty();
+            final var failed = Lists.mutable.<IndexPopulationFailedKernelException>empty();
             final var progressTracker = ObjectFloatMaps.mutable.<IndexDescriptor>empty();
             var completed = 0;
             while (completed < descriptorCount) {
@@ -140,8 +141,8 @@ public class BulkIndexesCreator implements IndexesCreator {
                         completed++;
                         failed.add(indexProxy
                                 .getPopulationFailure()
-                                .asIndexPopulationFailure(descriptor.schema(), descriptor.userDescription(tokenHolders))
-                                .getMessage());
+                                .asIndexPopulationFailure(
+                                        descriptor.schema(), descriptor.userDescription(tokenHolders)));
                     } else if (state == InternalIndexState.ONLINE || latestProgress == 1.0f) {
                         // some proxies are 'tentative' and stay at POPULATING even though they are actually done
                         completed++;
@@ -152,8 +153,10 @@ public class BulkIndexesCreator implements IndexesCreator {
             }
 
             if (!failed.isEmpty()) {
-                throw new IOException("Index creation failed -  %d of %d failed to complete: %s"
-                        .formatted(failed.size(), descriptorCount, failed.makeString("[", ", ", "]")));
+                final var errors = new IOException("Index creation failed -  %d of %d failed to complete"
+                        .formatted(failed.size(), descriptorCount));
+                failed.forEach(errors::addSuppressed);
+                throw errors;
             }
 
             creationListener.onCreationCompleted();

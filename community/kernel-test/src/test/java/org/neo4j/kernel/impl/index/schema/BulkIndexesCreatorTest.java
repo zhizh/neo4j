@@ -205,11 +205,14 @@ class BulkIndexesCreatorTest {
                         },
                         List.of(descriptor)))
                 .isInstanceOf(IOException.class)
-                .hasMessageContainingAll(
-                        "failed to complete",
-                        "Failed to populate index",
-                        "type='RANGE'",
-                        "indexProvider='token-lookup-1.0'");
+                .hasMessageContainingAll("Index creation failed", "1 of 1 failed to complete")
+                .satisfies(error -> {
+                    final var suppressed = error.getSuppressed();
+                    assertThat(suppressed).hasSize(1);
+                    assertThat(suppressed[0])
+                            .hasMessageContainingAll(
+                                    "Failed to populate index", "type='RANGE'", "indexProvider='token-lookup-1.0'");
+                });
 
         assertThat(deltas.get(descriptor))
                 .as("should not have completed the progress")
