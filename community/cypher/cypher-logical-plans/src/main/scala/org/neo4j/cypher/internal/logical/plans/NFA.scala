@@ -160,8 +160,8 @@ object NFA {
    * - compoundPredicate: a.prop = c.prop
    *
    * The predicate `a.prop = c.prop` applies across the whole transition and is evaluated once it has been expanded,
-   * and it can reference any node or relationship (including boundary nodes `a` and `c`) within the transition, but not those
-   * outside of it (`s` or `t`).
+   * and it can reference any node or relationship (including boundary nodes `a` and `c`) within the transition, the
+   * source node (`s`) and in the case of a bidirectional search it can also reference the target node (`t`).
    */
   case class MultiRelationshipExpansionTransition(
     relPredicates: Seq[RelationshipExpansionPredicate],
