@@ -29,7 +29,8 @@ case object LTrim extends Function {
       argumentTypes = Vector(CTString),
       outputType = CTString,
       description = "Returns the given `STRING` with leading whitespace removed.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "A value in which all leading whitespace will be removed.")
     ),
     FunctionTypeSignature(
       function = this,
@@ -37,7 +38,11 @@ case object LTrim extends Function {
       argumentTypes = Vector(CTString, CTString),
       outputType = CTString,
       description = "Returns the given `STRING` with leading `trimCharacterString` characters removed.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map(
+        "input" -> "A value from which the leading trim character will be removed.",
+        "trimCharacterString" -> "A character to be removed from the start of the given string."
+      )
     )
   )
 }

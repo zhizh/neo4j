@@ -23,6 +23,14 @@ case object Log extends Function {
   def name = "log"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTFloat, CTFloat, "Returns the natural logarithm of a `FLOAT`.", Category.LOGARITHMIC)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the natural logarithm of a `FLOAT`.",
+      category = Category.LOGARITHMIC,
+      argumentDescriptions = Map("input" -> "A value for which the natural logarithm will be returned.")
+    )
   )
 }

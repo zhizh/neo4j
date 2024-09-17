@@ -25,12 +25,14 @@ object GraphByName extends Function {
 
   override val signatures = Vector(
     FunctionTypeSignature(
-      this,
-      CTGraphRef,
-      Vector("name"),
-      "Returns the graph reference of the given name. It is only supported in the `USE` clause, on composite databases.",
-      Category.GRAPH,
-      Vector(CTString)
+      function = this,
+      names = Vector("name"),
+      argumentTypes = Vector(CTString),
+      outputType = CTGraphRef,
+      description =
+        "Returns the graph reference of the given name. It is only supported in the `USE` clause, on composite databases.",
+      category = Category.GRAPH,
+      argumentDescriptions = Map("name" -> "The name of the graph to be resolved.")
     )
   )
 }

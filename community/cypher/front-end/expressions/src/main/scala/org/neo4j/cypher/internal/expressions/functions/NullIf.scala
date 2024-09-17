@@ -30,7 +30,11 @@ case object NullIf extends Function {
       outputType = CTAny,
       description =
         "Returns null if the two given parameters are equivalent, otherwise returns the value of the first parameter.",
-      category = Category.SCALAR
+      category = Category.SCALAR,
+      argumentDescriptions = Map(
+        "v1" -> "A first value to be returned if the second value is not equivalent.",
+        "v2" -> "A second value against which the first value is compared."
+      )
     )
   )
 }

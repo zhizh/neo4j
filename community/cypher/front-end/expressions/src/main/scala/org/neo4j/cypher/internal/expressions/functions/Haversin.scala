@@ -23,6 +23,14 @@ case object Haversin extends Function {
   def name = "haversin"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTFloat, CTFloat, "Returns half the versine of a number.", Category.TRIGONOMETRIC)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns half the versine of a number.",
+      category = Category.TRIGONOMETRIC,
+      argumentDescriptions = Map("input" -> "An angle in radians.")
+    )
   )
 }

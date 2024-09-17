@@ -27,10 +27,13 @@ case object ToBooleanList extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTList(CTAny),
-      CTList(CTBoolean),
-      "Converts a `LIST<ANY>` of values to a `LIST<BOOLEAN>` values. If any values are not convertible to `BOOLEAN` they will be null in the `LIST<BOOLEAN>` returned.",
-      Category.LIST
+      names = Vector("input"),
+      argumentTypes = Vector(CTList(CTAny)),
+      outputType = CTList(CTBoolean),
+      description =
+        "Converts a `LIST<ANY>` of values to a `LIST<BOOLEAN>` values. If any values are not convertible to `BOOLEAN` they will be null in the `LIST<BOOLEAN>` returned.",
+      category = Category.LIST,
+      argumentDescriptions = Map("input" -> "A list of values to be converted into a list of booleans.")
     )
   )
 }

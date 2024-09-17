@@ -26,10 +26,12 @@ case object ToIntegerOrNull extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTAny,
-      CTInteger,
-      "Converts a value to an `INTEGER` value, or null if the value cannot be converted.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTInteger,
+      description = "Converts a value to an `INTEGER` value, or null if the value cannot be converted.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A value to be converted into an integer or null.")
     )
   )
 }

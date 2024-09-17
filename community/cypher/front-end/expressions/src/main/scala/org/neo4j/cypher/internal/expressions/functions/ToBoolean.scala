@@ -29,10 +29,13 @@ case object ToBoolean extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTBoolean, CTString, CTInteger))(InputPosition.NONE),
-      CTBoolean,
-      "Converts a `BOOLEAN`, `STRING` or `INTEGER` value to a `BOOLEAN` value. For `INTEGER` values, 0 is defined to be false and any other `INTEGER` is defined to be true.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTBoolean, CTString, CTInteger))(InputPosition.NONE)),
+      outputType = CTBoolean,
+      description =
+        "Converts a `BOOLEAN`, `STRING` or `INTEGER` value to a `BOOLEAN` value. For `INTEGER` values, 0 is defined to be false and any other `INTEGER` is defined to be true.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A value to be converted into a boolean.")
     )
   )
 }

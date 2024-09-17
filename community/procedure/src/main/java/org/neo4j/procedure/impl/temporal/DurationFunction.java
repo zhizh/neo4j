@@ -50,7 +50,11 @@ class DurationFunction implements CallableUserFunction {
 
     private static final UserFunctionSignature DURATION = new UserFunctionSignature(
             new QualifiedName("duration"),
-            Collections.singletonList(inputField("input", Neo4jTypes.NTAny)),
+            Collections.singletonList(
+                    inputField(
+                            "input",
+                            Neo4jTypes.NTAny,
+                            "A map optionally containing the following keys: 'years', 'quarters', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds', 'milliseconds', 'microseconds', or 'nanoseconds'.")),
             Neo4jTypes.NTDuration,
             false,
             null,
@@ -96,8 +100,15 @@ class DurationFunction implements CallableUserFunction {
     private static class Between implements CallableUserFunction {
         private static final String DESCRIPTION =
                 "Computes the `DURATION` between the `from` instant (inclusive) and the `to` instant (exclusive) in %s.";
-        private static final List<FieldSignature> SIGNATURE =
-                Arrays.asList(inputField("from", Neo4jTypes.NTAny), inputField("to", Neo4jTypes.NTAny));
+        private static final List<FieldSignature> SIGNATURE = Arrays.asList(
+                inputField(
+                        "from",
+                        Neo4jTypes.NTAny,
+                        "A temporal instant type (`DATE`, `LOCAL TIME`, `ZONED TIME`, `LOCAL DATETIME`, `ZONED DATETIME`) representing the starting instant."),
+                inputField(
+                        "to",
+                        Neo4jTypes.NTAny,
+                        "A temporal instant type (`DATE`, `LOCAL TIME`, `ZONED TIME`, `LOCAL DATETIME`, `ZONED DATETIME`) representing the ending instant."));
         private final UserFunctionSignature signature;
         private final TemporalUnit unit;
 

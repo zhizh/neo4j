@@ -30,7 +30,9 @@ case object Substring extends Function {
       argumentTypes = Vector(CTString, CTInteger),
       outputType = CTString,
       description = "Returns a substring of the given `STRING`, beginning with a 0-based index start.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions =
+        Map("original" -> "The string to be shortened.", "start" -> "The start position of the new string.")
     ),
     FunctionTypeSignature(
       function = this,
@@ -39,7 +41,12 @@ case object Substring extends Function {
       outputType = CTString,
       description =
         "Returns a substring of a given `length` from the given `STRING`, beginning with a 0-based index start.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map(
+        "original" -> "The string to be shortened.",
+        "start" -> "The start position of the new string.",
+        "length" -> "The length of the new string."
+      )
     )
   )
 }

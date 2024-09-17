@@ -25,10 +25,12 @@ case object Ceil extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTFloat,
-      CTFloat,
-      "Returns the smallest `FLOAT` that is greater than or equal to a number and equal to an `INTEGER`.",
-      Category.NUMERIC
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the smallest `FLOAT` that is greater than or equal to a number and equal to an `INTEGER`.",
+      category = Category.NUMERIC,
+      argumentDescriptions = Map("input" -> "A value to be rounded to the nearest higher integer.")
     )
   )
 }

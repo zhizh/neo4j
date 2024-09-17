@@ -26,10 +26,12 @@ case object Type extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTRelationship,
-      CTString,
-      "Returns a `STRING` representation of the `RELATIONSHIP` type.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(CTRelationship),
+      outputType = CTString,
+      description = "Returns a `STRING` representation of the `RELATIONSHIP` type.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A relationship.")
     )
   )
 }

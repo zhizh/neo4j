@@ -28,10 +28,12 @@ case object Abs extends Function {
   override val signatures: IndexedSeq[FunctionTypeSignature] = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE),
-      ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE),
-      "Returns the absolute value of an `INTEGER` or `FLOAT`.",
-      Category.NUMERIC
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE)),
+      outputType = ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE),
+      description = "Returns the absolute value of an `INTEGER` or `FLOAT`.",
+      category = Category.NUMERIC,
+      argumentDescriptions = Map("input" -> "A numeric value from which the absolute number will be returned.")
     )
   )
 }

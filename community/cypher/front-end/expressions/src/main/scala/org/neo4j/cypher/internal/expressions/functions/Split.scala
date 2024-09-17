@@ -33,7 +33,11 @@ case object Split extends Function {
       outputType = CTList(CTString),
       description =
         "Returns a `LIST<STRING>` resulting from the splitting of the given `STRING` around matches of the given delimiter(s).",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map(
+        "original" -> "The string to be split.",
+        "splitDelimiters" -> "The string with which to split the original string."
+      )
     )
   )
 }

@@ -27,10 +27,13 @@ case object ToFloatList extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTList(CTAny),
-      CTList(CTFloat),
-      "Converts a `LIST<ANY>` to a `LIST<FLOAT>` values. If any values are not convertible to `FLOAT` they will be null in the `LIST<FLOAT>` returned.",
-      Category.LIST
+      names = Vector("input"),
+      argumentTypes = Vector(CTList(CTAny)),
+      outputType = CTList(CTFloat),
+      description =
+        "Converts a `LIST<ANY>` to a `LIST<FLOAT>` values. If any values are not convertible to `FLOAT` they will be null in the `LIST<FLOAT>` returned.",
+      category = Category.LIST,
+      argumentDescriptions = Map("input" -> "A list of values to be converted into a list of floats.")
     )
   )
 }

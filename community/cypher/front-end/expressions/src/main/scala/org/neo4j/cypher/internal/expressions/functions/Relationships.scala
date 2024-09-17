@@ -27,10 +27,12 @@ case object Relationships extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTPath,
-      CTList(CTRelationship),
-      "Returns a `LIST<RELATIONSHIP>` containing all the `RELATIONSHIP` values in a `PATH`.",
-      Category.LIST
+      names = Vector("input"),
+      argumentTypes = Vector(CTPath),
+      outputType = CTList(CTRelationship),
+      description = "Returns a `LIST<RELATIONSHIP>` containing all the `RELATIONSHIP` values in a `PATH`.",
+      category = Category.LIST,
+      argumentDescriptions = Map("input" -> "The path from which all relationships will be returned.")
     )
   )
 }

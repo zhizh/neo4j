@@ -37,6 +37,10 @@ case object Reduce extends Function {
       category = Category.LIST,
       overrideDefaultAsString = Some(
         name + "(accumulator :: VARIABLE = initial :: ANY, variable :: VARIABLE IN list :: LIST<ANY> | expression :: ANY) :: ANY"
+      ),
+      argumentDescriptions = Map(
+        "accumulator" -> "A variable that holds the result as the list is iterated.",
+        "variable" -> "A variable that can be used within the reducing expression."
       )
     )
   )

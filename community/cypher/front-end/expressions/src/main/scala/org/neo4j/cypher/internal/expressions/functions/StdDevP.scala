@@ -25,10 +25,12 @@ case object StdDevP extends AggregatingFunction {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTFloat,
-      CTFloat,
-      "Returns the standard deviation for the given value over a group for an entire population.",
-      Category.AGGREGATING
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the standard deviation for the given value over a group for an entire population.",
+      category = Category.AGGREGATING,
+      argumentDescriptions = Map("input" -> "The value to calculate the population standard deviation of.")
     )
   )
 }

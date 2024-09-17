@@ -25,11 +25,14 @@ case object StartNode extends Function {
 
   override val signatures = Vector(
     FunctionTypeSignature(
-      this,
-      CTRelationship,
-      CTNode,
-      "Returns the start `NODE` of a `RELATIONSHIP`.",
-      Category.SCALAR
+      function = this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTRelationship),
+      outputType = CTNode,
+      description =
+        "Returns the start `NODE` of a `RELATIONSHIP`.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A relationship.")
     )
   )
 }

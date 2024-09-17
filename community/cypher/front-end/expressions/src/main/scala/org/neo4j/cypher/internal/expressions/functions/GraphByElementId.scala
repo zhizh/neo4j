@@ -25,12 +25,14 @@ object GraphByElementId extends Function {
 
   override val signatures = Vector(
     FunctionTypeSignature(
-      this,
-      CTGraphRef,
-      Vector("elementId"),
-      "Returns the graph reference with the given element id. It is only supported in the `USE` clause, on composite databases.",
-      Category.GRAPH,
-      Vector(CTString)
+      function = this,
+      names = Vector("elementId"),
+      argumentTypes = Vector(CTString),
+      outputType = CTGraphRef,
+      description =
+        "Returns the graph reference with the given element id. It is only supported in the `USE` clause, on composite databases.",
+      category = Category.GRAPH,
+      argumentDescriptions = Map("elementId" -> "An element id of a node or relationship.")
     )
   )
 }

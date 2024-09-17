@@ -29,7 +29,8 @@ case object Atan2 extends Function {
       argumentTypes = Vector(CTFloat, CTFloat),
       outputType = CTFloat,
       description = "Returns the arctangent2 of a set of coordinates in radians.",
-      category = Category.TRIGONOMETRIC
+      category = Category.TRIGONOMETRIC,
+      argumentDescriptions = Map("y" -> "A y angle in radians.", "x" -> "An x angle in radians.")
     )
   )
 }

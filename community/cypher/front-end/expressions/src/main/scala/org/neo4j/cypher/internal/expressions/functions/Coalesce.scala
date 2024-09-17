@@ -25,10 +25,12 @@ case object Coalesce extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTAny,
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
       outputType = CTAny,
       description = "Returns the first non-null value in a list of expressions.",
-      category = Category.SCALAR
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "If this is the first non-`NULL` value, it will be returned.")
     )
   )
 }

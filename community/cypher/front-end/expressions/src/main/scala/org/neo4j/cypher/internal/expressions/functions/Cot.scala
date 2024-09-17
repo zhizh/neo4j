@@ -23,6 +23,14 @@ case object Cot extends Function {
   def name = "cot"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTFloat, CTFloat, "Returns the cotangent of a `FLOAT`.", Category.TRIGONOMETRIC)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the cotangent of a `FLOAT`.",
+      category = Category.TRIGONOMETRIC,
+      argumentDescriptions = Map("input" -> "An angle in radians.")
+    )
   )
 }

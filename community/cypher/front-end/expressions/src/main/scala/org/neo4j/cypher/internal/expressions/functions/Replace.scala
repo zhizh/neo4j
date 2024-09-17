@@ -30,7 +30,12 @@ case object Replace extends Function {
       outputType = CTString,
       description =
         "Returns a `STRING` in which all occurrences of a specified search `STRING` in the given `STRING` have been replaced by another (specified) replacement `STRING`.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map(
+        "original" -> "The string to be modified.",
+        "search" -> "The value to replace in the original string.",
+        "replace" -> "The value to be inserted in the original string."
+      )
     )
   )
 }

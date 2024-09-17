@@ -26,10 +26,13 @@ case object ToStringOrNull extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTAny,
-      CTString,
-      "Converts an `INTEGER`, `FLOAT`, `BOOLEAN`, `POINT` or temporal type (i.e. `DATE`, `ZONED TIME`, `LOCAL TIME`, `ZONED DATETIME`, `LOCAL DATETIME` or `DURATION`) value to a `STRING`, or null if the value cannot be converted.",
-      Category.STRING
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTString,
+      description =
+        "Converts an `INTEGER`, `FLOAT`, `BOOLEAN`, `POINT` or temporal type (i.e. `DATE`, `ZONED TIME`, `LOCAL TIME`, `ZONED DATETIME`, `LOCAL DATETIME` or `DURATION`) value to a `STRING`, or null if the value cannot be converted.",
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "A value to be converted into a string or null.")
     )
     // TODO: Also Category.SCALAR, in case we entangle the categories. For now we keep the same as toString
   )

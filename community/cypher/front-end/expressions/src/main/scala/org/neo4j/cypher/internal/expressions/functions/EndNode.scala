@@ -24,6 +24,15 @@ case object EndNode extends Function {
   def name = "endNode"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTRelationship, CTNode, "Returns the end `NODE` of a `RELATIONSHIP`.", Category.SCALAR)
+    FunctionTypeSignature(
+      function = this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTRelationship),
+      outputType = CTNode,
+      description =
+        "Returns the end `NODE` of a `RELATIONSHIP`.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A relationship.")
+    )
   )
 }

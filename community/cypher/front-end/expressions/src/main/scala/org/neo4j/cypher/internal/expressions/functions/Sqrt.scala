@@ -23,6 +23,14 @@ case object Sqrt extends Function {
   def name = "sqrt"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTFloat, CTFloat, "Returns the square root of a `FLOAT`.", Category.LOGARITHMIC)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the square root of a `FLOAT`.",
+      category = Category.LOGARITHMIC,
+      argumentDescriptions = Map("input" -> "The value to calculate the square root of.")
+    )
   )
 }

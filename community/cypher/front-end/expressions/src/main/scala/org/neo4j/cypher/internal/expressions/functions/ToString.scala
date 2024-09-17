@@ -50,10 +50,13 @@ case object ToString extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTAny,
-      CTString,
-      "Converts an `INTEGER`, `FLOAT`, `BOOLEAN`, `POINT` or temporal type (i.e. `DATE`, `ZONED TIME`, `LOCAL TIME`, `ZONED DATETIME`, `LOCAL DATETIME` or `DURATION`) value to a `STRING`.",
-      Category.STRING
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTString,
+      description =
+        "Converts an `INTEGER`, `FLOAT`, `BOOLEAN`, `POINT` or temporal type (i.e. `DATE`, `ZONED TIME`, `LOCAL TIME`, `ZONED DATETIME`, `LOCAL DATETIME` or `DURATION`) value to a `STRING`.",
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "A value to be converted into a string.")
     )
   )
 }

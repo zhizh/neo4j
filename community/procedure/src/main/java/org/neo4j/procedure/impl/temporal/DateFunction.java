@@ -19,12 +19,19 @@
  */
 package org.neo4j.procedure.impl.temporal;
 
+import static java.util.Collections.singletonList;
+import static org.neo4j.internal.kernel.api.procs.DefaultParameterValue.nullValue;
+import static org.neo4j.internal.kernel.api.procs.FieldSignature.inputField;
 import static org.neo4j.internal.kernel.api.procs.Neo4jTypes.NTDate;
 
 import java.time.Clock;
 import java.time.ZoneId;
 import java.time.temporal.TemporalUnit;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Supplier;
+import org.neo4j.internal.kernel.api.procs.FieldSignature;
+import org.neo4j.internal.kernel.api.procs.Neo4jTypes;
 import org.neo4j.procedure.Description;
 import org.neo4j.values.AnyValue;
 import org.neo4j.values.storable.DateValue;
@@ -34,8 +41,17 @@ import org.neo4j.values.virtual.MapValue;
 
 @Description("Creates a `DATE` instant.")
 class DateFunction extends TemporalFunction<DateValue> {
+
+    private static final List<FieldSignature> INPUT_SIGNATURE = singletonList(
+            inputField(
+                    "input",
+                    Neo4jTypes.NTAny,
+                    DEFAULT_PARAMETER_VALUE,
+                    false,
+                    "Either a string representation of a temporal value, a map containing the single key 'timezone', or a map containing temporal values ('date', 'year', 'month', 'day', 'week', 'dayOfWeek', 'quarter', 'dayOfQuarter', 'ordinalDay') as components."));
+
     DateFunction(Supplier<ZoneId> defaultZone) {
-        super(NTDate, defaultZone);
+        super(NTDate, INPUT_SIGNATURE, defaultZone);
     }
 
     @Override
@@ -56,6 +72,27 @@ class DateFunction extends TemporalFunction<DateValue> {
     @Override
     protected DateValue select(AnyValue from, Supplier<ZoneId> defaultZone) {
         return DateValue.select(from, defaultZone);
+    }
+
+    @Override
+    protected List<FieldSignature> getTemporalTruncateSignature() {
+        return Arrays.asList(
+                inputField(
+                        "unit",
+                        Neo4jTypes.NTString,
+                        "A string representing one of the following: 'day', 'week', 'month', 'weekYear', 'quarter', 'year', 'decade', 'century', 'millennium'."),
+                inputField(
+                        "input",
+                        Neo4jTypes.NTAny,
+                        DEFAULT_PARAMETER_VALUE,
+                        false,
+                        "The date to be truncated using either `ZONED DATETIME`, `LOCAL DATETIME`, or `DATE`."),
+                inputField(
+                        "fields",
+                        Neo4jTypes.NTMap,
+                        nullValue(Neo4jTypes.NTMap),
+                        false,
+                        "A list of time components smaller than those specified in `unit` to preserve during truncation."));
     }
 
     @Override

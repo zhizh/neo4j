@@ -31,7 +31,11 @@ case object Trim extends Function {
       description = "Returns the given `STRING` with leading and trailing whitespace removed.",
       category = Category.STRING,
       overrideDefaultAsString = Some(name + "(input :: STRING) :: STRING"),
-      overriddenArgumentTypeName = Some(Map("trimSpecification" -> "[LEADING, TRAILING, BOTH]"))
+      overriddenArgumentTypeName = Some(Map("trimSpecification" -> "[LEADING, TRAILING, BOTH]")),
+      argumentDescriptions = Map(
+        "trimSpecification" -> "The parts of the string to trim; LEADING, TRAILING, BOTH",
+        "input" -> "A value from which all leading and trailing whitespace will be removed."
+      )
     ),
     FunctionTypeSignature(
       function = this,
@@ -42,7 +46,12 @@ case object Trim extends Function {
       category = Category.STRING,
       overrideDefaultAsString =
         Some(name + "([[LEADING | TRAILING | BOTH] [trimCharacterString :: STRING] FROM] input :: STRING) :: STRING"),
-      overriddenArgumentTypeName = Some(Map("trimSpecification" -> "[LEADING, TRAILING, BOTH]"))
+      overriddenArgumentTypeName = Some(Map("trimSpecification" -> "[LEADING, TRAILING, BOTH]")),
+      argumentDescriptions = Map(
+        "trimSpecification" -> "The parts of the string to trim; LEADING, TRAILING, BOTH",
+        "trimCharacterString" -> "The characters to be removed from the start and/or end of the given string.",
+        "input" -> "A value from which all leading and/or trailing trim characters will be removed."
+      )
     )
   )
 }

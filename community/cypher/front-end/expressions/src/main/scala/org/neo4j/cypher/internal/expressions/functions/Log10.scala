@@ -25,10 +25,12 @@ case object Log10 extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTFloat,
-      CTFloat,
-      "Returns the common logarithm (base 10) of a `FLOAT`.",
-      Category.LOGARITHMIC
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the common logarithm (base 10) of a `FLOAT`.",
+      category = Category.LOGARITHMIC,
+      argumentDescriptions = Map("input" -> "A value for which the common logarithm (base 10) will be returned.")
     )
   )
 }

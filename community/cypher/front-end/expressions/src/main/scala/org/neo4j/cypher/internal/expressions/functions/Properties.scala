@@ -29,10 +29,12 @@ case object Properties extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTNode, CTRelationship, CTMap))(InputPosition.NONE),
-      CTMap,
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTNode, CTRelationship, CTMap))(InputPosition.NONE)),
+      outputType = CTMap,
       description = "Returns a `MAP` containing all the properties of a `NODE`, `RELATIONSHIP` or `MAP`.",
-      Category.SCALAR
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "An entity to return the properties from.")
     )
   )
 }

@@ -31,7 +31,8 @@ case object Distance extends Function {
       outputType = CTFloat,
       description =
         "Returns a `FLOAT` representing the geodesic distance between any two points in the same CRS.",
-      category = Category.SPATIAL
+      category = Category.SPATIAL,
+      argumentDescriptions = Map("from" -> "A start point.", "to" -> "An end point in the same CRS as the start point.")
     )
   )
 }

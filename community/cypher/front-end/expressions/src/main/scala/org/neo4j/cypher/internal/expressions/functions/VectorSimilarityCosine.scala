@@ -32,7 +32,9 @@ case object VectorSimilarityCosine extends Function {
       outputType = CTFloat,
       description =
         "Returns a `FLOAT` representing the similarity between the argument vectors based on their cosine.",
-      category = Category.VECTOR
+      category = Category.VECTOR,
+      argumentDescriptions =
+        Map("a" -> "A list representing the first vector.", "b" -> "A list representing the second vector.")
     )
   )
 }

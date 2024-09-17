@@ -30,7 +30,12 @@ case object WithinBBox extends Function {
       argumentTypes = Vector(CTPoint, CTPoint, CTPoint),
       outputType = CTBoolean,
       description = "Returns true if the provided point is within the bounding box defined by the two provided points.",
-      category = Category.SPATIAL
+      category = Category.SPATIAL,
+      argumentDescriptions = Map(
+        "point" -> "A point to be confirmed in the bounding box.",
+        "lowerLeft" -> "The lower left side point of the bounding box.",
+        "upperRight" -> "The upper right side point of the bounding box."
+      )
     )
   )
 }

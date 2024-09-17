@@ -24,11 +24,14 @@ case object Floor extends Function {
 
   override val signatures = Vector(
     FunctionTypeSignature(
-      this,
-      CTFloat,
-      CTFloat,
-      "Returns the largest `FLOAT` that is less than or equal to a number and equal to an `INTEGER`.",
-      Category.NUMERIC
+      function = this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description =
+        "Returns the largest `FLOAT` that is less than or equal to a number and equal to an `INTEGER`.",
+      category = Category.NUMERIC,
+      argumentDescriptions = Map("input" -> "A value to be rounded to the nearest lower integer.")
     )
   )
 }

@@ -27,10 +27,13 @@ case object ToIntegerList extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTList(CTAny),
-      CTList(CTInteger),
-      "Converts a `LIST<ANY>` to a `LIST<INTEGER>` values. If any values are not convertible to `INTEGER` they will be null in the `LIST<INTEGER>` returned.",
-      Category.LIST
+      names = Vector("input"),
+      argumentTypes = Vector(CTList(CTAny)),
+      outputType = CTList(CTInteger),
+      description =
+        "Converts a `LIST<ANY>` to a `LIST<INTEGER>` values. If any values are not convertible to `INTEGER` they will be null in the `LIST<INTEGER>` returned.",
+      category = Category.LIST,
+      argumentDescriptions = Map("input" -> "A list of values to be converted into a list of integers.")
     )
   )
 }

@@ -26,10 +26,12 @@ case object Tail extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTList(CTAny),
-      CTList(CTAny),
+      names = Vector("input"),
+      argumentTypes = Vector(CTList(CTAny)),
+      outputType = CTList(CTAny),
       description = "Returns all but the first element in a `LIST<ANY>`.",
-      category = Category.LIST
+      category = Category.LIST,
+      argumentDescriptions = Map("input" -> "A list from which all but the first element will be returned.")
     )
   )
 }

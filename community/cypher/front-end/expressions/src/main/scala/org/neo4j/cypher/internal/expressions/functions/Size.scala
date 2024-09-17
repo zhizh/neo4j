@@ -30,10 +30,12 @@ case object Size extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTString, CTList(CTAny)))(InputPosition.NONE),
-      CTInteger,
-      "Returns the number of items in a `LIST<ANY>` or the number of Unicode characters in a `STRING`.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTString, CTList(CTAny)))(InputPosition.NONE)),
+      outputType = CTInteger,
+      description = "Returns the number of items in a `LIST<ANY>` or the number of Unicode characters in a `STRING`.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A value whose length is to be calculated.")
     )
   )
 }

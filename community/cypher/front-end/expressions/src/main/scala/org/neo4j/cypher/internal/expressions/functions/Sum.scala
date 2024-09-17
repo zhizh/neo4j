@@ -33,7 +33,8 @@ case object Sum extends AggregatingFunction {
       argumentTypes = Vector(ClosedDynamicUnionType(Set(CTInteger, CTFloat, CTDuration))(InputPosition.NONE)),
       outputType = ClosedDynamicUnionType(Set(CTInteger, CTFloat, CTDuration))(InputPosition.NONE),
       description = "Returns the sum of a set of `INTEGER`, `FLOAT` or `DURATION` values",
-      category = Category.AGGREGATING
+      category = Category.AGGREGATING,
+      argumentDescriptions = Map("input" -> "A value to be aggregated.")
     )
   )
 }

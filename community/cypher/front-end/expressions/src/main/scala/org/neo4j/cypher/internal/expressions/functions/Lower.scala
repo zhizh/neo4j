@@ -26,6 +26,14 @@ case object Lower extends Function {
   def name = "lower"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTString, CTString, "Returns the given `STRING` in lowercase.", Category.STRING)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTString),
+      outputType = CTString,
+      description = "Returns the given `STRING` in lowercase.",
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "A string to be converted into lowercase.")
+    )
   )
 }

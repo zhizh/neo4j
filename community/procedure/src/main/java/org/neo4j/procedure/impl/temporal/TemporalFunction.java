@@ -21,7 +21,6 @@ package org.neo4j.procedure.impl.temporal;
 
 import static java.util.Collections.singletonList;
 import static org.neo4j.internal.helpers.collection.Iterables.single;
-import static org.neo4j.internal.kernel.api.procs.DefaultParameterValue.nullValue;
 import static org.neo4j.internal.kernel.api.procs.FieldSignature.inputField;
 import static org.neo4j.values.storable.Values.NO_VALUE;
 import static org.neo4j.values.virtual.VirtualValues.EMPTY_MAP;
@@ -58,7 +57,7 @@ import org.neo4j.values.virtual.MapValue;
 public abstract class TemporalFunction<T extends AnyValue> implements CallableUserFunction {
     private static final String DEFAULT_TEMPORAL_ARGUMENT = "DEFAULT_TEMPORAL_ARGUMENT";
     private static final TextValue DEFAULT_TEMPORAL_ARGUMENT_VALUE = Values.utf8Value(DEFAULT_TEMPORAL_ARGUMENT);
-    private static final DefaultParameterValue DEFAULT_PARAMETER_VALUE =
+    static final DefaultParameterValue DEFAULT_PARAMETER_VALUE =
             new DefaultParameterValue(DEFAULT_TEMPORAL_ARGUMENT_VALUE, Neo4jTypes.NTAny);
     private static final String TEMPORAL_CATEGORY = Category.TEMPORAL();
 
@@ -90,21 +89,20 @@ public abstract class TemporalFunction<T extends AnyValue> implements CallableUs
     protected abstract T truncate(
             TemporalUnit unit, TemporalValue input, MapValue fields, Supplier<ZoneId> defaultZone);
 
-    private static final List<FieldSignature> INPUT_SIGNATURE =
-            singletonList(inputField("input", Neo4jTypes.NTAny, DEFAULT_PARAMETER_VALUE));
-
     private final UserFunctionSignature signature;
     private final Supplier<ZoneId> defaultZone;
 
     protected abstract String getTemporalCypherTypeName();
 
-    TemporalFunction(Neo4jTypes.AnyType result, Supplier<ZoneId> defaultZone) {
+    protected abstract List<FieldSignature> getTemporalTruncateSignature();
+
+    TemporalFunction(Neo4jTypes.AnyType result, List<FieldSignature> inputSignature, Supplier<ZoneId> defaultZone) {
         String basename = basename(getClass());
         assert result.getClass().getSimpleName().equals(basename + "Type") : "result type should match function name";
         Description description = getClass().getAnnotation(Description.class);
         this.signature = new UserFunctionSignature(
                 new QualifiedName(basename.toLowerCase(Locale.ROOT)),
-                INPUT_SIGNATURE,
+                inputSignature,
                 result,
                 false,
                 null,
@@ -207,8 +205,12 @@ public abstract class TemporalFunction<T extends AnyValue> implements CallableUs
     }
 
     private static class Now<T extends AnyValue> extends SubFunction<T> {
-        private static final List<FieldSignature> SIGNATURE =
-                singletonList(inputField("timezone", Neo4jTypes.NTAny, DEFAULT_PARAMETER_VALUE));
+        private static final List<FieldSignature> SIGNATURE = singletonList(inputField(
+                "timezone",
+                Neo4jTypes.NTAny,
+                DEFAULT_PARAMETER_VALUE,
+                false,
+                "A string value representing a time zone."));
         private final ThrowingFunction<Context, Clock, ProcedureException> clockSupplier;
 
         Now(TemporalFunction<T> function, String clock) {
@@ -252,16 +254,11 @@ public abstract class TemporalFunction<T extends AnyValue> implements CallableUs
     }
 
     private static class Truncate<T extends AnyValue> extends SubFunction<T> {
-        private static final List<FieldSignature> SIGNATURE = Arrays.asList(
-                inputField("unit", Neo4jTypes.NTString),
-                inputField("input", Neo4jTypes.NTAny, DEFAULT_PARAMETER_VALUE),
-                inputField("fields", Neo4jTypes.NTMap, nullValue(Neo4jTypes.NTMap)));
-
         Truncate(TemporalFunction<T> function) {
             super(
                     function,
                     "truncate",
-                    SIGNATURE,
+                    function.getTemporalTruncateSignature(),
                     String.format(
                             "Truncates the given temporal value to a `%s` instant using the specified unit.",
                             function.getTemporalCypherTypeName()));

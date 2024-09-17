@@ -26,10 +26,12 @@ case object Collect extends AggregatingFunction {
   override val signatures: Vector[FunctionTypeSignature] = Vector(
     FunctionTypeSignature(
       this,
-      CTAny,
-      CTList(CTAny),
-      "Returns a list containing the values returned by an expression.",
-      Category.AGGREGATING
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTList(CTAny),
+      description = "Returns a list containing the values returned by an expression.",
+      category = Category.AGGREGATING,
+      argumentDescriptions = Map("input" -> "A value aggregated into a list.")
     )
   )
 }

@@ -32,6 +32,10 @@ public final class FieldSignature {
         return inputField(name, type, false);
     }
 
+    public static FieldSignature inputField(String name, Neo4jTypes.AnyType type, String description) {
+        return new FieldSignature(name, type, null, false, false, description);
+    }
+
     public static FieldSignature inputField(String name, Neo4jTypes.AnyType type, DefaultParameterValue defaultValue) {
         return inputField(name, type, defaultValue, false, null);
     }

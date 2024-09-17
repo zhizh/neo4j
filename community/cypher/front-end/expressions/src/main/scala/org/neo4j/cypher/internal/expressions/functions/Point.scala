@@ -26,10 +26,15 @@ case object Point extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTMap,
-      CTPoint,
-      "Returns a 2D or 3D point object, given two or respectively three coordinate values in the Cartesian coordinate system or WGS 84 geographic coordinate system.",
-      Category.SPATIAL
+      names = Vector("input"),
+      argumentTypes = Vector(CTMap),
+      outputType = CTPoint,
+      description =
+        "Returns a 2D or 3D point object, given two or respectively three coordinate values in the Cartesian coordinate system or WGS 84 geographic coordinate system.",
+      category = Category.SPATIAL,
+      argumentDescriptions = Map(
+        "input" -> "Cartesian 2D: {x :: FLOAT, y :: FLOAT, crs = \"cartesian\" :: STRING, srid = 7203 :: INTEGER}\n\nCartesian 3D: {x :: FLOAT, y :: FLOAT, z :: FLOAT, crs = \"cartesian-3D\" :: STRING, srid = 9157 :: INTEGER} \n\nWGS 84 2D: {longitude | x :: FLOAT, latitude | y :: FLOAT, crs = \"WGS-84-2D\" :: STRING, srid = 4326 :: INTEGER}\n\nWGS 84 3D: {longitude | x :: FLOAT, latitude | y :: FLOAT, height | z :: FLOAT, crs = \"WGS-84-3D\" :: STRING, srid = 4979 :: INTEGER}"
+      )
     )
   )
 }

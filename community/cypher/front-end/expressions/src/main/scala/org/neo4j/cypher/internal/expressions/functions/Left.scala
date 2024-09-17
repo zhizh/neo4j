@@ -31,7 +31,11 @@ case object Left extends Function {
       outputType = CTString,
       description =
         "Returns a `STRING` containing the specified number (`INTEGER`) of leftmost characters in the given `STRING`.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map(
+        "original" -> "A string value whose rightmost characters will be trimmed.",
+        "length" -> "The length of the leftmost characters to be returned."
+      )
     )
   )
 }

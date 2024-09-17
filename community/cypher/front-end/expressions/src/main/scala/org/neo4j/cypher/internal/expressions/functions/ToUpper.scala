@@ -23,6 +23,14 @@ case object ToUpper extends Function {
   def name = "toUpper"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTString, CTString, "Returns the given `STRING` in uppercase.", Category.STRING)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTString),
+      outputType = CTString,
+      description = "Returns the given `STRING` in uppercase.",
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "A string to be converted into uppercase.")
+    )
   )
 }

@@ -29,10 +29,12 @@ case object ToFloat extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTString, CTInteger, CTFloat))(InputPosition.NONE),
-      CTFloat,
-      "Converts a `STRING`, `INTEGER` or `FLOAT` value to a `FLOAT` value.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTString, CTInteger, CTFloat))(InputPosition.NONE)),
+      outputType = CTFloat,
+      description = "Converts a `STRING`, `INTEGER` or `FLOAT` value to a `FLOAT` value.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A value to be converted into a float.")
     )
   )
 }

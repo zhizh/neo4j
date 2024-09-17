@@ -29,7 +29,8 @@ case object BTrim extends Function {
       argumentTypes = Vector(CTString),
       outputType = CTString,
       description = "Returns the given `STRING` with leading and trailing whitespace removed.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "A value from which all leading and trailing whitespace will be removed.")
     ),
     FunctionTypeSignature(
       function = this,
@@ -37,7 +38,11 @@ case object BTrim extends Function {
       argumentTypes = Vector(CTString, CTString),
       outputType = CTString,
       description = "Returns the given `STRING` with leading and trailing `trimCharacterString` characters removed.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map(
+        "input" -> "A value from which the leading and trailing trim character will be removed.",
+        "trimCharacterString" -> "A character to be removed from the start and end of the given string."
+      )
     )
   )
 }

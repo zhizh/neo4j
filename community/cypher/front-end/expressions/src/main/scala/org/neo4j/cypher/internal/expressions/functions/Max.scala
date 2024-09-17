@@ -23,6 +23,14 @@ case object Max extends AggregatingFunction {
   override def name = "max"
 
   override val signatures: Vector[FunctionTypeSignature] = Vector(
-    FunctionTypeSignature(this, CTAny, CTAny, "Returns the maximum value in a set of values.", Category.AGGREGATING)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTAny,
+      description = "Returns the maximum value in a set of values.",
+      category = Category.AGGREGATING,
+      argumentDescriptions = Map("input" -> "A value to be aggregated.")
+    )
   )
 }

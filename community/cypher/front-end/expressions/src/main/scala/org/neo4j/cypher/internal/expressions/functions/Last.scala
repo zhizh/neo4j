@@ -30,7 +30,8 @@ case object Last extends Function {
       argumentTypes = Vector(CTList(CTAny)),
       outputType = CTAny,
       description = "Returns the last element in a `LIST<ANY>`.",
-      category = Category.SCALAR
+      category = Category.SCALAR,
+      argumentDescriptions = Map("list" -> "A list from which the last element will be returned.")
     )
   )
 }

@@ -27,10 +27,13 @@ case object ToStringList extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTList(CTAny),
-      CTList(CTString),
-      "Converts a `LIST<ANY>` to a `LIST<STRING>` values. If any values are not convertible to `STRING` they will be null in the `LIST<STRING>` returned.",
-      Category.LIST
+      names = Vector("input"),
+      argumentTypes = Vector(CTList(CTAny)),
+      outputType = CTList(CTString),
+      description =
+        "Converts a `LIST<ANY>` to a `LIST<STRING>` values. If any values are not convertible to `STRING` they will be null in the `LIST<STRING>` returned.",
+      category = Category.LIST,
+      argumentDescriptions = Map("input" -> "A list of values to be converted into a list of strings.")
     )
   )
 }

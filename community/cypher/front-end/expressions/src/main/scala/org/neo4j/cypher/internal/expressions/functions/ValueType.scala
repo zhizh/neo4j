@@ -31,10 +31,13 @@ case object ValueType extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTAny,
-      CTString,
-      "Returns a `STRING` representation of the most precise value type that the given expression evaluates to.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTString,
+      description =
+        "Returns a `STRING` representation of the most precise value type that the given expression evaluates to.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A value to return the type of.")
     )
   )
 }

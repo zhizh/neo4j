@@ -29,10 +29,12 @@ case object IsNaN extends Function {
   override val signatures: IndexedSeq[FunctionTypeSignature] = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE),
-      CTBoolean,
-      "Returns whether the given `INTEGER` or `FLOAT` is NaN.",
-      Category.NUMERIC
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE)),
+      outputType = CTBoolean,
+      description = "Returns whether the given `INTEGER` or `FLOAT` is NaN.",
+      category = Category.NUMERIC,
+      argumentDescriptions = Map("input" -> "A numeric value to be compared against `NaN`.")
     )
   )
 }

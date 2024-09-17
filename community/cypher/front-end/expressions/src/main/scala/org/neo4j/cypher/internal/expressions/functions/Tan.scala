@@ -23,6 +23,14 @@ case object Tan extends Function {
   def name = "tan"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTFloat, CTFloat, "Returns the tangent of a `FLOAT`.", Category.TRIGONOMETRIC)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the tangent of a `FLOAT`.",
+      category = Category.TRIGONOMETRIC,
+      argumentDescriptions = Map("input" -> "An angle in radians.")
+    )
   )
 }

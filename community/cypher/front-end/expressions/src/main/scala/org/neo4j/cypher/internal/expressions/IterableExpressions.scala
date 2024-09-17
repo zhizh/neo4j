@@ -94,6 +94,7 @@ case class PatternComprehension(
 
 sealed trait IterableExpressionWithInfo extends FunctionWithName with TypeSignatures {
   def description: String
+  def argumentDescriptions: Map[String, String]
 
   // TODO: Get specification formalized by CLG
   override def signatures: Seq[TypeSignature] =
@@ -105,7 +106,8 @@ sealed trait IterableExpressionWithInfo extends FunctionWithName with TypeSignat
       argumentTypes = Vector(CTAny, CTList(CTAny)),
       category = Category.PREDICATE,
       overrideDefaultAsString =
-        Some(s"$name(variable :: VARIABLE IN list :: LIST<ANY> WHERE predicate :: ANY) :: BOOLEAN")
+        Some(s"$name(variable :: VARIABLE IN list :: LIST<ANY> WHERE predicate :: ANY) :: BOOLEAN"),
+      argumentDescriptions = argumentDescriptions
     ))
 }
 
@@ -148,6 +150,12 @@ object AllIterablePredicate extends IterableExpressionWithInfo {
   val name = "all"
   val description = "Returns true if the predicate holds for all elements in the given `LIST<ANY>`."
 
+  val argumentDescriptions = Map(
+    "variable" -> "A variable that can be used within the `WHERE` clause.",
+    "list" -> "A predicate must hold for all elements in this list for the function to return `true`.",
+    "predicate" -> "A predicate that is tested against all items in the given list."
+  )
+
   def apply(
     variable: LogicalVariable,
     expression: Expression,
@@ -164,6 +172,12 @@ case class AnyIterablePredicate(scope: FilterScope, expression: Expression)(val 
 object AnyIterablePredicate extends IterableExpressionWithInfo {
   val name = "any"
   val description = "Returns true if the predicate holds for at least one element in the given `LIST<ANY>`."
+
+  val argumentDescriptions = Map(
+    "variable" -> "A variable that can be used within the `WHERE` clause.",
+    "list" -> "A list for the predicate to check against.",
+    "predicate" -> "A predicate that is tested against all items in the given list."
+  )
 
   def apply(
     variable: LogicalVariable,
@@ -182,6 +196,12 @@ object NoneIterablePredicate extends IterableExpressionWithInfo {
   val name = "none"
   val description = "Returns true if the predicate holds for no element in the given `LIST<ANY>`."
 
+  val argumentDescriptions = Map(
+    "variable" -> "A variable that can be used within the `WHERE` clause.",
+    "list" -> "A list for the predicate to check against.",
+    "predicate" -> "A predicate that is tested against all items in the given list."
+  )
+
   def apply(
     variable: LogicalVariable,
     expression: Expression,
@@ -198,6 +218,12 @@ case class SingleIterablePredicate(scope: FilterScope, expression: Expression)(v
 object SingleIterablePredicate extends IterableExpressionWithInfo {
   val name = "single"
   val description = "Returns true if the predicate holds for exactly one of the elements in the given `LIST<ANY>`."
+
+  val argumentDescriptions = Map(
+    "variable" -> "A variable that can be used within the `WHERE` clause.",
+    "list" -> "A list for the predicate to check against.",
+    "predicate" -> "A predicate that is tested against all items in the given list."
+  )
 
   def apply(
     variable: LogicalVariable,

@@ -29,10 +29,12 @@ case object Avg extends AggregatingFunction {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTInteger, CTFloat, CTDuration))(InputPosition.NONE),
-      ClosedDynamicUnionType(Set(CTInteger, CTFloat, CTDuration))(InputPosition.NONE),
-      "Returns the average of a set of `INTEGER`, `FLOAT` or `DURATION` values.",
-      Category.AGGREGATING
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTInteger, CTFloat, CTDuration))(InputPosition.NONE)),
+      outputType = ClosedDynamicUnionType(Set(CTInteger, CTFloat, CTDuration))(InputPosition.NONE),
+      description = "Returns the average of a set of `INTEGER`, `FLOAT` or `DURATION` values.",
+      category = Category.AGGREGATING,
+      argumentDescriptions = Map("input" -> "A value aggregated to form an average.")
     )
   )
 }

@@ -26,10 +26,12 @@ case object ToFloatOrNull extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTAny,
-      CTFloat,
-      "Converts a value to a `FLOAT` value, or null if the value cannot be converted.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTFloat,
+      description = "Converts a value to a `FLOAT` value, or null if the value cannot be converted.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A value to be converted into a float or null.")
     )
   )
 }

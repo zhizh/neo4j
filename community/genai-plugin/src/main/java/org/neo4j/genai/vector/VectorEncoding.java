@@ -141,9 +141,26 @@ public class VectorEncoding {
     @UserFunction(name = "genai.vector.encode")
     @Description("Encode a given resource as a vector using the named provider.")
     public Value encode(
-            @Name("resource") String resource,
-            @Name("provider") String providerName,
-            @Sensitive @Name(value = "configuration", defaultValue = "{}") AnyValue configuration) {
+            @Name(value = "resource", description = "The object to transform into an embedding.") String resource,
+            @Name(
+                            value = "provider",
+                            description =
+                                    "The identifier of the provider: (\"VertexAI\", \"OpenAI\", \"AzureOpenAI\", \"Bedrock\").")
+                    String providerName,
+            @Sensitive
+                    @Name(
+                            value = "configuration",
+                            defaultValue = "{}",
+                            description =
+                                    """
+                                    VertexAI: {token :: STRING, projectId :: STRING, model :: STRING, region :: STRING, taskType :: STRING, title :: STRING }
+
+                                    OpenAI: {token :: STRING, model :: STRING, dimensions :: INTEGER}
+
+                                    AzureOpenAI: {token :: STRING, resource :: STRING, deployment :: STRING, dimensions :: INTEGER}
+
+                                    AmazonBedrock: {accessKeyId :: STRING, secretAccessKey :: STRING, model :: STRING, region :: STRING}""")
+                    AnyValue configuration) {
         requireNonNull(providerName, "'provider' must not be null");
         final var configurationMap = requireNonNullMap(configuration);
         final var provider = getProvider(providerName);

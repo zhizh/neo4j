@@ -19,6 +19,8 @@
  */
 package org.neo4j.procedure.impl.temporal;
 
+import static java.util.Collections.singletonList;
+import static org.neo4j.internal.kernel.api.procs.DefaultParameterValue.nullValue;
 import static org.neo4j.internal.kernel.api.procs.FieldSignature.inputField;
 import static org.neo4j.internal.kernel.api.procs.Neo4jTypes.NTDateTime;
 
@@ -51,8 +53,16 @@ import org.neo4j.values.virtual.MapValue;
 class DateTimeFunction extends TemporalFunction<DateTimeValue> {
     private static final String CATEGORY = Category.TEMPORAL();
 
+    private static final List<FieldSignature> INPUT_SIGNATURE = singletonList(
+            inputField(
+                    "input",
+                    Neo4jTypes.NTAny,
+                    DEFAULT_PARAMETER_VALUE,
+                    false,
+                    "Either a string representation of a temporal value, a map containing the single key 'timezone', or a map containing temporal values ('year', 'month', 'day', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond', 'timezone', 'epochSeconds', 'epochMillis') as components."));
+
     DateTimeFunction(Supplier<ZoneId> defaultZone) {
-        super(NTDateTime, defaultZone);
+        super(NTDateTime, INPUT_SIGNATURE, defaultZone);
     }
 
     @Override
@@ -76,6 +86,27 @@ class DateTimeFunction extends TemporalFunction<DateTimeValue> {
     }
 
     @Override
+    protected List<FieldSignature> getTemporalTruncateSignature() {
+        return Arrays.asList(
+                inputField(
+                        "unit",
+                        Neo4jTypes.NTString,
+                        "A string representing one of the following: 'microsecond', 'millisecond', 'second', 'minute', 'hour', 'day', 'week', 'month', 'weekYear', 'quarter', 'year', 'decade', 'century', 'millennium'."),
+                inputField(
+                        "input",
+                        Neo4jTypes.NTAny,
+                        DEFAULT_PARAMETER_VALUE,
+                        false,
+                        "The date to be truncated using either `ZONED DATETIME`, `LOCAL DATETIME`, or `DATE`."),
+                inputField(
+                        "fields",
+                        Neo4jTypes.NTMap,
+                        nullValue(Neo4jTypes.NTMap),
+                        false,
+                        "A list of time components smaller than those specified in `unit` to preserve during truncation."));
+    }
+
+    @Override
     protected DateTimeValue truncate(
             TemporalUnit unit, TemporalValue input, MapValue fields, Supplier<ZoneId> defaultZone) {
         return DateTimeValue.truncate(unit, input, fields, defaultZone);
@@ -91,7 +122,14 @@ class DateTimeFunction extends TemporalFunction<DateTimeValue> {
         private static final String DESCRIPTION =
                 "Creates a `ZONED DATETIME` given the seconds and nanoseconds since the start of the epoch.";
         private static final List<FieldSignature> SIGNATURE = Arrays.asList(
-                inputField("seconds", Neo4jTypes.NTNumber), inputField("nanoseconds", Neo4jTypes.NTNumber));
+                inputField(
+                        "seconds",
+                        Neo4jTypes.NTNumber,
+                        "The number of seconds from the UNIX epoch in the UTC time zone."),
+                inputField(
+                        "nanoseconds",
+                        Neo4jTypes.NTNumber,
+                        "The number of nanoseconds from the UNIX epoch in the UTC time zone. This can be added to seconds."));
         private final UserFunctionSignature signature;
 
         private FromEpoch() {
@@ -131,8 +169,10 @@ class DateTimeFunction extends TemporalFunction<DateTimeValue> {
     private static class FromEpochMillis implements CallableUserFunction {
         private static final String DESCRIPTION =
                 "Creates a `ZONED DATETIME` given the milliseconds since the start of the epoch.";
-        private static final List<FieldSignature> SIGNATURE =
-                Collections.singletonList(inputField("milliseconds", Neo4jTypes.NTNumber));
+        private static final List<FieldSignature> SIGNATURE = Collections.singletonList(inputField(
+                "milliseconds",
+                Neo4jTypes.NTNumber,
+                "The number of milliseconds from the UNIX epoch in the UTC time zone."));
         private final UserFunctionSignature signature;
 
         private FromEpochMillis() {

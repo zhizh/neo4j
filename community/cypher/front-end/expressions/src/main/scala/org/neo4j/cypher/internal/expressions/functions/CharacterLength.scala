@@ -26,10 +26,12 @@ case object CharacterLength extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTString,
-      CTInteger,
-      "Returns the number of Unicode characters in a `STRING`.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(CTString),
+      outputType = CTInteger,
+      description = "Returns the number of Unicode characters in a `STRING`.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A string value whose length in characters is to be calculated.")
     )
   )
 }

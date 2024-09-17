@@ -33,7 +33,9 @@ case object PercentileDisc extends AggregatingFunction {
       outputType = ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE),
       description =
         "Returns the nearest `INTEGER` or `FLOAT` value to the given percentile over a group using a rounding method.",
-      category = Category.AGGREGATING
+      category = Category.AGGREGATING,
+      argumentDescriptions =
+        Map("input" -> "A value to be aggregated.", "percentile" -> "A percentile between 0.0 and 1.0.")
     )
   )
 }

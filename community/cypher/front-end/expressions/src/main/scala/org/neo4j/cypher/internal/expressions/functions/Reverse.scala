@@ -29,10 +29,13 @@ case object Reverse extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTString, CTList(CTAny)))(InputPosition.NONE),
-      ClosedDynamicUnionType(Set(CTString, CTList(CTAny)))(InputPosition.NONE),
-      "Returns a `STRING` or `LIST<ANY>` in which the order of all characters or elements in the given `STRING` or `LIST<ANY>` have been reversed.",
-      Category.STRING
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTString, CTList(CTAny)))(InputPosition.NONE)),
+      outputType = ClosedDynamicUnionType(Set(CTString, CTList(CTAny)))(InputPosition.NONE),
+      description =
+        "Returns a `STRING` or `LIST<ANY>` in which the order of all characters or elements in the given `STRING` or `LIST<ANY>` have been reversed.",
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "The string or list to be reversed.")
     )
   )
 }

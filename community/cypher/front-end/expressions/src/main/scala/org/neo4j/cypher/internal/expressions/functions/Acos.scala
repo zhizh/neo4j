@@ -25,10 +25,12 @@ case object Acos extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTFloat,
-      CTFloat,
-      "Returns the arccosine of a `FLOAT` in radians.",
-      Category.TRIGONOMETRIC
+      names = Vector("input"),
+      argumentTypes = Vector(CTFloat),
+      outputType = CTFloat,
+      description = "Returns the arccosine of a `FLOAT` in radians.",
+      category = Category.TRIGONOMETRIC,
+      argumentDescriptions = Map("input" -> "An angle in radians.")
     )
   )
 }

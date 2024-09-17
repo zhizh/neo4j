@@ -30,7 +30,8 @@ case object Range extends Function {
       argumentTypes = Vector(CTInteger, CTInteger),
       outputType = CTList(CTInteger),
       description = "Returns a `LIST<INTEGER>` comprising all `INTEGER` values within a specified range.",
-      category = Category.LIST
+      category = Category.LIST,
+      argumentDescriptions = Map("start" -> "The start value of the range.", "end" -> "The end value of the range.")
     ),
     FunctionTypeSignature(
       function = this,
@@ -39,7 +40,12 @@ case object Range extends Function {
       outputType = CTList(CTInteger),
       description =
         "Returns a `LIST<INTEGER>` comprising all `INTEGER` values within a specified range created with step length.",
-      category = Category.LIST
+      category = Category.LIST,
+      argumentDescriptions = Map(
+        "start" -> "The start value of the range.",
+        "end" -> "The end value of the range.",
+        "step" -> "The size of the increment (default value: 1)."
+      )
     )
   )
 }

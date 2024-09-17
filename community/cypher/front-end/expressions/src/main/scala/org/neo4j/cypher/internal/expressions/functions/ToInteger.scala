@@ -30,10 +30,13 @@ case object ToInteger extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTString, CTInteger, CTFloat, CTBoolean))(InputPosition.NONE),
-      CTInteger,
-      "Converts a `BOOLEAN`, `STRING`, `INTEGER` or `FLOAT` value to an `INTEGER` value. For `BOOLEAN` values, true is defined to be 1 and false is defined to be 0.",
-      Category.SCALAR
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTString, CTInteger, CTFloat, CTBoolean))(InputPosition.NONE)),
+      outputType = CTInteger,
+      description =
+        "Converts a `BOOLEAN`, `STRING`, `INTEGER` or `FLOAT` value to an `INTEGER` value. For `BOOLEAN` values, true is defined to be 1 and false is defined to be 0.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "A value to be converted into an integer.")
     )
   )
 }

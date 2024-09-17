@@ -29,7 +29,9 @@ case object PercentileCont extends AggregatingFunction {
       argumentTypes = Vector(CTFloat, CTFloat),
       outputType = CTFloat,
       description = "Returns the percentile of a value over a group using linear interpolation.",
-      category = Category.AGGREGATING
+      category = Category.AGGREGATING,
+      argumentDescriptions =
+        Map("input" -> "A value to be aggregated.", "percentile" -> "A percentile between 0.0 and 1.0.")
     )
   )
 }

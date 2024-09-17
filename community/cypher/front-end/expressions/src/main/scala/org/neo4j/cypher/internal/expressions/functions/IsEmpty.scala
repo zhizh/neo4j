@@ -31,10 +31,12 @@ case object IsEmpty extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTString, CTList(CTAny), CTMap))(InputPosition.NONE),
-      CTBoolean,
-      "Checks whether a `STRING`, `MAP` or `LIST<ANY>` is empty.",
-      Category.PREDICATE
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTString, CTList(CTAny), CTMap))(InputPosition.NONE)),
+      outputType = CTBoolean,
+      description = "Checks whether a `STRING`, `MAP` or `LIST<ANY>` is empty.",
+      category = Category.PREDICATE,
+      argumentDescriptions = Map("input" -> "A value to be checked for emptiness.")
     )
   )
 }

@@ -31,10 +31,14 @@ case object Keys extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTNode, CTRelationship, CTMap))(InputPosition.NONE),
-      CTList(CTString),
-      "Returns a `LIST<STRING>` containing the `STRING` representations for all the property names of a `NODE`, `RELATIONSHIP` or `MAP`.",
-      Category.LIST
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTNode, CTRelationship, CTMap))(InputPosition.NONE)),
+      outputType = CTList(CTString),
+      description =
+        "Returns a `LIST<STRING>` containing the `STRING` representations for all the property names of a `NODE`, `RELATIONSHIP` or `MAP`.",
+      category = Category.LIST,
+      argumentDescriptions =
+        Map("input" -> "A node or relationship from which the names of all properties will be returned.")
     )
   )
 }

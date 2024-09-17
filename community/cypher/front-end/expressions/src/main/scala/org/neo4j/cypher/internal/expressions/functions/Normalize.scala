@@ -30,7 +30,8 @@ case object Normalize extends Function {
       outputType = CTString,
       description =
         "Normalize a `STRING`. The `STRING` will be normalized using the normal form 'NFC'.",
-      category = Category.STRING
+      category = Category.STRING,
+      argumentDescriptions = Map("input" -> "A value to be normalized.")
     ),
     FunctionTypeSignature(
       function = this,
@@ -41,7 +42,11 @@ case object Normalize extends Function {
         "Normalize a `STRING`. The `STRING` will be normalized according to the specified normalization form.",
       category = Category.STRING,
       overrideDefaultAsString = Some(name + "(input :: STRING, normalForm = NFC :: [NFC, NFD, NFKC, NFKD]) :: STRING"),
-      overriddenArgumentTypeName = Some(Map("normalForm" -> "[NFC, NFD, NFKC, NFKD]"))
+      overriddenArgumentTypeName = Some(Map("normalForm" -> "[NFC, NFD, NFKC, NFKD]")),
+      argumentDescriptions = Map(
+        "input" -> "A value to be normalized.",
+        "normalForm" -> "A keyword specifying any of the normal forms; NFC, NFD, NFKC or NFKD."
+      )
     )
   )
 }

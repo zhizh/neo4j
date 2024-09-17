@@ -24,6 +24,14 @@ case object Count extends AggregatingFunction {
   def name = "count"
 
   override val signatures = Vector(
-    FunctionTypeSignature(this, CTAny, CTInteger, "Returns the number of values or rows.", Category.AGGREGATING)
+    FunctionTypeSignature(
+      this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTInteger,
+      description = "Returns the number of values or rows.",
+      category = Category.AGGREGATING,
+      argumentDescriptions = Map("input" -> "A value to be aggregated.")
+    )
   )
 }

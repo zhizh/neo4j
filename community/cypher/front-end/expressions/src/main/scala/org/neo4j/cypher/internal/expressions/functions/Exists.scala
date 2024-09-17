@@ -25,11 +25,14 @@ case object Exists extends Function {
 
   override val signatures = Vector(
     FunctionTypeSignature(
-      this,
-      CTAny,
-      CTBoolean,
-      "Returns true if a match for the pattern exists in the graph.",
-      Category.PREDICATE
+      function = this,
+      names = Vector("input"),
+      argumentTypes = Vector(CTAny),
+      outputType = CTBoolean,
+      description =
+        "Returns true if a match for the pattern exists in the graph.",
+      category = Category.PREDICATE,
+      argumentDescriptions = Map("input" -> "A pattern to verify the existence of.")
     )
   )
 }

@@ -27,10 +27,12 @@ case object Labels extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      CTNode,
-      CTList(CTString),
-      "Returns a `LIST<STRING>` containing the `STRING` representations for all the labels of a `NODE`.",
-      Category.LIST
+      names = Vector("input"),
+      argumentTypes = Vector(CTNode),
+      outputType = CTList(CTString),
+      description = "Returns a `LIST<STRING>` containing the `STRING` representations for all the labels of a `NODE`.",
+      category = Category.LIST,
+      argumentDescriptions = Map("input" -> "A node whose labels will be returned.")
     )
   )
 }

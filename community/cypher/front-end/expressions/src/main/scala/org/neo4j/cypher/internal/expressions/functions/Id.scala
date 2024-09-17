@@ -34,7 +34,8 @@ case object Id extends Function {
       outputType = CTInteger,
       description = "Returns the id of a `NODE` or `RELATIONSHIP`.",
       category = Category.SCALAR,
-      deprecated = true
+      deprecated = true,
+      argumentDescriptions = Map("input" -> "A node or a relationship.")
     )
   )
 }

@@ -28,10 +28,13 @@ case object Sign extends Function {
   override val signatures = Vector(
     FunctionTypeSignature(
       this,
-      ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE),
-      CTInteger,
-      "Returns the signum of an `INTEGER` or `FLOAT`: 0 if the number is 0, -1 for any negative number, and 1 for any positive number.",
-      Category.NUMERIC
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTInteger, CTFloat))(InputPosition.NONE)),
+      outputType = CTInteger,
+      description =
+        "Returns the signum of an `INTEGER` or `FLOAT`: 0 if the number is 0, -1 for any negative number, and 1 for any positive number.",
+      category = Category.NUMERIC,
+      argumentDescriptions = Map("input" -> "A positive or negative number.")
     )
   )
 }

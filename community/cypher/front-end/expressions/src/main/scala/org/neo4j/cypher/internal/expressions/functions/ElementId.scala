@@ -28,11 +28,14 @@ case object ElementId extends Function {
 
   override val signatures = Vector(
     FunctionTypeSignature(
-      this,
-      ClosedDynamicUnionType(Set(CTNode, CTRelationship))(InputPosition.NONE),
-      CTString,
-      "Returns the element id of a `NODE` or `RELATIONSHIP`.",
-      Category.SCALAR
+      function = this,
+      names = Vector("input"),
+      argumentTypes = Vector(ClosedDynamicUnionType(Set(CTNode, CTRelationship))(InputPosition.NONE)),
+      outputType = CTString,
+      description =
+        "Returns the element id of a `NODE` or `RELATIONSHIP`.",
+      category = Category.SCALAR,
+      argumentDescriptions = Map("input" -> "An element id of a node or a relationship.")
     )
   )
 }
