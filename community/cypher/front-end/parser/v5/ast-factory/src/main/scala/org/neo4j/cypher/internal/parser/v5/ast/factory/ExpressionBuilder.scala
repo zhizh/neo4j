@@ -995,6 +995,10 @@ trait ExpressionBuilder extends Cypher5ParserListener {
     ctx.ast = text
   }
 
+  final override def exitExternalKeywords(ctx: Cypher5Parser.ExternalKeywordsContext): Unit = {
+    AssertMacros.checkOnlyWhenAssertionsAreEnabled(false)
+  }
+
   final override def exitSymbolicLabelNameString(
     ctx: Cypher5Parser.SymbolicLabelNameStringContext
   ): Unit = {

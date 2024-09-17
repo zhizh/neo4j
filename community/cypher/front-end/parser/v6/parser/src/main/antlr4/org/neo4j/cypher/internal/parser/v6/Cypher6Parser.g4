@@ -1746,6 +1746,12 @@ symbolicLabelNameString
    | unescapedLabelSymbolicNameString
    ;
 
+// Do not remove this, it is needed for composing the grammar
+// with other ones (e.g. language support ones)
+externalKeywords
+   : IDENTIFIER
+   ;
+
 unescapedLabelSymbolicNameString
    : IDENTIFIER
    | ACCESS
@@ -1998,6 +2004,7 @@ unescapedLabelSymbolicNameString
    | YIELD
    | ZONE
    | ZONED
+   | externalKeywords
    ;
 
 endOfFile

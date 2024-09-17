@@ -480,6 +480,8 @@ public abstract class AbstractCypher6AstBuilder implements Cypher6ParserListener
                     (Cypher6Parser.UnescapedSymbolicNameStringContext) ctx);
             case Cypher6Parser.RULE_symbolicLabelNameString -> exitSymbolicLabelNameString(
                     (Cypher6Parser.SymbolicLabelNameStringContext) ctx);
+            case Cypher6Parser.RULE_externalKeywords -> exitExternalKeywords(
+                    (Cypher6Parser.ExternalKeywordsContext) ctx);
             case Cypher6Parser.RULE_unescapedLabelSymbolicNameString -> exitUnescapedLabelSymbolicNameString(
                     (Cypher6Parser.UnescapedLabelSymbolicNameStringContext) ctx);
             case Cypher6Parser.RULE_endOfFile -> exitEndOfFile((Cypher6Parser.EndOfFileContext) ctx);
