@@ -286,10 +286,10 @@ case class NFA(
   def predicateVariables: Set[LogicalVariable] = {
     val statePredicates = states.iterator.flatMap(_.variablePredicate).map(_.variable)
     val inlineTransitionPredicates = transitions.values.flatten.iterator.flatMap(_.predicateVariables)
-
+    val allVariables = this.variables
     val compoundPredicates = transitions.values.flatten.iterator.collect {
       case MultiRelationshipExpansionTransition(_, _, Some(compoundPredicate), _) =>
-        compoundPredicate.dependencies intersect this.variables
+        compoundPredicate.dependencies intersect allVariables
     }.flatten
 
     val res = (statePredicates ++ inlineTransitionPredicates ++ compoundPredicates).toSet
