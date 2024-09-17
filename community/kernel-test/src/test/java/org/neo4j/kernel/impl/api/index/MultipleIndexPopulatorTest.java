@@ -570,6 +570,42 @@ class MultipleIndexPopulatorTest {
                 population -> multipleIndexPopulator.stop(population, NULL_CONTEXT));
     }
 
+    @Test
+    void shouldBuildDistinctSortedTokenArrays() {
+        // given
+        var populator1 = createIndexPopulator();
+        var populator2 = createIndexPopulator();
+        var populator3 = createIndexPopulator();
+        addPopulator(
+                multipleIndexPopulator,
+                IndexPrototype.forSchema(SchemaDescriptors.forLabel(2, 4))
+                        .withName("i1")
+                        .materialise(1),
+                populator1,
+                mock(FlippableIndexProxy.class));
+        addPopulator(
+                multipleIndexPopulator,
+                IndexPrototype.forSchema(SchemaDescriptors.forLabel(1, 5))
+                        .withName("i2")
+                        .materialise(1),
+                populator2,
+                mock(FlippableIndexProxy.class));
+        addPopulator(
+                multipleIndexPopulator,
+                IndexPrototype.forSchema(SchemaDescriptors.forLabel(2, 6))
+                        .withName("i3")
+                        .materialise(1),
+                populator3,
+                mock(FlippableIndexProxy.class));
+
+        // when
+        multipleIndexPopulator.createStoreScan(CONTEXT_FACTORY);
+
+        // then
+        verify(indexStoreView)
+                .visitNodes(eq(new int[] {1, 2}), any(), any(), any(), anyBoolean(), anyBoolean(), any(), any());
+    }
+
     private void shouldStopStoreScanWhenNoMorePopulatorsLeft(Consumer<IndexPopulation> cancelAction) throws Exception {
         // given
         IndexPopulator populator1 = createIndexPopulator();

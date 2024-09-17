@@ -368,6 +368,8 @@ public class MultipleIndexPopulator implements StoreScan.ExternalUpdatesCheck, A
     private int[] entityTokenIds() {
         return populations.stream()
                 .flatMapToInt(population -> Arrays.stream(population.schema().getEntityTokenIds()))
+                .sorted()
+                .distinct()
                 .toArray();
     }
 
