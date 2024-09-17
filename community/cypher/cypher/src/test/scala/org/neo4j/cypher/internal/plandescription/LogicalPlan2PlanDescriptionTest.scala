@@ -6251,7 +6251,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
   }
 
   test("StatefulShortestPath with multi-relationship expansion") {
-    val solvedExpressionStr = "SHORTEST 5 PATHS (a)-[`  UNNAMED0`]->*(`  b@45`)"
+    val solvedExpressionStr = "SHORTEST 5 PATHS (a)-[r1]->(b)-[r2]->(c)"
     val nfa = {
       val builder = new NFABuilder(v"a")
       builder
@@ -6283,7 +6283,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
               v"c",
               Some(VariablePredicate(v"c", propEquality("c", "prop", 5)))
             )),
-            Some(propEquality("b", "prop", prop("c", "prop"))),
+            Some(and(propEquality("b", "p1", prop("c", "p1")), propEquality("b", "p2", prop("c", "p2")))),
             builder.addAndGetState(
               v"d",
               Some(VariablePredicate(v"d", propEquality("d", "prop", 5)))
@@ -6322,17 +6322,17 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         "StatefulShortestPath(All)",
         SingleChild(lhsPD),
         Seq(details(
-          """SHORTEST 5 PATHS (a)-[`anon_0`]->*(`b`)
-            |        expanding from: a
-            |    inlined predicates: b.prop = 5
-            |                        b.prop = c.prop
-            |                        c.prop = 5
-            |                        d.prop = 5
-            |                        r1.prop = 5
-            |                        r2.prop = 5
-            |non-inlined predicates: b.prop > 10
-            |                        c.prop > 10
-            |                        r1.prop > 10""".stripMargin
+          s"""$solvedExpressionStr
+             |        expanding from: a
+             |    inlined predicates: b.p1 = c.p1 AND b.p2 = c.p2
+             |                        b.prop = 5
+             |                        c.prop = 5
+             |                        d.prop = 5
+             |                        r1.prop = 5
+             |                        r2.prop = 5
+             |non-inlined predicates: b.prop > 10
+             |                        c.prop > 10
+             |                        r1.prop > 10""".stripMargin
         )),
         Set("a")
       )
