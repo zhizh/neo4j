@@ -200,9 +200,11 @@ class SchemaRuleTest {
             .label(0, "La:bel")
             .label(1, "Label1")
             .label(2, "Label2")
+            .label(3, "Label3")
             .relationshipType(0, "Ty:pe")
             .relationshipType(1, "Type1")
             .relationshipType(2, "Type2")
+            .relationshipType(3, "Type3")
             .propertyKey(0, "prop:erty")
             .propertyKey(1, "prop1")
             .propertyKey(2, "prop2")
@@ -214,29 +216,29 @@ class SchemaRuleTest {
      */
     @Test
     void mustGenerateDeterministicNames() {
-        assertName(rangeLabelPrototype, "index_c4551613");
-        assertName(rangeLabelUniquePrototype, "index_ad093035");
-        assertName(rangeRelTypePrototype, "index_31eed16b");
-        assertName(rangeRelTypeUniquePrototype, "index_9b4ce430");
-        assertName(nodeFtsPrototype, "index_99c88876");
-        assertName(relFtsPrototype, "index_9c14864e");
-        assertName(uniqueLabelConstraint, "constraint_dbf17751");
-        assertName(uniqueRelTypeConstraint, "constraint_f05b6188");
-        assertName(existsLabelConstraint, "constraint_b23c1483");
-        assertName(nodeKeyConstraint, "constraint_75ad9cd9");
-        assertName(relKeyConstraint, "constraint_675015ed");
-        assertName(existsRelTypeConstraint, "constraint_ef4bbcac");
-        assertName(nodeTypeConstraintIntBool, "constraint_6d996305");
-        assertName(nodeTypeConstraintBoolInt, "constraint_6d996305");
-        assertName(nodeTypeConstraintBoolString, "constraint_83c1f5d4");
-        assertName(nodeTypeConstraintIntBool, "constraint_6d996305");
-        assertName(nodeTypeConstraintBoolInt, "constraint_6d996305");
-        assertName(allLabelsPrototype, "index_f56fb29d");
-        assertName(allRelTypesPrototype, "index_9625776f");
-        assertName(textLabelPrototype, "index_e76ccd25");
-        assertName(textRelTypePrototype, "index_52ad048c");
-        assertName(pointLabelPrototype, "index_abc433e9");
-        assertName(pointRelTypePrototype, "index_97015bc0");
+        assertName(rangeLabelPrototype, "index_5b87d2c3");
+        assertName(rangeLabelUniquePrototype, "index_9d28ea5a");
+        assertName(rangeRelTypePrototype, "index_9e6d798a");
+        assertName(rangeRelTypeUniquePrototype, "index_44dad3fd");
+        assertName(nodeFtsPrototype, "index_a585279c");
+        assertName(relFtsPrototype, "index_61cf3bcd");
+        assertName(uniqueLabelConstraint, "constraint_696e08");
+        assertName(uniqueRelTypeConstraint, "constraint_f8b599ad");
+        assertName(existsLabelConstraint, "constraint_b757431a");
+        assertName(nodeKeyConstraint, "constraint_b9c6f39a");
+        assertName(relKeyConstraint, "constraint_1ee340ba");
+        assertName(existsRelTypeConstraint, "constraint_d73daf0a");
+        assertName(nodeTypeConstraintIntBool, "constraint_f37a6b9f");
+        assertName(nodeTypeConstraintBoolInt, "constraint_f37a6b9f");
+        assertName(nodeTypeConstraintBoolString, "constraint_c99ece6");
+        assertName(nodeTypeConstraintIntBool, "constraint_f37a6b9f");
+        assertName(nodeTypeConstraintBoolInt, "constraint_f37a6b9f");
+        assertName(allLabelsPrototype, "index_343aff4e");
+        assertName(allRelTypesPrototype, "index_f7700477");
+        assertName(textLabelPrototype, "index_19f9e602");
+        assertName(textRelTypePrototype, "index_1e2b31d");
+        assertName(pointLabelPrototype, "index_f083f269");
+        assertName(pointRelTypePrototype, "index_72cf76e2");
     }
 
     @Test
@@ -425,8 +427,23 @@ class SchemaRuleTest {
                 namedRelationshipTypeConstraint);
     }
 
-    private static void assertName(SchemaDescriptorSupplier schemaish, String expectedName) {
-        String generateName = SchemaNameUtil.generateName(schemaish, new String[] {"A"}, new String[] {"B", "C"});
+    private void assertName(SchemaDescriptorSupplier schemaish, String expectedName) {
+        var entityToken = schemaish.schema().getEntityTokenIds();
+        var entityTokenNames = new String[entityToken.length];
+        for (int i = 0; i < entityToken.length; i++) {
+            entityTokenNames[i] = switch (schemaish.schema().entityType()) {
+                case NODE -> lookup.labelGetName(entityToken[i]);
+                case RELATIONSHIP -> lookup.relationshipTypeGetName(entityToken[i]);
+            };
+        }
+
+        var propertyToken = schemaish.schema().getPropertyIds();
+        var propertyTokenNames = new String[propertyToken.length];
+        for (int i = 0; i < propertyToken.length; i++) {
+            propertyTokenNames[i] = lookup.propertyKeyGetName(propertyToken[i]);
+        }
+
+        String generateName = SchemaNameUtil.generateName(schemaish, entityTokenNames, propertyTokenNames);
         assertThat(generateName).isEqualTo(expectedName);
         assertThat(SchemaNameUtil.sanitiseName(generateName)).isEqualTo(expectedName);
     }
