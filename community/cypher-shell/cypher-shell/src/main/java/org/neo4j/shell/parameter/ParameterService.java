@@ -220,12 +220,39 @@ class ShellParameterService implements ParameterService {
 
         private List<Parameter> asParameters(String expression, org.neo4j.driver.Value value) {
             if (value.hasType(TYPE_SYSTEM.MAP())) {
-                return value.asMap(v -> v).entrySet().stream()
+                final var params = value.asMap(v -> v).entrySet().stream()
                         .map(e -> new Parameter(e.getKey(), e.getValue()))
                         .toList();
+                final var invalidParams = params.stream()
+                        .filter(p -> !isValidParameterValue(p.value()))
+                        .toList();
+                if (!invalidParams.isEmpty()) {
+                    final var invalidParamsString = invalidParams.stream()
+                            .map(p -> "`%s`: %s".formatted(p.name(), p.value()))
+                            .collect(Collectors.joining(", "));
+                    final var message =
+                            "Parameter values needs to have a literal type (not nodes, relationships or paths), but found: "
+                                    + invalidParamsString;
+                    throw new ParameterEvaluationException(message);
+                }
+                return params;
             } else {
                 final var message = "Failed to evaluate parameters " + expression + ", got " + value;
                 throw new ParameterEvaluationException(message);
+            }
+        }
+
+        private static boolean isValidParameterValue(org.neo4j.driver.Value value) {
+            if (value.hasType(TYPE_SYSTEM.NODE())
+                    || value.hasType(TYPE_SYSTEM.RELATIONSHIP())
+                    || value.hasType(TYPE_SYSTEM.PATH())) {
+                return false;
+            } else if (value.hasType(TYPE_SYSTEM.MAP())) {
+                return value.asMap(v -> v).values().stream().allMatch(ShellParameterEvaluator::isValidParameterValue);
+            } else if (value.hasType(TYPE_SYSTEM.LIST())) {
+                return value.asList(v -> v).stream().allMatch(ShellParameterEvaluator::isValidParameterValue);
+            } else {
+                return true;
             }
         }
 

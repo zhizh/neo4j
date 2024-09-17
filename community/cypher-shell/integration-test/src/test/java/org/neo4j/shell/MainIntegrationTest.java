@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.assertj.core.api.Condition;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.neo4j.driver.exceptions.ClientException;
@@ -91,6 +92,13 @@ class MainIntegrationTest {
 
     private Condition<String> returned42AndExited() {
         return allOf(contains(return42Output()), endsWithInteractiveExit);
+    }
+
+    @BeforeEach
+    void cleanup() {
+        runInDb(DEFAULT_DEFAULT_DB_NAME, shell -> {
+            shell.execute(cypher("MATCH (n) DETACH DELETE n;"));
+        });
     }
 
     @Test
@@ -1211,6 +1219,72 @@ class MainIntegrationTest {
                                         $purple, $advice, $when, $repeatAfterMe, $easyAs, $dt, $dt2
                                         "rain", ["talk", "less", "smile", "more"], 2021-01-12, "ABC", 6, 2023-02-06T00:00-06:00[America/Chicago], 2023-02-06T00:00-06:00[America/Chicago]
                                         """));
+    }
+
+    @Test
+    void illegalParameters() throws Exception {
+
+        buildTest()
+                .addArgs("-u", USER, "-p", PASSWORD, "--format", "plain")
+                .userInputLines(
+                        "create ();",
+                        ":params { a: 1 }",
+                        ":params { a: collect { match (n) return n } }",
+                        ":params { b: { a: [ collect { match (n) return n } ] } }",
+                        ":params",
+                        ":exit")
+                .run()
+                .assertSuccess(false)
+                .assertThatErrorOutput(
+                        contains(
+                                "Parameter values needs to have a literal type (not nodes, relationships or paths), but found: `a`: [node"),
+                        contains(
+                                "Parameter values needs to have a literal type (not nodes, relationships or paths), but found: `b`: {a: [[node"))
+                .assertThatOutput(
+                        contains(
+                                """
+                        neo4j@neo4j> create ();
+                        neo4j@neo4j> :params { a: 1 }
+                        neo4j@neo4j> :params { a: collect { match (n) return n } }
+                        neo4j@neo4j> :params { b: { a: [ collect { match (n) return n } ] } }
+                        neo4j@neo4j> :params
+                        {
+                          a: 1
+                        }
+                        neo4j@neo4j>"""))
+                .assertThatOutput(contains(GOOD_BYE));
+    }
+
+    @Test
+    void complexParameters() throws Exception {
+
+        buildTest()
+                .addArgs("-u", USER, "-p", PASSWORD, "--format", "plain")
+                .userInputLines(
+                        "create ( { p: 'x' });",
+                        ":params { a: 1 }",
+                        ":params { a: collect { match (n) return n.p } }",
+                        ":params { b: { a: [ collect { match (n) return n.p } ] } }",
+                        ":params",
+                        ":exit")
+                .run()
+                .assertSuccess()
+                .assertThatOutput(
+                        contains(
+                                """
+                        neo4j@neo4j> create ( { p: 'x' });
+                        neo4j@neo4j> :params { a: 1 }
+                        neo4j@neo4j> :params { a: collect { match (n) return n.p } }
+                        neo4j@neo4j> :params { b: { a: [ collect { match (n) return n.p } ] } }
+                        neo4j@neo4j> :params
+                        {
+                          a: ['x'],
+                          b: {
+                            a: [['x']]
+                          }
+                        }
+                        neo4j@neo4j>"""))
+                .assertThatOutput(contains(GOOD_BYE));
     }
 
     @Test
