@@ -2422,7 +2422,7 @@ case class StatefulShortestPath(
 
   override val distinctness: Distinctness = NotDistinct
 
-  def boundNodes = Set(Option(sourceNode), Option.when(mode == ExpandInto)(targetNode)).flatten
+  def boundNodes: Set[LogicalVariable] = Set(Option(sourceNode), Option.when(mode == ExpandInto)(targetNode)).flatten
 }
 
 /**
