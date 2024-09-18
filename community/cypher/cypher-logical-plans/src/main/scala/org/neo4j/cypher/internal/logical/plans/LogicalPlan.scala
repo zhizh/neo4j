@@ -20,7 +20,6 @@
 package org.neo4j.cypher.internal.logical.plans
 
 import org.neo4j.common.EntityType
-import org.neo4j.cypher.internal.TraversalMatchMode
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.GraphReference
 import org.neo4j.cypher.internal.ast.ShowColumn

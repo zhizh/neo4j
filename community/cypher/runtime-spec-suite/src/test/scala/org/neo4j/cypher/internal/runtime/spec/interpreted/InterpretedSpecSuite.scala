@@ -168,7 +168,8 @@ import org.neo4j.cypher.internal.runtime.spec.tests.ShortestPathTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.SkipTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.SortTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.StatefulShortestPathPropagationTestBase
-import org.neo4j.cypher.internal.runtime.spec.tests.StatefulShortestPathTestBase
+import org.neo4j.cypher.internal.runtime.spec.tests.StatefulShortestPathTrailModeTestBase
+import org.neo4j.cypher.internal.runtime.spec.tests.StatefulShortestPathWalkModeTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.SubqueryForeachTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.SubscriberErrorTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.SubtractionLabelScanTestBase
@@ -390,11 +391,15 @@ class InterpretedExpressionTest extends ExpressionTestBase(COMMUNITY.EDITION, In
 class InterpretedProcedureCallTest extends ProcedureCallTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 class InterpretedShortestPathTest extends ShortestPathTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 
-class InterpretedStatefulShortestPathTest
-    extends StatefulShortestPathTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
+class InterpretedStatefulShortestPathTrailModeTest
+    extends StatefulShortestPathTrailModeTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
+
+class InterpretedStatefulShortestPathWalkModeTest
+    extends StatefulShortestPathWalkModeTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 
 class InterpretedStatefulShortestPathPropagationTest
     extends StatefulShortestPathPropagationTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
+
 class InterpretedUnionTest extends UnionTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 class InterpretedOrderedUnionTest extends OrderedUnionTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 class InterpretedSemiApplyTest extends SemiApplyTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)

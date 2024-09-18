@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.logical.builder.TestNFABuilder
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpandAll
 import org.neo4j.cypher.internal.logical.plans.IndexOrderNone
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.runtime.spec.Edition
 import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
@@ -1347,7 +1348,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
         selector,
         nfa,
         ExpandAll,
-        false
+        matchMode = TraversalMatchMode.Trail
       )
     }
   }

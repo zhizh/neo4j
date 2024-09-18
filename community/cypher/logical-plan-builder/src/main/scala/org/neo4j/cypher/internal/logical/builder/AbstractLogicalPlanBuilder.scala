@@ -252,6 +252,7 @@ import org.neo4j.cypher.internal.logical.plans.Top1WithTies
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionConcurrency
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.logical.plans.TriadicBuild
 import org.neo4j.cypher.internal.logical.plans.TriadicFilter
 import org.neo4j.cypher.internal.logical.plans.TriadicSelection
@@ -644,7 +645,7 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
     reverseGroupVariableProjections: Boolean = false,
     minLength: Int = 0,
     maxLength: Option[Int] = None,
-    matchMode: TraversalMatchMode = TraversalMatchMode.TRAIL
+    matchMode: TraversalMatchMode = TraversalMatchMode.Trail
   ): IMPL = {
     val nodeVariableGroupings = groupNodes.map { case (x, y) => VariableGrouping(varFor(x), varFor(y))(pos) }
     val relationshipVariableGroupings = groupRelationships.map { case (x, y) =>
@@ -709,7 +710,7 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
     reverseGroupVariableProjections: Boolean = false,
     minLength: Int = 0,
     maxLength: Option[Int] = None,
-    matchMode: TraversalMatchMode = TraversalMatchMode.TRAIL
+    matchMode: TraversalMatchMode = TraversalMatchMode.Trail
   ): IMPL = {
     val predicates = nonInlinedPreFilters.map(parseExpression)
     statefulShortestPathExpr(
