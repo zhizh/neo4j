@@ -231,7 +231,7 @@ public class NotificationsConfigIT {
 
         assertThat(connection).receivesSuccess(x -> {
             Assertions.assertThat(x).containsKey("statuses");
-            Assertions.assertThat((ArrayList<?>) x.get("statuses")).hasSize(3);
+            Assertions.assertThat((ArrayList<?>) x.get("statuses")).hasSize(4);
         });
     }
 

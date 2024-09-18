@@ -420,17 +420,17 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
   test("redundant composite use clause should not be considered as nested use clause") {
     val query = "USE comp CALL { USE comp.c1 RETURN 1 as n } RETURN n"
-    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, "comp")
+    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, databaseName = "comp")
   }
 
   test("redundant composite use clause should not be considered as nested use clause and scope clause") {
     val query = "USE comp CALL () { USE comp.c1 RETURN 1 as n } RETURN n"
-    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, "comp")
+    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, databaseName = "comp")
   }
 
   test("redundant composite use clause should not be considered as nested use clause (case insensitive)") {
     val query = "USE comp CALL { USE COMP.c1 RETURN 1 as n } RETURN n"
-    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, "comp")
+    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, databaseName = "comp")
   }
 
   test("nesting after redundant composite use clause should be considered as nesting") {
@@ -455,30 +455,30 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       ),
       pipelineWithUseAsMultipleGraphsSelector,
       isComposite = true,
-      "comp"
+      databaseName = "comp"
     )
   }
 
   test("redundant composite use clause should not be considered as nested use clause with graph function") {
     val query = "USE comp CALL { USE graph.byName('c1') RETURN 1 as n } return n"
-    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, "comp")
+    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, databaseName = "comp")
   }
 
   test(
     "redundant composite use clause should not be considered as nested use clause with graph function, scope clause"
   ) {
     val query = "USE comp CALL () { USE graph.byName('c1') RETURN 1 as n } return n"
-    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, "comp")
+    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, databaseName = "comp")
   }
 
   test("identical static graph target should not be considered as nested use clause (case insensitive)") {
     val query = "USE comp.c1 CALL { USE COMP.c1 RETURN 1 as n } return n"
-    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, "comp")
+    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, databaseName = "comp")
   }
 
   test("identical dynamic graph target should not be considered as nested use clause") {
     val query = "USE graph.byName('comp.c2') CALL { USE graph.byName('comp.c2') RETURN 1 as n } return n"
-    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, "comp")
+    expectNoErrorsFrom(query, pipelineWithUseAsMultipleGraphsSelector, isComposite = true, databaseName = "comp")
   }
 
   test("throw nested use clause exception with nested static use clauses") {
@@ -493,7 +493,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       ),
       pipelineWithUseAsMultipleGraphsSelector,
       isComposite = true,
-      "comp"
+      databaseName = "comp"
     )
   }
 
@@ -509,7 +509,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       ),
       pipelineWithUseAsMultipleGraphsSelector,
       isComposite = true,
-      "comp"
+      databaseName = "comp"
     )
   }
 
@@ -538,7 +538,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       ),
       pipelineWithUseAsMultipleGraphsSelector,
       isComposite = true,
-      "comp"
+      databaseName = "comp"
     )
   }
 
@@ -565,7 +565,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       ),
       pipelineWithUseAsMultipleGraphsSelector,
       isComposite = true,
-      "comp"
+      databaseName = "comp"
     )
   }
 
@@ -575,7 +575,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       pipelineWithUseAsMultipleGraphsSelector,
       isComposite = true,
-      "comp"
+      databaseName = "comp"
     )
   }
 
@@ -591,7 +591,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       ),
       pipelineWithUseAsSingleGraphSelector,
       isComposite = false,
-      "neo4j"
+      databaseName = "neo4j"
     )
   }
 
@@ -602,7 +602,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       Set(
         messageProvider.createUseClauseUnsupportedError()
       ),
-      pipelineWithMultiGraphs
+      pipeline = pipelineWithMultiGraphs
     )
   }
 

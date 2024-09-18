@@ -1954,17 +1954,16 @@ case class ScopeClauseSubqueryCall(
       // Import variables from outer to new scope
       innerWithImports <- importVariables(stateWithImports.state)
       // Check inner query
-      innerChecked <- innerQuery.semanticCheckInSubqueryContext(innerWithImports.state)
+      innerChecked <- innerQuery.semanticCheckInSubqueryContext(innerWithImports.state, current.state)
       // Return to outer scope
       _ <- returnToOuterScope(current.state.currentScope)
       // Declare output variables from inner query in outer scope
       merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
     } yield {
-      val importingScopeErrors = returnsChecked.errors ++ stateWithImports.errors ++ stateWithImports.errors
+      val importingScopeErrors = (returnsChecked.errors ++ stateWithImports.errors ++ innerChecked.errors).distinct
 
       // Avoid double errors if inner has errors
-      val allErrors = importingScopeErrors ++
-        (if (innerChecked.errors.nonEmpty) innerChecked.errors else merged.errors)
+      val allErrors = if (importingScopeErrors.nonEmpty) importingScopeErrors else merged.errors
 
       // Keep errors from inner check and from variable declarations
       SemanticCheckResult(merged.state, allErrors)

@@ -178,7 +178,7 @@ public class LegacyNotificationsConfigIT {
 
         assertThat(connection).receivesSuccess(x -> {
             Assertions.assertThat(x).containsKey("notifications");
-            Assertions.assertThat((ArrayList<?>) x.get("notifications")).hasSize(2);
+            Assertions.assertThat((ArrayList<?>) x.get("notifications")).hasSize(3);
         });
     }
 

@@ -65,7 +65,7 @@ sealed trait Query extends Statement with SemanticCheckable with SemanticAnalysi
    * Semantic check for when this `Query` is in a subquery, and might import
    * variables from the `outer` scope
    */
-  def semanticCheckInSubqueryContext(outer: SemanticState): SemanticCheck
+  def semanticCheckInSubqueryContext(outer: SemanticState, current: SemanticState): SemanticCheck
   def semanticCheckImportingWithSubQueryContext(outer: SemanticState): SemanticCheck
 
   def returnVariableCheck(outer: SemanticState): SemanticCheck
@@ -219,7 +219,7 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
     )
   }
 
-  override def semanticCheckInSubqueryContext(outer: SemanticState): SemanticCheck = {
+  override def semanticCheckInSubqueryContext(outer: SemanticState, current: SemanticState): SemanticCheck = {
     val workingGraph = outer.workingGraph
 
     checkInitialGraphSelection(outer) chain
@@ -228,6 +228,7 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
         checkClauses(_, Some(outer.currentScope.scope))
       ) chain
       errorOnShadowedImportVariables(outer) chain
+      warnOnPotentiallyShadowVariables(current) chain
       SemanticCheck.fromState(state =>
         SemanticCheck.setState(state.recordWorkingGraph(workingGraph))
       ) // resetWorkingGraph
@@ -526,24 +527,25 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
     }
   }
 
-  private def warnOnPotentiallyShadowVariables(outer: SemanticState): SemanticCheck = { (inner: SemanticState) =>
-    val outerScopeSymbols: Map[String, Symbol] = outer.currentScope.scope.symbolTable
-    val innerScopeSymbols: Map[String, Set[Symbol]] = inner.currentScope.scope.allSymbols
+  private def warnOnPotentiallyShadowVariables(outer: SemanticState): SemanticCheck = {
+    (inner: SemanticState) =>
+      val outerScopeSymbols: Map[String, Symbol] = outer.currentScope.scope.symbolTable
+      val innerScopeSymbols: Map[String, Set[Symbol]] = inner.currentScope.scope.allSymbols
 
-    def isShadowed(s: Symbol): Boolean =
-      innerScopeSymbols.contains(s.name) &&
-        !innerScopeSymbols(s.name).map(_.definition).contains(s.definition)
+      def isShadowed(s: Symbol): Boolean =
+        innerScopeSymbols.contains(s.name) &&
+          !innerScopeSymbols(s.name).map(_.definition).contains(s.definition)
 
-    val shadowedSymbols = outerScopeSymbols.collect {
-      case (name, symbol) if isShadowed(symbol) =>
-        name -> innerScopeSymbols(name).find(_.definition != symbol.definition).get.definition.asVariable.position
-    }
-    val stateWithNotifications = shadowedSymbols.foldLeft(inner) {
-      case (state, (varName, pos)) =>
-        state.addNotification(SubqueryVariableShadowing(pos, varName))
-    }
+      val shadowedSymbols = outerScopeSymbols.collect {
+        case (name, symbol) if isShadowed(symbol) =>
+          name -> innerScopeSymbols(name).find(_.definition != symbol.definition).get.definition.asVariable.position
+      }
+      val stateWithNotifications = shadowedSymbols.foldLeft(inner) {
+        case (state, (varName, pos)) =>
+          state.addNotification(SubqueryVariableShadowing(pos, varName))
+      }
 
-    SemanticCheckResult.success(stateWithNotifications)
+      SemanticCheckResult.success(stateWithNotifications)
   }
 
   private def errorOnShadowedImportVariables(outer: SemanticState): SemanticCheck = { (inner: SemanticState) =>
@@ -735,8 +737,8 @@ sealed trait Union extends Query {
 
   override def endsWithFinish: Boolean = rhs.endsWithFinish || lhs.endsWithFinish
 
-  def semanticCheckInSubqueryContext(outer: SemanticState): SemanticCheck =
-    checkRecursively(_.semanticCheckInSubqueryContext(outer))
+  def semanticCheckInSubqueryContext(outer: SemanticState, current: SemanticState): SemanticCheck =
+    checkRecursively(_.semanticCheckInSubqueryContext(outer, current))
 
   override def returnVariableCheck(outer: SemanticState): SemanticCheck =
     checkRecursively(_.returnVariableCheck(outer))

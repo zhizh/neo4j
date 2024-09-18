@@ -112,9 +112,16 @@ trait SemanticAnalysisTestSuite extends CypherFunSuite {
     pipeline: Pipeline,
     query: String,
     isComposite: Boolean = false,
+    versions: Seq[CypherVersion] = CypherVersion.values(),
     sessionDatabase: String = defaultDatabaseName
   ): SemanticAnalysisResult =
-    runSemanticAnalysisWithPipelineAndState(pipeline, () => initialStateWithQuery(query), isComposite, sessionDatabase)
+    runSemanticAnalysisWithPipelineAndState(
+      pipeline,
+      () => initialStateWithQuery(query),
+      isComposite,
+      sessionDatabase,
+      versions
+    )
 
   // This test invokes SemanticAnalysis twice because that's what the production pipeline does
   def pipelineWithSemanticFeatures(semanticFeatures: SemanticFeature*): Pipeline =
@@ -148,15 +155,17 @@ trait SemanticAnalysisTestSuite extends CypherFunSuite {
   def expectNoErrorsFrom(
     query: String,
     pipeline: Transformer[BaseContext, BaseState, BaseState] = pipelineWithSemanticFeatures(),
+    versions: Seq[CypherVersion] = CypherVersion.values(),
     isComposite: Boolean = false,
     databaseName: String = defaultDatabaseName
   ): Unit =
-    runSemanticAnalysisWithPipeline(pipeline, query, isComposite, databaseName).errors shouldBe empty
+    runSemanticAnalysisWithPipeline(pipeline, query, isComposite, versions, databaseName).errors shouldBe empty
 
   def expectErrorsFrom(
     query: String,
     expectedErrors: Iterable[SemanticError],
     pipeline: Transformer[BaseContext, BaseState, BaseState] = pipelineWithSemanticFeatures(),
+    versions: Seq[CypherVersion] = CypherVersion.values(),
     isComposite: Boolean = false,
     databaseName: String = defaultDatabaseName
   ): Unit =
@@ -164,28 +173,32 @@ trait SemanticAnalysisTestSuite extends CypherFunSuite {
       pipeline,
       query,
       isComposite,
+      versions,
       databaseName
     ).errors should contain theSameElementsAs expectedErrors
 
   def expectErrorMessagesFrom(
     query: String,
     expectedErrors: Iterable[String],
+    versions: Seq[CypherVersion] = CypherVersion.values(),
     pipeline: Transformer[BaseContext, BaseState, BaseState] = pipelineWithSemanticFeatures(),
     isComposite: Boolean = false
   ): Unit =
     runSemanticAnalysisWithPipeline(
       pipeline,
       query,
-      isComposite
+      isComposite,
+      versions
     ).errorMessages should contain theSameElementsAs expectedErrors
 
   def expectNotificationsFrom(
     query: String,
     expectedNotifications: Set[InternalNotification],
+    versions: Seq[CypherVersion] = CypherVersion.values(),
     pipeline: Transformer[BaseContext, BaseState, BaseState] = pipelineWithSemanticFeatures()
   ): Unit = {
     val normalisedQuery = normalizeNewLines(query)
-    val result = runSemanticAnalysisWithPipeline(pipeline, normalisedQuery)
+    val result = runSemanticAnalysisWithPipeline(pipeline, normalisedQuery, versions = versions)
     result.state.semantics().notifications shouldEqual expectedNotifications
     result.errors shouldBe empty
   }
