@@ -147,6 +147,18 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         initialPositions(channel.position());
     }
 
+    private static EnvelopeType completedEnvelopeType(boolean begin, boolean end) {
+        if (begin && end) {
+            return EnvelopeType.FULL;
+        } else if (begin) {
+            return EnvelopeType.BEGIN;
+        } else if (end) {
+            return EnvelopeType.END;
+        } else {
+            return EnvelopeType.MIDDLE;
+        }
+    }
+
     public int currentChecksum() {
         return previousChecksum;
     }
@@ -412,14 +424,14 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         return !closed;
     }
 
-    public void truncateToPosition(long position, int previousChecksum, long currentIndex) throws IOException {
+    public void truncateToPosition(long position, int previousChecksum, long previousIndex) throws IOException {
         requireNonNegative(position);
         checkArgument(position <= channel.position(), "Can only truncate written data.");
         checkArgument(position >= segmentBlockSize, "Truncating the first segment is not possible");
         this.previousChecksum = previousChecksum;
+        this.currentIndex = previousIndex;
         channel.truncate(position);
         rotateLogFile();
-        this.currentIndex = currentIndex;
     }
 
     @Override
@@ -471,13 +483,14 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         }
         writeHeader(type, payLoadLength);
         begin = end;
-        if (end) {
-            currentIndex++;
-        }
     }
 
     private void writeHeader(EnvelopeType type, int payloadLength) {
         final int payloadEndOffset = buffer.position();
+
+        if (begin) {
+            currentIndex++;
+        }
 
         // Fill in the header
         final int checksumStartOffset = currentEnvelopeStart + Integer.BYTES;
@@ -503,18 +516,6 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         // Now we're ready to position the buffer to start writing the next envelope.
         buffer.position(payloadEndOffset);
         currentEnvelopeStart = payloadEndOffset;
-    }
-
-    private static EnvelopeType completedEnvelopeType(boolean begin, boolean end) {
-        if (begin && end) {
-            return EnvelopeType.FULL;
-        } else if (begin) {
-            return EnvelopeType.BEGIN;
-        } else if (end) {
-            return EnvelopeType.END;
-        } else {
-            return EnvelopeType.MIDDLE;
-        }
     }
 
     private EnvelopeWriteChannel updateBytesWritten(int count) {
@@ -615,5 +616,9 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         put(new byte[payloadLength], payloadLength);
         writeHeader(EnvelopeType.START_OFFSET, payloadLength);
         prepareNextEnvelope();
+    }
+
+    public long currentIndex() {
+        return currentIndex;
     }
 }

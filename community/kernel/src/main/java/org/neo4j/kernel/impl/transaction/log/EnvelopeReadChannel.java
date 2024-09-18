@@ -45,7 +45,6 @@ import org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.EnvelopeTyp
 import org.neo4j.kernel.impl.transaction.log.entry.LogFormat;
 import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
 import org.neo4j.memory.MemoryTracker;
-import org.neo4j.util.VisibleForTesting;
 
 /**
  * A channel for reading segmented data from a file. All reads are buffer, one segment at a time.
@@ -95,7 +94,6 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
     private final ByteBuffer checksumView;
     private final int segmentShift;
     private final int segmentMask;
-
     private LogVersionedStoreChannel channel;
     // The log file header of the current file.
     private LogHeader logHeader;
@@ -105,20 +103,19 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
     protected int previousChecksum;
     protected long currentSegment;
     protected EnvelopeType payloadType;
-    protected long entryIndex;
+    protected long currentIndex;
     private byte payloadVersion;
     protected int payloadStartOffset;
     protected int payloadEndOffset;
     private volatile boolean closed;
 
-    protected EnvelopeReadChannel(
+    public EnvelopeReadChannel(
             LogVersionedStoreChannel startingChannel,
             int segmentBlockSize,
             LogVersionBridge bridge,
             MemoryTracker memoryTracker,
             boolean raw)
             throws IOException {
-
         this(
                 startingChannel,
                 segmentBlockSize,
@@ -127,7 +124,7 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
                 new NativeScopedBuffer(segmentBlockSize, LITTLE_ENDIAN, memoryTracker));
     }
 
-    EnvelopeReadChannel(
+    public EnvelopeReadChannel(
             LogVersionedStoreChannel startingChannel,
             int segmentBlockSize,
             LogVersionBridge bridge,
@@ -165,9 +162,30 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
         }
     }
 
-    @VisibleForTesting
-    long entryIndex() {
-        return entryIndex;
+    /**
+     * Positions the channel either at the beginning of the first entry found (this means not moving at all if this
+     * is satisfied already) or at the end of the entry stream if there are no new entries to be found.
+     *
+     * @return starting position of the start entry, or end of the last entry if there are no start entries to be found
+     */
+    public long alignWithStartEntry() throws IOException {
+        try {
+            if (payloadType == null) {
+                readEnvelopeHeader();
+            } else {
+                buffer.position(payloadStartOffset);
+            }
+            if (payloadType != EnvelopeType.FULL && payloadType != EnvelopeType.BEGIN) {
+                goToNextEntry();
+            }
+            return position() - HEADER_SIZE;
+        } catch (ReadPastEndException e) {
+            return position();
+        }
+    }
+
+    public long entryIndex() {
+        return currentIndex;
     }
 
     @Override
@@ -398,9 +416,22 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
      */
     public long goToNextEntry() throws IOException {
         do {
-            skipToNextEnvelope();
-            readEnvelopeHeader();
+            goToNextEnvelope();
         } while (payloadType != EnvelopeType.FULL && payloadType != EnvelopeType.BEGIN);
+        return position() - HEADER_SIZE;
+    }
+
+    /**
+     * Move the channel to the next envelope. This method should be used carefully since it may set the
+     * position in the middle of an entry.
+     *
+     * @return position of the next entry
+     * @throws IOException          I/O error from channel.
+     * @throws ReadPastEndException if the end is reached.
+     */
+    public long goToNextEnvelope() throws IOException {
+        skipToNextEnvelope();
+        readEnvelopeHeader();
         return position() - HEADER_SIZE;
     }
 
@@ -417,6 +448,10 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
             channel = null;
             closed = true;
         }
+    }
+
+    public LogHeader logHeader() {
+        return logHeader;
     }
 
     private void readAllEnvelopesUpToIncluding(int bufferOffset, boolean forceReadingEvenIfAtEnd) throws IOException {
@@ -606,6 +641,7 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
                 // Must be the end of actual content in a longer pre-allocated file
                 // So we throw, to avoid the loop to keep going and just read a lot of zeroes
                 // until the end of the file.
+
                 // Position should be reset so we know where the actual content ended
                 buffer.position(buffer.position() - remaining - 5 /* checksum + type */);
                 throw ReadPastEndException.INSTANCE;
@@ -618,8 +654,8 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
         int previousEnvelopeChecksumFromHeader = buffer.getInt();
 
         payloadType = nextEnvelopeType;
-        entryIndex = nextPayloadIndex;
         payloadVersion = nextPayloadVersion;
+        currentIndex = nextPayloadIndex;
         payloadStartOffset = buffer.position();
         payloadEndOffset = payloadStartOffset + nextPayloadLength;
         if (payloadEndOffset > segmentBlockSize) {
@@ -705,7 +741,6 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
             // Too small file to contain data, just return and let other methods return ReadPastEndException
             return;
         }
-
         logHeader = LogFormat.parseHeader(buffer, true, null);
         if (logHeader == null) {
             // Pre-allocated file, just return and let other methods return ReadPastEndException
@@ -723,7 +758,10 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
                 LogFormat.V10.getVersionByte()
                         >= logHeader.getLogFormatVersion().getVersionByte(),
                 "Envelopes are not supported in old versions");
-        checkState(previousChecksum == logHeader.getPreviousLogFileChecksum(), "Checksum chain broken");
+        checkState(
+                previousChecksum == logHeader.getPreviousLogFileChecksum(),
+                "Checksum chain broken. " + previousChecksum + " " + logHeader.getPreviousLogFileChecksum());
+
         enforceTerminalZeros();
     }
 
@@ -772,5 +810,12 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
             handleClosedChannelException(e);
         }
         return length;
+    }
+
+    public void reReadSegment() throws IOException {
+        var logPositionMarker = new LogPositionMarker();
+        var currentLogPosition = getCurrentLogPosition(logPositionMarker);
+        currentSegment = -1;
+        setLogPosition(currentLogPosition);
     }
 }

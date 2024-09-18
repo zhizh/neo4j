@@ -31,5 +31,12 @@ import java.nio.channels.ReadableByteChannel;
 public final class ReadPastEndException extends IOException {
     public static final ReadPastEndException INSTANCE = new ReadPastEndException();
 
-    private ReadPastEndException() {}
+    private ReadPastEndException() {
+        setStackTrace(new StackTraceElement[] {});
+    }
+
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        return this; // only used as a static instance, stack trace will confuse
+    }
 }

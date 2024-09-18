@@ -117,6 +117,7 @@ class EphemeralFileChannel extends FileChannel implements EphemeralPositionable 
     public FileChannel truncate(long size) throws IOException {
         checkIfClosedOrInterrupted();
         data.truncate(size);
+        pos(size);
         return this;
     }
 

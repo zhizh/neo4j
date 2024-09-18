@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.neo4j.io.ByteUnit.KibiByte;
 import static org.neo4j.io.fs.ChecksumWriter.CHECKSUM_FACTORY;
-import static org.neo4j.kernel.impl.transaction.log.EnvelopeWriteChannel.START_INDEX;
 import static org.neo4j.kernel.impl.transaction.log.LogVersionBridge.NO_MORE_CHANNELS;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.HEADER_SIZE;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.IGNORE_KERNEL_VERSION;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.function.ThrowingConsumer;
 import org.neo4j.io.fs.ChecksumMismatchException;
@@ -70,6 +70,7 @@ import org.neo4j.test.utils.TestDirectory;
 @TestDirectoryExtension
 @ExtendWith(RandomExtension.class)
 class EnvelopeReadChannelTest {
+    private static final long START_INDEX = 0;
     private final Checksum checksum = CHECKSUM_FACTORY.get();
 
     @Inject
@@ -80,6 +81,28 @@ class EnvelopeReadChannelTest {
 
     @Inject
     private RandomSupport random;
+
+    private static void writeZeroSegment(ByteBuffer buffer, int segmentSize) {
+        writeZeroSegment(buffer, segmentSize, BASE_TX_CHECKSUM);
+    }
+
+    private static void writeZeroSegment(ByteBuffer buffer, int segmentSize, int previousLogFileChecksum) {
+        try {
+            LogFormat.V10.serializeHeader(
+                    buffer,
+                    LogFormat.V10.newHeader(
+                            42, 1, 10, StoreId.UNKNOWN, segmentSize, previousLogFileChecksum, LATEST_KERNEL_VERSION));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        buffer.put(new byte[segmentSize - buffer.position()]);
+    }
+
+    private static byte[] bytes(RandomSupport random, int size) {
+        final var bytes = new byte[size];
+        random.nextBytes(bytes);
+        return bytes;
+    }
 
     @ParameterizedTest
     @ValueSource(ints = {128, 256})
@@ -401,8 +424,10 @@ class EnvelopeReadChannelTest {
     @ParameterizedTest
     @ValueSource(ints = {128, 256})
     void readingPreAllocatedFile(int segmentSize) throws Exception {
+        final var file = file(0);
         final var zeros = new byte[segmentSize * 3];
-        writeSomeData(buffer -> buffer.put(zeros));
+        writeSomeData(buffer -> writeZeroSegment(buffer, segmentSize));
+        writeSomeData(file, buffer -> buffer.put(zeros));
 
         final var logChannel = logChannel();
         try (var channel = new EnvelopeReadChannel(
@@ -999,7 +1024,7 @@ class EnvelopeReadChannelTest {
     @ParameterizedTest
     @EnumSource(names = {"FULL", "END"})
     void shouldFailForReadsOutsideOfTerminatingEnvelope(EnvelopeType envelopeType) throws Exception {
-        int segmentSize = 128;
+        int segmentSize = 256;
         // GIVEN
         final var bytes = bytes(random, segmentSize / 2);
 
@@ -1023,9 +1048,9 @@ class EnvelopeReadChannelTest {
 
     @Test
     void nextEntry() throws IOException {
-        int segmentSize = 128;
-        final var bytes = bytes(random, 8);
-        int entrySize = HEADER_SIZE + 8;
+        int segmentSize = 256;
+        final var bytes = bytes(random, 40);
+        int entrySize = HEADER_SIZE + 40;
 
         writeSomeData(buffer -> {
             writeZeroSegment(buffer, segmentSize);
@@ -1077,6 +1102,99 @@ class EnvelopeReadChannelTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(
+            value = EnvelopeType.class,
+            mode = Mode.INCLUDE,
+            names = {"FULL", "BEGIN"})
+    void shouldAlignFromStartToNextNewEntry(EnvelopeType envelopeType) throws IOException {
+        int segmentSize = 256;
+        final var bytes = bytes(random, 40);
+        int entrySize = HEADER_SIZE + 40;
+
+        writeSomeData(buffer -> {
+            writeZeroSegment(buffer, segmentSize);
+            int checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, BASE_TX_CHECKSUM, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, checksum, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.END, checksum, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, envelopeType, checksum, bytes, START_INDEX + 1);
+            writeHeaderAndPayload(buffer, EnvelopeType.FULL, checksum, bytes, START_INDEX + 2);
+        });
+
+        try (var channel = new EnvelopeReadChannel(
+                logChannel(), segmentSize, NO_MORE_CHANNELS, EmptyMemoryTracker.INSTANCE, false)) {
+            assertThat(channel.alignWithStartEntry()).isEqualTo(segmentSize + entrySize * 3); // first full or begin
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = EnvelopeType.class,
+            mode = Mode.INCLUDE,
+            names = {"FULL", "BEGIN"})
+    void shouldAlignFromMiddleToNextNewEntry(EnvelopeType envelopeType) throws IOException {
+        int segmentSize = 256;
+        final var bytes = bytes(random, 40);
+        int entrySize = HEADER_SIZE + 40;
+
+        writeSomeData(buffer -> {
+            writeZeroSegment(buffer, segmentSize);
+            int checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, BASE_TX_CHECKSUM, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, checksum, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.END, checksum, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, envelopeType, checksum, bytes, START_INDEX + 1);
+            writeHeaderAndPayload(buffer, EnvelopeType.FULL, checksum, bytes, START_INDEX + 2);
+        });
+
+        try (var channel = new EnvelopeReadChannel(
+                logChannel(), segmentSize, NO_MORE_CHANNELS, EmptyMemoryTracker.INSTANCE, false)) {
+            channel.position(segmentSize + entrySize);
+            assertThat(channel.alignWithStartEntry()).isEqualTo(segmentSize + entrySize * 3); // first full or begin
+        }
+    }
+
+    @Test
+    void shouldAlignResettingPositionToStartOfAlignedEntry() throws IOException {
+        int segmentSize = 256;
+        final var bytes = bytes(random, 40);
+        int entrySize = HEADER_SIZE + 40;
+
+        writeSomeData(buffer -> {
+            writeZeroSegment(buffer, segmentSize);
+            int checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, BASE_TX_CHECKSUM, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, checksum, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.END, checksum, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.BEGIN, checksum, bytes, START_INDEX + 1);
+            writeHeaderAndPayload(buffer, EnvelopeType.FULL, checksum, bytes, START_INDEX + 2);
+        });
+
+        try (var channel = new EnvelopeReadChannel(
+                logChannel(), segmentSize, NO_MORE_CHANNELS, EmptyMemoryTracker.INSTANCE, false)) {
+            channel.position(segmentSize + entrySize * 3 + 5); // partly read content
+            assertThat(channel.alignWithStartEntry()).isEqualTo(segmentSize + entrySize * 3); // first full or begin
+        }
+    }
+
+    @Test
+    void shouldAlignPositionAtTheEndIfNoNewEntries() throws IOException {
+        int segmentSize = 256;
+        final var bytes = bytes(random, 40);
+        int entrySize = HEADER_SIZE + 40;
+
+        writeSomeData(buffer -> {
+            writeZeroSegment(buffer, segmentSize);
+            int checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, BASE_TX_CHECKSUM, bytes, START_INDEX);
+            checksum = writeHeaderAndPayload(buffer, EnvelopeType.MIDDLE, checksum, bytes, START_INDEX);
+            writeHeaderAndPayload(buffer, EnvelopeType.END, checksum, bytes, START_INDEX);
+        });
+
+        try (var channel = new EnvelopeReadChannel(
+                logChannel(), segmentSize, NO_MORE_CHANNELS, EmptyMemoryTracker.INSTANCE, false)) {
+            assertThat(channel.alignWithStartEntry()).isEqualTo(segmentSize + entrySize * 3); // end of last entry
+            assertThat(channel.position()).isEqualTo(segmentSize + entrySize * 3); // no new header to read
+        }
+    }
+
     private Path file(int index) {
         return directory.homePath().resolve(String.valueOf(index));
     }
@@ -1093,7 +1211,7 @@ class EnvelopeReadChannelTest {
         fileSystem.deleteFile(file);
         try (var channel = fileSystem.write(file)) {
             var buffer =
-                    ByteBuffers.allocate(toIntExact(KibiByte.toBytes(1)), LITTLE_ENDIAN, EmptyMemoryTracker.INSTANCE);
+                    ByteBuffers.allocate(toIntExact(KibiByte.toBytes(2)), LITTLE_ENDIAN, EmptyMemoryTracker.INSTANCE);
             consumer.accept(buffer);
             buffer.flip();
             channel.writeAll(buffer);
@@ -1169,22 +1287,6 @@ class EnvelopeReadChannelTest {
         return writeHeaderAndPayload(buffer, type, previousChecksum, version, payload, startIndex);
     }
 
-    private static void writeZeroSegment(ByteBuffer buffer, int segmentSize) {
-        writeZeroSegment(buffer, segmentSize, BASE_TX_CHECKSUM);
-    }
-
-    private static void writeZeroSegment(ByteBuffer buffer, int segmentSize, int previousLogFileChecksum) {
-        try {
-            LogFormat.V10.serializeHeader(
-                    buffer,
-                    LogFormat.V10.newHeader(
-                            42, 1, StoreId.UNKNOWN, segmentSize, previousLogFileChecksum, LATEST_KERNEL_VERSION));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        buffer.put(new byte[segmentSize - buffer.position()]);
-    }
-
     private int writeHeaderAndPayload(
             ByteBuffer buffer,
             EnvelopeType type,
@@ -1232,10 +1334,14 @@ class EnvelopeReadChannelTest {
         writeHeaderAndPayload(buffer, EnvelopeType.START_OFFSET, 0, payload, 0);
     }
 
-    private static byte[] bytes(RandomSupport random, int size) {
-        final var bytes = new byte[size];
-        random.nextBytes(bytes);
-        return bytes;
+    private static class RawCapturingLogVersionBridge implements LogVersionBridge {
+        private boolean isRaw = false;
+
+        @Override
+        public LogVersionedStoreChannel next(LogVersionedStoreChannel channel, boolean raw) {
+            isRaw = raw;
+            return channel;
+        }
     }
 
     /**
@@ -1274,16 +1380,6 @@ class EnvelopeReadChannelTest {
 
                 return logChannel(path);
             }
-            return channel;
-        }
-    }
-
-    private static class RawCapturingLogVersionBridge implements LogVersionBridge {
-        private boolean isRaw = false;
-
-        @Override
-        public LogVersionedStoreChannel next(LogVersionedStoreChannel channel, boolean raw) {
-            isRaw = raw;
             return channel;
         }
     }

@@ -25,7 +25,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.neo4j.io.ByteUnit.kibiBytes;
 import static org.neo4j.io.ByteUnit.mebiBytes;
-import static org.neo4j.kernel.impl.transaction.log.EnvelopeWriteChannel.START_INDEX;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogFormat.writeLogHeader;
 import static org.neo4j.memory.EmptyMemoryTracker.INSTANCE;
 import static org.neo4j.storageengine.AppendIndexProvider.BASE_APPEND_INDEX;
@@ -75,6 +74,8 @@ class EnvelopeFuzzerTest {
      */
     private static final boolean PRINT_SEQUENCE = false;
 
+    private static final long PREV_INDEX = -1;
+
     @Inject
     private RandomSupport random;
 
@@ -103,6 +104,7 @@ class EnvelopeFuzzerTest {
         LogHeader logHeader = LogFormat.V10.newHeader(
                 INITIAL_LOG_VERSION,
                 BASE_APPEND_INDEX,
+                LogHeader.UNKNOWN_TERM,
                 StoreId.UNKNOWN,
                 segmentSize,
                 initialChecksum,
@@ -117,7 +119,7 @@ class EnvelopeFuzzerTest {
                 buffer(bufferSize),
                 segmentSize,
                 initialChecksum,
-                START_INDEX,
+                PREV_INDEX,
                 DatabaseTracer.NULL,
                 logRotation)) {
             logRotation.bindWriteChannel(envelopeWriteChannel);
@@ -240,6 +242,7 @@ class EnvelopeFuzzerTest {
                     LogHeader logHeader = LogFormat.V10.newHeader(
                             currentVersion.intValue(),
                             BASE_APPEND_INDEX,
+                            LogHeader.UNKNOWN_TERM,
                             StoreId.UNKNOWN,
                             segmentSize,
                             previousChecksum,

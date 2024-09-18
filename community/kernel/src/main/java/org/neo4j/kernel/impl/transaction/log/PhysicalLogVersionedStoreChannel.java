@@ -58,18 +58,18 @@ public class PhysicalLogVersionedStoreChannel extends DelegatingStoreChannel<Sto
 
     public PhysicalLogVersionedStoreChannel(
             StoreChannel delegateChannel,
-            long version,
+            long fileVersion,
             LogFormat formatVersion,
             Path path,
             ChannelNativeAccessor nativeChannelAccessor,
             DatabaseTracer databaseTracer)
             throws IOException {
-        this(delegateChannel, version, formatVersion, path, nativeChannelAccessor, databaseTracer, false);
+        this(delegateChannel, fileVersion, formatVersion, path, nativeChannelAccessor, databaseTracer, false);
     }
 
     public PhysicalLogVersionedStoreChannel(
             StoreChannel delegateChannel,
-            long version,
+            long fileVersion,
             LogFormat formatVersion,
             Path path,
             ChannelNativeAccessor nativeChannelAccessor,
@@ -77,7 +77,7 @@ public class PhysicalLogVersionedStoreChannel extends DelegatingStoreChannel<Sto
             boolean raw)
             throws IOException {
         super(delegateChannel);
-        this.version = version;
+        this.version = fileVersion;
         this.formatVersion = formatVersion;
         this.position = delegateChannel.position();
         this.path = path;
