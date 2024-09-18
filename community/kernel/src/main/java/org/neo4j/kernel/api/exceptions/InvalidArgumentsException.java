@@ -25,6 +25,7 @@ import org.neo4j.gqlstatus.GqlException;
 public class InvalidArgumentsException extends GqlException implements Status.HasStatus {
     private final Status status;
 
+    @Deprecated
     public InvalidArgumentsException(String message) {
         this(message, null);
     }
@@ -33,6 +34,7 @@ public class InvalidArgumentsException extends GqlException implements Status.Ha
         this(gqlStatusObject, message, null);
     }
 
+    @Deprecated
     public InvalidArgumentsException(String message, Throwable cause) {
         super(message, cause);
         this.status = Status.General.InvalidArguments;

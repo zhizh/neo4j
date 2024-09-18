@@ -1095,9 +1095,9 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_22N20(
             new GqlStatus("22N20"),
             """
-                    Cannot create POINT with { %s } coordinate reference system (CRS) and { %s } coordinates. Use the equivalent { %s } coordinate reference system instead.""",
+                    Cannot create POINT with { %s }D coordinate reference system (CRS) and { %s } coordinates. Use the equivalent { %s }D coordinate reference system instead.""",
             new GqlParams.GqlParam[] {
-                GqlParams.StringParam.crs1, GqlParams.StringParam.coordinates, GqlParams.StringParam.crs2
+                GqlParams.NumberParam.dim1, GqlParams.NumberParam.value, GqlParams.NumberParam.dim2
             },
             null,
             Condition.DATA_EXCEPTION,

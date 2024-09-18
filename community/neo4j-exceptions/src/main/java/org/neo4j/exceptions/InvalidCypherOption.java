@@ -21,10 +21,16 @@ package org.neo4j.exceptions;
 
 import static java.lang.String.format;
 
+import java.util.Arrays;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 
 public class InvalidCypherOption extends InvalidArgumentException {
 
+    @Deprecated
     public InvalidCypherOption(String message) {
         super(message);
     }
@@ -35,27 +41,70 @@ public class InvalidCypherOption extends InvalidArgumentException {
 
     public static InvalidCypherOption invalidCombination(
             String optionName1, String option1, String optionName2, String option2) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N08)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.option1, optionName1 + ": " + option1)
+                        .withParam(GqlParams.StringParam.option2, optionName2 + ": " + option2)
+                        .build())
+                .build();
         return new InvalidCypherOption(
-                format("Cannot combine %s '%s' with %s '%s'", optionName1, option1, optionName2, option2));
+                gql, format("Cannot combine %s '%s' with %s '%s'", optionName1, option1, optionName2, option2));
     }
 
     public static InvalidCypherOption parallelRuntimeIsDisabled() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N44)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
         return new InvalidCypherOption(
-                "Parallel runtime has been disabled, please enable it or upgrade to a bigger Aura instance.");
+                gql, "Parallel runtime has been disabled, please enable it or upgrade to a bigger Aura instance.");
     }
 
     public static InvalidCypherOption invalidOption(String input, String name, String... validOptions) {
-        return new InvalidCypherOption(format(
-                "%s is not a valid option for %s. Valid options are: %s",
-                input, name, String.join(", ", validOptions)));
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N10)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.input, input)
+                        .withParam(GqlParams.StringParam.option, name)
+                        .withParam(
+                                GqlParams.ListParam.optionList,
+                                Arrays.stream(validOptions).toList())
+                        .build())
+                .build();
+        return new InvalidCypherOption(
+                gql,
+                format(
+                        "%s is not a valid option for %s. Valid options are: %s",
+                        input, name, String.join(", ", validOptions)));
     }
 
     public static InvalidCypherOption conflictingOptionForName(String name) {
-        return new InvalidCypherOption("Can't specify multiple conflicting values for " + name);
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N09)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.option, name)
+                        .build())
+                .build();
+        return new InvalidCypherOption(gql, "Can't specify multiple conflicting values for " + name);
     }
 
     public static InvalidCypherOption unsupportedOptions(String... keys) {
-        return new InvalidCypherOption(format("Unsupported options: %s", String.join(", ", keys)));
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N07)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(
+                                GqlParams.ListParam.optionList,
+                                Arrays.stream(keys).toList())
+                        .build())
+                .build();
+        return new InvalidCypherOption(gql, format("Unsupported options: %s", String.join(", ", keys)));
     }
 
     public static InvalidCypherOption irEagerAnalyzerUnsupported(String operation) {

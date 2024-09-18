@@ -22,10 +22,15 @@ package org.neo4j.exceptions;
 import static java.lang.String.format;
 
 import java.util.Arrays;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 
 public class InvalidSpatialArgumentException extends InvalidArgumentException {
 
+    @Deprecated
     public InvalidSpatialArgumentException(String message) {
         super(message);
     }
@@ -41,13 +46,30 @@ public class InvalidSpatialArgumentException extends InvalidArgumentException {
     }
 
     public static InvalidSpatialArgumentException infiniteCoordinateValue(double... coordinate) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N24)
+                        .withParam(GqlParams.StringParam.valueType, "point")
+                        .withParam(GqlParams.StringParam.coordinates, Arrays.toString(coordinate))
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
         return new InvalidSpatialArgumentException(
-                "Cannot create a point with non-finite coordinate values: " + Arrays.toString(coordinate));
+                gql, "Cannot create a point with non-finite coordinate values: " + Arrays.toString(coordinate));
     }
 
     public static InvalidSpatialArgumentException invalidGeographicCoordinates(double... coordinate) {
-        return new InvalidSpatialArgumentException("Cannot create WGS84 point with invalid coordinate: "
-                + Arrays.toString(coordinate) + ". Valid range for Y coordinate is [-90, 90].");
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N23)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.coordinates, Arrays.toString(coordinate))
+                        .build())
+                .build();
+        return new InvalidSpatialArgumentException(
+                gql,
+                "Cannot create WGS84 point with invalid coordinate: " + Arrays.toString(coordinate)
+                        + ". Valid range for Y coordinate is [-90, 90].");
     }
 
     public static InvalidSpatialArgumentException invalidCoordinateSystem(int crs) {

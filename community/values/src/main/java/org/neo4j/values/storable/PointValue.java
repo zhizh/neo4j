@@ -34,6 +34,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.neo4j.exceptions.InvalidArgumentException;
 import org.neo4j.exceptions.InvalidSpatialArgumentException;
+import org.neo4j.gqlstatus.ErrorClassification;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.spatial.CRS;
 import org.neo4j.graphdb.spatial.Coordinate;
 import org.neo4j.graphdb.spatial.Point;
@@ -375,8 +379,14 @@ public class PointValue extends HashMemoizingScalarValue implements Point, Compa
             }
         } else {
             if (crs == null) {
+                var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N19)
+                                .withClassification(ErrorClassification.CLIENT_ERROR)
+                                .build())
+                        .build();
                 throw new InvalidArgumentException(
-                        "A point must contain either 'x' and 'y' or 'latitude' and 'longitude'");
+                        gql, "A point must contain either 'x' and 'y' or 'latitude' and 'longitude'");
             }
 
             throw new InvalidArgumentException(String.format(
@@ -391,10 +401,21 @@ public class PointValue extends HashMemoizingScalarValue implements Point, Compa
         }
 
         if (crs.getDimension() != coordinates.length) {
-            throw new InvalidArgumentException(String.format(
-                    "Cannot create point with %dD coordinate reference system and %d coordinates. "
-                            + "Please consider using equivalent %dD coordinate reference system",
-                    crs.getDimension(), coordinates.length, coordinates.length));
+            var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                    .withClassification(ErrorClassification.CLIENT_ERROR)
+                    .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N20)
+                            .withClassification(ErrorClassification.CLIENT_ERROR)
+                            .withParam(GqlParams.NumberParam.dim1, crs.getDimension())
+                            .withParam(GqlParams.NumberParam.value, coordinates.length)
+                            .withParam(GqlParams.NumberParam.dim2, coordinates.length)
+                            .build())
+                    .build();
+            throw new InvalidArgumentException(
+                    gql,
+                    String.format(
+                            "Cannot create point with %dD coordinate reference system and %d coordinates. "
+                                    + "Please consider using equivalent %dD coordinate reference system",
+                            crs.getDimension(), coordinates.length, coordinates.length));
         }
         return Values.pointValue(crs, coordinates);
     }
