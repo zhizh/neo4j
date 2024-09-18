@@ -108,7 +108,7 @@ abstract class UpdatingSystemCommandExecutionPlanBase(
       val systemSubscriber =
         new SystemCommandQuerySubscriber(ctx, new RowDroppingQuerySubscriber(subscriber), queryHandler, updatedParams)
       assertCanWrite(tc, systemSubscriber)
-      initAndFinally.execute(ctx, previousNotifications ++ notifications, updatedParams) { () =>
+      initAndFinally.execute(ctx, systemSubscriber, previousNotifications ++ notifications, updatedParams) { () =>
         val execution = normalExecutionEngine.executeSubquery(
           queryPrefix + query,
           updatedParams,
@@ -131,6 +131,7 @@ abstract class UpdatingSystemCommandExecutionPlanBase(
         } else {
           UpdatingSystemCommandRuntimeResult(
             ctx.withContextVars(systemSubscriber.getContextUpdates),
+            Some(systemSubscriber),
             previousNotifications ++ notifications ++ systemSubscriber.getNotifications
           )
         }
@@ -261,6 +262,7 @@ sealed trait InitAndFinally {
 
   def execute(
     context: SystemUpdateCountingQueryContext,
+    subscriber: SystemCommandQuerySubscriber,
     notifications: Set[InternalNotification],
     params: MapValue
   )(queryFunction: () => RuntimeResult): RuntimeResult = queryFunction()
@@ -275,6 +277,7 @@ case class InitAndFinallyFunctions(
 
   override def execute(
     context: SystemUpdateCountingQueryContext,
+    subscriber: SystemCommandQuerySubscriber,
     notifications: Set[InternalNotification],
     params: MapValue
   )(queryFunction: () => RuntimeResult): RuntimeResult =
@@ -282,7 +285,9 @@ case class InitAndFinallyFunctions(
       if (initFunction(params)) {
         queryFunction()
       } else {
-        UpdatingSystemCommandRuntimeResult(context, notifications)
+        val results = UpdatingSystemCommandRuntimeResult(context, Some(subscriber), notifications)
+        subscriber.onResultCompleted(results.queryStatistics())
+        results
       }
     } finally {
       finallyFunction(params)

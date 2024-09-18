@@ -35,6 +35,7 @@ import scala.jdk.CollectionConverters.SetHasAsJava
  */
 case class UpdatingSystemCommandRuntimeResult(
   ctx: SystemUpdateCountingQueryContext,
+  subscriber: Option[SystemCommandQuerySubscriber],
   runtimeNotifications: Set[InternalNotification]
 ) extends RuntimeResult {
   override val fieldNames: Array[String] = Array.empty
@@ -56,7 +57,8 @@ case class UpdatingSystemCommandRuntimeResult(
 
   override def heapHighWaterMark(): Long = HeapHighWaterMarkTracker.ALLOCATIONS_NOT_TRACKED
 
-  override def notifications(): util.Set[InternalNotification] = runtimeNotifications.asJava
+  override def notifications(): util.Set[InternalNotification] =
+    (runtimeNotifications ++ subscriber.toSeq.flatMap(_.getNotifications)).asJava
 
   override def getErrorOrNull: Throwable = null
 }
