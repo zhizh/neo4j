@@ -193,6 +193,7 @@ public class UserDataCollector extends LifecycleAdapter {
         long relationships = 0;
         long labels = 0;
         long dataSize = 0;
+        int databaseCount = 0;
         for (String database : databases) {
             try {
                 GraphDatabaseAPI db = (GraphDatabaseAPI) databaseManagementService.database(database);
@@ -202,6 +203,9 @@ public class UserDataCollector extends LifecycleAdapter {
                 relationships += storeEntityCounters.estimateRelationships();
                 labels += storeEntityCounters.estimateLabels();
                 dataSize += databaseSizeService.getDatabaseDataSize(db.databaseId());
+                if (!db.databaseId().isSystemDatabase()) {
+                    databaseCount++;
+                }
             } catch (Exception e) {
                 log.debug("Failed to collect data from database " + database, e);
             }
@@ -210,7 +214,8 @@ public class UserDataCollector extends LifecycleAdapter {
                 "nodes", String.valueOf(nodes),
                 "relationships", String.valueOf(relationships),
                 "labels", String.valueOf(labels),
-                "storeSize", String.valueOf(dataSize));
+                "storeSize", String.valueOf(dataSize),
+                "databaseCount", String.valueOf(databaseCount));
     }
 
     private static String getPackagingInformation(Config config, FileSystemAbstraction fs) {
