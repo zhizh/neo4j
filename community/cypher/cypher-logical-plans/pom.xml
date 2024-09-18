@@ -32,6 +32,12 @@
 
         <dependency>
             <groupId>org.neo4j</groupId>
+            <artifactId>neo4j-ast</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.neo4j</groupId>
             <artifactId>neo4j-exceptions</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -45,12 +51,6 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-values</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.neo4j</groupId>
-            <artifactId>neo4j-configuration</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -81,11 +81,6 @@
         </dependency>
 
         <dependency>
-            <artifactId>scala-reflect</artifactId>
-            <groupId>org.scala-lang</groupId>
-        </dependency>
-
-        <dependency>
             <groupId>org.scala-lang.modules</groupId>
             <artifactId>scala-collection-contrib_2.13</artifactId>
         </dependency>
@@ -104,17 +99,9 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.scalatestplus</groupId>
-            <artifactId>scalacheck-1-16_${scala.binary.version}</artifactId>
-        </dependency>
 
         <!-- other -->
 
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
