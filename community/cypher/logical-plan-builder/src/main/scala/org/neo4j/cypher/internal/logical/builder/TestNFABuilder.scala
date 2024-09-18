@@ -166,7 +166,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
     pattern: String,
     maybeRelPredicate: Option[VariablePredicate] = None,
     maybeToPredicate: Option[VariablePredicate] = None,
-    compoundPredicate: Option[String] = None
+    compoundPredicate: String = ""
   ): TestNFABuilder = {
 
     parsePattern(pattern) match {
@@ -214,7 +214,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
           )
         }
         val (from, rels, nodes, to) = unnestRelationshipChain(chain)
-        val compoundPred = compoundPredicate.map(Parser.parseExpression)
+        val compoundPred = if (compoundPredicate == "") None else Some(Parser.parseExpression(compoundPredicate))
         val fromState = getOrCreateState(fromId, from.nodeVariable)
         assertFromNameMatchesFromId(fromState, from.nodeVariable.name, fromId, pattern)
         val transition = MultiRelationshipExpansionTransition(rels, nodes, compoundPred, toId)
@@ -240,18 +240,29 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
     this
   }
 
+  def addMultiRelationshipTransition(fromId: Int, toId: Int, pattern: String): TestNFABuilder =
+    addMultiRelationshipTransitionWithPredicate(fromId, toId, pattern, "")
+
   def addMultiRelationshipTransition(
     fromId: Int,
     toId: Int,
     pattern: String,
-    compoundPredicate: String = ""
+    compoundPredicate: String
+  ): TestNFABuilder =
+    addMultiRelationshipTransitionWithPredicate(fromId, toId, pattern, compoundPredicate)
+
+  private def addMultiRelationshipTransitionWithPredicate(
+    fromId: Int,
+    toId: Int,
+    pattern: String,
+    compoundPredicate: String
   ): TestNFABuilder = {
 
     parsePattern(pattern) match {
       // (n1)-[r1:R]->(n2)-[r2:R]->(n3)
       case chain: RelationshipChain =>
         val (from, rels, nodes, to) = unnestRelationshipChain(chain)
-        val compoundPred = if (compoundPredicate == "") None else Some(Parser.parseExpression(compoundPredicate))
+        val compoundPred = if (compoundPredicate.trim.isEmpty) None else Some(Parser.parseExpression(compoundPredicate))
         val fromState = getOrCreateState(fromId, from.nodeVariable)
         assertFromNameMatchesFromId(fromState, from.nodeVariable.name, fromId, pattern)
         val transition = MultiRelationshipExpansionTransition(rels, nodes, compoundPred, toId)

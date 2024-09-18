@@ -773,7 +773,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         1,
         2,
         "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)",
-        compoundPredicate = Some("n1_inner.foo = n3_inner.foo")
+        compoundPredicate = "n1_inner.foo = n3_inner.foo"
       )
       .addTransition(2, 3, "(n3_inner) (t_inner)")
       .setFinalState(3)
@@ -834,7 +834,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         1,
         2,
         "(n1_inner)<-[r1_inner]-(n2_inner)<-[r2_inner]-(n3_inner)",
-        compoundPredicate = Some("n1_inner.foo = n3_inner.foo")
+        compoundPredicate = "n1_inner.foo = n3_inner.foo"
       )
       .addTransition(2, 3, "(n3_inner) (t_inner)")
       .setFinalState(3)
@@ -895,7 +895,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         1,
         2,
         "(n1_inner)-[r1_inner]-(n2_inner)-[r2_inner]-(n3_inner)",
-        compoundPredicate = Some("n1_inner.foo = n3_inner.foo")
+        compoundPredicate = "n1_inner.foo = n3_inner.foo"
       )
       .addTransition(2, 3, "(n3_inner) (t_inner)")
       .setFinalState(3)
@@ -966,9 +966,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         2,
         "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)-[r3_inner]->(n4_inner)-[r4_inner]->(n5_inner)",
         compoundPredicate =
-          Some(
-            "n1_inner.prop = n2_inner.prop AND n2_inner.prop = n3_inner.prop AND n3_inner.prop = n4_inner.prop AND n4_inner.prop = n5_inner.prop"
-          )
+          "n1_inner.prop = n2_inner.prop AND n2_inner.prop = n3_inner.prop AND n3_inner.prop = n4_inner.prop AND n4_inner.prop = n5_inner.prop"
       )
       .addTransition(2, 3, "(n5_inner) (t_inner)")
       .setFinalState(3)
@@ -1040,7 +1038,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         2,
         "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)-[r3_inner]->(n4_inner)-[r4_inner]->(n5_inner)",
         compoundPredicate =
-          Some("r1_inner.prop = r2_inner.prop AND r2_inner.prop = r3_inner.prop AND r3_inner.prop = r4_inner.prop")
+          "r1_inner.prop = r2_inner.prop AND r2_inner.prop = r3_inner.prop AND r3_inner.prop = r4_inner.prop"
       )
       .addTransition(2, 3, "(n5_inner) (t_inner)")
       .setFinalState(3)
