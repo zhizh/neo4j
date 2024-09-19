@@ -20,30 +20,36 @@
 package org.neo4j.procedure.builtin;
 
 import java.util.List;
+import org.neo4j.procedure.Description;
 
 public class NodePropertySchemaInfoResult {
     /**
      * A combination of escaped label names interleaved by ":"
      */
+    @Description("A name generated from the labels on the node.")
     public final String nodeType;
 
     /**
      * A list of label names
      */
+    @Description("A list containing the labels on a category of node.")
     public final List<String> nodeLabels;
     /**
      * A property name that occurs on the given label combination or null
      */
+    @Description("A property key on a category of node.")
     public final String propertyName;
 
     /**
      * A List containing all types of the given property on the given label combination or null
      */
+    @Description("All types of a property belonging to a node category.")
     public final List<String> propertyTypes;
 
     /**
      * Indicates whether the property is present on all similar nodes (= true) or not (= false)
      */
+    @Description("Whether or not the property is present on all nodes belonging to a node category.")
     public final boolean mandatory;
 
     public NodePropertySchemaInfoResult(

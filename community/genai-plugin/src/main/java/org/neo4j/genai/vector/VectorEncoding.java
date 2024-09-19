@@ -89,7 +89,10 @@ public class VectorEncoding {
     }
 
     public record ProviderRow(
-            String name, String requiredConfigType, String optionalConfigType, Map<String, Object> defaultConfig) {
+            @Description("The name of the GenAI provider.") String name,
+            @Description("The signature of the required config map.") String requiredConfigType,
+            @Description("The signature of the optional config map.") String optionalConfigType,
+            @Description("The default values for the GenAI provider.") Map<String, Object> defaultConfig) {
         public static ProviderRow from(Provider<?> provider) {
             final var parameters = Parameters.getParameters(provider.parameterDeclarations());
 
@@ -182,9 +185,12 @@ public class VectorEncoding {
                 * and the encoded 'vector'.
             """)
     public Stream<InternalBatchRow> encode(
-            @Name("resources") List<String> resources,
-            @Name("provider") String providerName,
-            @Sensitive @Name(value = "configuration", defaultValue = "{}") AnyValue configuration) {
+            @Name(value = "resources", description = "The object to transform into an embedding.")
+                    List<String> resources,
+            @Name(value = "provider", description = "The GenAI provider to use.") String providerName,
+            @Sensitive
+                    @Name(value = "configuration", defaultValue = "{}", description = "The provider specific settings.")
+                    AnyValue configuration) {
         requireNonNull(resources, "'resources' must not be null");
         Preconditions.checkArgument(!resources.isEmpty(), "'resources' must not be empty");
         requireNonNull(providerName, "'provider' must not be null");
@@ -288,7 +294,10 @@ public class VectorEncoding {
 
     public record BatchRow(long index, String resource, float[] vector) {}
 
-    public record InternalBatchRow(long index, String resource, Value vector) {
+    public record InternalBatchRow(
+            @Description("The index of the corresponding element in the input list.") long index,
+            @Description("The name of the input resource.") String resource,
+            @Description("The generated vector embedding for the resource.") Value vector) {
         InternalBatchRow(BatchRow row) {
             this(row.index(), row.resource(), Values.of(row.vector));
         }

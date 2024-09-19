@@ -130,10 +130,17 @@ public final class GetRoutingTableProcedure implements CallableProcedure {
 
     public static ProcedureSignature.Builder createSignature(String[] namespace) {
         return procedureSignature(new QualifiedName(namespace, NAME))
-                .in(CONTEXT.parameterName(), Neo4jTypes.NTMap)
-                .in(DATABASE.parameterName(), Neo4jTypes.NTString, nullValue(Neo4jTypes.NTString))
-                .out(TTL.parameterName(), Neo4jTypes.NTInteger)
-                .out(SERVERS.parameterName(), Neo4jTypes.NTList(Neo4jTypes.NTMap))
+                .in(CONTEXT.parameterName(), Neo4jTypes.NTMap, "Routing context, for example, routing policies.")
+                .in(
+                        DATABASE.parameterName(),
+                        Neo4jTypes.NTString,
+                        nullValue(Neo4jTypes.NTString),
+                        "The database to get a routing table for.")
+                .out(TTL.parameterName(), Neo4jTypes.NTInteger, "Time to live (in seconds) for the routing table.")
+                .out(
+                        SERVERS.parameterName(),
+                        Neo4jTypes.NTList(Neo4jTypes.NTMap),
+                        "Servers grouped by whether they are readers, writers, or routers.")
                 .mode(Mode.DBMS)
                 .description(GetRoutingTableProcedure.DESCRIPTION)
                 .systemProcedure()

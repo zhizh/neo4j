@@ -17,24 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.procedure.builtin;
+package org.neo4j.internal.collector;
 
-import org.neo4j.capabilities.Capability;
 import org.neo4j.procedure.Description;
 
-public class CapabilityResult {
-    @Description("The full name of the capability (e.g. \"dbms.instance.version\").")
-    public final String name;
+@SuppressWarnings("WeakerAccess")
+public class ClearActionResult {
+    @Description("The section cleared.")
+    public final String section;
 
-    @Description("The capability description (e.g. \"Neo4j version this instance is running\").")
-    public final String description;
+    @Description("Whether the section was successfully cleared.")
+    public final boolean success;
 
-    @Description("The capability object if it is present in the system (e.g. \"5.20.0\").")
-    public final Object value;
+    @Description("Details about the outcome of the procedure.")
+    public final String message;
 
-    public CapabilityResult(Capability<?> capability, Object value) {
-        this.name = capability.name().fullName();
-        this.description = capability.description();
-        this.value = value;
+    public ClearActionResult(String section, boolean success, String message) {
+        this.section = section;
+        this.success = success;
+        this.message = message;
     }
 }

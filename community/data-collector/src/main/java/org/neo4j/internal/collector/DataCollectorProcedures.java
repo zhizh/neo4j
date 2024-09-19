@@ -59,8 +59,13 @@ public class DataCollectorProcedures {
             + "', '" + Sections.TOKENS + "', '" + Sections.QUERIES + "', '" + Sections.META + "'")
     @Procedure(name = "db.stats.retrieve", mode = Mode.READ)
     public Stream<RetrieveResult> retrieve(
-            @Name(value = "section") String section,
-            @Name(value = "config", defaultValue = "{}") Map<String, Object> config)
+            @Name(
+                            value = "section",
+                            description =
+                                    "A section of stats to retrieve: ('GRAPH COUNTS', 'TOKENS', 'QUERIES', 'META').")
+                    String section,
+            @Name(value = "config", defaultValue = "{}", description = "{maxInvocations = 100 :: INTEGER}")
+                    Map<String, Object> config)
             throws InvalidArgumentsException, IndexNotFoundKernelException, TransactionFailureException {
         if (callContext.isSystemDatabase()) {
             return Stream.empty();
@@ -87,8 +92,9 @@ public class DataCollectorProcedures {
     @Description("Retrieve all available statistical data about the current database, in an anonymized form.")
     @Procedure(name = "db.stats.retrieveAllAnonymized", mode = Mode.READ)
     public Stream<RetrieveResult> retrieveAllAnonymized(
-            @Name(value = "graphToken") String graphToken,
-            @Name(value = "config", defaultValue = "{}") Map<String, Object> config)
+            @Name(value = "graphToken", description = "The name of the graph token.") String graphToken,
+            @Name(value = "config", defaultValue = "{}", description = "{maxInvocations = 100 :: INTEGER}")
+                    Map<String, Object> config)
             throws IndexNotFoundKernelException, TransactionFailureException, InvalidArgumentsException {
         if (callContext.isSystemDatabase()) {
             return Stream.empty();
@@ -128,42 +134,50 @@ public class DataCollectorProcedures {
     @SystemProcedure
     @Description("Start data collection of a given data section. Valid sections are '" + Sections.QUERIES + "'")
     @Procedure(name = "db.stats.collect", mode = Mode.READ)
-    public Stream<ActionResult> collect(
-            @Name(value = "section") String section,
-            @Name(value = "config", defaultValue = "{}") Map<String, Object> config)
+    public Stream<CollectActionResult> collect(
+            @Name(value = "section", description = "The section to collect. The only available section is: 'QUERIES'.")
+                    String section,
+            @Name(value = "config", defaultValue = "{}", description = "{durationSeconds = -1 :: INTEGER}")
+                    Map<String, Object> config)
             throws InvalidArgumentsException {
         if (callContext.isSystemDatabase()) {
             return Stream.empty();
         }
 
         CollectorStateMachine.Result result = collectorStateMachine(section).collect(config);
-        return Stream.of(new ActionResult(section, result.success(), result.message()));
+        return Stream.of(new CollectActionResult(section, result.success(), result.message()));
     }
 
     @Admin
     @SystemProcedure
     @Description("Stop data collection of a given data section. Valid sections are '" + Sections.QUERIES + "'")
     @Procedure(name = "db.stats.stop", mode = Mode.READ)
-    public Stream<ActionResult> stop(@Name(value = "section") String section) throws InvalidArgumentsException {
+    public Stream<StopActionResult> stop(
+            @Name(value = "section", description = "The section to stop. The only available section is: 'QUERIES'.")
+                    String section)
+            throws InvalidArgumentsException {
         if (callContext.isSystemDatabase()) {
             return Stream.empty();
         }
 
         CollectorStateMachine.Result result = collectorStateMachine(section).stop(Long.MAX_VALUE);
-        return Stream.of(new ActionResult(section, result.success(), result.message()));
+        return Stream.of(new StopActionResult(section, result.success(), result.message()));
     }
 
     @Admin
     @SystemProcedure
     @Description("Clear collected data of a given data section. Valid sections are '" + Sections.QUERIES + "'")
     @Procedure(name = "db.stats.clear", mode = Mode.READ)
-    public Stream<ActionResult> clear(@Name(value = "section") String section) throws InvalidArgumentsException {
+    public Stream<ClearActionResult> clear(
+            @Name(value = "section", description = "The section to clear. The only available section is: 'QUERIES'.")
+                    String section)
+            throws InvalidArgumentsException {
         if (callContext.isSystemDatabase()) {
             return Stream.empty();
         }
 
         CollectorStateMachine.Result result = collectorStateMachine(section).clear();
-        return Stream.of(new ActionResult(section, result.success(), result.message()));
+        return Stream.of(new ClearActionResult(section, result.success(), result.message()));
     }
 
     private QueryCollector collectorStateMachine(String section) throws InvalidArgumentsException {

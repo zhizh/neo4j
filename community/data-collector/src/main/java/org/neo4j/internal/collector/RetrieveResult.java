@@ -20,10 +20,14 @@
 package org.neo4j.internal.collector;
 
 import java.util.Map;
+import org.neo4j.procedure.Description;
 
 @SuppressWarnings("WeakerAccess")
 public class RetrieveResult {
+    @Description("The section retrieved.")
     public final String section;
+
+    @Description("Data pertaining to the retrieved statistics.")
     public final Map<String, Object> data;
 
     public RetrieveResult(String section, Map<String, Object> data) {

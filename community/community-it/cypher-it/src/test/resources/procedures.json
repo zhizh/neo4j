@@ -9,7 +9,7 @@
     "returnDescription": [
       {
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The change identifier.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -39,7 +39,7 @@
     "returnDescription": [
       {
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The change identifier.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -69,14 +69,14 @@
       {
         "default": "DefaultParameterValue{value=, type=STRING}",
         "name": "from",
-        "description": "from =  :: STRING",
+        "description": "The change identifier to query changes from.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=[], type=LIST<MAP>}",
         "name": "selectors",
-        "description": "selectors = [] :: LIST<MAP>",
+        "description": "An optional list of selectors to filter out changes.",
         "type": "LIST<MAP>",
         "isDeprecated": false
       }
@@ -85,31 +85,31 @@
       {
         "isDeprecated": false,
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The change identifier for this change event. Used to continue querying from this change event.",
         "type": "STRING"
       },
       {
         "isDeprecated": false,
         "name": "txId",
-        "description": "txId :: INTEGER",
+        "description": "A number identifying which transaction the change happened in, unique in combination with seq.",
         "type": "INTEGER"
       },
       {
         "isDeprecated": false,
         "name": "seq",
-        "description": "seq :: INTEGER",
+        "description": "A number used for ordering changes that happened in the same transaction.",
         "type": "INTEGER"
       },
       {
         "isDeprecated": false,
         "name": "metadata",
-        "description": "metadata :: MAP",
+        "description": "Metadata from the transaction that caused this change event.",
         "type": "MAP"
       },
       {
         "isDeprecated": false,
         "name": "event",
-        "description": "event :: MAP",
+        "description": "The retrieved changes on the affected entity.",
         "type": "MAP"
       }
     ],
@@ -136,14 +136,14 @@
     "argumentDescription": [
       {
         "name": "indexName",
-        "description": "indexName :: STRING",
+        "description": "The name of the awaited index.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=300, type=INTEGER}",
         "name": "timeOutSeconds",
-        "description": "timeOutSeconds = 300 :: INTEGER",
+        "description": "The maximum time to wait in seconds.",
         "type": "INTEGER",
         "isDeprecated": false
       }
@@ -174,7 +174,7 @@
       {
         "default": "DefaultParameterValue{value=300, type=INTEGER}",
         "name": "timeOutSeconds",
-        "description": "timeOutSeconds = 300 :: INTEGER",
+        "description": "The maximum time to wait in seconds.",
         "type": "INTEGER",
         "isDeprecated": false
       }
@@ -205,7 +205,7 @@
     "returnDescription" : [
       {
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The change identifier.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -235,7 +235,7 @@
     "returnDescription" : [
       {
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The change identifier.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -265,14 +265,14 @@
       {
         "default": "DefaultParameterValue{value=, type=STRING}",
         "name": "from",
-        "description": "from =  :: STRING",
+        "description": "The change identifier to query changes from.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=[], type=LIST<MAP>}",
         "name": "selectors",
-        "description": "selectors = [] :: LIST<MAP>",
+        "description": "An optional list of selectors to filter out changes.",
         "type": "LIST<MAP>",
         "isDeprecated": false
       }
@@ -281,31 +281,31 @@
       {
         "isDeprecated": false,
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The change identifier for this change event. Used to continue querying from this change event.",
         "type": "STRING"
       },
       {
         "isDeprecated": false,
         "name": "txId",
-        "description": "txId :: INTEGER",
+        "description": "A number identifying which transaction the change happened in, unique in combination with seq.",
         "type": "INTEGER"
       },
       {
         "isDeprecated": false,
         "name": "seq",
-        "description": "seq :: INTEGER",
+        "description": "A number used for ordering changes that happened in the same transaction.",
         "type": "INTEGER"
       },
       {
         "isDeprecated": false,
         "name": "metadata",
-        "description": "metadata :: MAP",
+        "description": "Metadata from the transaction that caused this change event.",
         "type": "MAP"
       },
       {
         "isDeprecated": false,
         "name": "event",
-        "description": "event :: MAP",
+        "description": "The retrieved changes on the affected entity.",
         "type": "MAP"
       }
     ],
@@ -333,13 +333,13 @@
     "returnDescription": [
       {
         "name": "success",
-        "description": "success :: BOOLEAN",
+        "description": "Whether the checkpoint has successfully completed.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "message",
-        "description": "message :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -369,7 +369,7 @@
     "returnDescription": [
       {
         "name": "value",
-        "description": "value :: STRING",
+        "description": "Information about the number of cleared query caches.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -397,19 +397,19 @@
     "argumentDescription": [
       {
         "name": "node",
-        "description": "node :: NODE",
+        "description": "The node on which the new property will be stored.",
         "type": "NODE",
         "isDeprecated": false
       },
       {
         "name": "key",
-        "description": "key :: STRING",
+        "description": "The name of the new property.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "vector",
-        "description": "vector :: ANY",
+        "description": "The object containing the embedding.",
         "type": "ANY",
         "isDeprecated": false
       }
@@ -439,19 +439,19 @@
     "argumentDescription": [
       {
         "name": "relationship",
-        "description": "relationship :: RELATIONSHIP",
+        "description": "The relationship on which the new property will be stored.",
         "type": "RELATIONSHIP",
         "isDeprecated": false
       },
       {
         "name": "key",
-        "description": "key :: STRING",
+        "description": "The name of the new property.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "vector",
-        "description": "vector :: ANY",
+        "description": "The object containing the embedding.",
         "type": "ANY",
         "isDeprecated": false
       }
@@ -481,19 +481,19 @@
     "argumentDescription": [
       {
         "name": "node",
-        "description": "node :: NODE",
+        "description": "The node on which the new property will be stored.",
         "type": "NODE",
         "isDeprecated": false
       },
       {
         "name": "key",
-        "description": "key :: STRING",
+        "description": "The name of the new property.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "vector",
-        "description": "vector :: ANY",
+        "description": "The object containing the embedding.",
         "type": "ANY",
         "isDeprecated": false
       }
@@ -501,7 +501,7 @@
     "returnDescription": [
       {
         "name": "node",
-        "description": "node :: NODE",
+        "description": "The node on which the vector property was set.",
         "type": "NODE",
         "isDeprecated": false
       }
@@ -530,7 +530,7 @@
     "argumentDescription": [
       {
         "name": "newLabel",
-        "description": "newLabel :: STRING",
+        "description": "Label name.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -560,7 +560,7 @@
     "argumentDescription": [
       {
         "name": "newProperty",
-        "description": "newProperty :: STRING",
+        "description": "Property name.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -590,7 +590,7 @@
     "argumentDescription": [
       {
         "name": "newRelationshipType",
-        "description": "newRelationshipType :: STRING",
+        "description": "Relationship type name.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -644,19 +644,19 @@
     "returnDescription": [
       {
         "name": "analyzer",
-        "description": "analyzer :: STRING",
+        "description": "The name of the analyzer.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "description",
-        "description": "description :: STRING",
+        "description": "The  description of the analyzer.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "stopwords",
-        "description": "stopwords :: LIST<STRING>",
+        "description": "The stopwords used by the analyzer to tokenize strings.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       }
@@ -685,20 +685,20 @@
     "argumentDescription": [
       {
         "name": "indexName",
-        "description": "indexName :: STRING",
+        "description": "The name of the full-text index.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "queryString",
-        "description": "queryString :: STRING",
+        "description": "The string to find approximate matches for.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value={}, type=MAP}",
         "name": "options",
-        "description": "options = {} :: MAP",
+        "description": "{skip :: INTEGER, limit :: INTEGER, analyzer :: STRING}",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -706,13 +706,13 @@
     "returnDescription": [
       {
         "name": "node",
-        "description": "node :: NODE",
+        "description": "A node which contains a property similar to the query string.",
         "type": "NODE",
         "isDeprecated": false
       },
       {
         "name": "score",
-        "description": "score :: FLOAT",
+        "description": "The score measuring how similar the node property is to the query string.",
         "type": "FLOAT",
         "isDeprecated": false
       }
@@ -741,20 +741,20 @@
     "argumentDescription": [
       {
         "name": "indexName",
-        "description": "indexName :: STRING",
+        "description": "The name of the full-text index.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "queryString",
-        "description": "queryString :: STRING",
+        "description": "The string to find approximate matches for.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value={}, type=MAP}",
         "name": "options",
-        "description": "options = {} :: MAP",
+        "description": "{skip :: INTEGER, limit :: INTEGER, analyzer :: STRING}",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -762,13 +762,13 @@
     "returnDescription": [
       {
         "name": "relationship",
-        "description": "relationship :: RELATIONSHIP",
+        "description": "A relationship which contains a property similar to the query string.",
         "type": "RELATIONSHIP",
         "isDeprecated": false
       },
       {
         "name": "score",
-        "description": "score :: FLOAT",
+        "description": "The score measuring how similar the relationship property is to the query string.",
         "type": "FLOAT",
         "isDeprecated": false
       }
@@ -851,19 +851,19 @@
     "argumentDescription": [
       {
         "name": "indexName",
-        "description": "indexName :: STRING",
+        "description": "The name of the vector index.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "numberOfNearestNeighbours",
-        "description": "numberOfNearestNeighbours :: INTEGER",
+        "description": "The size of the vector neighbourhood.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "query",
-        "description": "query :: ANY",
+        "description": "The object to find approximate matches for.",
         "type": "ANY",
         "isDeprecated": false
       }
@@ -871,13 +871,13 @@
     "returnDescription": [
       {
         "name": "node",
-        "description": "node :: NODE",
+        "description": "A node which contains a vector property similar to the query object.",
         "type": "NODE",
         "isDeprecated": false
       },
       {
         "name": "score",
-        "description": "score :: FLOAT",
+        "description": "The score measuring how similar the node property is to the query object.",
         "type": "FLOAT",
         "isDeprecated": false
       }
@@ -906,19 +906,19 @@
     "argumentDescription": [
       {
         "name": "indexName",
-        "description": "indexName :: STRING",
+        "description": "The name of the vector index.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "numberOfNearestNeighbours",
-        "description": "numberOfNearestNeighbours :: INTEGER",
+        "description": "The size of the vector neighbourhood.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "query",
-        "description": "query :: ANY",
+        "description": "The object to find approximate matches for.",
         "type": "ANY",
         "isDeprecated": false
       }
@@ -926,13 +926,13 @@
     "returnDescription": [
       {
         "name": "relationship",
-        "description": "relationship :: RELATIONSHIP",
+        "description": "A relationship which contains a vector property similar to the query object.",
         "type": "RELATIONSHIP",
         "isDeprecated": false
       },
       {
         "name": "score",
-        "description": "score :: FLOAT",
+        "description": "The score measuring how similar the relationship property is to the query object.",
         "type": "FLOAT",
         "isDeprecated": false
       }
@@ -962,19 +962,19 @@
     "returnDescription": [
       {
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The id of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "name",
-        "description": "name :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "creationDate",
-        "description": "creationDate :: STRING",
+        "description": "The creation date of the database, formatted according to the ISO-8601 Standard.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1004,7 +1004,7 @@
     "returnDescription": [
       {
         "name": "label",
-        "description": "label :: STRING",
+        "description": "A label within the database.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1034,25 +1034,25 @@
     "returnDescription": [
       {
         "name": "mode",
-        "description": "mode :: STRING",
+        "description": "The locking mode this lock is using, either \"SHARED\" or \"EXCLUSIVE\".",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "resourceType",
-        "description": "resourceType :: STRING",
+        "description": "The type of resource (e.g. nodes, relationships, labels) this lock protects.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "resourceId",
-        "description": "resourceId :: INTEGER",
+        "description": "The id of the resource this lock protects.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "transactionId",
-        "description": "transactionId :: STRING",
+        "description": "The id of the transaction that owns this lock.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1081,7 +1081,7 @@
     "returnDescription": [
       {
         "name": "success",
-        "description": "success :: BOOLEAN",
+        "description": "Whether or not the connection call to the database has been successful.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -1111,7 +1111,7 @@
       {
         "default": "DefaultParameterValue{value=300, type=INTEGER}",
         "name": "timeOutSeconds",
-        "description": "timeOutSeconds = 300 :: INTEGER",
+        "description": "The maximum time to wait in seconds.",
         "type": "INTEGER",
         "isDeprecated": false
       }
@@ -1141,7 +1141,7 @@
     "returnDescription": [
       {
         "name": "propertyKey",
-        "description": "propertyKey :: STRING",
+        "description": "A property key in the database.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1171,7 +1171,7 @@
     "returnDescription": [
       {
         "name": "relationshipType",
-        "description": "relationshipType :: STRING",
+        "description": "A relationship type in the database.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1200,7 +1200,7 @@
     "argumentDescription": [
       {
         "name": "indexName",
-        "description": "indexName :: STRING",
+        "description": "The name of the index.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1254,31 +1254,31 @@
     "returnDescription": [
       {
         "name": "nodeType",
-        "description": "nodeType :: STRING",
+        "description": "A name generated from the labels on the node.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "nodeLabels",
-        "description": "nodeLabels :: LIST<STRING>",
+        "description": "A list containing the labels on a category of node.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       },
       {
         "name": "propertyName",
-        "description": "propertyName :: STRING",
+        "description": "A property key on a category of node.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "propertyTypes",
-        "description": "propertyTypes :: LIST<STRING>",
+        "description": "All types of a property belonging to a node category.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       },
       {
         "name": "mandatory",
-        "description": "mandatory :: BOOLEAN",
+        "description": "Whether or not the property is present on all nodes belonging to a node category.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -1308,25 +1308,25 @@
     "returnDescription": [
       {
         "name": "relType",
-        "description": "relType :: STRING",
+        "description": "A name generated from the type on the relationship.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "propertyName",
-        "description": "propertyName :: STRING",
+        "description": "A property key on a category of relationship.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "propertyTypes",
-        "description": "propertyTypes :: LIST<STRING>",
+        "description": "All types of a property belonging to a relationship category.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       },
       {
         "name": "mandatory",
-        "description": "mandatory :: BOOLEAN",
+        "description": "Whether or not the property is present on all relationships belonging to a relationship category.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -1356,13 +1356,13 @@
     "returnDescription": [
       {
         "name": "nodes",
-        "description": "nodes :: LIST<NODE>",
+        "description": "A list of virtual nodes representing each label in the database.",
         "type": "LIST<NODE>",
         "isDeprecated": false
       },
       {
         "name": "relationships",
-        "description": "relationships :: LIST<RELATIONSHIP>",
+        "description": "A list of virtual relationships representing all combinations between start and end nodes in the database.",
         "type": "LIST<RELATIONSHIP>",
         "isDeprecated": false
       }
@@ -1391,7 +1391,7 @@
     "argumentDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The section to clear. The only available section is: 'QUERIES'.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1399,19 +1399,19 @@
     "returnDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The section cleared.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "success",
-        "description": "success :: BOOLEAN",
+        "description": "Whether the section was successfully cleared.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "message",
-        "description": "message :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1439,14 +1439,14 @@
     "argumentDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The section to collect. The only available section is: 'QUERIES'.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value={}, type=MAP}",
         "name": "config",
-        "description": "config = {} :: MAP",
+        "description": "{durationSeconds = -1 :: INTEGER}",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -1454,19 +1454,19 @@
     "returnDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The section collected.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "success",
-        "description": "success :: BOOLEAN",
+        "description": "Whether the section was successfully collected.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "message",
-        "description": "message :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1494,14 +1494,14 @@
     "argumentDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "A section of stats to retrieve: ('GRAPH COUNTS', 'TOKENS', 'QUERIES', 'META').",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value={}, type=MAP}",
         "name": "config",
-        "description": "config = {} :: MAP",
+        "description": "{maxInvocations = 100 :: INTEGER}",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -1509,13 +1509,13 @@
     "returnDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The section retrieved.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "data",
-        "description": "data :: MAP",
+        "description": "Data pertaining to the retrieved statistics.",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -1543,14 +1543,14 @@
     "argumentDescription": [
       {
         "name": "graphToken",
-        "description": "graphToken :: STRING",
+        "description": "The name of the graph token.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value={}, type=MAP}",
         "name": "config",
-        "description": "config = {} :: MAP",
+        "description": "{maxInvocations = 100 :: INTEGER}",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -1558,13 +1558,13 @@
     "returnDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The section retrieved.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "data",
-        "description": "data :: MAP",
+        "description": "Data pertaining to the retrieved statistics.",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -1593,13 +1593,13 @@
     "returnDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "String with the message \"QUERIES\".",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "status",
-        "description": "status :: STRING",
+        "description": "The status of the QueryCollector: \"idle\" or \"collecting\".",
         "type": "STRING",
         "isDeprecated": false
       },
@@ -1633,7 +1633,7 @@
     "argumentDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The section to stop. The only available section is: 'QUERIES'.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1641,19 +1641,19 @@
     "returnDescription": [
       {
         "name": "section",
-        "description": "section :: STRING",
+        "description": "The stopped section.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "success",
-        "description": "success :: BOOLEAN",
+        "description": "Whether the section was successfully stopped.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "message",
-        "description": "message :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1681,13 +1681,13 @@
     "argumentDescription": [
       {
         "name": "setting",
-        "description": "setting :: STRING",
+        "description": "The name of the setting.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "value",
-        "description": "value :: STRING",
+        "description": "The setting value to verify.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1695,13 +1695,13 @@
     "returnDescription": [
       {
         "name": "valid",
-        "description": "valid :: BOOLEAN",
+        "description": "Whether or not the setting value is valid.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "message",
-        "description": "message :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1736,7 +1736,7 @@
     "returnDescription": [
       {
         "name": "serverId",
-        "description": "serverId :: STRING",
+        "description": "The id of the checked server.",
         "type": "STRING",
         "isDeprecated": false
       },
@@ -1754,25 +1754,25 @@
       },
       {
         "name": "mode-constraint",
-        "description": "mode-constraint :: STRING",
+        "description": "The instance mode constraint of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "port-name",
-        "description": "port-name :: STRING",
+        "description": "The name of the checked port.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "port-address",
-        "description": "port-address :: STRING",
+        "description": "The address of the checked port.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "result",
-        "description": "result :: STRING",
+        "description": "Whether the check was successful or not.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1785,14 +1785,14 @@
       {
         "default": "DefaultParameterValue{value=null, type=STRING}",
         "name": "port-name",
-        "description": "port-name = null :: STRING",
+        "description": "The name of the port: ('CLUSTER', 'RAFT').",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=null, type=STRING}",
         "name": "server",
-        "description": "server = null :: STRING",
+        "description": "The id of the server to check connectivity of.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1822,7 +1822,7 @@
     "argumentDescription": [
       {
         "name": "server",
-        "description": "server :: STRING",
+        "description": "The name or id of the server to be cordoned.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1840,31 +1840,31 @@
     "returnDescription": [
       {
         "name": "orientation",
-        "description": "orientation :: STRING",
+        "description": "Direction of the protocol (inbound or outbound).",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "remoteAddress",
-        "description": "remoteAddress :: STRING",
+        "description": "The socket address this protocol is available on.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "applicationProtocol",
-        "description": "applicationProtocol :: STRING",
+        "description": "The name of the protocol.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "applicationProtocolVersion",
-        "description": "applicationProtocolVersion :: INTEGER",
+        "description": "The version of the protocol.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "modifierProtocols",
-        "description": "modifierProtocols :: STRING",
+        "description": "Installed modifier protocols, for example, compression.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1900,7 +1900,7 @@
     "returnDescription": [
       {
         "name": "state",
-        "description": "state :: STRING",
+        "description": "The current state of the secondary replication process.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1912,13 +1912,13 @@
     "argumentDescription": [
       {
         "name": "databaseName",
-        "description": "databaseName :: STRING",
+        "description": "The name of the database to toggle the secondary replication process for.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "pause",
-        "description": "pause :: BOOLEAN",
+        "description": "Whether or not to enable/disable the secondary replication process.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -1935,14 +1935,14 @@
     "argumentDescription": [
       {
         "name": "context",
-        "description": "context :: MAP",
+        "description": "Routing context, for example, routing policies.",
         "type": "MAP",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=null, type=STRING}",
         "name": "database",
-        "description": "database = null :: STRING",
+        "description": "The database to get a routing table for.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -1950,13 +1950,13 @@
     "returnDescription": [
       {
         "name": "ttl",
-        "description": "ttl :: INTEGER",
+        "description": "Time to live (in seconds) for the routing table.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "servers",
-        "description": "servers :: LIST<MAP>",
+        "description": "Servers grouped by whether they are readers, writers, or routers.",
         "type": "LIST<MAP>",
         "isDeprecated": false
       }
@@ -1992,7 +1992,7 @@
     "returnDescription": [
       {
         "name": "state",
-        "description": "state :: STRING",
+        "description": "The current state of the secondary replication process.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2004,13 +2004,13 @@
     "argumentDescription": [
       {
         "name": "databaseName",
-        "description": "databaseName :: STRING",
+        "description": "The name of the database to toggle the secondary replication process for.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "pause",
-        "description": "pause :: BOOLEAN",
+        "description": "Whether or not to enable/disable the secondary replication process.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -2040,7 +2040,7 @@
     "argumentDescription": [
       {
         "name": "autoEnable",
-        "description": "autoEnable :: BOOLEAN",
+        "description": "Whether or not to automatically enable free servers.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -2167,7 +2167,7 @@
     "argumentDescription": [
       {
         "name": "server",
-        "description": "server :: STRING",
+        "description": "The name or id of the server to be uncordoned.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2175,6 +2175,7 @@
     "mode": "WRITE",
     "enterpriseOnly": true
   },
+
   {
     "admin": false,
     "name": "dbms.cluster.deallocateDatabaseFromServer",
@@ -2191,37 +2192,37 @@
     "returnDescription": [
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerName",
-        "description": "fromServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerId",
-        "description": "fromServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerName",
-        "description": "toServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerId",
-        "description": "toServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "mode",
-        "description": "mode :: STRING",
+        "description": "The mode in which the database is hosted.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2234,20 +2235,20 @@
     "argumentDescription": [
       {
         "name": "server",
-        "description": "server :: STRING",
+        "description": "The id of the server to deallocate from.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database to deallocate.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=false, type=BOOLEAN}",
         "name": "dryrun",
-        "description": "dryrun = false :: BOOLEAN",
+        "description": "Set to `true` to dry run the procedure.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -2271,37 +2272,37 @@
     "returnDescription": [
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerName",
-        "description": "fromServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerId",
-        "description": "fromServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerName",
-        "description": "toServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerId",
-        "description": "toServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "mode",
-        "description": "mode :: STRING",
+        "description": "The mode in which the database is hosted.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2314,20 +2315,20 @@
     "argumentDescription": [
       {
         "name": "servers",
-        "description": "servers :: LIST<STRING>",
+        "description": "The ids of the servers to deallocate from.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       },
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The id of the database to deallocate.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=false, type=BOOLEAN}",
         "name": "dryrun",
-        "description": "dryrun = false :: BOOLEAN",
+        "description": "Set to `true` to dry run the procedure.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -2352,37 +2353,37 @@
     "returnDescription": [
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerName",
-        "description": "fromServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerId",
-        "description": "fromServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerName",
-        "description": "toServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerId",
-        "description": "toServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "mode",
-        "description": "mode :: STRING",
+        "description": "The mode in which the database is hosted.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2395,20 +2396,20 @@
     "argumentDescription": [
       {
         "name": "server",
-        "description": "server :: STRING",
+        "description": "The id of the server to deallocate from.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "number",
-        "description": "number :: INTEGER",
+        "description": "The number of databases to deallocate.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=false, type=BOOLEAN}",
         "name": "dryrun",
-        "description": "dryrun = false :: BOOLEAN",
+        "description": "Set to `true` to dry run the procedure.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -2432,37 +2433,37 @@
     "returnDescription": [
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerName",
-        "description": "fromServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerId",
-        "description": "fromServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerName",
-        "description": "toServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerId",
-        "description": "toServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "mode",
-        "description": "mode :: STRING",
+        "description": "The mode in which the database is hosted.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2475,14 +2476,14 @@
     "argumentDescription": [
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database to reallocate.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=false, type=BOOLEAN}",
         "name": "dryrun",
-        "description": "dryrun = false :: BOOLEAN",
+        "description": "Set to `true` to dry run the procedure.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -2506,37 +2507,37 @@
     "returnDescription": [
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerName",
-        "description": "fromServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "fromServerId",
-        "description": "fromServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerName",
-        "description": "toServerName :: STRING",
+        "description": "The name of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "toServerId",
-        "description": "toServerId :: STRING",
+        "description": "The id of the server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "mode",
-        "description": "mode :: STRING",
+        "description": "The mode in which the database is hosted.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2549,14 +2550,14 @@
     "argumentDescription": [
       {
         "name": "number",
-        "description": "number :: INTEGER",
+        "description": "The number of databases to reallocate.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=false, type=BOOLEAN}",
         "name": "dryrun",
-        "description": "dryrun = false :: BOOLEAN",
+        "description": "Set to `true` to dry run the procedure.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -2574,19 +2575,19 @@
     "returnDescription": [
       {
         "name": "name",
-        "description": "name :: STRING",
+        "description": "The name of the component.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "versions",
-        "description": "versions :: LIST<STRING>",
+        "description": "The installed versions of the component.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       },
       {
         "name": "edition",
-        "description": "edition :: STRING",
+        "description": "The Neo4j edition of the DBMS.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2616,19 +2617,19 @@
     "returnDescription": [
       {
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The id of the DBMS.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "name",
-        "description": "name :: STRING",
+        "description": "The name of the DBMS.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "creationDate",
-        "description": "creationDate :: STRING",
+        "description": "The creation date of the DBMS.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2657,7 +2658,7 @@
     "argumentDescription": [
       {
         "name": "id",
-        "description": "id :: STRING",
+        "description": "The id of the connection to kill.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2665,19 +2666,19 @@
     "returnDescription": [
       {
         "name": "connectionId",
-        "description": "connectionId :: STRING",
+        "description": "The id of the connection killed.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "username",
-        "description": "username :: STRING",
+        "description": "The username of the user of the killed connection.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "message",
-        "description": "message :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2706,7 +2707,7 @@
     "argumentDescription": [
       {
         "name": "ids",
-        "description": "ids :: LIST<STRING>",
+        "description": "The ids of the connections to kill.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       }
@@ -2714,19 +2715,19 @@
     "returnDescription": [
       {
         "name": "connectionId",
-        "description": "connectionId :: STRING",
+        "description": "The id of the connection killed.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "username",
-        "description": "username :: STRING",
+        "description": "The username of the user of the killed connection.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "message",
-        "description": "message :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2755,7 +2756,7 @@
     "argumentDescription": [
       {
         "name": "queryId",
-        "description": "queryId :: STRING",
+        "description": "The id of the query to check for active locks on.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2763,19 +2764,19 @@
     "returnDescription": [
       {
         "name": "mode",
-        "description": "mode :: STRING",
+        "description": "The lock type: ('SHARED', 'EXCLUSIVE').",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "resourceType",
-        "description": "resourceType :: STRING",
+        "description": "The locked resource.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "resourceId",
-        "description": "resourceId :: INTEGER",
+        "description": "The id of the locked resource.",
         "type": "INTEGER",
         "isDeprecated": false
       }
@@ -2805,19 +2806,19 @@
     "returnDescription": [
       {
         "name": "name",
-        "description": "name :: STRING",
+        "description": "The full name of the capability (e.g. \"dbms.instance.version\").",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "description",
-        "description": "description :: STRING",
+        "description": "The capability description (e.g. \"Neo4j version this instance is running\").",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "value",
-        "description": "value :: ANY",
+        "description": "The capability object if it is present in the system (e.g. \"5.20.0\").",
         "type": "ANY",
         "isDeprecated": false
       }
@@ -2847,7 +2848,7 @@
       {
         "default": "DefaultParameterValue{value=, type=STRING}",
         "name": "searchString",
-        "description": "searchString =  :: STRING",
+        "description": "A string that filters on the name of config settings.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2855,49 +2856,49 @@
     "returnDescription": [
       {
         "name": "name",
-        "description": "name :: STRING",
+        "description": "The name of the setting.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "description",
-        "description": "description :: STRING",
+        "description": "The description of the setting.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "value",
-        "description": "value :: STRING",
+        "description": "The set value of the setting.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "dynamic",
-        "description": "dynamic :: BOOLEAN",
+        "description": "If the setting can be set dynamically or not.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "defaultValue",
-        "description": "defaultValue :: STRING",
+        "description": "The default value of the setting.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "startupValue",
-        "description": "startupValue :: STRING",
+        "description": "The value of the setting when the database started.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "explicitlySet",
-        "description": "explicitlySet :: BOOLEAN",
+        "description": "Whether or not the setting was explicitly set.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "validValues",
-        "description": "validValues :: STRING",
+        "description": "A description of the valid values.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2926,43 +2927,43 @@
     "returnDescription": [
       {
         "name": "connectionId",
-        "description": "connectionId :: STRING",
+        "description": "The id of the connection.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "connectTime",
-        "description": "connectTime :: STRING",
+        "description": "The time the connection was established, formatted according to the ISO-8601 Standard.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "connector",
-        "description": "connector :: STRING",
+        "description": "The protocol of the connector.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "username",
-        "description": "username :: STRING",
+        "description": "The username of the connected user.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "userAgent",
-        "description": "userAgent :: STRING",
+        "description": "The active agent.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "serverAddress",
-        "description": "serverAddress :: STRING",
+        "description": "The address of the connected server.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "clientAddress",
-        "description": "clientAddress :: STRING",
+        "description": "The address of the connected client.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -2992,61 +2993,61 @@
     "returnDescription": [
       {
         "name": "pool",
-        "description": "pool :: STRING",
+        "description": "The name of the memory pool.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "databaseName",
-        "description": "databaseName :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "heapMemoryUsed",
-        "description": "heapMemoryUsed :: STRING",
+        "description": "The amount of heap memory used.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "heapMemoryUsedBytes",
-        "description": "heapMemoryUsedBytes :: STRING",
+        "description": "The amount of heap memory used in bytes.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "nativeMemoryUsed",
-        "description": "nativeMemoryUsed :: STRING",
+        "description": "The amount of native memory used.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "nativeMemoryUsedBytes",
-        "description": "nativeMemoryUsedBytes :: STRING",
+        "description": "The amount of native memory used in bytes.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "freeMemory",
-        "description": "freeMemory :: STRING",
+        "description": "The amount of free memory.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "freeMemoryBytes",
-        "description": "freeMemoryBytes :: STRING",
+        "description": "The amount of free memory in bytes.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "totalPoolMemory",
-        "description": "totalPoolMemory :: STRING",
+        "description": "The total pool memory.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "totalPoolMemoryBytes",
-        "description": "totalPoolMemoryBytes :: STRING",
+        "description": "The total pool memory in bytes.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3075,20 +3076,20 @@
     "argumentDescription": [
       {
         "name": "databaseName",
-        "description": "databaseName :: STRING",
+        "description": "The name of the database to set the quarantine status of.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "setStatus",
-        "description": "setStatus :: BOOLEAN",
+        "description": "Whether or not to quarantine the database.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=No reason given, type=STRING}",
         "name": "reason",
-        "description": "reason = No reason given :: STRING",
+        "description": "The reason to quarantine the database.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3096,19 +3097,19 @@
     "returnDescription": [
       {
         "name": "databaseName",
-        "description": "databaseName :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "quarantined",
-        "description": "quarantined :: BOOLEAN",
+        "description": "Whether or not the database is quarantined.",
         "type": "BOOLEAN",
         "isDeprecated": false
       },
       {
         "name": "result",
-        "description": "result :: STRING",
+        "description": "Details about the outcome of the procedure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3136,7 +3137,7 @@
     "argumentDescription": [
       {
         "name": "query",
-        "description": "query :: STRING",
+        "description": "A query for MBeans on this MBeanServer (e.g. '*:*,name=*neo4j*' for all metrics in neo4j database).",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3144,19 +3145,19 @@
     "returnDescription": [
       {
         "name": "name",
-        "description": "name :: STRING",
+        "description": "The name of the metric.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "description",
-        "description": "description :: STRING",
+        "description": "The description of the metric.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "attributes",
-        "description": "attributes :: MAP",
+        "description": "A collection with the attributes (values) of that metric.",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -3185,14 +3186,14 @@
     "argumentDescription": [
       {
         "name": "context",
-        "description": "context :: MAP",
+        "description": "Routing context, for example, routing policies.",
         "type": "MAP",
         "isDeprecated": false
       },
       {
         "default": "DefaultParameterValue{value=null, type=STRING}",
         "name": "database",
-        "description": "database = null :: STRING",
+        "description": "The database to get a routing table for.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3200,13 +3201,13 @@
     "returnDescription": [
       {
         "name": "ttl",
-        "description": "ttl :: INTEGER",
+        "description": "Time to live (in seconds) for the routing table.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "servers",
-        "description": "servers :: LIST<MAP>",
+        "description": "Servers grouped by whether they are readers, writers, or routers.",
         "type": "LIST<MAP>",
         "isDeprecated": false
       }
@@ -3236,61 +3237,61 @@
     "returnDescription": [
       {
         "name": "jobId",
-        "description": "jobId :: STRING",
+        "description": "The id of the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "group",
-        "description": "group :: STRING",
+        "description": "The category of the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database the job failed in.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "submitter",
-        "description": "submitter :: STRING",
+        "description": "The creator of the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "description",
-        "description": "description :: STRING",
+        "description": "Information about the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "type",
-        "description": "type :: STRING",
+        "description": "The interval of the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "submitted",
-        "description": "submitted :: STRING",
+        "description": "The submission time of the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "executionStart",
-        "description": "executionStart :: STRING",
+        "description": "The start time of the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "failureTime",
-        "description": "failureTime :: STRING",
+        "description": "The failure time of the failed job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "failureDescription",
-        "description": "failureDescription :: STRING",
+        "description": "Information about the job failure.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3319,13 +3320,13 @@
     "returnDescription": [
       {
         "name": "group",
-        "description": "group :: STRING",
+        "description": "The name of the job group.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "threads",
-        "description": "threads :: INTEGER",
+        "description": "The number of active threads in that job group.",
         "type": "INTEGER",
         "isDeprecated": false
       }
@@ -3354,67 +3355,67 @@
     "returnDescription": [
       {
         "name": "jobId",
-        "description": "jobId :: STRING",
+        "description": "The id of the job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "group",
-        "description": "group :: STRING",
+        "description": "The category of the job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "submitted",
-        "description": "submitted :: STRING",
+        "description": "The submission time of the job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "database",
-        "description": "database :: STRING",
+        "description": "The name of the database the job is in.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "submitter",
-        "description": "submitter :: STRING",
+        "description": "The creator of the job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "description",
-        "description": "description :: STRING",
+        "description": "Information about the job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "type",
-        "description": "type :: STRING",
+        "description": "The interval of the job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "scheduledAt",
-        "description": "scheduledAt :: STRING",
+        "description": "The start time of the job.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "period",
-        "description": "period :: STRING",
+        "description": "The interval for jobs run periodically.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "state",
-        "description": "state :: STRING",
+        "description": "The state of the job: ('EXECUTING', 'SCHEDULED').",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "currentStateDescription",
-        "description": "currentStateDescription :: STRING",
+        "description": "A description of the job state.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3464,13 +3465,13 @@
     "argumentDescription": [
       {
         "name": "setting",
-        "description": "setting :: STRING",
+        "description": "The name of the setting.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "value",
-        "description": "value :: STRING",
+        "description": "The value to set.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3511,7 +3512,7 @@
     "argumentDescription": [
       {
         "name": "allocator",
-        "description": "allocator :: STRING",
+        "description": "The name of the allocator.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3540,13 +3541,13 @@
     "argumentDescription": [
       {
         "name": "primaries",
-        "description": "primaries :: INTEGER",
+        "description": "The default number of primaries.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "secondaries",
-        "description": "secondaries :: INTEGER",
+        "description": "The default number of secondaries.",
         "type": "INTEGER",
         "isDeprecated": false
       }
@@ -3570,7 +3571,7 @@
     "returnDescription": [
       {
         "name": "result",
-        "description": "result :: STRING",
+        "description": "Information about the default database.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3582,7 +3583,7 @@
     "argumentDescription": [
       {
         "name": "databaseName",
-        "description": "databaseName :: STRING",
+        "description": "The name of the database.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3637,19 +3638,19 @@
     "returnDescription": [
       {
         "name": "username",
-        "description": "username :: STRING",
+        "description": "The name of the current user.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "roles",
-        "description": "roles :: LIST<STRING>",
+        "description": "The roles assigned to the current user.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       },
       {
         "name": "flags",
-        "description": "flags :: LIST<STRING>",
+        "description": "The flags set on the current user.",
         "type": "LIST<STRING>",
         "isDeprecated": false
       }
@@ -3685,31 +3686,31 @@
     "returnDescription": [
       {
         "name": "allocator",
-        "description": "allocator :: STRING",
+        "description": "The name of the allocator.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "defaultPrimariesCount",
-        "description": "defaultPrimariesCount :: INTEGER",
+        "description": "The default number of primaries.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "defaultSecondariesCount",
-        "description": "defaultSecondariesCount :: INTEGER",
+        "description": "The default number of secondaries.",
         "type": "INTEGER",
         "isDeprecated": false
       },
       {
         "name": "defaultDatabase",
-        "description": "defaultDatabase :: STRING",
+        "description": "The name of the default database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "autoEnableFreeServers",
-        "description": "autoEnableFreeServers :: BOOLEAN",
+        "description": "Whether or not to automatically enable free servers.",
         "type": "BOOLEAN",
         "isDeprecated": false
       }
@@ -3732,13 +3733,13 @@
     "returnDescription": [
       {
         "name": "status",
-        "description": "status :: STRING",
+        "description": "The upgrade status of the system database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "upgradeResult",
-        "description": "upgradeResult :: STRING",
+        "description": "Information about the upgrade outcome.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3767,19 +3768,19 @@
     "returnDescription": [
       {
         "name": "status",
-        "description": "status :: STRING",
+        "description": "The upgrade status of the system database.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "description",
-        "description": "description :: STRING",
+        "description": "Information describing the upgrade status.",
         "type": "STRING",
         "isDeprecated": false
       },
       {
         "name": "resolution",
-        "description": "resolution :: STRING",
+        "description": "Information about the steps necessary to upgrade.",
         "type": "STRING",
         "isDeprecated": false
       }
@@ -3808,7 +3809,7 @@
     "returnDescription": [
       {
         "name": "metadata",
-        "description": "metadata :: MAP",
+        "description": "Metadata about the transaction.",
         "type": "MAP",
         "isDeprecated": false
       }
@@ -3837,7 +3838,7 @@
     "argumentDescription": [
       {
         "name": "data",
-        "description": "data :: MAP",
+        "description": "Metadata to attach to the transaction.",
         "type": "MAP",
         "isDeprecated": false
       }

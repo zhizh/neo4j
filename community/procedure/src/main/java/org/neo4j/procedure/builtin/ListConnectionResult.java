@@ -22,14 +22,28 @@ package org.neo4j.procedure.builtin;
 import java.time.ZoneId;
 import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.kernel.api.net.TrackedNetworkConnection;
+import org.neo4j.procedure.Description;
 
 public class ListConnectionResult {
+    @Description("The id of the connection.")
     public final String connectionId;
+
+    @Description("The time the connection was established, formatted according to the ISO-8601 Standard.")
     public final String connectTime;
+
+    @Description("The protocol of the connector.")
     public final String connector;
+
+    @Description("The username of the connected user.")
     public final String username;
+
+    @Description("The active agent.")
     public final String userAgent;
+
+    @Description("The address of the connected server.")
     public final String serverAddress;
+
+    @Description("The address of the connected client.")
     public final String clientAddress;
 
     ListConnectionResult(TrackedNetworkConnection connection, ZoneId timeZone) {

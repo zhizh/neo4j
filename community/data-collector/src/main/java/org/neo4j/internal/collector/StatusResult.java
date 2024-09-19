@@ -20,11 +20,16 @@
 package org.neo4j.internal.collector;
 
 import java.util.Map;
+import org.neo4j.procedure.Description;
 
 @SuppressWarnings("WeakerAccess")
 public class StatusResult {
+    @Description("String with the message \"QUERIES\".")
     public final String section;
+
+    @Description("The status of the QueryCollector: \"idle\" or \"collecting\".")
     public final String status;
+
     public final Map<String, Object> data;
 
     public StatusResult(String section, String status, Map<String, Object> data) {

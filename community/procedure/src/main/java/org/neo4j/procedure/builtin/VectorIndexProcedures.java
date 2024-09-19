@@ -104,11 +104,11 @@ public class VectorIndexProcedures {
             """)
     @Procedure(name = "db.index.vector.createNodeIndex", mode = SCHEMA)
     public void createIndex(
-            @Name("indexName") String name,
-            @Name("label") String label,
-            @Name("propertyKey") String propertyKey,
-            @Name("vectorDimension") Long vectorDimension,
-            @Name("vectorSimilarityFunction") String vectorSimilarityFunction) {
+            @Name(value = "indexName") String name,
+            @Name(value = "label") String label,
+            @Name(value = "propertyKey") String propertyKey,
+            @Name(value = "vectorDimension") Long vectorDimension,
+            @Name(value = "vectorSimilarityFunction") String vectorSimilarityFunction) {
         Objects.requireNonNull(name, "'indexName' must not be null");
         Objects.requireNonNull(label, "'label' must not be null");
         Objects.requireNonNull(propertyKey, "'propertyKey' must not be null");
@@ -143,9 +143,10 @@ public class VectorIndexProcedures {
             """)
     @Procedure(name = "db.index.vector.queryNodes", mode = READ)
     public Stream<NodeNeighbor> queryNodeVectorIndex(
-            @Name("indexName") String name,
-            @Name("numberOfNearestNeighbours") Long numberOfNearestNeighbours,
-            @Name("query") AnyValue candidateQuery)
+            @Name(value = "indexName", description = "The name of the vector index.") String name,
+            @Name(value = "numberOfNearestNeighbours", description = "The size of the vector neighbourhood.")
+                    Long numberOfNearestNeighbours,
+            @Name(value = "query", description = "The object to find approximate matches for.") AnyValue candidateQuery)
             throws KernelException {
         final var query = validateQueryArguments(name, numberOfNearestNeighbours, candidateQuery);
         if (callContext.isSystemDatabase()) {
@@ -163,9 +164,10 @@ public class VectorIndexProcedures {
             """)
     @Procedure(name = "db.index.vector.queryRelationships", mode = READ)
     public Stream<RelationshipNeighbor> queryRelationshipVectorIndex(
-            @Name("indexName") String name,
-            @Name("numberOfNearestNeighbours") Long numberOfNearestNeighbours,
-            @Name("query") AnyValue candidateQuery)
+            @Name(value = "indexName", description = "The name of the vector index.") String name,
+            @Name(value = "numberOfNearestNeighbours", description = "The size of the vector neighbourhood.")
+                    Long numberOfNearestNeighbours,
+            @Name(value = "query", description = "The object to find approximate matches for.") AnyValue candidateQuery)
             throws KernelException {
         final var query = validateQueryArguments(name, numberOfNearestNeighbours, candidateQuery);
         if (callContext.isSystemDatabase()) {
@@ -196,7 +198,9 @@ public class VectorIndexProcedures {
     @Description("Set a vector property on a given node in a more space efficient representation than Cypher's SET.")
     @Procedure(name = "db.create.setNodeVectorProperty", mode = WRITE)
     public void setNodeVectorProperty(
-            @Name("node") Node node, @Name("key") String propKey, @Name("vector") AnyValue candidateVector) {
+            @Name(value = "node", description = "The node on which the new property will be stored.") Node node,
+            @Name(value = "key", description = "The name of the new property.") String propKey,
+            @Name(value = "vector", description = "The object containing the embedding.") AnyValue candidateVector) {
         setVectorProperty(Objects.requireNonNull(node, "'node' must not be null"), propKey, candidateVector);
     }
 
@@ -204,21 +208,24 @@ public class VectorIndexProcedures {
     @Procedure(name = "db.create.setVectorProperty", mode = WRITE, deprecatedBy = "db.create.setNodeVectorProperty")
     @Deprecated(since = "5.13.0", forRemoval = true)
     public Stream<NodeRecord> deprecatedSetVectorProperty(
-            @Name("node") Node node, @Name("key") String propKey, @Name("vector") AnyValue candidateVector) {
+            @Name(value = "node", description = "The node on which the new property will be stored.") Node node,
+            @Name(value = "key", description = "The name of the new property.") String propKey,
+            @Name(value = "vector", description = "The object containing the embedding.") AnyValue candidateVector) {
         setNodeVectorProperty(Objects.requireNonNull(node, "'node' must not be null"), propKey, candidateVector);
         return Stream.of(new NodeRecord(node));
     }
 
     // specifically for the deprecated `db.create.setVectorProperty`
-    public record NodeRecord(Node node) {}
+    public record NodeRecord(@Description("The node on which the vector property was set.") Node node) {}
 
     @Description(
             "Set a vector property on a given relationship in a more space efficient representation than Cypher's SET.")
     @Procedure(name = "db.create.setRelationshipVectorProperty", mode = WRITE)
     public void setRelationshipVectorProperty(
-            @Name("relationship") Relationship relationship,
-            @Name("key") String propKey,
-            @Name("vector") AnyValue candidateQuery) {
+            @Name(value = "relationship", description = "The relationship on which the new property will be stored.")
+                    Relationship relationship,
+            @Name(value = "key", description = "The name of the new property.") String propKey,
+            @Name(value = "vector", description = "The object containing the embedding.") AnyValue candidateQuery) {
         setVectorProperty(
                 Objects.requireNonNull(relationship, "'relationship' must not be null"), propKey, candidateQuery);
     }
@@ -395,7 +402,10 @@ public class VectorIndexProcedures {
      * @param node a node within the query point's neighborhood
      * @param score similarity in [0, 1]; 0 indicates furthest, 1 closest.
      */
-    public record NodeNeighbor(Node node, double score) implements Neighbor<Node, NodeNeighbor> {
+    public record NodeNeighbor(
+            @Description("A node which contains a vector property similar to the query object.") Node node,
+            @Description("The score measuring how similar the node property is to the query object.") double score)
+            implements Neighbor<Node, NodeNeighbor> {
         @Override
         public Node entity() {
             return node;
@@ -415,7 +425,11 @@ public class VectorIndexProcedures {
      * @param relationship a relationship within the query point's neighborhood
      * @param score similarity in [0, 1]; 0 indicates furthest, 1 closest.
      */
-    public record RelationshipNeighbor(Relationship relationship, double score)
+    public record RelationshipNeighbor(
+            @Description("A relationship which contains a vector property similar to the query object.")
+                    Relationship relationship,
+            @Description("The score measuring how similar the relationship property is to the query object.")
+                    double score)
             implements Neighbor<Relationship, RelationshipNeighbor> {
         @Override
         public Relationship entity() {

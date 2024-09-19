@@ -168,7 +168,9 @@ public class BuiltInProcedures {
     @Description("Wait for an index to come online (for example: CALL db.awaitIndex(\"MyIndex\", 300)).")
     @Procedure(name = "db.awaitIndex", mode = READ)
     public void awaitIndex(
-            @Name("indexName") String indexName, @Name(value = "timeOutSeconds", defaultValue = "300") long timeout)
+            @Name(value = "indexName", description = "The name of the awaited index.") String indexName,
+            @Name(value = "timeOutSeconds", defaultValue = "300", description = "The maximum time to wait in seconds.")
+                    long timeout)
             throws ProcedureException {
         if (callContext.isSystemDatabase()) {
             return;
@@ -181,7 +183,9 @@ public class BuiltInProcedures {
     @NotThreadSafe
     @Description("Wait for all indexes to come online (for example: CALL db.awaitIndexes(300)).")
     @Procedure(name = "db.awaitIndexes", mode = READ)
-    public void awaitIndexes(@Name(value = "timeOutSeconds", defaultValue = "300") long timeout) {
+    public void awaitIndexes(
+            @Name(value = "timeOutSeconds", defaultValue = "300", description = "The maximum time to wait in seconds.")
+                    long timeout) {
         if (callContext.isSystemDatabase()) {
             return;
         }
@@ -194,7 +198,8 @@ public class BuiltInProcedures {
     @Description("Schedule resampling of an index (for example: CALL db.resampleIndex(\"MyIndex\")).")
     @Procedure(name = "db.resampleIndex", mode = READ)
     @UnsupportedDatabaseTypes(UnsupportedDatabaseTypes.DatabaseType.SPD)
-    public void resampleIndex(@Name("indexName") String indexName) throws ProcedureException {
+    public void resampleIndex(@Name(value = "indexName", description = "The name of the index.") String indexName)
+            throws ProcedureException {
         if (callContext.isSystemDatabase()) {
             return;
         }
@@ -225,7 +230,9 @@ public class BuiltInProcedures {
                     + "procedure has finished queries will be planned using the latest database statistics.")
     @Procedure(name = "db.prepareForReplanning", mode = READ)
     @UnsupportedDatabaseTypes(UnsupportedDatabaseTypes.DatabaseType.SPD)
-    public void prepareForReplanning(@Name(value = "timeOutSeconds", defaultValue = "300") long timeOutSeconds)
+    public void prepareForReplanning(
+            @Name(value = "timeOutSeconds", defaultValue = "300", description = "The maximum time to wait in seconds.")
+                    long timeOutSeconds)
             throws ProcedureException {
         if (callContext.isSystemDatabase()) {
             return;
@@ -308,6 +315,7 @@ public class BuiltInProcedures {
     }
 
     public static class LabelResult {
+        @Description("A label within the database.")
         public final String label;
 
         private LabelResult(Label label) {
@@ -315,11 +323,16 @@ public class BuiltInProcedures {
         }
     }
 
-    public record PropertyKeyResult(String propertyKey) {}
+    public record PropertyKeyResult(@Description("A property key in the database.") String propertyKey) {}
 
-    public record DatabaseInfo(String id, String name, String creationDate) {}
+    public record DatabaseInfo(
+            @Description("The id of the database.") String id,
+            @Description("The name of the database.") String name,
+            @Description("The creation date of the database, formatted according to the ISO-8601 Standard.")
+                    String creationDate) {}
 
     public static class RelationshipTypeResult {
+        @Description("A relationship type in the database.")
         public final String relationshipType;
 
         private RelationshipTypeResult(RelationshipType relationshipType) {
@@ -327,7 +340,8 @@ public class BuiltInProcedures {
         }
     }
 
-    public record BooleanResult(Boolean success) {}
+    public record BooleanResult(
+            @Description("Whether or not the connection call to the database has been successful.") Boolean success) {}
 
     public record NodeResult(Node node) {}
 

@@ -123,9 +123,13 @@ public class FulltextProcedures {
             """)
     @Procedure(name = "db.index.fulltext.queryNodes", mode = READ)
     public Stream<NodeOutput> queryFulltextForNodes(
-            @Name("indexName") String name,
-            @Name("queryString") String query,
-            @Name(value = "options", defaultValue = "{}") Map<String, Object> options)
+            @Name(value = "indexName", description = "The name of the full-text index.") String name,
+            @Name(value = "queryString", description = "The string to find approximate matches for.") String query,
+            @Name(
+                            value = "options",
+                            defaultValue = "{}",
+                            description = "{skip :: INTEGER, limit :: INTEGER, analyzer :: STRING}")
+                    Map<String, Object> options)
             throws Exception {
         if (callContext.isSystemDatabase()) {
             return Stream.empty();
@@ -205,9 +209,13 @@ public class FulltextProcedures {
             """)
     @Procedure(name = "db.index.fulltext.queryRelationships", mode = READ)
     public Stream<RelationshipOutput> queryFulltextForRelationships(
-            @Name("indexName") String name,
-            @Name("queryString") String query,
-            @Name(value = "options", defaultValue = "{}") Map<String, Object> options)
+            @Name(value = "indexName", description = "The name of the full-text index.") String name,
+            @Name(value = "queryString", description = "The string to find approximate matches for.") String query,
+            @Name(
+                            value = "options",
+                            defaultValue = "{}",
+                            description = "{skip :: INTEGER, limit :: INTEGER, analyzer :: STRING}")
+                    Map<String, Object> options)
             throws Exception {
         if (callContext.isSystemDatabase()) {
             return Stream.empty();
@@ -308,7 +316,10 @@ public class FulltextProcedures {
     }
 
     public static final class NodeOutput implements Comparable<NodeOutput> {
+        @Description("A node which contains a property similar to the query string.")
         public final Node node;
+
+        @Description("The score measuring how similar the node property is to the query string.")
         public final double score;
 
         public NodeOutput(Node node, float score) {
@@ -337,7 +348,10 @@ public class FulltextProcedures {
     }
 
     public static final class RelationshipOutput implements Comparable<RelationshipOutput> {
+        @Description("A relationship which contains a property similar to the query string.")
         public final Relationship relationship;
+
+        @Description("The score measuring how similar the relationship property is to the query string.")
         public final double score;
 
         public RelationshipOutput(Relationship relationship, float score) {
@@ -367,8 +381,13 @@ public class FulltextProcedures {
     }
 
     public static final class AvailableAnalyzer {
+        @Description("The name of the analyzer.")
         public final String analyzer;
+
+        @Description("The  description of the analyzer.")
         public final String description;
+
+        @Description("The stopwords used by the analyzer to tokenize strings.")
         public final List<String> stopwords;
 
         AvailableAnalyzer(AnalyzerProvider provider) {

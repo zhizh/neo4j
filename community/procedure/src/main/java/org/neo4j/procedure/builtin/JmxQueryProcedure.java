@@ -63,10 +63,13 @@ public class JmxQueryProcedure extends CallableProcedure.BasicProcedure {
 
     public JmxQueryProcedure(QualifiedName name, MBeanServer jmxServer) {
         super(procedureSignature(name)
-                .in("query", Neo4jTypes.NTString)
-                .out("name", Neo4jTypes.NTString)
-                .out("description", Neo4jTypes.NTString)
-                .out("attributes", Neo4jTypes.NTMap)
+                .in(
+                        "query",
+                        Neo4jTypes.NTString,
+                        "A query for MBeans on this MBeanServer (e.g. '*:*,name=*neo4j*' for all metrics in neo4j database).")
+                .out("name", Neo4jTypes.NTString, "The name of the metric.")
+                .out("description", Neo4jTypes.NTString, "The description of the metric.")
+                .out("attributes", Neo4jTypes.NTMap, "A collection with the attributes (values) of that metric.")
                 .mode(Mode.DBMS)
                 .description(
                         "Query JMX management data by domain and name. For instance, use `*:*` to find all JMX beans.")

@@ -20,26 +20,31 @@
 package org.neo4j.procedure.builtin;
 
 import java.util.List;
+import org.neo4j.procedure.Description;
 
 public class RelationshipPropertySchemaInfoResult {
     /**
      * A relationship type
      */
+    @Description("A name generated from the type on the relationship.")
     public final String relType;
 
     /**
      * A property name that occurs on the given relationship type or null
      */
+    @Description("A property key on a category of relationship.")
     public final String propertyName;
 
     /**
      * A List containing all types of the given property on the given relationship type or null
      */
+    @Description("All types of a property belonging to a relationship category.")
     public final List<String> propertyTypes;
 
     /**
      * Indicates whether the property is present on all similar relationships (= true) or not (= false)
      */
+    @Description("Whether or not the property is present on all relationships belonging to a relationship category.")
     public final boolean mandatory;
 
     public RelationshipPropertySchemaInfoResult(

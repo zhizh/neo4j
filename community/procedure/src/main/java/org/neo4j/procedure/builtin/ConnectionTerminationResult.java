@@ -19,11 +19,18 @@
  */
 package org.neo4j.procedure.builtin;
 
+import org.neo4j.procedure.Description;
+
 public class ConnectionTerminationResult {
     private static final String SUCCESS_MESSAGE = "Connection found";
 
+    @Description("The id of the connection killed.")
     public final String connectionId;
+
+    @Description("The username of the user of the killed connection.")
     public final String username;
+
+    @Description("Details about the outcome of the procedure.")
     public final String message;
 
     ConnectionTerminationResult(String connectionId, String username) {

@@ -22,15 +22,31 @@ package org.neo4j.procedure.builtin;
 import org.neo4j.configuration.Config;
 import org.neo4j.configuration.SettingImpl;
 import org.neo4j.graphdb.config.Setting;
+import org.neo4j.procedure.Description;
 
 public class ConfigResult {
+    @Description("The name of the setting.")
     public final String name;
+
+    @Description("The description of the setting.")
     public final String description;
+
+    @Description("The set value of the setting.")
     public final String value;
+
+    @Description("If the setting can be set dynamically or not.")
     public final boolean dynamic;
+
+    @Description("The default value of the setting.")
     public final String defaultValue;
+
+    @Description("The value of the setting when the database started.")
     public final String startupValue;
+
+    @Description("Whether or not the setting was explicitly set.")
     public final boolean explicitlySet;
+
+    @Description("A description of the valid values.")
     public final String validValues;
 
     public ConfigResult(Setting<Object> setting, Config config) {

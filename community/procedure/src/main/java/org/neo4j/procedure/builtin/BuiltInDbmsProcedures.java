@@ -138,7 +138,12 @@ public class BuiltInDbmsProcedures {
     @SystemProcedure
     @Description("List the currently active configuration settings of Neo4j.")
     @Procedure(name = "dbms.listConfig", mode = DBMS)
-    public Stream<ConfigResult> listConfig(@Name(value = "searchString", defaultValue = "") String searchString) {
+    public Stream<ConfigResult> listConfig(
+            @Name(
+                            value = "searchString",
+                            defaultValue = "",
+                            description = "A string that filters on the name of config settings.")
+                    String searchString) {
         String lowerCasedSearchString = searchString.toLowerCase();
         List<ConfigResult> results = new ArrayList<>();
 
@@ -183,7 +188,8 @@ public class BuiltInDbmsProcedures {
     @Description("Attaches a map of data to the transaction. The data will be printed when listing queries, and "
             + "inserted into the query log.")
     @Procedure(name = "tx.setMetaData", mode = DBMS)
-    public void setTXMetaData(@Name(value = "data") Map<String, Object> data) {
+    public void setTXMetaData(
+            @Name(value = "data", description = "Metadata to attach to the transaction.") Map<String, Object> data) {
         int totalCharSize = data.entrySet().stream()
                 .mapToInt(e -> e.getKey().length()
                         + ((e.getValue() != null) ? e.getValue().toString().length() : 0))
@@ -339,14 +345,16 @@ public class BuiltInDbmsProcedures {
     @SystemProcedure
     @Description("Kill network connection with the given connection id.")
     @Procedure(name = "dbms.killConnection", mode = DBMS)
-    public Stream<ConnectionTerminationResult> killConnection(@Name("id") String id) {
+    public Stream<ConnectionTerminationResult> killConnection(
+            @Name(value = "id", description = "The id of the connection to kill.") String id) {
         return killConnections(singletonList(id));
     }
 
     @SystemProcedure
     @Description("Kill all network connections with the given connection ids.")
     @Procedure(name = "dbms.killConnections", mode = DBMS)
-    public Stream<ConnectionTerminationResult> killConnections(@Name("ids") List<String> ids) {
+    public Stream<ConnectionTerminationResult> killConnections(
+            @Name(value = "ids", description = "The ids of the connections to kill.") List<String> ids) {
         NetworkConnectionTracker connectionTracker = getConnectionTracker();
 
         return ids.stream().map(id -> killConnection(id, connectionTracker));
@@ -438,9 +446,13 @@ public class BuiltInDbmsProcedures {
         return new SystemGraphComponentStatusResult(systemGraphComponents.detect(transaction));
     }
 
-    public record SystemInfo(String id, String name, String creationDate) {}
+    public record SystemInfo(
+            @Description("The id of the DBMS.") String id,
+            @Description("The name of the DBMS.") String name,
+            @Description("The creation date of the DBMS.") String creationDate) {}
 
     public static class StringResult {
+        @Description("Information about the number of cleared query caches.")
         public final String value;
 
         public StringResult(String value) {
@@ -449,6 +461,7 @@ public class BuiltInDbmsProcedures {
     }
 
     public static class MetadataResult {
+        @Description("Metadata about the transaction.")
         public final Map<String, Object> metadata;
 
         MetadataResult(Map<String, Object> metadata) {
@@ -456,7 +469,10 @@ public class BuiltInDbmsProcedures {
         }
     }
 
-    public record SystemGraphComponentStatusResult(String status, String description, String resolution) {
+    public record SystemGraphComponentStatusResult(
+            @Description("The upgrade status of the system database.") String status,
+            @Description("Information describing the upgrade status.") String description,
+            @Description("Information about the steps necessary to upgrade.") String resolution) {
         public static final String CANNOT_UPGRADE_STATUS = "CANNOT_UPGRADE";
         public static final String CANNOT_UPGRADE_RESOLUTION =
                 "Wait for upgraded versions to be observed, or upgrade other cluster members so all are on the same version.";
@@ -467,7 +483,10 @@ public class BuiltInDbmsProcedures {
     }
 
     public static class SystemGraphComponentUpgradeResult {
+        @Description("The upgrade status of the system database.")
         public final String status;
+
+        @Description("Information about the upgrade outcome.")
         public final String upgradeResult;
 
         SystemGraphComponentUpgradeResult(String status, String upgradeResult) {

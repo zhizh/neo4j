@@ -59,11 +59,11 @@ public class ListComponentsProcedure extends CallableProcedure.BasicProcedure {
 
     public ListComponentsProcedure(QualifiedName name, String neo4jVersion, String neo4jEdition) {
         super(procedureSignature(name)
-                .out("name", NTString)
+                .out("name", NTString, "The name of the component.")
                 // Since Bolt, Cypher and other components support multiple versions
                 // at the same time, list of versions rather than single version.
-                .out("versions", NTList(NTString))
-                .out("edition", NTString)
+                .out("versions", NTList(NTString), "The installed versions of the component.")
+                .out("edition", NTString, "The Neo4j edition of the DBMS.")
                 .mode(Mode.DBMS)
                 .description("List DBMS components and their versions.")
                 .systemProcedure()

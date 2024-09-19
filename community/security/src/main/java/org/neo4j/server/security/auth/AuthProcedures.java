@@ -47,9 +47,14 @@ public class AuthProcedures {
     private static final List<String> changeRequiredList = List.of(PASSWORD_CHANGE_REQUIRED);
 
     public static class UserResult {
+        @Description("The name of the current user.")
         public final String username;
+
+        @Description("The roles assigned to the current user.")
         public final List<String> roles =
                 null; // this is just so that the community version has the same signature as in enterprise
+
+        @Description("The flags set on the current user.")
         public final List<String> flags;
 
         UserResult(String username, boolean changeRequired) {

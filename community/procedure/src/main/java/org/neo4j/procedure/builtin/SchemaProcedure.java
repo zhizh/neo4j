@@ -49,6 +49,7 @@ import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.impl.coreapi.schema.PropertyNameUtils;
+import org.neo4j.procedure.Description;
 
 public class SchemaProcedure {
     private final InternalTransaction internalTransaction;
@@ -156,7 +157,11 @@ public class SchemaProcedure {
 
     private record LabelNameId(String name, int id) {}
 
-    public record GraphResult(List<Node> nodes, List<Relationship> relationships) {}
+    public record GraphResult(
+            @Description("A list of virtual nodes representing each label in the database.") List<Node> nodes,
+            @Description(
+                            "A list of virtual relationships representing all combinations between start and end nodes in the database.")
+                    List<Relationship> relationships) {}
 
     private static VirtualNodeHack getOrCreateLabel(
             String label, Map<String, Object> properties, final Map<String, VirtualNodeHack> nodeMap) {

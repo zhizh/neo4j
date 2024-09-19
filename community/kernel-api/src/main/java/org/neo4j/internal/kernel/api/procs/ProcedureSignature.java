@@ -395,14 +395,32 @@ public class ProcedureSignature {
             return this;
         }
 
+        /** Define an input field with a description */
+        public Builder in(String name, Neo4jTypes.AnyType type, String description) {
+            inputSignature.add(FieldSignature.inputField(name, type, description));
+            return this;
+        }
+
         public Builder in(String name, Neo4jTypes.AnyType type, DefaultParameterValue defaultValue) {
             inputSignature.add(FieldSignature.inputField(name, type, defaultValue));
+            return this;
+        }
+
+        public Builder in(
+                String name, Neo4jTypes.AnyType type, DefaultParameterValue defaultValue, String description) {
+            inputSignature.add(FieldSignature.inputField(name, type, defaultValue, false, description));
             return this;
         }
 
         /** Define an output field */
         public Builder out(String name, Neo4jTypes.AnyType type) {
             outputSignature.add(FieldSignature.outputField(name, type));
+            return this;
+        }
+
+        /** Define an output field with a description */
+        public Builder out(String name, Neo4jTypes.AnyType type, String description) {
+            outputSignature.add(FieldSignature.outputField(name, type, false, description));
             return this;
         }
 

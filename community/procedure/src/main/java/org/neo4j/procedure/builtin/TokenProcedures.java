@@ -34,19 +34,23 @@ public class TokenProcedures {
 
     @Description("Create a label")
     @Procedure(name = "db.createLabel", mode = WRITE)
-    public void createLabel(@Name("newLabel") String newLabel) throws KernelException {
+    public void createLabel(@Name(value = "newLabel", description = "Label name.") String newLabel)
+            throws KernelException {
         tx.tokenWrite().labelGetOrCreateForName(newLabel);
     }
 
     @Description("Create a RelationshipType")
     @Procedure(name = "db.createRelationshipType", mode = WRITE)
-    public void createRelationshipType(@Name("newRelationshipType") String newRelationshipType) throws KernelException {
+    public void createRelationshipType(
+            @Name(value = "newRelationshipType", description = "Relationship type name.") String newRelationshipType)
+            throws KernelException {
         tx.tokenWrite().relationshipTypeGetOrCreateForName(newRelationshipType);
     }
 
     @Description("Create a Property")
     @Procedure(name = "db.createProperty", mode = WRITE)
-    public void createProperty(@Name("newProperty") String newProperty) throws KernelException {
+    public void createProperty(@Name(value = "newProperty", description = "Property name.") String newProperty)
+            throws KernelException {
         tx.tokenWrite().propertyKeyGetOrCreateForName(newProperty);
     }
 }

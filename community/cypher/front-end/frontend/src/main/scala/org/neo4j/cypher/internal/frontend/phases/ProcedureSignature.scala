@@ -107,10 +107,8 @@ case class FieldSignature(
 ) {
 
   override def toString: String = {
-    if (description == null || description.isEmpty) {
-      val nameValue = default.map(d => s"$name  =  ${stringOf(d)}").getOrElse(name)
-      s"$nameValue :: ${typ.normalizedCypherTypeString()}"
-    } else description
+    val nameValue = default.map(d => s"$name  =  ${stringOf(d)}").getOrElse(name)
+    s"$nameValue :: ${typ.normalizedCypherTypeString()}"
   }
 
   private def stringOf(any: AnyValue) = any match {

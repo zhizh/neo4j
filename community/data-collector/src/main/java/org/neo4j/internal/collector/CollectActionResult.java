@@ -19,13 +19,20 @@
  */
 package org.neo4j.internal.collector;
 
+import org.neo4j.procedure.Description;
+
 @SuppressWarnings("WeakerAccess")
-public class ActionResult {
+public class CollectActionResult {
+    @Description("The section collected.")
     public final String section;
+
+    @Description("Whether the section was successfully collected.")
     public final boolean success;
+
+    @Description("Details about the outcome of the procedure.")
     public final String message;
 
-    public ActionResult(String section, boolean success, String message) {
+    public CollectActionResult(String section, boolean success, String message) {
         this.section = section;
         this.success = success;
         this.message = message;
