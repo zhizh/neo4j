@@ -137,16 +137,15 @@ public class StandardConstraintSemantics extends ConstraintSemantics {
 
     @Override
     public ConstraintDescriptor readConstraint(ConstraintDescriptor constraint) {
+        // Opening a store in Community Edition with Enterprise constraints should not work
         return switch (constraint.type()) {
-            case EXISTS -> readNonStandardConstraint(constraint, ERROR_MESSAGE_EXISTS);
-            case UNIQUE_EXISTS -> readNonStandardConstraint(constraint, keyConstraintErrorMessage(constraint.schema()));
-            default -> constraint;
+            case UNIQUE -> constraint;
+            case EXISTS -> throw new IllegalStateException(ERROR_MESSAGE_EXISTS);
+            case UNIQUE_EXISTS -> throw new IllegalStateException(keyConstraintErrorMessage(constraint.schema()));
+            case PROPERTY_TYPE -> throw new IllegalStateException(ERROR_MESSAGE_TYPE);
+            case ENDPOINT -> throw new IllegalStateException(ERROR_MESSAGE_ENDPOINT);
+            case LABEL_COEXISTENCE -> throw new IllegalStateException(ERROR_MESSAGE_LABEL_COEXISTENCE);
         };
-    }
-
-    protected ConstraintDescriptor readNonStandardConstraint(ConstraintDescriptor constraint, String errorMessage) {
-        // When opening a store in Community Edition that contains a Property Existence Constraint
-        throw new IllegalStateException(errorMessage);
     }
 
     private static CreateConstraintFailureException propertyExistenceConstraintsNotAllowed(
