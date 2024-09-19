@@ -1047,10 +1047,9 @@
     <profile>
       <id>test-lighthouse</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <activeByDefault>false</activeByDefault>
         <property>
-          <name>NEO4J_PARALLEL_DISCOVERY</name>
-          <value>V2_ONLY</value>
+          <name>!testAkka</name>
         </property>
       </activation>
       <properties>
