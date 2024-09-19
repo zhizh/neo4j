@@ -87,11 +87,20 @@ public interface Input extends AutoCloseable {
     ReadableGroups groups();
 
     /**
+     * Validates the {@link Input} and estimates the expected size of the graph using a small, initial section of the
+     * data and extrapolating using the full size of the data.
+     * <br>
+     * Examples of types of validation could include:
+     * <ul>
+     *     <li>checking the configuration provided is valid and consistent</li>
+     *     <li>that no duplicated resource are present in the node/relationship inputs</li>
+     *     <li>that any header information is valid and consistent</li>
+     * </ul>
      * @param valueSizeCalculator for calculating property sizes on disk.
      * @return {@link Estimates} for this input w/o reading through it entirely.
      * @throws IOException on I/O error.
      */
-    Estimates calculateEstimates(PropertySizeCalculator valueSizeCalculator) throws IOException;
+    Estimates validateAndEstimate(PropertySizeCalculator valueSizeCalculator) throws IOException;
 
     /**
      * @return a {@link Map} where key is group name and value which {@link SchemaDescriptor index} it refers to.
@@ -139,7 +148,7 @@ public interface Input extends AutoCloseable {
             }
 
             @Override
-            public Estimates calculateEstimates(PropertySizeCalculator valueSizeCalculator) {
+            public Estimates validateAndEstimate(PropertySizeCalculator valueSizeCalculator) {
                 return estimates;
             }
         };

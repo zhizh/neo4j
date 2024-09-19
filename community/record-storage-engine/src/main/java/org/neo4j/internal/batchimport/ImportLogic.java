@@ -87,7 +87,7 @@ import org.neo4j.storageengine.migration.MigrationProgressMonitor;
 
 /**
  * Contains all algorithms and logic for doing an import. It exposes all stages as methods so that
- * it's possible to implement a {@link BatchImporter} which calls those.
+ * it's possible to implement a {@link org.neo4j.batchimport.api.BatchImporter} which calls those.
  * This class has state which typically gets modified in each invocation of an import method.
  *
  * To begin with the methods are fairly coarse-grained, but can and probably will be split up into smaller parts
@@ -187,7 +187,7 @@ public class ImportLogic implements Closeable {
                 databaseName);
         // Some temporary caches and indexes in the import
         Input.Estimates inputEstimates =
-                input.calculateEstimates(neoStore.getPropertyStore().newValueEncodedSizeCalculator());
+                input.validateAndEstimate(neoStore.getPropertyStore().newValueEncodedSizeCalculator());
         idMapper = instantiateIdMapper(input, inputEstimates);
         nodeRelationshipCache = new NodeRelationshipCache(
                 numberArrayFactory, dbConfig.get(GraphDatabaseSettings.dense_node_threshold), memoryTracker);
@@ -302,7 +302,7 @@ public class ImportLogic implements Closeable {
         importRelationships(NO_SCHEMA_MONITORING);
     }
 
-    public void removeViolatingRelationships(LongSet violatingRelationships) throws IOException {
+    public void removeViolatingRelationships(LongSet violatingRelationships) {
         if (violatingRelationships.notEmpty()) {
             // Make sure to keep the typeDistribution up to date
             DataStatistics state = getState(DataStatistics.class);

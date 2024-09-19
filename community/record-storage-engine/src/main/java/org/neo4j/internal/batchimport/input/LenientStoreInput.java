@@ -125,7 +125,7 @@ public class LenientStoreInput implements Input {
     }
 
     @Override
-    public Estimates calculateEstimates(PropertySizeCalculator valueSizeCalculator) throws IOException {
+    public Estimates validateAndEstimate(PropertySizeCalculator valueSizeCalculator) {
         long propertyStoreSize = storeSize(propertyStore) / 2
                 + storeSize(propertyStore.getStringStore()) / 2
                 + storeSize(propertyStore.getArrayStore()) / 2;

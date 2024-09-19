@@ -146,7 +146,7 @@ class CsvInputEstimateCalculationIT {
     void shouldCalculateCorrectEstimates() throws Exception {
         // given a couple of input files of various layouts
         Input input = generateData();
-        Input.Estimates estimates = input.calculateEstimates(new PropertyValueRecordSizeCalculator(
+        Input.Estimates estimates = input.validateAndEstimate(new PropertyValueRecordSizeCalculator(
                 defaultFormat().property().getRecordSize(NO_STORE_HEADER),
                 GraphDatabaseInternalSettings.string_block_size.defaultValue(),
                 0,
@@ -243,7 +243,7 @@ class CsvInputEstimateCalculationIT {
                 INSTANCE);
 
         // when
-        Input.Estimates estimates = input.calculateEstimates(new PropertyValueRecordSizeCalculator(
+        Input.Estimates estimates = input.validateAndEstimate(new PropertyValueRecordSizeCalculator(
                 defaultFormat().property().getRecordSize(NO_STORE_HEADER),
                 GraphDatabaseInternalSettings.string_block_size.defaultValue(),
                 0,

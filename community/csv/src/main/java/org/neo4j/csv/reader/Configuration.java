@@ -33,6 +33,8 @@ public class Configuration {
 
     public static final boolean DEFAULT_LEGACY_STYLE_QUOTING = false;
 
+    public static final boolean DEFAULT_READ_IS_FOR_SAMPLING = false;
+
     private final char quotationCharacter;
     private final char delimiter;
     private final char arrayDelimiter;
@@ -41,6 +43,7 @@ public class Configuration {
     private final boolean trimStrings;
     private final boolean emptyQuotedStringsAsNull;
     private final boolean legacyStyleQuoting;
+    private final boolean readIsForSampling;
 
     private Configuration(Builder b) {
         this.quotationCharacter = b.quotationCharacter;
@@ -51,6 +54,7 @@ public class Configuration {
         this.trimStrings = b.trimStrings;
         this.emptyQuotedStringsAsNull = b.emptyQuotedStringsAsNull;
         this.legacyStyleQuoting = b.legacyStyleQuoting;
+        this.readIsForSampling = b.readIsForSampling;
     }
 
     public char quotationCharacter() {
@@ -99,11 +103,18 @@ public class Configuration {
      *
      * @return whether or not the parsing will interpret <code>\"</code> (see {@link #quotationCharacter()})
      * as an inner quote. Reason why this is configurable is that this interpretation conflicts with
-     * "standard" RFC for CSV parsing, see https://tools.ietf.org/html/rfc4180. This also makes it impossible
-     * to enter some combinations of characters, e.g. <code>"""abc\"""</code>, when expecting <code>"abc\"</code>.
+     * "standard" RFC for CSV parsing, see <a href="https://tools.ietf.org/html/rfc4180">RFC4180</a>. This also makes
+     * it impossible to enter some combinations of characters, e.g. <code>"""abc\"""</code>, when expecting <code>"abc\"</code>.
      */
     public boolean legacyStyleQuoting() {
         return legacyStyleQuoting;
+    }
+
+    /**
+     * @return {@code true} when the expected read behaviour is to only sample some initial fraction of the data
+     */
+    public boolean readIsForSampling() {
+        return readIsForSampling;
     }
 
     public Builder toBuilder() {
@@ -115,7 +126,8 @@ public class Configuration {
                 .withMultilineFields(multilineFields)
                 .withTrimStrings(trimStrings)
                 .withEmptyQuotedStringsAsNull(emptyQuotedStringsAsNull)
-                .withLegacyStyleQuoting(legacyStyleQuoting);
+                .withLegacyStyleQuoting(legacyStyleQuoting)
+                .withReadIsForSampling(readIsForSampling);
     }
 
     public static Builder newBuilder() {
@@ -131,6 +143,7 @@ public class Configuration {
         private boolean trimStrings;
         private boolean emptyQuotedStringsAsNull;
         private boolean legacyStyleQuoting = DEFAULT_LEGACY_STYLE_QUOTING;
+        private boolean readIsForSampling = DEFAULT_READ_IS_FOR_SAMPLING;
 
         public Builder withQuotationCharacter(char quotationCharacter) {
             this.quotationCharacter = quotationCharacter;
@@ -169,6 +182,11 @@ public class Configuration {
 
         public Builder withLegacyStyleQuoting(boolean legacyStyleQuoting) {
             this.legacyStyleQuoting = legacyStyleQuoting;
+            return this;
+        }
+
+        public Builder withReadIsForSampling(boolean readIsForSampling) {
+            this.readIsForSampling = readIsForSampling;
             return this;
         }
 

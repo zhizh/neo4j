@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.ToIntFunction;
+import org.apache.logging.log4j.util.TriConsumer;
 import org.neo4j.batchimport.api.InputIterable;
 import org.neo4j.batchimport.api.InputIterator;
 import org.neo4j.batchimport.api.input.Collector;
@@ -45,7 +46,6 @@ import org.neo4j.batchimport.api.input.IdType;
 import org.neo4j.batchimport.api.input.Input;
 import org.neo4j.batchimport.api.input.PropertySizeCalculator;
 import org.neo4j.batchimport.api.input.ReadableGroups;
-import org.neo4j.collection.RawIterator;
 import org.neo4j.csv.reader.CharReadable;
 import org.neo4j.csv.reader.CharSeeker;
 import org.neo4j.csv.reader.Configuration;
@@ -207,96 +207,6 @@ public class CsvInput implements Input {
         this.config = config;
         this.monitor = monitor;
         this.groups = groups;
-
-        verifyHeaders();
-        warnAboutDuplicateSourceFiles();
-    }
-
-    /**
-     * Verifies so that all headers in input files looks sane:
-     * <ul>
-     * <li>node/relationship headers can be parsed correctly</li>
-     * <li>relationship headers uses ID spaces previously defined in node headers</li>
-     * </ul>
-     */
-    private void verifyHeaders() {
-        try {
-            // parse all node headers and remember all ID spaces
-            for (DataFactory dataFactory : nodeDataFactory) {
-                Data data = dataFactory.create(config);
-                try (CharSeeker dataStream = charSeeker(new MultiReadable(data.stream()), config, true)) {
-                    // Parsing and constructing this header will create this group,
-                    // so no need to do something with the result of it right now
-                    Header header = nodeHeaderFactory.create(dataStream, config, idType, groups, NO_MONITOR);
-                    if (Arrays.stream(header.entries()).noneMatch(entry -> entry.type() == Type.LABEL)
-                            && data.decorator() == NO_DECORATOR) {
-                        monitor.noNodeLabelsSpecified(dataStream.sourceDescription());
-                    }
-
-                    var numIdColumns = Arrays.stream(header.entries())
-                            .filter(e -> e.type() == Type.ID)
-                            .count();
-                    if (numIdColumns > 1) {
-                        Preconditions.checkState(
-                                idType == IdType.STRING,
-                                "Having multiple :ID columns requires idType:" + IdType.STRING);
-                    }
-                    var numIdColumnsGroups = Arrays.stream(header.entries())
-                            .filter(e -> e.type() == Type.ID)
-                            .map(Header.Entry::group)
-                            .distinct()
-                            .count();
-                    Preconditions.checkState(
-                            numIdColumnsGroups <= 1,
-                            "There are multiple :ID columns, but they are referring to different groups");
-                }
-            }
-
-            // parse all relationship headers and verify all ID spaces
-            for (DataFactory dataFactory : relationshipDataFactory) {
-                Data data = dataFactory.create(config);
-                try (CharSeeker dataStream = charSeeker(new MultiReadable(data.stream()), config, true)) {
-                    // Merely parsing and constructing the header here will as a side-effect verify that the
-                    // id groups already exists (relationship header isn't allowed to create groups)
-                    Header header = relationshipHeaderFactory.create(dataStream, config, idType, groups, NO_MONITOR);
-                    if (Arrays.stream(header.entries()).noneMatch(entry -> entry.type() == Type.TYPE)
-                            && data.decorator() == NO_DECORATOR) {
-                        monitor.noRelationshipTypeSpecified(dataStream.sourceDescription());
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private void warnAboutDuplicateSourceFiles() {
-        try {
-            Set<String> seenSourceFiles = new HashSet<>();
-            warnAboutDuplicateSourceFiles(seenSourceFiles, nodeDataFactory);
-            warnAboutDuplicateSourceFiles(seenSourceFiles, relationshipDataFactory);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private void warnAboutDuplicateSourceFiles(Set<String> seenSourceFiles, Iterable<DataFactory> dataFactories)
-            throws IOException {
-        for (DataFactory dataFactory : dataFactories) {
-            RawIterator<CharReadable, IOException> stream = dataFactory.create(config).stream();
-            while (stream.hasNext()) {
-                try (CharReadable source = stream.next()) {
-                    warnAboutDuplicateSourceFiles(seenSourceFiles, source);
-                }
-            }
-        }
-    }
-
-    private void warnAboutDuplicateSourceFiles(Set<String> seenSourceFiles, CharReadable source) {
-        String sourceDescription = source.sourceDescription();
-        if (!seenSourceFiles.add(sourceDescription)) {
-            monitor.duplicateSourceFile(sourceDescription);
-        }
     }
 
     private static void assertSaneConfiguration(Configuration config) {
@@ -346,12 +256,54 @@ public class CsvInput implements Input {
     }
 
     @Override
-    public Estimates calculateEstimates(PropertySizeCalculator valueSizeCalculator) throws IOException {
-        long[] nodeSample =
-                sample(nodeDataFactory, nodeHeaderFactory, valueSizeCalculator, node -> node.labels().length);
-        long[] relationshipSample =
-                sample(relationshipDataFactory, relationshipHeaderFactory, valueSizeCalculator, entity -> 0);
-        long propPreAllocAdditional = propertyPreAllocateRounding(nodeSample[2] + relationshipSample[2]) / 2;
+    public Estimates validateAndEstimate(PropertySizeCalculator valueSizeCalculator) throws IOException {
+        final var seenSourceFiles = new HashSet<String>();
+        // parse all node headers and remember all ID spaces
+        final var nodeSample = validateAndEstimate(
+                nodeDataFactory,
+                nodeHeaderFactory,
+                (header, source, noDecorator) -> {
+                    if (Arrays.stream(header.entries()).noneMatch(entry -> entry.type() == Type.LABEL) && noDecorator) {
+                        monitor.noNodeLabelsSpecified(source);
+                    }
+
+                    var numIdColumns = Arrays.stream(header.entries())
+                            .filter(e -> e.type() == Type.ID)
+                            .count();
+                    if (numIdColumns > 1) {
+                        Preconditions.checkState(
+                                idType == IdType.STRING,
+                                "Having multiple :ID columns requires idType:" + IdType.STRING);
+                    }
+                    var numIdColumnsGroups = Arrays.stream(header.entries())
+                            .filter(e -> e.type() == Type.ID)
+                            .map(Header.Entry::group)
+                            .distinct()
+                            .count();
+                    Preconditions.checkState(
+                            numIdColumnsGroups <= 1,
+                            "There are multiple :ID columns, but they are referring to different groups");
+                },
+                valueSizeCalculator,
+                node -> node.labels().length,
+                seenSourceFiles);
+
+        // parse all relationship headers and verify all ID spaces
+        final var relationshipSample = validateAndEstimate(
+                relationshipDataFactory,
+                relationshipHeaderFactory,
+                (header, source, noDecorator) -> {
+                    // Merely parsing and constructing the header here will as a side effect verify that the id
+                    // groups already exists (relationship header isn't allowed to create groups)
+                    if (Arrays.stream(header.entries()).noneMatch(entry -> entry.type() == Type.TYPE) && noDecorator) {
+                        monitor.noRelationshipTypeSpecified(source);
+                    }
+                },
+                valueSizeCalculator,
+                entity -> 0,
+                seenSourceFiles);
+
+        final var propPreAllocAdditional = propertyPreAllocateRounding(nodeSample[2] + relationshipSample[2]) / 2;
         return Input.knownEstimates(
                 nodeSample[0],
                 relationshipSample[0],
@@ -362,69 +314,106 @@ public class CsvInput implements Input {
                 nodeSample[3]);
     }
 
-    private long[] sample(
+    private long[] validateAndEstimate(
             Iterable<DataFactory> dataFactories,
             Header.Factory headerFactory,
+            TriConsumer<Header, String, Boolean> headerChecker,
             PropertySizeCalculator valueSizeCalculator,
-            ToIntFunction<InputEntity> additionalCalculator)
+            ToIntFunction<InputEntity> additionalCalculator,
+            Set<String> seenSourceFiles)
             throws IOException {
-        long[] estimates = new long[4]; // [entity count, property count, property size, labels (for nodes only)]
-        try (CsvInputChunkProxy chunk = new CsvInputChunkProxy()) {
-            // One group of input files
-            int groupId = 0;
-            for (DataFactory dataFactory : dataFactories) // one input group
-            {
+        final var estimates = new long[4]; // [entity count, property count, property size, labels (for nodes only)]
+
+        try (var chunk = new CsvInputChunkProxy()) {
+            final var sampleConfig =
+                    config.toBuilder().withReadIsForSampling(true).build();
+            var groupId = 0;
+            for (var dataFactory : dataFactories) {
+                // one input group
                 groupId++;
                 Header header = null;
-                Data data = dataFactory.create(config);
-                RawIterator<CharReadable, IOException> sources = data.stream();
-                while (sources.hasNext()) {
-                    try (CharReadable source = sources.next()) {
-                        if (header == null) {
-                            // Extract the header from the first file in this group
-                            // This is the only place we monitor type normalization because it's before import and it
-                            // touches all headers
-                            header = extractHeader(source, headerFactory, idType, config, groups, monitor);
-                        }
-                        try (CsvInputIterator iterator = new CsvInputIterator(
-                                        source,
-                                        data.decorator(),
-                                        header,
-                                        config,
-                                        idType,
-                                        EMPTY,
-                                        CsvGroupInputIterator.extractors(config),
-                                        groupId,
-                                        autoSkipHeaders);
-                                InputEntity entity = new InputEntity()) {
-                            int entities = 0;
-                            int properties = 0;
-                            int propertySize = 0;
-                            int additional = 0;
-                            while (iterator.position() < ESTIMATE_SAMPLE_SIZE && iterator.next(chunk)) {
-                                for (; chunk.next(entity); entities++) {
-                                    properties += entity.propertyCount();
-                                    propertySize += Inputs.calculatePropertySize(
-                                            entity, valueSizeCalculator, NULL_CONTEXT, memoryTracker);
-                                    additional += additionalCalculator.applyAsInt(entity);
-                                }
+                final var data = dataFactory.create(sampleConfig);
+                try (var decorator = data.decorator()) {
+                    final var stream = data.stream();
+                    while (stream.hasNext()) {
+                        try (var source = stream.next()) {
+                            final var sourceDescription = source.sourceDescription();
+                            if (!seenSourceFiles.add(sourceDescription)) {
+                                monitor.duplicateSourceFile(sourceDescription);
                             }
-                            if (entities > 0) {
-                                long position = iterator.position();
-                                double compressionRatio = iterator.compressionRatio();
-                                double actualFileSize = source.length() / compressionRatio;
-                                long entityCountInSource = (long) ((actualFileSize / position) * entities);
-                                estimates[0] += entityCountInSource;
-                                estimates[1] += ((double) properties / entities) * entityCountInSource;
-                                estimates[2] += ((double) propertySize / entities) * entityCountInSource;
-                                estimates[3] += ((double) additional / entities) * entityCountInSource;
+
+                            if (header == null) {
+                                // Parsing and constructing this header will create this group
+                                // Extract the header from the first file in this group
+                                // This is the only place we monitor type normalization because it's before import and
+                                // it touches all headers
+                                header = extractHeader(source, headerFactory, idType, sampleConfig, groups, monitor);
+                                headerChecker.accept(header, sourceDescription, decorator == NO_DECORATOR);
                             }
+
+                            sample(
+                                    chunk,
+                                    sampleConfig,
+                                    source,
+                                    groupId,
+                                    header,
+                                    decorator,
+                                    valueSizeCalculator,
+                                    additionalCalculator,
+                                    estimates);
                         }
                     }
                 }
             }
         }
+
         return estimates;
+    }
+
+    private void sample(
+            CsvInputChunkProxy chunk,
+            Configuration sampleConfig,
+            CharReadable source,
+            int groupId,
+            Header header,
+            Decorator decorator,
+            PropertySizeCalculator valueSizeCalculator,
+            ToIntFunction<InputEntity> additionalCalculator,
+            long[] estimates)
+            throws IOException {
+        try (var iterator = new CsvInputIterator(
+                        source,
+                        decorator,
+                        header,
+                        sampleConfig,
+                        idType,
+                        EMPTY,
+                        CsvGroupInputIterator.extractors(sampleConfig),
+                        groupId,
+                        autoSkipHeaders);
+                var entity = new InputEntity()) {
+            var entities = 0;
+            var properties = 0d;
+            var propertySize = 0d;
+            var additional = 0d;
+            while (iterator.position() < ESTIMATE_SAMPLE_SIZE && iterator.next(chunk)) {
+                for (; chunk.next(entity); entities++) {
+                    properties += entity.propertyCount();
+                    propertySize +=
+                            Inputs.calculatePropertySize(entity, valueSizeCalculator, NULL_CONTEXT, memoryTracker);
+                    additional += additionalCalculator.applyAsInt(entity);
+                }
+            }
+            if (entities > 0) {
+                final var position = iterator.position();
+                final var actualFileSize = source.length() / iterator.compressionRatio();
+                final var entityCountInSource = ((actualFileSize / position) * entities);
+                estimates[0] += (long) entityCountInSource;
+                estimates[1] += (long) ((properties / entities) * entityCountInSource);
+                estimates[2] += (long) ((propertySize / entities) * entityCountInSource);
+                estimates[3] += (long) ((additional / entities) * entityCountInSource);
+            }
+        }
     }
 
     @Override

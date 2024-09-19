@@ -92,7 +92,7 @@ class CsvInputIterator implements SourceTraceability, Closeable {
                     idType,
                     config.delimiter(),
                     badCollector,
-                    CsvGroupInputIterator.extractors(config),
+                    extractors,
                     chunker.newChunk(),
                     config,
                     decorator,

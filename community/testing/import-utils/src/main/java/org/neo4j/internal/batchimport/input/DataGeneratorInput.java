@@ -159,7 +159,7 @@ public class DataGeneratorInput implements Input {
     }
 
     @Override
-    public Estimates calculateEstimates(PropertySizeCalculator valueSizeCalculator) {
+    public Estimates validateAndEstimate(PropertySizeCalculator valueSizeCalculator) {
         int sampleSize = 100;
         InputEntity[] nodeSample = sample(nodes(Collector.EMPTY), sampleSize);
         double labelsPerNodeEstimate = sampleLabels(nodeSample);
@@ -553,7 +553,7 @@ public class DataGeneratorInput implements Input {
                 case "double" -> random.nextDoubleValue().asObjectCopy();
                 case "double[]" -> random.nextDoubleArray().asObjectCopy();
                 default -> throw new IllegalArgumentException(
-                        "" + entry + " " + entry.extractor().name());
+                        entry + " " + entry.extractor().name());
             };
         }
 
