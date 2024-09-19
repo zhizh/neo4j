@@ -28,6 +28,7 @@ import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.storageengine.api.PropertySelection;
 import org.neo4j.storageengine.api.Reference;
 import org.neo4j.storageengine.api.RelationshipSelection;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -288,13 +289,13 @@ public interface Read {
     /**
      * The number of nodes in the graph, including anything changed in the transaction state.
      *
-     * If the label parameter is {@link TokenRead#ANY_LABEL}, this method returns the total number of nodes in the graph, i.e.
+     * If the label parameter is {@link TokenConstants#ANY_LABEL}, this method returns the total number of nodes in the graph, i.e.
      * {@code MATCH (n) RETURN count(n)}.
      *
      * If the label parameter is set to any other value, this method returns the number of nodes that has that label,
      * i.e. {@code MATCH (n:LBL) RETURN count(n)}.
      *
-     * @param labelId the label to get the count for, or {@link TokenRead#ANY_LABEL} to get the total number of nodes.
+     * @param labelId the label to get the count for, or {@link TokenConstants#ANY_LABEL} to get the total number of nodes.
      * @return the number of matching nodes in the graph.
      */
     long countsForNode(int labelId);
@@ -307,7 +308,7 @@ public interface Read {
      * Accuracy of this estimation is enough for cardinality estimation purposes.
      * Without concurrent writes this method usually returns exact counts.
      *
-     * @param labelId the label to get the count for, or {@link TokenRead#ANY_LABEL} to get the total number of nodes.
+     * @param labelId the label to get the count for, or {@link TokenConstants#ANY_LABEL} to get the total number of nodes.
      * @return estimate number of matching nodes in the graph
      */
     long estimateCountsForNode(int labelId);
@@ -325,35 +326,35 @@ public interface Read {
      * </thead>
      * <tdata>
      * <tr>
-     * <td>{@link TokenRead#ANY_LABEL}</td>      <td>{@link TokenRead#ANY_RELATIONSHIP_TYPE}</td>  <td>{@link TokenRead#ANY_LABEL}</td>
+     * <td>{@link TokenConstants#ANY_LABEL}</td>      <td>{@link TokenConstants#ANY_RELATIONSHIP_TYPE}</td>  <td>{@link TokenConstants#ANY_LABEL}</td>
      * <td>{@code MATCH}</td>    <td>{@code ()-[r]->()}</td>            <td>{@code RETURN count(r)}</td>
      * </tr>
      * <tr>
-     * <td>{@link TokenRead#ANY_LABEL}</td>      <td>{@code REL}</td>                     <td>{@link TokenRead#ANY_LABEL}</td>
+     * <td>{@link TokenConstants#ANY_LABEL}</td>      <td>{@code REL}</td>                     <td>{@link TokenConstants#ANY_LABEL}</td>
      * <td>{@code MATCH}</td>    <td>{@code ()-[r:REL]->()}</td>        <td>{@code RETURN count(r)}</td>
      * </tr>
      * <tr>
-     * <td>{@code LHS}</td>             <td>{@link TokenRead#ANY_RELATIONSHIP_TYPE}</td>  <td>{@link TokenRead#ANY_LABEL}</td>
+     * <td>{@code LHS}</td>             <td>{@link TokenConstants#ANY_RELATIONSHIP_TYPE}</td>  <td>{@link TokenConstants#ANY_LABEL}</td>
      * <td>{@code MATCH}</td>    <td>{@code (:LHS)-[r]->()}</td>        <td>{@code RETURN count(r)}</td>
      * </tr>
      * <tr>
-     * <td>{@link TokenRead#ANY_LABEL}</td>      <td>{@link TokenRead#ANY_RELATIONSHIP_TYPE}</td>  <td>{@code RHS}</td>
+     * <td>{@link TokenConstants#ANY_LABEL}</td>      <td>{@link TokenConstants#ANY_RELATIONSHIP_TYPE}</td>  <td>{@code RHS}</td>
      * <td>{@code MATCH}</td>    <td>{@code ()-[r]->(:RHS)}</td>        <td>{@code RETURN count(r)}</td>
      * </tr>
      * <tr>
-     * <td>{@code LHS}</td>             <td>{@code REL}</td>                     <td>{@link TokenRead#ANY_LABEL}</td>
+     * <td>{@code LHS}</td>             <td>{@code REL}</td>                     <td>{@link TokenConstants#ANY_LABEL}</td>
      * <td>{@code MATCH}</td>    <td>{@code (:LHS)-[r:REL]->()}</td>    <td>{@code RETURN count(r)}</td>
      * </tr>
      * <tr>
-     * <td>{@link TokenRead#ANY_LABEL}</td>      <td>{@code REL}</td>                     <td>{@code RHS}</td>
+     * <td>{@link TokenConstants#ANY_LABEL}</td>      <td>{@code REL}</td>                     <td>{@code RHS}</td>
      * <td>{@code MATCH}</td>    <td>{@code ()-[r:REL]->(:RHS)}</td>    <td>{@code RETURN count(r)}</td>
      * </tr>
      * </tdata>
      * </table>
      *
-     * @param startLabelId the label of the start node of relationships to get the count for, or {@link TokenRead#ANY_LABEL}.
-     * @param typeId       the type of relationships to get a count for, or {@link TokenRead#ANY_RELATIONSHIP_TYPE}.
-     * @param endLabelId   the label of the end node of relationships to get the count for, or {@link TokenRead#ANY_LABEL}.
+     * @param startLabelId the label of the start node of relationships to get the count for, or {@link TokenConstants#ANY_LABEL}.
+     * @param typeId       the type of relationships to get a count for, or {@link TokenConstants#ANY_RELATIONSHIP_TYPE}.
+     * @param endLabelId   the label of the end node of relationships to get the count for, or {@link TokenConstants#ANY_LABEL}.
      * @return the number of matching relationships in the graph.
      */
     long countsForRelationship(int startLabelId, int typeId, int endLabelId);
@@ -364,9 +365,9 @@ public interface Read {
      * Accuracy of this estimation is enough for cardinality estimation purposes.
      * Without concurrent writes this method usually returns exact counts.
      *
-     * @param startLabelId the label of the start node of relationships to get the count for, or {@link TokenRead#ANY_LABEL}.
-     * @param typeId       the type of relationships to get a count for, or {@link TokenRead#ANY_RELATIONSHIP_TYPE}.
-     * @param endLabelId   the label of the end node of relationships to get the count for, or {@link TokenRead#ANY_LABEL}.
+     * @param startLabelId the label of the start node of relationships to get the count for, or {@link TokenConstants#ANY_LABEL}.
+     * @param typeId       the type of relationships to get a count for, or {@link TokenConstants#ANY_RELATIONSHIP_TYPE}.
+     * @param endLabelId   the label of the end node of relationships to get the count for, or {@link TokenConstants#ANY_LABEL}.
      * @return the estimate number of matching relationships in the graph.
      */
     long estimateCountsForRelationships(int startLabelId, int typeId, int endLabelId);

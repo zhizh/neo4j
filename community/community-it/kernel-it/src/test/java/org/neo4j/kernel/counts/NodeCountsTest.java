@@ -20,7 +20,6 @@
 package org.neo4j.kernel.counts;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_LABEL;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,6 +32,7 @@ import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.Barrier;
 import org.neo4j.test.extension.ImpermanentDbmsExtension;
 import org.neo4j.test.extension.Inject;
+import org.neo4j.token.api.TokenConstants;
 
 @ImpermanentDbmsExtension
 class NodeCountsTest {
@@ -177,6 +177,6 @@ class NodeCountsTest {
     }
 
     private static long countsForNode(Transaction tx) {
-        return ((InternalTransaction) tx).kernelTransaction().dataRead().countsForNode(ANY_LABEL);
+        return ((InternalTransaction) tx).kernelTransaction().dataRead().countsForNode(TokenConstants.ANY_LABEL);
     }
 }

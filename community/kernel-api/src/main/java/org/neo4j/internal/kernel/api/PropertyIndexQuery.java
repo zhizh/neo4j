@@ -771,7 +771,7 @@ public abstract class PropertyIndexQuery implements IndexQuery {
         }
 
         private FulltextSearchPredicate(String query, String queryAnalyzer) {
-            super(TokenRead.NO_TOKEN);
+            super(TokenConstants.NO_TOKEN);
             this.query = query;
             this.queryAnalyzer = queryAnalyzer;
         }
@@ -821,7 +821,7 @@ public abstract class PropertyIndexQuery implements IndexQuery {
         private final float[] query;
 
         private NearestNeighborsPredicate(int k, float... query) {
-            super(TokenRead.NO_TOKEN);
+            super(TokenConstants.NO_TOKEN);
             this.k = k;
             this.query = query;
         }

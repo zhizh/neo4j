@@ -36,6 +36,7 @@ import org.neo4j.internal.kernel.api.PropertyCursor;
 import org.neo4j.internal.kernel.api.TokenRead;
 import org.neo4j.internal.kernel.api.exceptions.PropertyKeyIdNotFoundKernelException;
 import org.neo4j.storageengine.api.PropertySelection;
+import org.neo4j.token.api.TokenConstants;
 
 public abstract class AbstractEntity implements Entity {
 
@@ -45,7 +46,7 @@ public abstract class AbstractEntity implements Entity {
         }
 
         int propertyKey = tokenRead().propertyKey(key);
-        if (propertyKey == TokenRead.NO_TOKEN) {
+        if (propertyKey == TokenConstants.NO_TOKEN) {
             return false;
         }
 
@@ -58,7 +59,7 @@ public abstract class AbstractEntity implements Entity {
             throw new IllegalArgumentException("(null) property key is not allowed");
         }
         int propertyKey = tokenRead().propertyKey(key);
-        if (propertyKey == TokenRead.NO_TOKEN) {
+        if (propertyKey == TokenConstants.NO_TOKEN) {
             throw new NotFoundException(format("No such property, '%s'.", key));
         }
 
@@ -75,7 +76,7 @@ public abstract class AbstractEntity implements Entity {
             throw new IllegalArgumentException("(null) property key is not allowed");
         }
         int propertyKey = tokenRead().propertyKey(key);
-        if (propertyKey == TokenRead.NO_TOKEN) {
+        if (propertyKey == TokenConstants.NO_TOKEN) {
             return defaultValue;
         }
         singleEntity.properties(properties, PropertySelection.selection(propertyKey));

@@ -29,8 +29,6 @@ import static org.neo4j.configuration.GraphDatabaseSettings.db_timezone;
 import static org.neo4j.configuration.GraphDatabaseSettings.dense_node_threshold;
 import static org.neo4j.csv.reader.Configuration.COMMAS;
 import static org.neo4j.internal.helpers.collection.Iterators.asSet;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_LABEL;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_RELATIONSHIP_TYPE;
 import static org.neo4j.io.fs.FileSystemUtils.writeString;
 import static org.neo4j.io.pagecache.context.CursorContext.NULL_CONTEXT;
 import static org.neo4j.io.pagecache.context.CursorContextFactory.NULL_CONTEXT_FACTORY;
@@ -117,6 +115,7 @@ import org.neo4j.test.extension.RandomExtension;
 import org.neo4j.test.scheduler.ThreadPoolJobScheduler;
 import org.neo4j.test.utils.TestDirectory;
 import org.neo4j.token.api.NamedToken;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.values.storable.CoordinateReferenceSystem;
 import org.neo4j.values.storable.PointValue;
 
@@ -398,7 +397,7 @@ class CsvInputBatchImportIT {
             NeoStores neoStores = storageEngine.testAccessNeoStores();
             var counts = storageEngine.countsAccessor();
             Function<String, Integer> labelTranslationTable =
-                    translationTable(neoStores.getLabelTokenStore(), ANY_LABEL, storageEngine);
+                    translationTable(neoStores.getLabelTokenStore(), TokenConstants.ANY_LABEL, storageEngine);
             for (Pair<Integer, Long> count : allNodeCounts(labelTranslationTable, expectedNodeCounts)) {
                 assertEquals(
                         count.other().longValue(),
@@ -406,8 +405,8 @@ class CsvInputBatchImportIT {
                         "Label count mismatch for label " + count.first());
             }
 
-            Function<String, Integer> relationshipTypeTranslationTable =
-                    translationTable(neoStores.getRelationshipTypeTokenStore(), ANY_RELATIONSHIP_TYPE, storageEngine);
+            Function<String, Integer> relationshipTypeTranslationTable = translationTable(
+                    neoStores.getRelationshipTypeTokenStore(), TokenConstants.ANY_RELATIONSHIP_TYPE, storageEngine);
             for (Pair<RelationshipCountKey, Long> count : allRelationshipCounts(
                     labelTranslationTable, relationshipTypeTranslationTable, expectedRelationshipCounts)) {
                 RelationshipCountKey key = count.first();

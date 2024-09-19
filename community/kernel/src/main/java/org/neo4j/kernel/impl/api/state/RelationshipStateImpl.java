@@ -24,13 +24,13 @@ import static java.util.Collections.emptyList;
 import org.eclipse.collections.api.IntIterable;
 import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.neo4j.collection.factory.CollectionsFactory;
-import org.neo4j.internal.kernel.api.TokenRead;
 import org.neo4j.memory.HeapEstimator;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.RelationshipVisitor;
 import org.neo4j.storageengine.api.RelationshipVisitorWithProperties;
 import org.neo4j.storageengine.api.StorageProperty;
 import org.neo4j.storageengine.api.txstate.RelationshipState;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.values.storable.Value;
 
 class RelationshipStateImpl extends EntityStateImpl implements RelationshipState {
@@ -171,7 +171,7 @@ class RelationshipStateImpl extends EntityStateImpl implements RelationshipState
 
     @Override
     public <EX extends Exception> boolean accept(RelationshipVisitor<EX> visitor) throws EX {
-        if (type != TokenRead.NO_TOKEN) {
+        if (type != TokenConstants.NO_TOKEN) {
             visitor.visit(getId(), type, startNode, endNode);
             return true;
         }
@@ -180,7 +180,7 @@ class RelationshipStateImpl extends EntityStateImpl implements RelationshipState
 
     @Override
     public <EX extends Exception> boolean accept(RelationshipVisitorWithProperties<EX> visitor) throws EX {
-        if (type != TokenRead.NO_TOKEN) {
+        if (type != TokenConstants.NO_TOKEN) {
             visitor.visit(
                     getId(), type, startNode, endNode, addedProperties(), changedProperties(), removedProperties());
             return true;

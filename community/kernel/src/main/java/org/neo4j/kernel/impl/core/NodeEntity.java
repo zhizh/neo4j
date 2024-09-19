@@ -56,6 +56,7 @@ import org.neo4j.internal.kernel.api.helpers.RelationshipFactory;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.values.storable.Values;
 
 public class NodeEntity extends AbstractNodeEntity implements RelationshipFactory<Relationship> {
@@ -190,7 +191,7 @@ public class NodeEntity extends AbstractNodeEntity implements RelationshipFactor
     public Object removeProperty(String key) throws NotFoundException {
         KernelTransaction transaction = internalTransaction.kernelTransaction();
         int propertyKeyId = transaction.tokenRead().propertyKey(key);
-        if (propertyKeyId == TokenRead.NO_TOKEN) {
+        if (propertyKeyId == TokenConstants.NO_TOKEN) {
             return NO_VALUE.asObjectCopy();
         }
         try {
@@ -329,7 +330,7 @@ public class NodeEntity extends AbstractNodeEntity implements RelationshipFactor
         KernelTransaction transaction = internalTransaction.kernelTransaction();
         try {
             int labelId = transaction.tokenRead().nodeLabel(label.name());
-            if (labelId != TokenRead.NO_TOKEN) {
+            if (labelId != TokenConstants.NO_TOKEN) {
                 transaction.dataWrite().nodeRemoveLabel(getId(), labelId);
             }
         } catch (EntityNotFoundException e) {

@@ -29,8 +29,8 @@ import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.cypher.operations.CursorUtils.entityGetProperties
 import org.neo4j.cypher.operations.CypherFunctions.propertiesGet
 import org.neo4j.internal.kernel.api.EntityCursor
-import org.neo4j.internal.kernel.api.TokenRead
 import org.neo4j.kernel.api.StatementConstants
+import org.neo4j.token.api.TokenConstants
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.MapValueBuilder
@@ -41,7 +41,7 @@ abstract class MapProjectionFromStore extends Expression with SlottedExpression 
   final private[this] val (tokens: PropertyTokensResolver, nameAliases: Array[String]) = {
     val (mapKeys, propKeys, propTokens) = entries
       .sortBy(_.mapKey)
-      .map(e => (e.mapKey, e.property.name, e.property.token.getOrElse(TokenRead.NO_TOKEN)))
+      .map(e => (e.mapKey, e.property.name, e.property.token.getOrElse(TokenConstants.NO_TOKEN)))
       .unzip3
     (PropertyTokensResolver.property(propKeys.toArray, propTokens.toArray), mapKeys.toArray)
   }

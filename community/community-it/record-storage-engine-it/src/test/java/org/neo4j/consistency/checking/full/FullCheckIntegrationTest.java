@@ -39,8 +39,6 @@ import static org.neo4j.graphdb.Label.label;
 import static org.neo4j.graphdb.RelationshipType.withName;
 import static org.neo4j.graphdb.schema.IndexType.RANGE;
 import static org.neo4j.internal.helpers.collection.Iterables.asIterable;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_LABEL;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_RELATIONSHIP_TYPE;
 import static org.neo4j.internal.recordstorage.RecordCursorTypes.DYNAMIC_PROPERTY_KEY_TOKEN_CURSOR;
 import static org.neo4j.internal.recordstorage.RecordCursorTypes.DYNAMIC_REL_TYPE_TOKEN_CURSOR;
 import static org.neo4j.internal.recordstorage.RecordCursorTypes.LABEL_TOKEN_CURSOR;
@@ -193,6 +191,7 @@ import org.neo4j.test.ReflectionUtil;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.util.BitBuffer;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
@@ -916,8 +915,9 @@ public class FullCheckIntegrationTest {
                 tx.create(node2);
                 tx.create(relationship);
                 tx.create(property);
-                tx.incrementRelationshipCount(ANY_LABEL, ANY_RELATIONSHIP_TYPE, ANY_LABEL, 1);
-                tx.incrementRelationshipCount(ANY_LABEL, M, ANY_LABEL, 1);
+                tx.incrementRelationshipCount(
+                        TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL, 1);
+                tx.incrementRelationshipCount(TokenConstants.ANY_LABEL, M, TokenConstants.ANY_LABEL, 1);
             }
         });
 
@@ -1695,8 +1695,9 @@ public class FullCheckIntegrationTest {
                 tx.create(withPrev(inUse(relationshipB), relA));
                 tx.create(
                         withOwner(withRelationships(inUse(relationshipGroupRecord(group, C)), relB, relB, relB), node));
-                tx.incrementRelationshipCount(ANY_LABEL, ANY_RELATIONSHIP_TYPE, ANY_LABEL, 2);
-                tx.incrementRelationshipCount(ANY_LABEL, C, ANY_LABEL, 2);
+                tx.incrementRelationshipCount(
+                        TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL, 2);
+                tx.incrementRelationshipCount(TokenConstants.ANY_LABEL, C, TokenConstants.ANY_LABEL, 2);
             }
         });
 
@@ -1844,8 +1845,9 @@ public class FullCheckIntegrationTest {
                 relationship.setLinks(node, otherNode, T);
                 tx.create(relationship);
                 tx.create(withOwner(withRelationships(relationshipGroupRecord(group, C), rel, rel, rel), node));
-                tx.incrementRelationshipCount(ANY_LABEL, ANY_RELATIONSHIP_TYPE, ANY_LABEL, 1);
-                tx.incrementRelationshipCount(ANY_LABEL, T, ANY_LABEL, 1);
+                tx.incrementRelationshipCount(
+                        TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL, 1);
+                tx.incrementRelationshipCount(TokenConstants.ANY_LABEL, T, TokenConstants.ANY_LABEL, 1);
             }
         });
 
@@ -1883,8 +1885,9 @@ public class FullCheckIntegrationTest {
                 RelationshipRecord relationship = new RelationshipRecord(rel);
                 relationship.setLinks(nodeA, nodeB, C);
                 tx.create(firstInChains(relationship, 1));
-                tx.incrementRelationshipCount(ANY_LABEL, ANY_RELATIONSHIP_TYPE, ANY_LABEL, 1);
-                tx.incrementRelationshipCount(ANY_LABEL, C, ANY_LABEL, 1);
+                tx.incrementRelationshipCount(
+                        TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL, 1);
+                tx.incrementRelationshipCount(TokenConstants.ANY_LABEL, C, TokenConstants.ANY_LABEL, 1);
 
                 tx.create(withOwner(
                         withRelationship(withNext(relationshipGroupRecord(groupA, C), groupB), Direction.OUTGOING, rel),
@@ -1925,7 +1928,7 @@ public class FullCheckIntegrationTest {
             @Override
             protected void transactionData(
                     GraphStoreFixture.TransactionDataBuilder tx, GraphStoreFixture.IdGenerator next) {
-                tx.incrementRelationshipCount(label1, C, ANY_LABEL, 1);
+                tx.incrementRelationshipCount(label1, C, TokenConstants.ANY_LABEL, 1);
             }
         });
 
@@ -1983,7 +1986,7 @@ public class FullCheckIntegrationTest {
                 node.setInUse(true);
                 node.setLabelField(inlinedLabelsLongRepresentation(1024), Collections.emptyList());
                 tx.createNoCountUpdate(node);
-                tx.incrementNodeCount(ANY_LABEL, 1);
+                tx.incrementNodeCount(TokenConstants.ANY_LABEL, 1);
             }
         });
 
@@ -2817,8 +2820,9 @@ public class FullCheckIntegrationTest {
                 tx.create(relationship);
                 tx.create(new RelationshipGroupRecord(group)
                         .initialize(false, C, rel, rel, rel, node, NULL_REFERENCE.longValue()));
-                tx.incrementRelationshipCount(ANY_LABEL, ANY_RELATIONSHIP_TYPE, ANY_LABEL, 1);
-                tx.incrementRelationshipCount(ANY_LABEL, C, ANY_LABEL, 1);
+                tx.incrementRelationshipCount(
+                        TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL, 1);
+                tx.incrementRelationshipCount(TokenConstants.ANY_LABEL, C, TokenConstants.ANY_LABEL, 1);
             }
         });
 
@@ -2850,8 +2854,9 @@ public class FullCheckIntegrationTest {
                 relationship.setSecondPrevRel(-6);
                 tx.create(relationship);
 
-                tx.incrementRelationshipCount(ANY_LABEL, ANY_RELATIONSHIP_TYPE, ANY_LABEL, 1);
-                tx.incrementRelationshipCount(ANY_LABEL, C, ANY_LABEL, 1);
+                tx.incrementRelationshipCount(
+                        TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL, 1);
+                tx.incrementRelationshipCount(TokenConstants.ANY_LABEL, C, TokenConstants.ANY_LABEL, 1);
             }
         });
 
@@ -2897,8 +2902,9 @@ public class FullCheckIntegrationTest {
                 relationship.setLinks(-2, -3, C);
                 tx.create(relationship);
 
-                tx.incrementRelationshipCount(ANY_LABEL, ANY_RELATIONSHIP_TYPE, ANY_LABEL, 1);
-                tx.incrementRelationshipCount(ANY_LABEL, C, ANY_LABEL, 1);
+                tx.incrementRelationshipCount(
+                        TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL, 1);
+                tx.incrementRelationshipCount(TokenConstants.ANY_LABEL, C, TokenConstants.ANY_LABEL, 1);
             }
         });
 

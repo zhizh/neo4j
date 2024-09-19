@@ -61,6 +61,7 @@ import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.storageengine.api.LongReference;
 import org.neo4j.storageengine.api.PropertySelection;
 import org.neo4j.storageengine.api.RelationshipVisitor;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.values.storable.Values;
 
 public class RelationshipEntity implements Relationship, RelationshipVisitor<RuntimeException> {
@@ -336,7 +337,7 @@ public class RelationshipEntity implements Relationship, RelationshipVisitor<Run
         }
         KernelTransaction transaction = internalTransaction.kernelTransaction();
         int propertyKey = transaction.tokenRead().propertyKey(key);
-        if (propertyKey == TokenRead.NO_TOKEN) {
+        if (propertyKey == TokenConstants.NO_TOKEN) {
             throw new NotFoundException(format("No such property, '%s'.", key));
         }
 
@@ -355,7 +356,7 @@ public class RelationshipEntity implements Relationship, RelationshipVisitor<Run
         }
         KernelTransaction transaction = internalTransaction.kernelTransaction();
         int propertyKey = transaction.tokenRead().propertyKey(key);
-        if (propertyKey == TokenRead.NO_TOKEN) {
+        if (propertyKey == TokenConstants.NO_TOKEN) {
             return defaultValue;
         }
 
@@ -372,7 +373,7 @@ public class RelationshipEntity implements Relationship, RelationshipVisitor<Run
 
         KernelTransaction transaction = internalTransaction.kernelTransaction();
         int propertyKey = transaction.tokenRead().propertyKey(key);
-        if (propertyKey == TokenRead.NO_TOKEN) {
+        if (propertyKey == TokenConstants.NO_TOKEN) {
             return false;
         }
 
@@ -422,7 +423,7 @@ public class RelationshipEntity implements Relationship, RelationshipVisitor<Run
     public Object removeProperty(String key) {
         KernelTransaction transaction = internalTransaction.kernelTransaction();
         int propertyKeyId = transaction.tokenRead().propertyKey(key);
-        if (propertyKeyId == TokenRead.NO_TOKEN) {
+        if (propertyKeyId == TokenConstants.NO_TOKEN) {
             return NO_VALUE.asObjectCopy();
         }
         try {

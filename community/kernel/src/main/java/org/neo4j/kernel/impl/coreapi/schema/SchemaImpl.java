@@ -94,6 +94,7 @@ import org.neo4j.kernel.api.exceptions.schema.DropIndexFailureException;
 import org.neo4j.kernel.api.exceptions.schema.RepeatedSchemaComponentException;
 import org.neo4j.kernel.impl.api.index.IndexPopulationFailure;
 import org.neo4j.time.Stopwatch;
+import org.neo4j.token.api.TokenConstants;
 
 public class SchemaImpl implements Schema {
     private final InternalSchemaActions actions;
@@ -136,7 +137,7 @@ public class SchemaImpl implements Schema {
         SchemaRead schemaRead = transaction.schemaRead();
         List<IndexDefinition> definitions = new ArrayList<>();
         int labelId = tokenRead.nodeLabel(label.name());
-        if (labelId == TokenRead.NO_TOKEN) {
+        if (labelId == TokenConstants.NO_TOKEN) {
             return emptyList();
         }
         Iterator<IndexDescriptor> indexes = schemaRead.indexesGetForLabel(labelId);
@@ -151,7 +152,7 @@ public class SchemaImpl implements Schema {
         SchemaRead schemaRead = transaction.schemaRead();
         List<IndexDefinition> definitions = new ArrayList<>();
         int relationshipTypeId = tokenRead.relationshipType(relationshipType.name());
-        if (relationshipTypeId == TokenRead.NO_TOKEN) {
+        if (relationshipTypeId == TokenConstants.NO_TOKEN) {
             return emptyList();
         }
         Iterator<IndexDescriptor> indexes = schemaRead.indexesGetForRelationshipType(relationshipTypeId);
@@ -410,7 +411,7 @@ public class SchemaImpl implements Schema {
         TokenRead tokenRead = transaction.tokenRead();
         SchemaRead schemaRead = transaction.schemaRead();
         int labelId = tokenRead.nodeLabel(label.name());
-        if (labelId == TokenRead.NO_TOKEN) {
+        if (labelId == TokenConstants.NO_TOKEN) {
             return emptyList();
         }
         return asConstraintDefinitions(schemaRead.constraintsGetForLabel(labelId), tokenRead);
@@ -422,7 +423,7 @@ public class SchemaImpl implements Schema {
         TokenRead tokenRead = transaction.tokenRead();
         SchemaRead schemaRead = transaction.schemaRead();
         int typeId = tokenRead.relationshipType(type.name());
-        if (typeId == TokenRead.NO_TOKEN) {
+        if (typeId == TokenConstants.NO_TOKEN) {
             return emptyList();
         }
         return asConstraintDefinitions(schemaRead.constraintsGetForRelationshipType(typeId), tokenRead);
@@ -487,7 +488,7 @@ public class SchemaImpl implements Schema {
         for (int i = 0; i < tokenIds.length; i++) {
             String tokenName = getTokenName.apply(tokens[i]);
             int tokenId = getTokenId.applyAsInt(tokenName);
-            if (tokenId == TokenRead.NO_TOKEN) {
+            if (tokenId == TokenConstants.NO_TOKEN) {
                 throw new NotFoundException(tokenTypeName + " " + tokenName + " not found.");
             }
             tokenIds[i] = tokenId;

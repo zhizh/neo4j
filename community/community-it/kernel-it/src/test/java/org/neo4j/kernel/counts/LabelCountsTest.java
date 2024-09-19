@@ -21,19 +21,18 @@ package org.neo4j.kernel.counts;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.neo4j.graphdb.Label.label;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_LABEL;
 
 import org.junit.jupiter.api.Test;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.internal.kernel.api.Read;
-import org.neo4j.internal.kernel.api.TokenRead;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.extension.ImpermanentDbmsExtension;
 import org.neo4j.test.extension.Inject;
+import org.neo4j.token.api.TokenConstants;
 
 @ImpermanentDbmsExtension
 class LabelCountsTest {
@@ -184,9 +183,9 @@ class LabelCountsTest {
         Read read = transaction.dataRead();
         int labelId;
         if (label == null) {
-            labelId = ANY_LABEL;
+            labelId = TokenConstants.ANY_LABEL;
         } else {
-            if (TokenRead.NO_TOKEN == (labelId = transaction.tokenRead().nodeLabel(label.name()))) {
+            if (TokenConstants.NO_TOKEN == (labelId = transaction.tokenRead().nodeLabel(label.name()))) {
                 return 0;
             }
         }

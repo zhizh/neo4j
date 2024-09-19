@@ -20,7 +20,6 @@
 package org.neo4j.internal.recordstorage;
 
 import static java.lang.Math.min;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_RELATIONSHIP_TYPE;
 import static org.neo4j.internal.recordstorage.RelationshipReferenceEncoding.encodeDense;
 import static org.neo4j.storageengine.api.LongReference.longReference;
 import static org.neo4j.storageengine.api.RelationshipSelection.ALL_RELATIONSHIPS;
@@ -51,6 +50,7 @@ import org.neo4j.storageengine.api.StoragePropertyCursor;
 import org.neo4j.storageengine.api.StorageRelationshipTraversalCursor;
 import org.neo4j.storageengine.api.cursor.StoreCursors;
 import org.neo4j.string.Mask;
+import org.neo4j.token.api.TokenConstants;
 
 public class RecordNodeCursor extends NodeRecord implements StorageNodeCursor {
     private final NodeStore read;
@@ -255,7 +255,7 @@ public class RecordNodeCursor extends NodeRecord implements StorageNodeCursor {
                 int degree = relationshipScanCursor.sourceNodeReference() == getId()
                         ? (int) relationshipScanCursor.getFirstPrevRel()
                         : (int) relationshipScanCursor.getSecondPrevRel();
-                mutator.add(ANY_RELATIONSHIP_TYPE, degree, 0, 0);
+                mutator.add(TokenConstants.ANY_RELATIONSHIP_TYPE, degree, 0, 0);
             }
             return;
         }

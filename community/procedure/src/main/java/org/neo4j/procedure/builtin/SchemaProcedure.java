@@ -50,6 +50,7 @@ import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.impl.coreapi.schema.PropertyNameUtils;
 import org.neo4j.procedure.Description;
+import org.neo4j.token.api.TokenConstants;
 
 public class SchemaProcedure {
     private final InternalTransaction internalTransaction;
@@ -136,10 +137,10 @@ public class SchemaProcedure {
                         Map<String, Object> properties = new HashMap<>();
                         VirtualNodeHack node = getOrCreateLabel(labelName, properties, nodes);
 
-                        if (dataRead.estimateCountsForRelationships(labelId, relId, TokenRead.ANY_LABEL) > 0) {
+                        if (dataRead.estimateCountsForRelationships(labelId, relId, TokenConstants.ANY_LABEL) > 0) {
                             startNodes.add(node);
                         }
-                        if (dataRead.estimateCountsForRelationships(TokenRead.ANY_LABEL, relId, labelId) > 0) {
+                        if (dataRead.estimateCountsForRelationships(TokenConstants.ANY_LABEL, relId, labelId) > 0) {
                             endNodes.add(node);
                         }
                     }

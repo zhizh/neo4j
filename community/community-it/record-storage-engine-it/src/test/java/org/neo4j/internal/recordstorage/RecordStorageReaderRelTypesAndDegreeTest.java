@@ -29,7 +29,6 @@ import static org.neo4j.graphdb.Direction.INCOMING;
 import static org.neo4j.graphdb.Direction.OUTGOING;
 import static org.neo4j.internal.helpers.collection.Iterators.asSet;
 import static org.neo4j.internal.helpers.collection.MapUtil.map;
-import static org.neo4j.internal.kernel.api.TokenRead.NO_TOKEN;
 import static org.neo4j.internal.recordstorage.RecordCursorTypes.GROUP_CURSOR;
 import static org.neo4j.internal.recordstorage.RecordCursorTypes.NODE_CURSOR;
 import static org.neo4j.internal.recordstorage.RecordCursorTypes.RELATIONSHIP_CURSOR;
@@ -68,6 +67,7 @@ import org.neo4j.test.RandomSupport;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.RandomExtension;
 import org.neo4j.test.storage.RecordStorageEngineSupport;
+import org.neo4j.token.api.TokenConstants;
 
 @ExtendWith(RandomExtension.class)
 public class RecordStorageReaderRelTypesAndDegreeTest extends RecordStorageReaderTestBase {
@@ -511,7 +511,7 @@ public class RecordStorageReaderRelTypesAndDegreeTest extends RecordStorageReade
 
     protected int relTypeId(TestRelType type) {
         int id = relationshipTypeId(type);
-        assertNotEquals(NO_TOKEN, id);
+        assertNotEquals(TokenConstants.NO_TOKEN, id);
         return id;
     }
 

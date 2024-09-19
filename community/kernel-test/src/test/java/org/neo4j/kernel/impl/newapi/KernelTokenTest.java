@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.neo4j.internal.kernel.api.TokenRead.NO_TOKEN;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +41,7 @@ import org.neo4j.kernel.impl.api.KernelTransactionImplementation;
 import org.neo4j.storageengine.api.CommandCreationContext;
 import org.neo4j.storageengine.api.StorageReader;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.token.api.TokenHolder;
 
 class KernelTokenTest {
@@ -75,7 +75,7 @@ class KernelTokenTest {
     void shouldEnsureValidLeaseBeforeCreatingLabel() throws KernelException {
         // when
         final var label = "MyLabel";
-        when(labelTokens.getIdByName(label)).thenReturn(NO_TOKEN);
+        when(labelTokens.getIdByName(label)).thenReturn(TokenConstants.NO_TOKEN);
         kernelToken.labelGetOrCreateForName(label);
 
         // then
@@ -94,7 +94,7 @@ class KernelTokenTest {
         final var labelNames = new String[] {label1, label2};
         final var labelIds = new int[labelNames.length];
         when(labelTokens.getIdByName(label1)).thenReturn(42);
-        when(labelTokens.getIdByName(label2)).thenReturn(isKnownToken ? 69 : NO_TOKEN);
+        when(labelTokens.getIdByName(label2)).thenReturn(isKnownToken ? 69 : TokenConstants.NO_TOKEN);
         kernelToken.labelGetOrCreateForNames(labelNames, labelIds);
 
         // then
@@ -113,7 +113,7 @@ class KernelTokenTest {
     void shouldEnsureValidLeaseBeforeCreatingRelationship() throws KernelException {
         // when
         final var relationship = "MyRelationship";
-        when(relationshipTypeTokens.getIdByName(relationship)).thenReturn(NO_TOKEN);
+        when(relationshipTypeTokens.getIdByName(relationship)).thenReturn(TokenConstants.NO_TOKEN);
         kernelToken.relationshipTypeGetOrCreateForName(relationship);
 
         // then
@@ -132,7 +132,7 @@ class KernelTokenTest {
         final var relationshipNames = new String[] {relationship1, relationship2};
         final var relationshipIds = new int[relationshipNames.length];
         when(relationshipTypeTokens.getIdByName(relationship1)).thenReturn(42);
-        when(relationshipTypeTokens.getIdByName(relationship2)).thenReturn(isKnownToken ? 69 : NO_TOKEN);
+        when(relationshipTypeTokens.getIdByName(relationship2)).thenReturn(isKnownToken ? 69 : TokenConstants.NO_TOKEN);
         kernelToken.relationshipTypeGetOrCreateForNames(relationshipNames, relationshipIds);
 
         // then
@@ -151,7 +151,7 @@ class KernelTokenTest {
     void shouldEnsureValidLeaseBeforeCreatingProperty() throws KernelException {
         // when
         final var property = "MyProperty";
-        when(propertyKeyTokens.getIdByName(property)).thenReturn(NO_TOKEN);
+        when(propertyKeyTokens.getIdByName(property)).thenReturn(TokenConstants.NO_TOKEN);
         kernelToken.propertyKeyGetOrCreateForName(property);
 
         // then
@@ -170,7 +170,7 @@ class KernelTokenTest {
         final var propertyNames = new String[] {property1, property2};
         final var propertyIds = new int[propertyNames.length];
         when(propertyKeyTokens.getIdByName(property1)).thenReturn(42);
-        when(propertyKeyTokens.getIdByName(property2)).thenReturn(isKnownToken ? 69 : NO_TOKEN);
+        when(propertyKeyTokens.getIdByName(property2)).thenReturn(isKnownToken ? 69 : TokenConstants.NO_TOKEN);
         kernelToken.propertyKeyGetOrCreateForNames(propertyNames, propertyIds);
 
         // then

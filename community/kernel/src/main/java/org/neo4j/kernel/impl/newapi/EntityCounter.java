@@ -36,7 +36,6 @@ import org.neo4j.internal.kernel.api.RelationshipIndexCursor;
 import org.neo4j.internal.kernel.api.RelationshipScanCursor;
 import org.neo4j.internal.kernel.api.SchemaRead;
 import org.neo4j.internal.kernel.api.TokenPredicate;
-import org.neo4j.internal.kernel.api.TokenRead;
 import org.neo4j.internal.kernel.api.exceptions.schema.IndexNotFoundKernelException;
 import org.neo4j.internal.kernel.api.security.AccessMode;
 import org.neo4j.internal.schema.IndexDescriptor;
@@ -132,7 +131,7 @@ final class EntityCounter {
         try (DefaultNodeCursor nodes = cursors.allocateNodeCursor(cursorContext, memoryTracker)) {
             read.allNodesScan(nodes);
             while (nodes.next()) {
-                if (labelId == TokenRead.ANY_LABEL || nodes.hasLabel(labelId)) {
+                if (labelId == TokenConstants.ANY_LABEL || nodes.hasLabel(labelId)) {
                     count++;
                 }
             }
@@ -198,7 +197,7 @@ final class EntityCounter {
             CursorContext cursorContext,
             MemoryTracker memoryTracker) {
         // token index scan can only scan for single relationship type
-        if (typeId != TokenRead.ANY_RELATIONSHIP_TYPE) {
+        if (typeId != TokenConstants.ANY_RELATIONSHIP_TYPE) {
             try {
                 var index = findUsableRelationshipTypeTokenIndex(schemaRead);
                 if (index != IndexDescriptor.NO_INDEX) {
@@ -230,7 +229,7 @@ final class EntityCounter {
                 DefaultNodeCursor targetNode = cursors.allocateFullAccessNodeCursor(cursorContext, memoryTracker)) {
             read.allRelationshipsScan(rels);
             Predicate<RelationshipScanCursor> predicate =
-                    typeId == TokenRead.ANY_RELATIONSHIP_TYPE ? alwaysTrue() : CursorPredicates.hasType(typeId);
+                    typeId == TokenConstants.ANY_RELATIONSHIP_TYPE ? alwaysTrue() : CursorPredicates.hasType(typeId);
             var filteredCursor = new FilteringRelationshipScanCursorWrapper(rels, predicate);
             count = countRelationshipsWithEndLabels(filteredCursor, sourceNode, targetNode, startLabelId, endLabelId);
         }
@@ -287,9 +286,9 @@ final class EntityCounter {
         relationship.source(sourceNode);
         relationship.target(targetNode);
         return sourceNode.next()
-                && (startLabelId == TokenRead.ANY_LABEL || sourceNode.hasLabel(startLabelId))
+                && (startLabelId == TokenConstants.ANY_LABEL || sourceNode.hasLabel(startLabelId))
                 && targetNode.next()
-                && (endLabelId == TokenRead.ANY_LABEL || targetNode.hasLabel(endLabelId));
+                && (endLabelId == TokenConstants.ANY_LABEL || targetNode.hasLabel(endLabelId));
     }
 
     private long countsForRelationshipInTxState(

@@ -70,6 +70,7 @@ import org.neo4j.storageengine.api.RelationshipSelection;
 import org.neo4j.storageengine.api.StorageReader;
 import org.neo4j.storageengine.api.cursor.StoreCursors;
 import org.neo4j.storageengine.api.txstate.RelationshipState;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.util.Preconditions;
 import org.neo4j.values.storable.Value;
 
@@ -899,12 +900,13 @@ public final class KernelRead implements Read {
 
     @Override
     public long nodesGetCount() {
-        return countsForNode(TokenRead.ANY_LABEL);
+        return countsForNode(TokenConstants.ANY_LABEL);
     }
 
     @Override
     public long relationshipsGetCount() {
-        return countsForRelationship(TokenRead.ANY_LABEL, TokenRead.ANY_RELATIONSHIP_TYPE, TokenRead.ANY_LABEL);
+        return countsForRelationship(
+                TokenConstants.ANY_LABEL, TokenConstants.ANY_RELATIONSHIP_TYPE, TokenConstants.ANY_LABEL);
     }
 
     @Override

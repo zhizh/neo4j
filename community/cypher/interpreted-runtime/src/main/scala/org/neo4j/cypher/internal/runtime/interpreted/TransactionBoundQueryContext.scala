@@ -126,6 +126,7 @@ import org.neo4j.logging.internal.LogService
 import org.neo4j.scheduler.JobScheduler
 import org.neo4j.storageengine.api.PropertySelection
 import org.neo4j.storageengine.api.RelationshipVisitor
+import org.neo4j.token.api.TokenConstants
 import org.neo4j.values.AnyValue
 import org.neo4j.values.ValueMapper
 import org.neo4j.values.storable.TextValue
@@ -178,13 +179,13 @@ sealed class TransactionBoundQueryContext(
 
   override def getOrCreateLabelId(labelName: String): Int = {
     val id = tokenRead.nodeLabel(labelName)
-    if (id != TokenRead.NO_TOKEN) id
+    if (id != TokenConstants.NO_TOKEN) id
     else tokenWrite.labelGetOrCreateForName(labelName)
   }
 
   override def getOrCreateTypeId(relTypeName: String): Int = {
     val id = tokenRead.relationshipType(relTypeName)
-    if (id != TokenRead.NO_TOKEN) id
+    if (id != TokenConstants.NO_TOKEN) id
     else tokenWrite.relationshipTypeGetOrCreateForName(relTypeName)
   }
 

@@ -21,7 +21,7 @@ package org.neo4j.cypher.internal.runtime;
 
 import static org.apache.commons.lang3.ArrayUtils.contains;
 
-import org.neo4j.internal.kernel.api.TokenRead;
+import org.neo4j.token.api.TokenConstants;
 
 /**
  * Resolves tokens for a set of property names.
@@ -46,7 +46,7 @@ public interface PropertyTokensResolver {
     static PropertyTokensResolver property(String[] names, int[] tokens) {
         assert names.length == tokens.length;
 
-        if (contains(tokens, TokenRead.NO_TOKEN)) {
+        if (contains(tokens, TokenConstants.NO_TOKEN)) {
             return new IncompletePropertyTokenResolverProperty(names, tokens);
         } else {
             return new CompletePropertyTokenResolverProperty(names, tokens);
@@ -59,7 +59,7 @@ class CompletePropertyTokenResolverProperty implements PropertyTokensResolver {
     private final int[] tokens;
 
     CompletePropertyTokenResolverProperty(String[] names, int[] tokens) {
-        assert !contains(tokens, TokenRead.NO_TOKEN);
+        assert !contains(tokens, TokenConstants.NO_TOKEN);
         this.names = names;
         this.tokens = tokens;
     }
@@ -99,10 +99,10 @@ class IncompletePropertyTokenResolverProperty implements PropertyTokensResolver 
         for (int i = 0; i < size; ++i) {
             final var token = tokens[i];
 
-            if (token == TokenRead.NO_TOKEN) {
+            if (token == TokenConstants.NO_TOKEN) {
                 final int newToken = db.propertyKey(names[i]);
                 tokens[i] = newToken;
-                newIsComplete = newIsComplete && newToken != TokenRead.NO_TOKEN;
+                newIsComplete = newIsComplete && newToken != TokenConstants.NO_TOKEN;
             }
         }
         isComplete = newIsComplete;

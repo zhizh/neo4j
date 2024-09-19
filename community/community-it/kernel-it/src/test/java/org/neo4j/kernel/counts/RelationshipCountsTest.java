@@ -41,6 +41,7 @@ import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.Barrier;
 import org.neo4j.test.extension.ImpermanentDbmsExtension;
 import org.neo4j.test.extension.Inject;
+import org.neo4j.token.api.TokenConstants;
 
 @ImpermanentDbmsExtension
 class RelationshipCountsTest {
@@ -370,25 +371,25 @@ class RelationshipCountsTest {
         int endId;
         // start
         if (start == null) {
-            startId = TokenRead.ANY_LABEL;
+            startId = TokenConstants.ANY_LABEL;
         } else {
-            if (TokenRead.NO_TOKEN == (startId = tokenRead.nodeLabel(start.name()))) {
+            if (TokenConstants.NO_TOKEN == (startId = tokenRead.nodeLabel(start.name()))) {
                 return 0;
             }
         }
         // type
         if (type == null) {
-            typeId = TokenRead.ANY_RELATIONSHIP_TYPE;
+            typeId = TokenConstants.ANY_RELATIONSHIP_TYPE;
         } else {
-            if (TokenRead.NO_TOKEN == (typeId = tokenRead.relationshipType(type.name()))) {
+            if (TokenConstants.NO_TOKEN == (typeId = tokenRead.relationshipType(type.name()))) {
                 return 0;
             }
         }
         // end
         if (end == null) {
-            endId = TokenRead.ANY_LABEL;
+            endId = TokenConstants.ANY_LABEL;
         } else {
-            if (TokenRead.NO_TOKEN == (endId = tokenRead.nodeLabel(end.name()))) {
+            if (TokenConstants.NO_TOKEN == (endId = tokenRead.nodeLabel(end.name()))) {
                 return 0;
             }
         }

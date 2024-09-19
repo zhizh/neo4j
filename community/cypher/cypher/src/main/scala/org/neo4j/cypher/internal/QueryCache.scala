@@ -30,13 +30,13 @@ import org.neo4j.cypher.internal.compiler.helpers.ParameterValueTypeHelper
 import org.neo4j.cypher.internal.options.CypherReplanOption
 import org.neo4j.cypher.internal.util.InternalNotification
 import org.neo4j.cypher.internal.util.symbols.ParameterTypeInfo
-import org.neo4j.internal.kernel.api.TokenRead
 import org.neo4j.kernel.api.AssertOpen
 import org.neo4j.kernel.api.query.ExecutingQuery
 import org.neo4j.kernel.impl.query.TransactionalContext
 import org.neo4j.notifications.MissingLabelNotification
 import org.neo4j.notifications.MissingPropertyNameNotification
 import org.neo4j.notifications.MissingRelTypeNotification
+import org.neo4j.token.api.TokenConstants
 import org.neo4j.values.virtual.MapValue
 
 import java.util.concurrent.CompletableFuture
@@ -438,11 +438,11 @@ class QueryCache[QUERY_KEY <: AnyRef, EXECUTABLE_QUERY <: CacheabilityInfo](
   private def isInvalidNotification(notification: InternalNotification, tc: TransactionalContext): Boolean =
     notification match {
       case x: MissingLabelNotification =>
-        tc.kernelTransaction().tokenRead().nodeLabel(x.label) != TokenRead.NO_TOKEN
+        tc.kernelTransaction().tokenRead().nodeLabel(x.label) != TokenConstants.NO_TOKEN
       case x: MissingRelTypeNotification =>
-        tc.kernelTransaction().tokenRead().relationshipType(x.relType) != TokenRead.NO_TOKEN
+        tc.kernelTransaction().tokenRead().relationshipType(x.relType) != TokenConstants.NO_TOKEN
       case x: MissingPropertyNameNotification =>
-        tc.kernelTransaction().tokenRead().propertyKey(x.name) != TokenRead.NO_TOKEN
+        tc.kernelTransaction().tokenRead().propertyKey(x.name) != TokenConstants.NO_TOKEN
       case _ => false
     }
 

@@ -20,7 +20,6 @@
 package org.neo4j.kernel.impl.api;
 
 import static org.neo4j.graphdb.Label.label;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_LABEL;
 
 import java.util.Iterator;
 import org.neo4j.graphdb.Label;
@@ -32,6 +31,7 @@ import org.neo4j.internal.kernel.api.SchemaRead;
 import org.neo4j.internal.kernel.api.SchemaReadCore;
 import org.neo4j.internal.kernel.api.TokenRead;
 import org.neo4j.token.api.NamedToken;
+import org.neo4j.token.api.TokenConstants;
 
 public abstract class TokenAccess<R> {
     public static final TokenAccess<RelationshipType> RELATIONSHIP_TYPES = new TokenAccess<>() {
@@ -51,7 +51,8 @@ public abstract class TokenAccess<R> {
                     || // used by indexes
                     hasAny(schemaReadCore.constraintsGetForRelationshipType(tokenId))
                     || // used by constraint
-                    read.countsForRelationship(ANY_LABEL, tokenId, ANY_LABEL) > 0; // used by data
+                    read.countsForRelationship(TokenConstants.ANY_LABEL, tokenId, TokenConstants.ANY_LABEL)
+                            > 0; // used by data
         }
     };
     public static final TokenAccess<Label> LABELS = new TokenAccess<>() {

@@ -20,7 +20,6 @@
 package org.neo4j.kernel.impl.core;
 
 import static org.neo4j.graphdb.Label.label;
-import static org.neo4j.internal.kernel.api.TokenRead.NO_TOKEN;
 import static org.neo4j.kernel.api.StatementConstants.NO_SUCH_LABEL;
 import static org.neo4j.kernel.api.StatementConstants.NO_SUCH_RELATIONSHIP_TYPE;
 import static org.neo4j.storageengine.api.RelationshipSelection.ALL_RELATIONSHIPS;
@@ -43,6 +42,7 @@ import org.neo4j.internal.kernel.api.TokenSet;
 import org.neo4j.internal.kernel.api.exceptions.LabelNotFoundKernelException;
 import org.neo4j.internal.kernel.api.helpers.Nodes;
 import org.neo4j.storageengine.api.Degrees;
+import org.neo4j.token.api.TokenConstants;
 
 public abstract class AbstractNodeEntity extends AbstractEntity implements Node {
 
@@ -121,7 +121,7 @@ public abstract class AbstractNodeEntity extends AbstractEntity implements Node 
 
     protected int getDegree(RelationshipType type, NodeCursor nodes) {
         int typeId = tokenRead().relationshipType(type.name());
-        if (typeId == NO_TOKEN) { // This type doesn't even exist. Return 0
+        if (typeId == TokenConstants.NO_TOKEN) { // This type doesn't even exist. Return 0
             return 0;
         }
 
@@ -140,7 +140,7 @@ public abstract class AbstractNodeEntity extends AbstractEntity implements Node 
 
     protected int getDegree(RelationshipType type, Direction direction, NodeCursor nodes) {
         int typeId = tokenRead().relationshipType(type.name());
-        if (typeId == NO_TOKEN) { // This type doesn't even exist. Return 0
+        if (typeId == TokenConstants.NO_TOKEN) { // This type doesn't even exist. Return 0
             return 0;
         }
 

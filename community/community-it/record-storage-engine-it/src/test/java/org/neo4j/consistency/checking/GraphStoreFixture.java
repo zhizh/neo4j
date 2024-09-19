@@ -21,7 +21,6 @@ package org.neo4j.consistency.checking;
 
 import static java.lang.System.currentTimeMillis;
 import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_LABEL;
 import static org.neo4j.internal.recordstorage.RecordCursorTypes.PROPERTY_CURSOR;
 import static org.neo4j.internal.recordstorage.StoreTokens.allReadableTokens;
 import static org.neo4j.io.pagecache.context.CursorContext.NULL_CONTEXT;
@@ -106,6 +105,7 @@ import org.neo4j.token.CreatingTokenHolder;
 import org.neo4j.token.TokenCreator;
 import org.neo4j.token.TokenHolders;
 import org.neo4j.token.api.NamedToken;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.token.api.TokenHolder;
 import org.neo4j.values.storable.Value;
 
@@ -646,7 +646,7 @@ public abstract class GraphStoreFixture implements AutoCloseable {
         }
 
         private void updateCounts(NodeRecord node, int delta) {
-            writer.incrementNodeCount(ANY_LABEL, delta);
+            writer.incrementNodeCount(TokenConstants.ANY_LABEL, delta);
             for (int label :
                     NodeLabelsField.parseLabelsField(node).get(nodes, StoreCursors.NULL, EmptyMemoryTracker.INSTANCE)) {
                 writer.incrementNodeCount(label, delta);

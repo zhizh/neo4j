@@ -28,11 +28,11 @@ import org.neo4j.cypher.internal.util.RelTypeId
 import org.neo4j.cypher.internal.util.Selectivity
 import org.neo4j.internal.kernel.api.Read
 import org.neo4j.internal.kernel.api.SchemaRead
-import org.neo4j.internal.kernel.api.TokenRead
 import org.neo4j.internal.kernel.api.exceptions.schema.IndexNotFoundKernelException
 import org.neo4j.internal.schema
 import org.neo4j.kernel.impl.query.TransactionalContext
 import org.neo4j.logging.InternalLog
+import org.neo4j.token.api.TokenConstants
 
 import java.lang.Math.min
 
@@ -88,7 +88,7 @@ object TransactionBoundGraphStatistics {
           case IndexDescriptor.EntityType.Node(label) =>
             read.estimateCountsForNode(label).toDouble
           case IndexDescriptor.EntityType.Relationship(relType) =>
-            read.estimateCountsForRelationships(TokenRead.ANY_LABEL, relType, TokenRead.ANY_LABEL).toDouble
+            read.estimateCountsForRelationships(TokenConstants.ANY_LABEL, relType, TokenConstants.ANY_LABEL).toDouble
         }
 
         if (entitiesCount == 0)
@@ -112,7 +112,7 @@ object TransactionBoundGraphStatistics {
       }
 
     override def nodesAllCardinality(): Cardinality =
-      Cardinality(read.estimateCountsForNode(TokenRead.ANY_LABEL))
+      Cardinality(read.estimateCountsForNode(TokenConstants.ANY_LABEL))
 
     override def mostCommonLabelGivenRelationshipType(typ: Int): Seq[Int] = {
       read.mostCommonLabelGivenRelationshipType(typ).asScala.toSeq.map(_.toInt)

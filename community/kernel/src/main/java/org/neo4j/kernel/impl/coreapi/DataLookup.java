@@ -87,6 +87,7 @@ import org.neo4j.kernel.impl.newapi.CursorPredicates;
 import org.neo4j.kernel.impl.newapi.FilteringNodeCursorWrapper;
 import org.neo4j.kernel.impl.newapi.FilteringRelationshipScanCursorWrapper;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.token.api.TokenConstants;
 import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
@@ -370,7 +371,7 @@ public abstract class DataLookup {
 
     private ResourceIterator<Relationship> allRelationshipsWithType(final RelationshipType type) {
         int typeId = tokenRead().relationshipType(type.name());
-        if (typeId == TokenRead.NO_TOKEN) {
+        if (typeId == TokenConstants.NO_TOKEN) {
             return emptyResourceIterator();
         }
 
@@ -409,7 +410,7 @@ public abstract class DataLookup {
 
     private ResourceIterator<Node> allNodesWithLabel(Label myLabel) {
         int labelId = tokenRead().nodeLabel(myLabel.name());
-        if (labelId == TokenRead.NO_TOKEN) {
+        if (labelId == TokenConstants.NO_TOKEN) {
             return emptyResourceIterator();
         }
 
@@ -793,7 +794,7 @@ public abstract class DataLookup {
     }
 
     private static boolean invalidTokens(int... tokens) {
-        return stream(tokens).anyMatch(token -> token == TokenRead.NO_TOKEN);
+        return stream(tokens).anyMatch(token -> token == TokenConstants.NO_TOKEN);
     }
 
     private static PropertyIndexQuery getIndexQuery(String value, StringSearchMode searchMode, int propertyId) {
@@ -806,12 +807,12 @@ public abstract class DataLookup {
     }
 
     private static boolean isInvalidQuery(int tokenId, PropertyIndexQuery[] queries) {
-        if (tokenId == TokenRead.NO_TOKEN) {
+        if (tokenId == TokenConstants.NO_TOKEN) {
             return true;
         }
         return stream(queries)
                 .mapToInt(PropertyIndexQuery::propertyKeyId)
-                .anyMatch(propertyKeyId -> propertyKeyId == TokenRead.NO_TOKEN);
+                .anyMatch(propertyKeyId -> propertyKeyId == TokenConstants.NO_TOKEN);
     }
 
     private static PropertyIndexQuery.ExactPredicate[] convertToQueries(

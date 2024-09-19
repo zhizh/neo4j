@@ -22,7 +22,6 @@ package org.neo4j.kernel.counts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.neo4j.graphdb.Label.label;
 import static org.neo4j.graphdb.RelationshipType.withName;
-import static org.neo4j.internal.kernel.api.TokenRead.ANY_LABEL;
 
 import org.junit.jupiter.api.Test;
 import org.neo4j.graphdb.Label;
@@ -36,6 +35,7 @@ import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.extension.ImpermanentDbmsExtension;
 import org.neo4j.test.extension.Inject;
+import org.neo4j.token.api.TokenConstants;
 
 @ImpermanentDbmsExtension
 class CompositeCountsTest {
@@ -368,25 +368,25 @@ class CompositeCountsTest {
         int endId;
         // start
         if (start == null) {
-            startId = ANY_LABEL;
+            startId = TokenConstants.ANY_LABEL;
         } else {
-            if (TokenRead.NO_TOKEN == (startId = tokenRead.nodeLabel(start.name()))) {
+            if (TokenConstants.NO_TOKEN == (startId = tokenRead.nodeLabel(start.name()))) {
                 return 0;
             }
         }
         // type
         if (type == null) {
-            typeId = TokenRead.NO_TOKEN;
+            typeId = TokenConstants.NO_TOKEN;
         } else {
-            if (TokenRead.NO_TOKEN == (typeId = tokenRead.relationshipType(type.name()))) {
+            if (TokenConstants.NO_TOKEN == (typeId = tokenRead.relationshipType(type.name()))) {
                 return 0;
             }
         }
         // end
         if (end == null) {
-            endId = ANY_LABEL;
+            endId = TokenConstants.ANY_LABEL;
         } else {
-            if (TokenRead.NO_TOKEN == (endId = tokenRead.nodeLabel(end.name()))) {
+            if (TokenConstants.NO_TOKEN == (endId = tokenRead.nodeLabel(end.name()))) {
                 return 0;
             }
         }
