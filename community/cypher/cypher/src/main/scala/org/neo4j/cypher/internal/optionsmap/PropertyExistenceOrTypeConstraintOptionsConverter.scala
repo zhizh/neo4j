@@ -35,12 +35,16 @@ case class PropertyExistenceOrTypeConstraintOptionsConverter(
 ) extends IndexOptionsConverter[CreateWithNoOptions] {
   // Property existence and property type constraints are not index-backed and do not have any valid options, but allows for an empty options map
 
-  override def convert(options: MapValue, config: Option[Config], version: CypherVersion): CreateWithNoOptions = {
+  override def convert(
+    options: MapValue,
+    config: Option[Config],
+    cypherVersion: CypherVersion
+  ): OptionsConverterResult[CreateWithNoOptions] = {
     if (!options.isEmpty)
       throw new InvalidArgumentsException(
         s"Could not create $entity property $constraintType constraint: property $constraintType constraints have no valid options values."
       )
-    CreateWithNoOptions()
+    ParsedOptions(CreateWithNoOptions())
   }
 
   // No options available, this method doesn't get called

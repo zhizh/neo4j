@@ -35,6 +35,7 @@ import org.neo4j.cypher.internal.util.DeprecatedIdentifierUnicode
 import org.neo4j.cypher.internal.util.DeprecatedIdentifierWhitespaceUnicode
 import org.neo4j.cypher.internal.util.DeprecatedImportingWithInSubqueryCall
 import org.neo4j.cypher.internal.util.DeprecatedNodesOrRelationshipsInSetClauseNotification
+import org.neo4j.cypher.internal.util.DeprecatedOptionInOptionMap
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInCreate
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInMerge
 import org.neo4j.cypher.internal.util.DeprecatedRelTypeSeparatorNotification
@@ -339,6 +340,9 @@ object NotificationWrapping {
       NotificationCodeWithDescription.deprecatedConnectComponentsPlannerPreParserOption(
         position.asInputPosition
       )
+
+    case DeprecatedOptionInOptionMap(oldOption, newOption) =>
+      NotificationCodeWithDescription.deprecatedOptionInOptionMap(oldOption, newOption)
 
     case AuthProviderNotDefined(provider) =>
       NotificationCodeWithDescription.authProviderNotDefined(

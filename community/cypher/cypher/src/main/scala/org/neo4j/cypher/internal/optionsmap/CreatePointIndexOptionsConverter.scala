@@ -43,10 +43,10 @@ case class CreatePointIndexOptionsConverter(context: IndexProviderContext)
   override def convert(
     options: MapValue,
     config: Option[Config],
-    version: CypherVersion
-  ): CreateIndexWithFullOptions = {
-    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.POINT, version)
-    CreateIndexWithFullOptions(indexProvider, indexConfig)
+    cypherVersion: CypherVersion
+  ): ParsedOptions[CreateIndexWithFullOptions] = {
+    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.POINT, cypherVersion)
+    ParsedOptions(CreateIndexWithFullOptions(indexProvider, indexConfig))
   }
 
   // POINT indexes has point config settings

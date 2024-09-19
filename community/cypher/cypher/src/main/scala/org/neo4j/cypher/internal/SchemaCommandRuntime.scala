@@ -60,6 +60,9 @@ import org.neo4j.cypher.internal.optionsmap.CreateRangeIndexOptionsConverter
 import org.neo4j.cypher.internal.optionsmap.CreateTextIndexOptionsConverter
 import org.neo4j.cypher.internal.optionsmap.CreateVectorIndexOptionsConverter
 import org.neo4j.cypher.internal.optionsmap.IndexBackedConstraintsOptionsConverter
+import org.neo4j.cypher.internal.optionsmap.Nothing
+import org.neo4j.cypher.internal.optionsmap.ParsedOptions
+import org.neo4j.cypher.internal.optionsmap.ParsedWithNotifications
 import org.neo4j.cypher.internal.optionsmap.PropertyExistenceOrTypeConstraintOptionsConverter
 import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescription.getPrettyStringName
 import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescription.prettyOptions
@@ -145,6 +148,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexProvider =
               IndexBackedConstraintsOptionsConverter("node key constraint", indexContext(ctx))
                 .convert(context.cypherVersion, options, params)
+                .toOption
                 .flatMap(_.provider)
             val labelId = ctx.getOrCreateLabelId(label.name)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p.propertyKey).id)
@@ -163,6 +167,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexProvider =
               IndexBackedConstraintsOptionsConverter("relationship key constraint", indexContext(ctx))
                 .convert(context.cypherVersion, options, params)
+                .toOption
                 .flatMap(_.provider)
             val relId = ctx.getOrCreateRelTypeId(relType.name)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p.propertyKey).id)
@@ -182,6 +187,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexProvider =
               IndexBackedConstraintsOptionsConverter("uniqueness constraint", indexContext(ctx))
                 .convert(context.cypherVersion, options, params)
+                .toOption
                 .flatMap(_.provider)
             val labelId = ctx.getOrCreateLabelId(label.name)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p.propertyKey).id)
@@ -202,6 +208,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexProvider =
               IndexBackedConstraintsOptionsConverter("relationship uniqueness constraint", indexContext(ctx))
                 .convert(context.cypherVersion, options, params)
+                .toOption
                 .flatMap(_.provider)
             val relTypeId = ctx.getOrCreateRelTypeId(relType.name)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p.propertyKey).id)
@@ -328,6 +335,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val provider =
               CreateRangeIndexOptionsConverter(schemaType, indexContext(ctx))
                 .convert(context.cypherVersion, options, params)
+                .toOption
                 .flatMap(_.provider)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p).id)
             ctx.addRangeIndexRule(entityId, entityType, propertyKeyIds, indexName, provider)
@@ -345,6 +353,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexName = getName(name, params)
             val provider = CreateLookupIndexOptionsConverter(indexContext(ctx))
               .convert(context.cypherVersion, options, params)
+              .toOption
               .flatMap(_.provider)
             ctx.addLookupIndexRule(entityType, indexName, provider)
             SuccessResult()
@@ -361,8 +370,9 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexName = getName(name, params)
             val (indexProvider, indexConfig) = CreateFulltextIndexOptionsConverter(indexContext(ctx))
               .convert(context.cypherVersion, options, params) match {
-              case None                                               => (None, IndexConfig.empty())
-              case Some(CreateIndexWithFullOptions(provider, config)) => (provider, config)
+              case Nothing                                                     => (None, IndexConfig.empty())
+              case ParsedOptions(CreateIndexWithFullOptions(provider, config)) => (provider, config)
+              case ParsedWithNotifications(CreateIndexWithFullOptions(provider, config), _) => (provider, config)
             }
             val (entityIds, entityType) = getMultipleEntityInfo(entityNames, ctx)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p).id)
@@ -381,6 +391,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexName = getName(name, params)
             val provider = CreateTextIndexOptionsConverter(indexContext(ctx))
               .convert(context.cypherVersion, options, params)
+              .toOption
               .flatMap(_.provider)
             val (entityId, entityType) = getEntityInfo(entityName, ctx)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p).id)
@@ -403,8 +414,9 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
                 options,
                 params
               ) match {
-              case None                                               => (None, IndexConfig.empty())
-              case Some(CreateIndexWithFullOptions(provider, config)) => (provider, config)
+              case Nothing                                                     => (None, IndexConfig.empty())
+              case ParsedOptions(CreateIndexWithFullOptions(provider, config)) => (provider, config)
+              case ParsedWithNotifications(CreateIndexWithFullOptions(provider, config), _) => (provider, config)
             }
             val (entityId, entityType) = getEntityInfo(entityName, ctx)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p).id)
@@ -423,10 +435,11 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val indexName = getName(name, params)
             val optionsConverter = CreateVectorIndexOptionsConverter(indexContext(ctx), vectorIndexVersion(ctx))
             val (indexProvider, indexConfig) = optionsConverter.convert(context.cypherVersion, options, params) match {
-              case None =>
+              case Nothing =>
                 // will not get here due to mandatory config but need this to make it compile
                 (None, IndexConfig.empty())
-              case Some(CreateIndexWithFullOptions(provider, config)) => (provider, config)
+              case ParsedOptions(CreateIndexWithFullOptions(provider, config))              => (provider, config)
+              case ParsedWithNotifications(CreateIndexWithFullOptions(provider, config), _) => (provider, config)
             }
             val (entityId, entityType) = getEntityInfo(entityName, ctx)
             val propertyKeyIds = props.map(p => propertyToId(ctx)(p).id)

@@ -35,10 +35,10 @@ case class CreateTextIndexOptionsConverter(context: IndexProviderContext)
   override def convert(
     options: MapValue,
     config: Option[Config],
-    version: CypherVersion
-  ): CreateIndexProviderOnlyOptions = {
-    val (indexProvider, _) = getOptionsParts(options, schemaType, IndexType.TEXT, version)
-    CreateIndexProviderOnlyOptions(indexProvider)
+    cypherVersion: CypherVersion
+  ): OptionsConverterResult[CreateIndexProviderOnlyOptions] = {
+    val (indexProvider, _) = getOptionsParts(options, schemaType, IndexType.TEXT, cypherVersion)
+    ParsedOptions(CreateIndexProviderOnlyOptions(indexProvider))
   }
 
   // TEXT indexes has no available config settings

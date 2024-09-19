@@ -34,10 +34,10 @@ abstract class CreateRangeOptionsConverter(schemaType: String)
   override def convert(
     options: MapValue,
     config: Option[Config],
-    version: CypherVersion
-  ): CreateIndexProviderOnlyOptions = {
-    val (indexProvider, _) = getOptionsParts(options, schemaType, IndexType.RANGE, version)
-    CreateIndexProviderOnlyOptions(indexProvider)
+    cypherVersion: CypherVersion
+  ): OptionsConverterResult[CreateIndexProviderOnlyOptions] = {
+    val (indexProvider, _) = getOptionsParts(options, schemaType, IndexType.RANGE, cypherVersion)
+    ParsedOptions(CreateIndexProviderOnlyOptions(indexProvider))
   }
 
   // RANGE indexes has no available config settings

@@ -316,7 +316,12 @@ public enum NotificationCodeWithDescription {
     AGGREGATION_SKIPPED_NULL(
             Status.Statement.AggregationSkippedNull,
             GqlStatusInfoCodes.STATUS_01G11,
-            "null value eliminated in set function.");
+            "null value eliminated in set function."),
+
+    DEPRECATED_OPTION_IN_OPTION_MAP(
+            Status.Statement.FeatureDeprecationWarning,
+            GqlStatusInfoCodes.STATUS_01N01,
+            "'%s' is deprecated. It is replaced by '%s'.");
 
     private final Status status;
     private final GqlStatusInfoCodes gqlStatusInfo;
@@ -707,6 +712,11 @@ public enum NotificationCodeWithDescription {
             InputPosition position, String titleParam, String descriptionParam) {
         return INDEX_OR_CONSTRAINT_DOES_NOT_EXIST.notificationWithTitleAndDescriptionDetails(
                 position, titleParam, new String[] {descriptionParam}, new String[] {titleParam, descriptionParam});
+    }
+
+    public static NotificationImplementation deprecatedOptionInOptionMap(String oldOption, String newOption) {
+        return DEPRECATED_OPTION_IN_OPTION_MAP.notificationWithParameters(
+                InputPosition.empty, new String[] {oldOption, newOption}, new String[] {oldOption, newOption});
     }
 
     private NotificationImplementation notification(InputPosition position) {

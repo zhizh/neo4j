@@ -42,6 +42,7 @@ import static org.neo4j.notifications.NotificationCodeWithDescription.deprecated
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedIdentifierWhitespaceUnicode;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedImportingWithInSubqueryCall;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedNodeOrRelationshipOnRhsSetClause;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedOptionInOptionMap;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureReturnField;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureWithReplacement;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureWithoutReplacement;
@@ -1654,6 +1655,30 @@ class NotificationCodeWithDescriptionTest {
                 "warn: null value eliminated in set function");
     }
 
+    @Test
+    void shouldConstructNotificationsFor_DEPRECATED_OPTION_IN_OPTION_MAP() {
+        NotificationImplementation notification = deprecatedOptionInOptionMap("oldName", "newName");
+
+        verifyNotification(
+                notification,
+                "This feature is deprecated and will be removed in future versions.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
+                "'oldName' is deprecated. It is replaced by 'newName'.",
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
+                "01N01",
+                new DiagnosticRecord(
+                                warning,
+                                NotificationClassification.DEPRECATION,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of("feat1", "oldName", "feat2", "newName"))
+                        .asMap(),
+                "warn: feature deprecated with replacement. oldName is deprecated. It is replaced by newName.");
+    }
+
     private void verifyNotification(
             NotificationImplementation notification,
             String title,
@@ -1774,8 +1799,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            -17, -42, -71, 71, 86, -95, -18, 80, 6, 111, 24, 46, 35, 61, -33, 56, 68, 96, -122, -85, 97, 50, -66, -1,
-            81, -119, 77, -4, 126, 87, 81, 120
+            38, 46, -89, 96, 13, -3, 17, 93, -74, -18, -1, 30, -100, -89, -25, 121, -77, -70, -67, 39, 93, 16, -28, -38,
+            122, 3, -125, -122, 117, 54, 16, 50
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {

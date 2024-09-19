@@ -35,10 +35,10 @@ case class CreateLookupIndexOptionsConverter(context: IndexProviderContext)
   override def convert(
     options: MapValue,
     config: Option[Config],
-    version: CypherVersion
-  ): CreateIndexProviderOnlyOptions = {
-    val (indexProvider, _) = getOptionsParts(options, schemaType, IndexType.LOOKUP, version)
-    CreateIndexProviderOnlyOptions(indexProvider)
+    cypherVersion: CypherVersion
+  ): ParsedOptions[CreateIndexProviderOnlyOptions] = {
+    val (indexProvider, _) = getOptionsParts(options, schemaType, IndexType.LOOKUP, cypherVersion)
+    ParsedOptions(CreateIndexProviderOnlyOptions(indexProvider))
   }
 
   // LOOKUP indexes has no available config settings

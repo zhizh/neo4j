@@ -103,6 +103,20 @@ object ExistingSeedInstanceOption extends StringOptionValidator {
     }
 }
 
+object ExistingSeedServerOption extends StringOptionValidator {
+  override val KEY: String = "existingDataSeedServer"
+
+  override protected def validateContent(value: String, config: Option[Config])(implicit operation: String): Unit =
+    try {
+      UUID.fromString(value)
+    } catch {
+      case _: IllegalArgumentException =>
+        throw new InvalidArgumentsException(
+          s"Could not $operation with specified $KEY '$value'. Expected server uuid string."
+        )
+    }
+}
+
 object StoreFormatOption extends StringOptionValidator {
   override val KEY: String = "storeFormat"
 

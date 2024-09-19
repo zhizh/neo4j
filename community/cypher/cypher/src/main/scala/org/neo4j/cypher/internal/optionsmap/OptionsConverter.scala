@@ -46,26 +46,26 @@ trait OptionsConverter[T] {
     options: Options,
     params: MapValue,
     config: Option[Config] = None
-  ): Option[T] = options match {
+  ): OptionsConverterResult[T] = options match {
     case NoOptions if hasMandatoryOptions =>
       // If there are mandatory options we should call convert with empty options to throw expected errors
-      Some(convert(VirtualValues.EMPTY_MAP, config, version))
-    case NoOptions => None
-    case OptionsMap(map) => Some(convert(
+      convert(VirtualValues.EMPTY_MAP, config, version)
+    case NoOptions => Nothing
+    case OptionsMap(map) => convert(
         VirtualValues.map(
           map.keys.map(_.toLowerCase(Locale.ROOT)).toArray,
           map.view.mapValues(evaluate(version, _, params)).values.toArray
         ),
         config,
         version
-      ))
+      )
     case OptionsParam(parameter) =>
       val opsMap = params.get(parameter.name)
       opsMap match {
         case mv: MapValue =>
           val builder = new MapValueBuilder()
           mv.foreach((k, v) => builder.add(k.toLowerCase(Locale.ROOT), v))
-          Some(convert(builder.build(), config, version))
+          convert(builder.build(), config, version)
         case _ =>
           throw new InvalidArgumentsException(s"Could not $operation with options '$opsMap'. Expected a map value.")
       }
@@ -73,7 +73,7 @@ trait OptionsConverter[T] {
 
   implicit def operation: String
 
-  def convert(options: MapValue, config: Option[Config], version: CypherVersion): T
+  def convert(options: MapValue, config: Option[Config], version: CypherVersion): OptionsConverterResult[T]
 
   protected val hasMandatoryOptions: Boolean = false
 }

@@ -365,7 +365,7 @@ class SchemaCommandConverter(
   private def validateOptions[OPTION](options: Options, converter: IndexOptionsConverter[OPTION]): Option[OPTION] = {
     if (options.isInstanceOf[OptionsParam])
       throw new SchemaCommandReaderException("Parameterised options are not allowed" + ERROR_SUFFIX)
-    converter.convert(cypherVersion, options, MapValue.EMPTY, Option.empty)
+    converter.convert(cypherVersion, options, MapValue.EMPTY, Option.empty).toOption
   }
 
   private def asList[TYPE](list: Seq[TYPE]): util.List[TYPE] =

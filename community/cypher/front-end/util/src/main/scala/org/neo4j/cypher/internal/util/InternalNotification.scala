@@ -85,7 +85,8 @@ object InternalNotification {
     "DeprecatedProcedureFieldNotification",
     "AuthProviderNotDefined",
     "ExternalAuthNotEnabled",
-    "AggregationSkippedNull"
+    "AggregationSkippedNull",
+    "DeprecatedOptionInOptionMap"
   )
 
   def allNotificationsAsJavaIterable(): lang.Iterable[String] = allNotifications.asJava
@@ -175,3 +176,5 @@ case class IndexOrConstraintAlreadyExistsNotification(command: String, conflicti
     extends InternalNotification
 case class IndexOrConstraintDoesNotExistNotification(command: String, name: String) extends InternalNotification
 case object AggregationSkippedNull extends InternalNotification
+
+case class DeprecatedOptionInOptionMap(oldOption: String, newOption: String) extends InternalNotification

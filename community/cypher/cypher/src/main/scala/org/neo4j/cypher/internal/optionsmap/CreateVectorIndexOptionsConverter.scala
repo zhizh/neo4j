@@ -58,10 +58,10 @@ case class CreateVectorIndexOptionsConverter(context: IndexProviderContext, late
   override def convert(
     options: MapValue,
     config: Option[Config],
-    version: CypherVersion
-  ): CreateIndexWithFullOptions = {
-    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.VECTOR, version)
-    CreateIndexWithFullOptions(indexProvider, indexConfig)
+    cypherVersion: CypherVersion
+  ): OptionsConverterResult[CreateIndexWithFullOptions] = {
+    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.VECTOR, cypherVersion)
+    ParsedOptions(CreateIndexWithFullOptions(indexProvider, indexConfig))
   }
 
   // VECTOR indexes has vector config settings

@@ -39,10 +39,10 @@ case class CreateFulltextIndexOptionsConverter(context: IndexProviderContext)
   override def convert(
     options: MapValue,
     config: Option[Config],
-    version: CypherVersion
-  ): CreateIndexWithFullOptions = {
-    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.FULLTEXT, version)
-    CreateIndexWithFullOptions(indexProvider, indexConfig)
+    cypherVersion: CypherVersion
+  ): OptionsConverterResult[CreateIndexWithFullOptions] = {
+    val (indexProvider, indexConfig) = getOptionsParts(options, schemaType, IndexType.FULLTEXT, cypherVersion)
+    ParsedOptions(CreateIndexWithFullOptions(indexProvider, indexConfig))
   }
 
   // FULLTEXT indexes have two config settings:
