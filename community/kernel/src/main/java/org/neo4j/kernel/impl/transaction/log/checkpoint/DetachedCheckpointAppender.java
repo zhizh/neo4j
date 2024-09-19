@@ -208,7 +208,7 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
 
                 logCheckPointEvent.appendedBytes(writer.getAppendedBytes());
                 forceAfterAppend(logCheckPointEvent);
-                logRotation.rotateLogIfNeeded(logCheckPointEvent);
+                logRotation.locklessRotateLogIfNeeded(logCheckPointEvent);
             } catch (Throwable cause) {
                 databasePanic.panic(cause);
                 throw cause;
