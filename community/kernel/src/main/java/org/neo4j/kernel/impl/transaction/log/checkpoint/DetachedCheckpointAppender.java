@@ -63,6 +63,7 @@ import org.neo4j.kernel.impl.transaction.tracing.LogForceEvent;
 import org.neo4j.kernel.lifecycle.LifecycleAdapter;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.monitoring.Panic;
+import org.neo4j.storageengine.AppendIndexProvider;
 import org.neo4j.storageengine.api.LogVersionRepository;
 import org.neo4j.storageengine.api.StoreId;
 import org.neo4j.storageengine.api.TransactionId;
@@ -110,7 +111,10 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
 
         long currentLogVersion = logVersionRepository.getCheckpointLogVersion();
         channel = channelAllocator.createLogChannel(
-                currentLogVersion, context.appendIndex(), BASE_TX_CHECKSUM, context.getKernelVersionProvider());
+                currentLogVersion,
+                AppendIndexProvider.UNKNOWN_APPEND_INDEX,
+                BASE_TX_CHECKSUM,
+                context.getKernelVersionProvider());
 
         context.getMonitors().newMonitor(LogRotationMonitor.class).started(channel.getPath(), currentLogVersion);
         seekCheckpointChannel(currentLogVersion);
@@ -227,26 +231,25 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
     }
 
     public Path rotate() throws IOException {
-        channel = rotateChannel(channel, context.appendIndex(), context.getKernelVersionProvider());
+        channel = rotateChannel(channel, context.getKernelVersionProvider());
         writer.setChannel(channel, logHeader(channel.getLogVersion()));
         return channel.getPath();
     }
 
-    public Path rotate(KernelVersion kernelVersion, long lastAppendIndex) throws IOException {
-        channel = rotateChannel(channel, lastAppendIndex, () -> kernelVersion);
+    public Path rotate(KernelVersion kernelVersion) throws IOException {
+        channel = rotateChannel(channel, () -> kernelVersion);
         writer.setChannel(channel, logHeader(channel.getLogVersion()));
         return channel.getPath();
     }
 
     private PhysicalLogVersionedStoreChannel rotateChannel(
-            PhysicalLogVersionedStoreChannel channel, long lastAppendIndex, KernelVersionProvider kernelVersionProvider)
-            throws IOException {
+            PhysicalLogVersionedStoreChannel channel, KernelVersionProvider kernelVersionProvider) throws IOException {
         long newLogVersion = logVersionRepository.incrementAndGetCheckpointLogVersion();
         writer.prepareForFlush().flush();
 
         int checksum = writer.currentChecksum().orElse(BASE_TX_CHECKSUM);
-        var newChannel =
-                channelAllocator.createLogChannel(newLogVersion, lastAppendIndex, checksum, kernelVersionProvider);
+        var newChannel = channelAllocator.createLogChannel(
+                newLogVersion, AppendIndexProvider.UNKNOWN_APPEND_INDEX, checksum, kernelVersionProvider);
         channel.close();
         return newChannel;
     }
