@@ -137,7 +137,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
 
   val logicalToExecutable: PartialFunction[LogicalPlan, RuntimeContext => ExecutionPlan] = {
     // CREATE CONSTRAINT [name] [IF NOT EXISTS] FOR (node:Label) REQUIRE (node.prop1,node.prop2) IS NODE KEY [OPTIONS {...}]
-    case CreateConstraint(source, NodeKey, label: LabelName, props, name, options) => context =>
+    case CreateConstraint(source, _: NodeKey, label: LabelName, props, name, options) => context =>
         SchemaExecutionPlan(
           "CreateNodeKeyConstraint",
           (ctx, params) => {
@@ -155,7 +155,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
         )
 
     // CREATE CONSTRAINT [name] [IF NOT EXISTS] FOR ()-[rel:TYPE]-() REQUIRE (rel.prop1,rel.prop2) IS RELATIONSHIP KEY [OPTIONS {...}]
-    case CreateConstraint(source, RelationshipKey, relType: RelTypeName, props, name, options) => context =>
+    case CreateConstraint(source, _: RelationshipKey, relType: RelTypeName, props, name, options) => context =>
         SchemaExecutionPlan(
           "CreateRelationshipKeyConstraint",
           (ctx, params) => {
@@ -594,10 +594,10 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             val constraintName = getName(name, params)
             // Assert correct options to get errors even if matching constraint already exists
             assertion match {
-              case NodeKey =>
+              case _: NodeKey =>
                 IndexBackedConstraintsOptionsConverter("node key constraint", indexContext(ctx))
                   .convert(context.cypherVersion, options, params)
-              case RelationshipKey =>
+              case _: RelationshipKey =>
                 IndexBackedConstraintsOptionsConverter("relationship key constraint", indexContext(ctx))
                   .convert(context.cypherVersion, options, params)
               case NodePropertyUniqueness =>
@@ -628,7 +628,8 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
               val constraintDescription = constraintInfo(constraintName, entityName, props, assertion, options)
               val conflictingConstraint = existingConstraintInfo(
                 ctx,
-                () => ctx.getConstraintInformation(constraintMatcher, entityId, propertyKeyIds: _*)
+                () => ctx.getConstraintInformation(constraintMatcher, entityId, propertyKeyIds: _*),
+                context.cypherVersion
               )
 
               val notification = IndexOrConstraintAlreadyExistsNotification(
@@ -639,8 +640,11 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
             } else if (constraintName.exists(ctx.constraintExists)) {
               // Notify on pre-existing constraint, replace potential parameter names with their actual value
               val constraintDescription = constraintInfo(constraintName, entityName, props, assertion, options)
-              val conflictingConstraint =
-                existingConstraintInfo(ctx, () => ctx.getConstraintInformation(constraintName.get))
+              val conflictingConstraint = existingConstraintInfo(
+                ctx,
+                () => ctx.getConstraintInformation(constraintName.get),
+                context.cypherVersion
+              )
 
               val notification = IndexOrConstraintAlreadyExistsNotification(
                 s"CREATE $constraintDescription",
@@ -691,8 +695,8 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
       case RelationshipPropertyExistence  => c => c.isRelationshipPropertyExistenceConstraint
       case NodePropertyUniqueness         => c => c.isNodeUniquenessConstraint
       case RelationshipPropertyUniqueness => c => c.isRelationshipUniquenessConstraint
-      case NodeKey                        => c => c.isNodeKeyConstraint
-      case RelationshipKey                => c => c.isRelationshipKeyConstraint
+      case _: NodeKey                     => c => c.isNodeKeyConstraint
+      case _: RelationshipKey             => c => c.isRelationshipKeyConstraint
       case NodePropertyType(propType) =>
         c => c.isNodePropertyTypeConstraint && checkTypes(propType, c.asPropertyTypeConstraint().propertyType())
       case RelationshipPropertyType(propType) =>
@@ -802,21 +806,14 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
     val name = getPrettyName(nameOption)
     val pattern = getPrettyEntityPattern(entityName)
     val propertyString = getPrettyPropertyPattern(properties.map(p => p.propertyKey), "(", ")")
-    val assertion = constraintType match {
-      case NodePropertyExistence | RelationshipPropertyExistence   => "IS NOT NULL"
-      case NodeKey                                                 => "IS NODE KEY"
-      case RelationshipKey                                         => "IS RELATIONSHIP KEY"
-      case NodePropertyUniqueness | RelationshipPropertyUniqueness => "IS UNIQUE"
-      case NodePropertyType(t)                                     => s"IS :: ${t.description}"
-      case RelationshipPropertyType(t)                             => s"IS :: ${t.description}"
-    }
-    val prettyAssertion = asPrettyString.raw(assertion)
+    val prettyAssertion = asPrettyString.raw(constraintType.predicate)
     pretty"CONSTRAINT$name IF NOT EXISTS FOR $pattern REQUIRE $propertyString $prettyAssertion${prettyOptions(options)}".prettifiedString
   }
 
   private def existingConstraintInfo(
     ctx: QueryContext,
-    getInfoParts: () => ConstraintInformation
+    getInfoParts: () => ConstraintInformation,
+    cypherVersion: CypherVersion
   ): String = {
     try {
       // Assert we are allowed to see the constraint description
@@ -830,8 +827,11 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
       val pattern = getPrettyEntityPattern(isNode, entityName)
       val propertyString = getPrettyPropertyPattern(properties, "(", ")")
       val assertion = constraintType match {
-        case EXISTS            => "IS NOT NULL"
-        case UNIQUE_EXISTS     => if (isNode) "IS NODE KEY" else "IS RELATIONSHIP KEY"
+        case EXISTS => "IS NOT NULL"
+        case UNIQUE_EXISTS =>
+          if (cypherVersion == CypherVersion.Cypher5)
+            if (isNode) "IS NODE KEY" else "IS RELATIONSHIP KEY"
+          else "IS KEY"
         case UNIQUE            => "IS UNIQUE"
         case PROPERTY_TYPE     => s"IS :: ${propertyType.get}"
         case ENDPOINT          => ""

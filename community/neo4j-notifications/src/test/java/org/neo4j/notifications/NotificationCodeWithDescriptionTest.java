@@ -1561,6 +1561,34 @@ class NotificationCodeWithDescriptionTest {
                                         "CONSTRAINT baz FOR (n:L) REQUIRE (n.p1) IS NODE KEY"))
                         .asMap(),
                 "note: successful completion - index or constraint already exists. The command 'CREATE CONSTRAINT bar IF NOT EXISTS FOR (n:L) REQUIRE (n.p1) IS NODE KEY' has no effect. The index or constraint specified by 'CONSTRAINT baz FOR (n:L) REQUIRE (n.p1) IS NODE KEY' already exists.");
+
+        notification = indexOrConstraintAlreadyExists(
+                InputPosition.empty,
+                "CREATE CONSTRAINT bar IF NOT EXISTS FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY",
+                "CONSTRAINT baz FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY");
+
+        verifyNotification(
+                notification,
+                "`CREATE CONSTRAINT bar IF NOT EXISTS FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY` has no effect.",
+                SeverityLevel.INFORMATION,
+                "Neo.ClientNotification.Schema.IndexOrConstraintAlreadyExists",
+                "`CONSTRAINT baz FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY` already exists.",
+                NotificationCategory.SCHEMA,
+                NotificationClassification.SCHEMA,
+                "00NA0",
+                new DiagnosticRecord(
+                                info,
+                                NotificationClassification.SCHEMA,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of(
+                                        "cmd",
+                                        "CREATE CONSTRAINT bar IF NOT EXISTS FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY",
+                                        "idxOrConstrPat",
+                                        "CONSTRAINT baz FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY"))
+                        .asMap(),
+                "note: successful completion - index or constraint already exists. The command 'CREATE CONSTRAINT bar IF NOT EXISTS FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY' has no effect. The index or constraint specified by 'CONSTRAINT baz FOR ()-[r:R]->() REQUIRE (r.p1) IS KEY' already exists.");
     }
 
     @Test

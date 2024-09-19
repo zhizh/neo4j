@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.runtime.interpreted.commands.showcommands
 
 import org.neo4j.common.EntityType
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AllIndexes
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.FulltextIndexes
@@ -80,12 +81,14 @@ import java.time.ZoneId
 import scala.collection.immutable.ListMap
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
-// SHOW [ALL|FULLTEXT|LOOKUP|POINT|RANGE|TEXT|VECTOR] INDEX[ES] [BRIEF|VERBOSE|WHERE clause|YIELD clause]
+// SHOW [ALL|FULLTEXT|LOOKUP|POINT|RANGE|TEXT|VECTOR] INDEX[ES] [WHERE clause|YIELD clause]
 case class ShowIndexesCommand(
   indexType: ShowIndexType,
   columns: List[ShowColumn],
-  yieldColumns: List[CommandResultItem]
+  yieldColumns: List[CommandResultItem],
+  cypherVersion: CypherVersion
 ) extends Command(columns, yieldColumns) {
+  private val returnCypher5Values: Boolean = cypherVersion == CypherVersion.Cypher5
 
   override def originalNameRows(state: QueryState, baseRow: CypherRow): ClosingIterator[Map[String, AnyValue]] = {
     val ctx = state.query
@@ -200,7 +203,8 @@ case class ShowIndexesCommand(
                 indexInfo.properties,
                 provider,
                 indexDescriptor.getIndexConfig,
-                indexInfo.indexStatus.maybeConstraint
+                indexInfo.indexStatus.maybeConstraint,
+                returnCypher5Values
               )
             )
           case unknown =>
@@ -262,7 +266,8 @@ object ShowIndexesCommand {
     properties: List[String],
     provider: IndexProviderDescriptor,
     indexConfig: IndexConfig,
-    maybeConstraint: Option[ConstraintDescriptor]
+    maybeConstraint: Option[ConstraintDescriptor],
+    returnCypher5Values: Boolean
   ): String = {
     val providerName = provider.name
 
@@ -274,9 +279,11 @@ object ShowIndexesCommand {
           case Some(constraint) if constraint.isRelationshipUniquenessConstraint =>
             createRelConstraintCommand(name, labelsOrTypes, properties, "IS UNIQUE")
           case Some(constraint) if constraint.isNodeKeyConstraint =>
-            createNodeConstraintCommand(name, labelsOrTypes, properties, "IS NODE KEY")
+            val predicate = if (returnCypher5Values) "IS NODE KEY" else "IS KEY"
+            createNodeConstraintCommand(name, labelsOrTypes, properties, predicate)
           case Some(constraint) if constraint.isRelationshipKeyConstraint =>
-            createRelConstraintCommand(name, labelsOrTypes, properties, "IS RELATIONSHIP KEY")
+            val predicate = if (returnCypher5Values) "IS RELATIONSHIP KEY" else "IS KEY"
+            createRelConstraintCommand(name, labelsOrTypes, properties, predicate)
           case Some(_) =>
             throw new IllegalArgumentException(
               "Expected an index or index backed constraint, found another constraint."

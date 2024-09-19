@@ -970,7 +970,7 @@ case class InterpretedPipeMapper(
         )(id = id)
 
       case ShowIndexes(indexType, columns, yields, _) =>
-        CommandPipe(ShowIndexesCommand(indexType, columns, yields))(id)
+        CommandPipe(ShowIndexesCommand(indexType, columns, yields, cypherVersion))(id)
 
       case ShowConstraints(constraintType, columns, yields, _) =>
         CommandPipe(ShowConstraintsCommand(constraintType, columns, yields, cypherVersion))(id)

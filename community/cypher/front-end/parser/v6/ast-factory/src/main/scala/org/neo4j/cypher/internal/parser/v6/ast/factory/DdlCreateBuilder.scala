@@ -128,7 +128,8 @@ trait DdlCreateBuilder extends Cypher6ParserListener {
             properties,
             constraintName,
             existsDo,
-            options
+            options,
+            fromCypher5 = false
           )(pos(parent))
         case _ => throw new IllegalStateException("Unknown Constraint Command")
       }
@@ -170,7 +171,8 @@ trait DdlCreateBuilder extends Cypher6ParserListener {
             properties,
             constraintName,
             existsDo,
-            options
+            options,
+            fromCypher5 = false
           )(pos(parent))
         case _ => throw new IllegalStateException("Unexpected Constraint Command")
       }

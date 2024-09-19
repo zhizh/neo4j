@@ -1865,7 +1865,8 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
           properties,
           name,
           ifExistsDo(replace, ifNotExists),
-          asOptionsAst(options)
+          asOptionsAst(options),
+          fromCypher5 = true
         )(p)
       case ConstraintType.REL_KEY =>
         CreateConstraint.createRelationshipKeyConstraint(
@@ -1874,7 +1875,8 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
           properties,
           name,
           ifExistsDo(replace, ifNotExists),
-          asOptionsAst(options)
+          asOptionsAst(options),
+          fromCypher5 = true
         )(p)
       case ConstraintType.NODE_EXISTS | ConstraintType.NODE_IS_NOT_NULL =>
         // Will only get here for IS NOT NULL as EXISTS throws before getting here,

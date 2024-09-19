@@ -24,6 +24,7 @@ import org.mockito.Mockito.when
 import org.neo4j.common.EntityType
 import org.neo4j.configuration.Config
 import org.neo4j.configuration.GraphDatabaseSettings
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AllIndexes
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.FulltextIndexes
@@ -427,7 +428,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, defaultColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -481,7 +482,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -538,7 +539,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -561,7 +562,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     )
   }
 
-  test("show indexes should show indexes backing constraints") {
+  test("show indexes should show indexes backing constraints - Cypher 6") {
     // Index and constraint descriptors
     val nodeIndexDescriptor =
       IndexPrototype.uniqueForSchema(labelDescriptor, AllIndexProviderDescriptors.RANGE_DESCRIPTOR)
@@ -608,7 +609,75 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher6)
+    val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    result should have size 2
+    checkResult(
+      result.head,
+      name = "index00",
+      constraint = Some("index00"),
+      createStatement =
+        s"CREATE CONSTRAINT `index00` FOR (n:`$label`) REQUIRE (n.`$prop`) IS UNIQUE"
+    )
+    checkResult(
+      result.last,
+      name = "index01",
+      constraint = Some("index01"),
+      createStatement =
+        s"CREATE CONSTRAINT `index01` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS KEY"
+    )
+  }
+
+  test("show indexes should show indexes backing constraints - Cypher 5") {
+    // Index and constraint descriptors
+    val nodeIndexDescriptor =
+      IndexPrototype.uniqueForSchema(labelDescriptor, AllIndexProviderDescriptors.RANGE_DESCRIPTOR)
+        .withName("index00")
+        .materialise(0)
+        .withOwningConstraintId(1)
+
+    val relIndexDescriptor =
+      IndexPrototype.uniqueForSchema(relTypeDescriptor, AllIndexProviderDescriptors.RANGE_DESCRIPTOR)
+        .withName("index01")
+        .materialise(2)
+        .withOwningConstraintId(3)
+
+    val nodeConstraintDescriptor =
+      ConstraintDescriptorFactory.uniqueForSchema(nodeIndexDescriptor.schema(), IndexType.RANGE)
+        .withName("index00")
+        .withOwnedIndexId(0)
+        .withId(1)
+
+    val relConstraintDescriptor =
+      ConstraintDescriptorFactory.keyForSchema(relIndexDescriptor.schema(), IndexType.RANGE)
+        .withName("index01")
+        .withOwnedIndexId(2)
+        .withId(3)
+
+    // Override returned constraints:
+    when(ctx.getAllConstraints()).thenReturn(Map(
+      nodeConstraintDescriptor -> ConstraintInfo(List(label), List(prop), Some(nodeIndexDescriptor)),
+      relConstraintDescriptor -> ConstraintInfo(List(relType), List(prop), Some(relIndexDescriptor))
+    ))
+
+    // Set-up which indexes to return:
+    when(ctx.getAllIndexes()).thenReturn(Map(
+      nodeIndexDescriptor -> IndexInfo(
+        IndexStatus("ONLINE", "", 100.0, Some(nodeConstraintDescriptor)),
+        List(label),
+        List(prop)
+      ),
+      relIndexDescriptor -> IndexInfo(
+        IndexStatus("ONLINE", "", 100.0, Some(relConstraintDescriptor)),
+        List(relType),
+        List(prop)
+      )
+    ))
+
+    // When
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher5)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -637,7 +706,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, defaultColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -658,7 +727,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     when(ctx.getIndexUsageStatistics(any())).thenReturn(statistics)
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -679,7 +748,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     when(ctx.getIndexUsageStatistics(any())).thenReturn(statistics)
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -707,7 +776,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     when(ctx.getIndexUsageStatistics(any())).thenReturn(statistics)
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -735,7 +804,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     when(ctx.getIndexUsageStatistics(any())).thenReturn(statistics)
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, defaultColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -766,7 +835,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -937,7 +1006,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(RangeIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(RangeIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -984,7 +1053,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(LookupIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(LookupIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1031,7 +1100,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(PointIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(PointIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1080,7 +1149,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(TextIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(TextIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1129,7 +1198,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(FulltextIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(FulltextIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1178,7 +1247,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(VectorIndexes, allColumns, List.empty)
+    val showIndexes = ShowIndexesCommand(VectorIndexes, allColumns, List.empty, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1239,7 +1308,7 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
     ))
 
     // When
-    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, yieldColumns)
+    val showIndexes = ShowIndexesCommand(AllIndexes, allColumns, yieldColumns, CypherVersion.Cypher6)
     val result = showIndexes.originalNameRows(queryState, initialCypherRow).toList
 
     // Then

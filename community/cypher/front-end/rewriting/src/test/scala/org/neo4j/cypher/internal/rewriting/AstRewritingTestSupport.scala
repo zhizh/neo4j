@@ -18,9 +18,14 @@ package org.neo4j.cypher.internal.rewriting
 
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
+import org.neo4j.cypher.internal.ast.CreateConstraint
+import org.neo4j.cypher.internal.ast.NodeKey
+import org.neo4j.cypher.internal.ast.RelationshipKey
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.UnionAll
 import org.neo4j.cypher.internal.ast.UnionDistinct
+import org.neo4j.cypher.internal.expressions.LabelName
+import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.parser.AstParserFactory
 import org.neo4j.cypher.internal.util.CypherExceptionFactory
 import org.neo4j.cypher.internal.util.Rewriter
@@ -61,6 +66,42 @@ trait AstRewritingTestSupport extends AstConstructionTestSupport {
     statement.endoRewrite(bottomUp(Rewriter.lift {
       case u: UnionDistinct => u.copy(differentReturnOrderAllowed = true)(u.position)
       case u: UnionAll      => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case c @ CreateConstraint(variable, labelName: LabelName, properties, name, _: NodeKey, ifExistsDo, options) =>
+        // Create constraint is a trait so it doesn't have a copy method
+        // and it doesn't have a public implementing class to match instead either
+        CreateConstraint.createNodeKeyConstraint(
+          variable,
+          labelName,
+          properties,
+          name,
+          ifExistsDo,
+          options,
+          // let's just update all of them to be version > 5
+          fromCypher5 = false,
+          c.useGraph
+        )(c.position)
+      case c @ CreateConstraint(
+          variable,
+          relTypeName: RelTypeName,
+          properties,
+          name,
+          _: RelationshipKey,
+          ifExistsDo,
+          options
+        ) =>
+        // Create constraint is a trait so it doesn't have a copy method
+        // and it doesn't have a public implementing class to match instead either
+        CreateConstraint.createRelationshipKeyConstraint(
+          variable,
+          relTypeName,
+          properties,
+          name,
+          ifExistsDo,
+          options,
+          // let's just update all of them to be version > 5
+          fromCypher5 = false,
+          c.useGraph
+        )(c.position)
     }))
   }
 }

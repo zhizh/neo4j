@@ -74,7 +74,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
 //   | NODE EXIST | RELATIONSHIP EXIST | EXIST
 //   | NODE KEY | RELATIONSHIP KEY | KEY
 //   | NODE PROPERTY TYPE | RELATIONSHIP PROPERTY TYPE | PROPERTY TYPE
-// ] CONSTRAINT[S] [BRIEF | VERBOSE | WHERE clause | YIELD clause]
+// ] CONSTRAINT[S] [WHERE clause | YIELD clause]
 case class ShowConstraintsCommand(
   constraintType: ShowConstraintType,
   columns: List[ShowColumn],
@@ -182,7 +182,8 @@ case class ShowConstraintsCommand(
               constraintType,
               constraintInfo.labelsOrTypes,
               constraintInfo.properties,
-              propertyType
+              propertyType,
+              returnCypher5Values
             )
             createStatementColumn -> Values.stringValue(createString)
           case unknown =>
@@ -222,7 +223,8 @@ object ShowConstraintsCommand {
     constraintType: ShowConstraintType,
     labelsOrTypes: List[String],
     properties: List[String],
-    propertyType: Option[String]
+    propertyType: Option[String],
+    returnCypher5Values: Boolean
   ): String = {
     constraintType match {
       case _: NodeUniqueConstraints =>
@@ -230,9 +232,11 @@ object ShowConstraintsCommand {
       case _: RelUniqueConstraints =>
         createRelConstraintCommand(name, labelsOrTypes, properties, "IS UNIQUE")
       case NodeKeyConstraints =>
-        createNodeConstraintCommand(name, labelsOrTypes, properties, "IS NODE KEY")
+        val predicate = if (returnCypher5Values) "IS NODE KEY" else "IS KEY"
+        createNodeConstraintCommand(name, labelsOrTypes, properties, predicate)
       case RelKeyConstraints =>
-        createRelConstraintCommand(name, labelsOrTypes, properties, "IS RELATIONSHIP KEY")
+        val predicate = if (returnCypher5Values) "IS RELATIONSHIP KEY" else "IS KEY"
+        createRelConstraintCommand(name, labelsOrTypes, properties, predicate)
       case _: NodeExistsConstraints =>
         createNodeConstraintCommand(name, labelsOrTypes, properties, "IS NOT NULL")
       case _: RelExistsConstraints =>

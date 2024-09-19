@@ -447,7 +447,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       propType = Some(null),
       options = optionsMap,
       createStatement =
-        s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NODE KEY"
+        s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS KEY"
     )
     checkResult(
       result(6),
@@ -458,7 +458,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       propType = Some(null),
       options = optionsMap,
       createStatement =
-        s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS RELATIONSHIP KEY"
+        s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS KEY"
     )
     checkResult(
       result(7),
@@ -577,7 +577,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       propType = Some(null),
       options = optionsMap,
       createStatement =
-        s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NODE KEY"
+        s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS KEY"
     )
     checkResult(
       result.last,
@@ -588,7 +588,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       propType = Some(null),
       options = optionsMap,
       createStatement =
-        s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS RELATIONSHIP KEY"
+        s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS KEY"
     )
   }
 
@@ -612,7 +612,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       propType = Some(null),
       options = optionsMap,
       createStatement =
-        s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NODE KEY"
+        s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS KEY"
     )
   }
 
@@ -635,7 +635,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       propType = Some(null),
       options = optionsMap,
       createStatement =
-        s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS RELATIONSHIP KEY"
+        s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS KEY"
     )
   }
 
@@ -1266,6 +1266,40 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       options = Values.NO_VALUE,
       createStatement =
         s"CREATE CONSTRAINT `constraint1` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS NOT NULL"
+    )
+  }
+
+  test("show key constraints with Cypher 5") {
+    // Given
+    setupAllConstraints()
+
+    // When
+    val showConstraints = ShowConstraintsCommand(KeyConstraints, allColumns, List.empty, CypherVersion.Cypher5)
+    val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    result should have size 2
+    checkResult(
+      result.head,
+      name = "constraint3",
+      constraintType = "NODE_KEY",
+      entityType = "NODE",
+      index = "constraint3",
+      propType = Some(null),
+      options = optionsMap,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NODE KEY"
+    )
+    checkResult(
+      result.last,
+      name = "constraint4",
+      constraintType = "RELATIONSHIP_KEY",
+      entityType = "RELATIONSHIP",
+      index = "constraint4",
+      propType = Some(null),
+      options = optionsMap,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS RELATIONSHIP KEY"
     )
   }
 

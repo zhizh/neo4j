@@ -635,6 +635,7 @@ object CreateConstraint {
     name: Option[Either[String, Parameter]],
     ifExistsDo: IfExistsDo,
     options: Options,
+    fromCypher5: Boolean,
     useGraph: Option[GraphSelection] = None
   )(position: InputPosition): CreateConstraint =
     CreateConstraintCommand(
@@ -642,7 +643,7 @@ object CreateConstraint {
       entityName = label,
       properties,
       name,
-      constraintType = NodeKey,
+      constraintType = if (fromCypher5) NodeKey.cypher5 else NodeKey.cypher6,
       ifExistsDo,
       options,
       useGraph
@@ -655,6 +656,7 @@ object CreateConstraint {
     name: Option[Either[String, Parameter]],
     ifExistsDo: IfExistsDo,
     options: Options,
+    fromCypher5: Boolean,
     useGraph: Option[GraphSelection] = None
   )(position: InputPosition): CreateConstraint =
     CreateConstraintCommand(
@@ -662,7 +664,7 @@ object CreateConstraint {
       entityName = relType,
       properties,
       name,
-      constraintType = RelationshipKey,
+      constraintType = if (fromCypher5) RelationshipKey.cypher5 else RelationshipKey.cypher6,
       ifExistsDo,
       options,
       useGraph

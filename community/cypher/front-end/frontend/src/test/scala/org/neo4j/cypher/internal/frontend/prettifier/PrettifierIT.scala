@@ -849,68 +849,161 @@ class PrettifierIT extends CypherFunSuite {
   )
 
   def constraintCommandTests(): Seq[Test] = Seq(
-    "create CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY" ->
+    ChangedBetween5And6(
+      "create CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
-    "create CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS KEY" ->
+      "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
-    "create CONSTRAINT `foo` FOR (n:A) REQUIRE n.p IS NODE KEY" ->
+      "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `foo` FOR (n:A) REQUIRE n.p IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
-    "create CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p) IS NODE KEY" ->
+      "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p) IS NODE KEY",
-    "create CONSTRAINT $foo FOR (n:A) REQUIRE (n.p) IS NODE KEY" ->
+      "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT $foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT $foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
-    "create OR replace CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY" ->
+      "CREATE CONSTRAINT $foo FOR (n:A) REQUIRE (n.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create OR replace CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE OR REPLACE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
-    "create CONSTRAINT foo IF NOT EXISTS FOR (n:A) REQUIRE (n.p) IS NODE KEY" ->
+      "CREATE OR REPLACE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT foo IF NOT EXISTS FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT foo IF NOT EXISTS FOR (n:A) REQUIRE (n.p) IS NODE KEY",
-    "create CONSTRAINT FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY" ->
+      "CREATE CONSTRAINT foo IF NOT EXISTS FOR (n:A) REQUIRE (n.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
-    "create CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY" ->
+      "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
-    "create CONSTRAINT `foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY" ->
+      "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
-    "create CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY" ->
+      "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
-    "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {indexProvider: 'range-1.0'}" ->
+      "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {indexProvider: 'range-1.0'}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {indexProvider: "range-1.0"}""",
-    "create CONSTRAINT myConstraint FOR (n:A) require (n.p) IS NODE KEY OPTIONS {`indexProvider`: 'range-1.0', indexConfig: {}}" ->
+      """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {indexProvider: "range-1.0"}"""
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT myConstraint FOR (n:A) require (n.p) IS NODE KEY OPTIONS {`indexProvider`: 'range-1.0', indexConfig: {}}",
       """CREATE CONSTRAINT myConstraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}""",
-    "create CONSTRAINT FOR (n:A) require (n.p) IS NODE KEY OPTIONS {indexConfig: {someConfig: 'toShowItCanBePrettified' }}" ->
+      """CREATE CONSTRAINT myConstraint FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}"""
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT FOR (n:A) require (n.p) IS NODE KEY OPTIONS {indexConfig: {someConfig: 'toShowItCanBePrettified' }}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}""",
-    "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {nonValidOption : 42, `backticks.stays.when.needed`: 'theAnswer'}" ->
+      """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}"""
+    ),
+    ChangedBetween5And6(
+      "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {nonValidOption : 42, `backticks.stays.when.needed`: 'theAnswer'}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}""",
-    "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {}" ->
+      """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}"""
+    ),
+    ChangedBetween5And6(
+      "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {}""",
-    "create CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY" ->
+      """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {}"""
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
-    "create CONSTRAINT foo FOR ()-[r:R]->() REQUIRE r.p IS RELATIONSHIP KEY" ->
+      "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT foo FOR ()-[r:R]->() REQUIRE r.p IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
-    "create CONSTRAINT `foo` FOR ()<-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY" ->
+      "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `foo` FOR ()<-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
-    "create CONSTRAINT `$foo` FOR ()<-[r:R]->() REQUIRE (r.p) IS REL KEY" ->
+      "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `$foo` FOR ()<-[r:R]->() REQUIRE (r.p) IS REL KEY",
       "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
-    "create OR replace CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY" ->
+      "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create OR replace CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE OR REPLACE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
-    "create CONSTRAINT foo IF NOT EXISTS FOR ()-[r:R]-() REQUIRE (r.p) IS KEY" ->
+      "CREATE OR REPLACE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT foo IF NOT EXISTS FOR ()-[r:R]-() REQUIRE (r.p) IS KEY",
       "CREATE CONSTRAINT foo IF NOT EXISTS FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
-    "create CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY" ->
+      "CREATE CONSTRAINT foo IF NOT EXISTS FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
-    "create CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY" ->
+      "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
-    "create CONSTRAINT `foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY" ->
+      "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
-    "create CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY" ->
+      "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
-    "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {indexProvider: 'range-1.0'}" ->
+      "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
+    ),
+    ChangedBetween5And6(
+      "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {indexProvider: 'range-1.0'}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {indexProvider: "range-1.0"}""",
-    "create CONSTRAINT myConstraint FOR ()-[r:R]-() require (r.p) IS RELATIONSHIP KEY OPTIONS {`indexProvider`: 'range-1.0', indexConfig: {}}" ->
+      """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {indexProvider: "range-1.0"}"""
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT myConstraint FOR ()-[r:R]-() require (r.p) IS RELATIONSHIP KEY OPTIONS {`indexProvider`: 'range-1.0', indexConfig: {}}",
       """CREATE CONSTRAINT myConstraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}""",
-    "create CONSTRAINT FOR ()-[r:R]-() require (r.p) IS RELATIONSHIP KEY OPTIONS {indexConfig: {someConfig: 'toShowItCanBePrettified' }}" ->
+      """CREATE CONSTRAINT myConstraint FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}"""
+    ),
+    ChangedBetween5And6(
+      "create CONSTRAINT FOR ()-[r:R]-() require (r.p) IS RELATIONSHIP KEY OPTIONS {indexConfig: {someConfig: 'toShowItCanBePrettified' }}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}""",
-    "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {nonValidOption : 42, `backticks.stays.when.needed`: 'theAnswer'}" ->
+      """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}"""
+    ),
+    ChangedBetween5And6(
+      "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {nonValidOption : 42, `backticks.stays.when.needed`: 'theAnswer'}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}""",
-    "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {}" ->
+      """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}"""
+    ),
+    ChangedBetween5And6(
+      "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {}""",
+      """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {}"""
+    ),
     "create CONSTRAINT FOR (n:A) REQUIRE (n.p) IS UNIQUE" ->
       "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS UNIQUE",
     "create CONSTRAINT foo FOR (n:A) REQUIRE n.p IS UNIQUE" ->

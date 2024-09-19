@@ -3708,7 +3708,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
 
   test("CreateNodeKeyConstraint") {
     assertGood(
-      attach(CreateConstraint(None, NodeKey, label("Label"), Seq(prop(" x", "prop")), None, NoOptions), 63.2),
+      attach(CreateConstraint(None, NodeKey.cypher5, label("Label"), Seq(prop(" x", "prop")), None, NoOptions), 63.2),
       planDescription(
         id,
         "CreateConstraint",
@@ -3722,7 +3722,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       attach(
         CreateConstraint(
           None,
-          NodeKey,
+          NodeKey.cypher5,
           label("Label"),
           Seq(prop("x", "prop1"), prop("x", "prop2")),
           Some(Left("constraintName")),
@@ -3743,7 +3743,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       attach(
         CreateConstraint(
           None,
-          NodeKey,
+          NodeKey.cypher5,
           label("Label"),
           List(prop("x", "prop")),
           Some(Right(parameter("constraintName", CTString))),
@@ -3768,11 +3768,11 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           Some(DoNothingIfExistsForConstraint(
             label("Label"),
             Seq(prop(" x", "prop")),
-            NodeKey,
+            NodeKey.cypher5,
             Some(Left("constraintName")),
             NoOptions
           )),
-          NodeKey,
+          NodeKey.cypher5,
           label("Label"),
           Seq(prop(" x", "prop")),
           Some(Left("constraintName")),
@@ -3801,7 +3801,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       attach(
         CreateConstraint(
           None,
-          NodeKey,
+          NodeKey.cypher5,
           label("Label"),
           Seq(prop(" x", "prop")),
           None,
@@ -3817,12 +3817,34 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         Set.empty
       )
     )
+
+    assertGood(
+      attach(
+        CreateConstraint(
+          None,
+          NodeKey.cypher6,
+          label("Label"),
+          Seq(prop("x", "prop1"), prop("x", "prop2")),
+          Some(Left("constraintName")),
+          NoOptions
+        ),
+        63.2
+      ),
+      planDescription(
+        id,
+        "CreateConstraint",
+        NoChildren,
+        Seq(details("CONSTRAINT constraintName FOR (x:Label) REQUIRE (x.prop1, x.prop2) IS KEY")),
+        Set.empty
+      ),
+      cypherVersion = CypherVersion.Cypher6
+    )
   }
 
   test("CreateRelationshipKeyConstraint") {
     assertGood(
       attach(
-        CreateConstraint(None, RelationshipKey, relType("REL_TYPE"), Seq(prop(" x", "prop")), None, NoOptions),
+        CreateConstraint(None, RelationshipKey.cypher5, relType("REL_TYPE"), Seq(prop(" x", "prop")), None, NoOptions),
         63.2
       ),
       planDescription(
@@ -3838,7 +3860,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       attach(
         CreateConstraint(
           None,
-          RelationshipKey,
+          RelationshipKey.cypher5,
           relType("REL_TYPE"),
           Seq(prop("x", "prop1"), prop("x", "prop2")),
           Some(Left("constraintName")),
@@ -3859,7 +3881,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       attach(
         CreateConstraint(
           None,
-          RelationshipKey,
+          RelationshipKey.cypher5,
           relType("REL_TYPE"),
           List(prop("x", "prop")),
           Some(Right(parameter("constraintName", CTString))),
@@ -3884,11 +3906,11 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           Some(DoNothingIfExistsForConstraint(
             relType("REL_TYPE"),
             Seq(prop(" x", "prop")),
-            RelationshipKey,
+            RelationshipKey.cypher5,
             Some(Left("constraintName")),
             NoOptions
           )),
-          RelationshipKey,
+          RelationshipKey.cypher5,
           relType("REL_TYPE"),
           Seq(prop(" x", "prop")),
           Some(Left("constraintName")),
@@ -3917,7 +3939,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       attach(
         CreateConstraint(
           None,
-          RelationshipKey,
+          RelationshipKey.cypher5,
           relType("REL_TYPE"),
           Seq(prop(" x", "prop")),
           None,
@@ -3932,6 +3954,21 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         Seq(details("CONSTRAINT FOR ()-[` x`:REL_TYPE]-() REQUIRE (` x`.prop) IS RELATIONSHIP KEY OPTIONS $options")),
         Set.empty
       )
+    )
+
+    assertGood(
+      attach(
+        CreateConstraint(None, RelationshipKey.cypher6, relType("REL_TYPE"), Seq(prop(" x", "prop")), None, NoOptions),
+        63.2
+      ),
+      planDescription(
+        id,
+        "CreateConstraint",
+        NoChildren,
+        Seq(details("CONSTRAINT FOR ()-[` x`:REL_TYPE]-() REQUIRE (` x`.prop) IS KEY")),
+        Set.empty
+      ),
+      cypherVersion = CypherVersion.Cypher6
     )
   }
 

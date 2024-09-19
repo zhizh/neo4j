@@ -258,7 +258,7 @@ class SchemaCommandConverter(
       val name = constraintName.map(n => checkName(n, desc + " name")).orNull
       val entityName = tokenName(elementName)
       constraintType match {
-        case org.neo4j.cypher.internal.ast.NodeKey =>
+        case _: org.neo4j.cypher.internal.ast.NodeKey =>
           val config = validateOptions(options, IndexBackedConstraintsOptionsConverter("range index", providerContext))
           new NodeKey(
             name,
@@ -267,7 +267,7 @@ class SchemaCommandConverter(
             ifNotExists(ifExistsDo),
             providerOnly(config)
           )
-        case org.neo4j.cypher.internal.ast.RelationshipKey =>
+        case _: org.neo4j.cypher.internal.ast.RelationshipKey =>
           val config = validateOptions(options, IndexBackedConstraintsOptionsConverter("range index", providerContext))
           new RelationshipKey(
             name,

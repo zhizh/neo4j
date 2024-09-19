@@ -25,17 +25,9 @@ import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.CreateConstraintType
 import org.neo4j.cypher.internal.ast.ExecutableBy
 import org.neo4j.cypher.internal.ast.NoOptions
-import org.neo4j.cypher.internal.ast.NodeKey
-import org.neo4j.cypher.internal.ast.NodePropertyExistence
-import org.neo4j.cypher.internal.ast.NodePropertyType
-import org.neo4j.cypher.internal.ast.NodePropertyUniqueness
 import org.neo4j.cypher.internal.ast.Options
 import org.neo4j.cypher.internal.ast.OptionsMap
 import org.neo4j.cypher.internal.ast.OptionsParam
-import org.neo4j.cypher.internal.ast.RelationshipKey
-import org.neo4j.cypher.internal.ast.RelationshipPropertyExistence
-import org.neo4j.cypher.internal.ast.RelationshipPropertyType
-import org.neo4j.cypher.internal.ast.RelationshipPropertyUniqueness
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorBreak
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorContinue
@@ -333,7 +325,8 @@ object LogicalPlan2PlanDescription {
       withRawCardinalities,
       withDistinctness,
       providedOrders,
-      runtimeOperatorMetadata
+      runtimeOperatorMetadata,
+      cypherVersion
     )
       .create(input)
       .addArgument(Version(cypherVersion.versionName))
@@ -371,7 +364,8 @@ case class LogicalPlan2PlanDescription(
   withRawCardinalities: Boolean,
   withDistinctness: Boolean = false,
   providedOrders: ProvidedOrders,
-  runtimeOperatorMetadata: Id => Seq[Argument]
+  runtimeOperatorMetadata: Id => Seq[Argument],
+  cypherVersion: CypherVersion = CypherVersion.Default
 ) extends LogicalPlans.Mapper[InternalPlanDescription] {
   private val SEPARATOR = ", "
 
@@ -3642,15 +3636,7 @@ case class LogicalPlan2PlanDescription(
     useForAndRequire: Boolean = true
   ): PrettyString = {
     val name = getPrettyStringName(nameOption)
-    val assertion = constraintType match {
-      case NodePropertyExistence | RelationshipPropertyExistence   => "IS NOT NULL"
-      case NodeKey                                                 => "IS NODE KEY"
-      case RelationshipKey                                         => "IS RELATIONSHIP KEY"
-      case NodePropertyUniqueness | RelationshipPropertyUniqueness => "IS UNIQUE"
-      case NodePropertyType(t)                                     => s"IS :: ${t.description}"
-      case RelationshipPropertyType(t)                             => s"IS :: ${t.description}"
-    }
-    val prettyAssertion = asPrettyString.raw(assertion)
+    val prettyAssertion = asPrettyString.raw(constraintType.predicate)
 
     val propertyString = properties.map(asPrettyString(_)).mkPrettyString("(", SEPARATOR, ")")
     val prettyEntity = asPrettyString(entity)
