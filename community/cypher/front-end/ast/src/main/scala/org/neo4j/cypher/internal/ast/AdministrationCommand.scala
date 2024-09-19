@@ -213,7 +213,18 @@ sealed trait WriteAdministrationCommand extends AdministrationCommand {
 
     def numSecondaryPositive(topology: Topology): SemanticCheck =
       if (topology.secondaries.exists(_ < 0)) {
+        val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
+          .withClassification(ErrorClassification.CLIENT_ERROR)
+          .atPosition(position.line, position.column, position.offset)
+          .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N53)
+            .withClassification(ErrorClassification.CLIENT_ERROR)
+            .atPosition(position.line, position.column, position.offset)
+            .withParam(GqlParams.NumberParam.count, topology.primaries.get)
+            .withParam(GqlParams.NumberParam.upper, 20)
+            .build())
+          .build()
         error(
+          gql,
           s"Failed to $command with `${Prettifier.extractTopology(topology).trim}`, SECONDARY must be a positive value.",
           position
         )
