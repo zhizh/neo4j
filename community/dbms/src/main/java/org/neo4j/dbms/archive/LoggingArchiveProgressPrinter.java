@@ -22,45 +22,48 @@ package org.neo4j.dbms.archive;
 import static java.util.Objects.requireNonNull;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.function.Supplier;
 import org.neo4j.dbms.archive.printer.OutputProgressPrinter;
 import org.neo4j.dbms.archive.printer.ProgressPrinters.EmptyOutputProgressPrinter;
 import org.neo4j.graphdb.Resource;
 import org.neo4j.io.ByteUnit;
+import org.neo4j.time.Clocks;
+import org.neo4j.time.SystemNanoClock;
+import org.neo4j.util.VisibleForTesting;
 
 class LoggingArchiveProgressPrinter implements ArchiveProgressPrinter {
-    public static final Duration PRINT_INTERVAL = Duration.ofSeconds(60);
+    private static final long PRINT_INTERVAL = Duration.ofSeconds(60).toMillis();
     private final OutputProgressPrinter progressPrinter;
-    private final Supplier<Instant> timeSource;
 
     private long currentBytes;
     private long currentFiles;
     private boolean done;
     private long maxBytes;
     private long maxFiles;
+    private long startTime;
+    private double printingTime;
+    private final SystemNanoClock clock;
 
     private boolean force;
     private Deadline deadline = null;
     private PercentageCondition percentage = null;
 
-    public static ArchiveProgressPrinter createProgressPrinter(
-            OutputProgressPrinter progressPrinter, Supplier<Instant> timeSource) {
+    public static ArchiveProgressPrinter createProgressPrinter(OutputProgressPrinter progressPrinter) {
         requireNonNull(progressPrinter);
         if (progressPrinter instanceof EmptyOutputProgressPrinter) {
             return ArchiveProgressPrinter.EMPTY;
         }
-        return new LoggingArchiveProgressPrinter(progressPrinter, timeSource);
+        return new LoggingArchiveProgressPrinter(progressPrinter, Clocks.nanoClock());
     }
 
-    private LoggingArchiveProgressPrinter(OutputProgressPrinter progressPrinter, Supplier<Instant> timeSource) {
+    LoggingArchiveProgressPrinter(OutputProgressPrinter progressPrinter, SystemNanoClock clock) {
         this.progressPrinter = requireNonNull(progressPrinter);
-        this.timeSource = requireNonNull(timeSource);
+        this.clock = clock;
     }
 
     @Override
     public Resource startPrinting() {
-        deadline = new Deadline(Instant.EPOCH, PRINT_INTERVAL);
+        startTime = clock.millis();
+        deadline = new Deadline(startTime - PRINT_INTERVAL, PRINT_INTERVAL);
         return () -> {
             done();
             printProgress();
@@ -112,7 +115,7 @@ class LoggingArchiveProgressPrinter implements ArchiveProgressPrinter {
     public void addBytes(long n) {
         currentBytes += n;
 
-        var when = timeSource.get();
+        var when = clock.millis();
         var deadlineReached = (deadline != null && deadline.reached(when));
         var percentageReached = (percentage != null && percentage.updateAndCheckIfReached(currentBytes));
 
@@ -134,14 +137,21 @@ class LoggingArchiveProgressPrinter implements ArchiveProgressPrinter {
 
     @Override
     public void done() {
+        var now = clock.millis();
+        printingTime = (double) (now - startTime) / 1000; // convert to seconds
         done = true;
+    }
+
+    @VisibleForTesting
+    double getPrintingTime() {
+        return printingTime;
     }
 
     @Override
     public void printProgress() {
         if (done) {
-            progressPrinter.print(
-                    "Done: " + currentFiles + " files, " + ByteUnit.bytesToString(currentBytes) + " processed.");
+            progressPrinter.print("Done: " + currentFiles + " files, " + ByteUnit.bytesToString(currentBytes)
+                    + " processed in " + String.format("%.3f", printingTime) + " seconds.");
             progressPrinter.complete();
         } else if (maxFiles > 0 && maxBytes > 0) {
             double progress = (currentBytes / (double) maxBytes) * 100;
@@ -153,24 +163,20 @@ class LoggingArchiveProgressPrinter implements ArchiveProgressPrinter {
     }
 
     static class Deadline {
-        private final Duration interval;
-        private Instant target;
+        private final long interval;
+        private long target;
 
-        Deadline(Instant now, Duration interval) {
+        Deadline(long now, long interval) {
             this.interval = interval;
-            this.target = increment(now, interval);
+            this.target = now + interval;
         }
 
-        boolean reached(Instant when) {
-            return when.isAfter(target);
+        boolean reached(long when) {
+            return when >= target;
         }
 
-        void next(Instant now) {
-            target = increment(now, interval);
-        }
-
-        private static Instant increment(Instant target, Duration duration) {
-            return target.plusMillis(duration.toMillis());
+        void next(long now) {
+            target = now + interval;
         }
     }
 

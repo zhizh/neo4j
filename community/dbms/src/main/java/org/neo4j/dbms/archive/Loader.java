@@ -34,7 +34,6 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.time.Instant;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -67,7 +66,7 @@ public class Loader {
 
     public Loader(FileSystemAbstraction filesystem, OutputProgressPrinter progressPrinter) {
         this.filesystem = filesystem;
-        this.progressPrinter = createProgressPrinter(progressPrinter, Instant::now);
+        this.progressPrinter = createProgressPrinter(progressPrinter);
     }
 
     public Loader(FileSystemAbstraction filesystem, InternalLogProvider logProvider) {

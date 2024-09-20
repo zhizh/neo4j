@@ -27,10 +27,10 @@ import static org.neo4j.dbms.archive.printer.ProgressPrinters.printStreamPrinter
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,6 +44,7 @@ import org.neo4j.io.ByteUnit;
 import org.neo4j.logging.AssertableLogProvider;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.time.Clocks;
+import org.neo4j.time.FakeClock;
 
 class ArchiveProgressPrinterTest {
 
@@ -110,29 +111,29 @@ class ArchiveProgressPrinterTest {
 
     private static List<String> executeSomeWork(OutputProgressPrinter outputPrinter) {
         List<String> expected = new ArrayList<>();
-        var clock = Clocks.fakeClock();
-        ArchiveProgressPrinter progressPrinter =
-                LoggingArchiveProgressPrinter.createProgressPrinter(outputPrinter, clock::instant);
+        LoggingArchiveProgressPrinter progressPrinter =
+                new LoggingArchiveProgressPrinter(outputPrinter, Clocks.nanoClock());
 
         progressPrinter.maxBytes(1000);
         progressPrinter.maxFiles(10);
 
-        progressPrinter.beginFile();
-        progressPrinter.addBytes(5);
-        progressPrinter.endFile();
-        progressPrinter.beginFile();
-        progressPrinter.addBytes(50);
-        progressPrinter.addBytes(50);
-        progressPrinter.printOnNextUpdate();
-        progressPrinter.addBytes(100);
-        progressPrinter.endFile();
-        progressPrinter.beginFile();
-        progressPrinter.printOnNextUpdate();
-        progressPrinter.addBytes(100);
-        progressPrinter.endFile();
-        progressPrinter.done();
-        progressPrinter.printProgress();
+        try (var ignored = progressPrinter.startPrinting()) {
+            progressPrinter.beginFile();
+            progressPrinter.addBytes(5);
+            progressPrinter.endFile();
+            progressPrinter.beginFile();
+            progressPrinter.addBytes(50);
+            progressPrinter.addBytes(50);
+            progressPrinter.printOnNextUpdate();
+            progressPrinter.addBytes(100);
+            progressPrinter.endFile();
+            progressPrinter.beginFile();
+            progressPrinter.printOnNextUpdate();
+            progressPrinter.addBytes(100);
+            progressPrinter.endFile();
+        }
 
+        expected.add(line(1, 10, 0.5)); // first addBytes since deadline is reached automatically at start
         expected.add(line(1, 10, 0.5)); // endFile
         expected.add(line(2, 10, 5.5)); // percentage
         expected.add(line(2, 10, 10.5)); // percentage
@@ -140,37 +141,48 @@ class ArchiveProgressPrinterTest {
         expected.add(line(2, 10, 20.5)); // endFile
         expected.add(line(3, 10, 30.5)); // printOnNextUpdate
         expected.add(line(3, 10, 30.5)); // endFile
-        expected.add(done(3, 305)); // done
+        expected.add(done(3, 305, progressPrinter.getPrintingTime())); // done
 
         return expected;
     }
 
     private static List<String> executeSlowWorkload(OutputProgressPrinter outputProgressPrinter) {
         List<String> expected = new ArrayList<>();
-        var clock = Clocks.fakeClock();
-        ArchiveProgressPrinter progressPrinter =
-                LoggingArchiveProgressPrinter.createProgressPrinter(outputProgressPrinter, clock::instant);
-        var numFiles = 10;
-        var numBytes = 10_000;
+        FakeClock clock = new FakeClock();
+        LoggingArchiveProgressPrinter progressPrinter = new LoggingArchiveProgressPrinter(outputProgressPrinter, clock);
+
+        progressPrinter.maxBytes(1000);
+        progressPrinter.maxFiles(10);
 
         try (var ignored = progressPrinter.startPrinting()) {
-            progressPrinter.maxBytes(numBytes);
-            progressPrinter.maxFiles(numFiles);
-
             progressPrinter.beginFile();
-            // This disk is really slow
-            for (int i = 0; i < numBytes; i++) {
-                clock.forward(Duration.ofMillis(10));
-                progressPrinter.addBytes(1);
-            }
+            progressPrinter.addBytes(1);
+            clock.forward(1, TimeUnit.MINUTES);
+            progressPrinter.addBytes(4);
+            progressPrinter.endFile();
+            progressPrinter.beginFile();
+            progressPrinter.addBytes(50);
+            progressPrinter.addBytes(50);
+            progressPrinter.printOnNextUpdate();
+            progressPrinter.addBytes(100);
+            progressPrinter.endFile();
+            progressPrinter.beginFile();
+            progressPrinter.printOnNextUpdate();
+            progressPrinter.addBytes(100);
             progressPrinter.endFile();
         }
 
-        for (int i = 1; i <= 100; i++) {
-            expected.add(line(1, 10, i));
-        }
-        expected.add(line(1, 10, 100));
-        expected.add(done(1, numBytes));
+        expected.add(line(1, 10, 0.1)); // first addBytes since deadline is reached automatically at start
+        expected.add(line(1, 10, 0.5)); // deadline reached after minute pause
+        expected.add(line(1, 10, 0.5)); // endFile
+        expected.add(line(2, 10, 5.5)); // percentage
+        expected.add(line(2, 10, 10.5)); // percentage
+        expected.add(line(2, 10, 20.5)); // printOnNextUpdate
+        expected.add(line(2, 10, 20.5)); // endFile
+        expected.add(line(3, 10, 30.5)); // printOnNextUpdate
+        expected.add(line(3, 10, 30.5)); // endFile
+        expected.add(done(3, 305, progressPrinter.getPrintingTime())); // done
+
         return expected;
     }
 
@@ -178,8 +190,8 @@ class ArchiveProgressPrinterTest {
         return format("Files: %d/%d, data: %4.1f%%", nFiles, maxFiles, percentage);
     }
 
-    private static String done(int nFiles, int nBytes) {
-        return format("Done: %d files, %s processed.", nFiles, ByteUnit.bytesToString(nBytes));
+    private static String done(int nFiles, int nBytes, double time) {
+        return format("Done: %d files, %s processed in %.3f seconds", nFiles, ByteUnit.bytesToString(nBytes), time);
     }
 
     private static String niceMessage(String message, List<String> actual, List<String> expected) {

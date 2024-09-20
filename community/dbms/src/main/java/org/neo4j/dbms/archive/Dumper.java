@@ -37,7 +37,6 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -76,7 +75,7 @@ public class Dumper {
 
     private Dumper(FileSystemAbstraction fs, OutputProgressPrinter progressPrinter) {
         this.fs = requireNonNull(fs);
-        this.progressPrinter = createProgressPrinter(progressPrinter, Instant::now);
+        this.progressPrinter = createProgressPrinter(progressPrinter);
     }
 
     public void dump(Path path, Path archive, CompressionFormat format) throws IOException {
