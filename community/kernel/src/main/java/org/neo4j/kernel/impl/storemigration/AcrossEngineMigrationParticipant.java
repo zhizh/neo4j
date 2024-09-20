@@ -58,6 +58,7 @@ import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.storageengine.api.StoreVersion;
 import org.neo4j.storageengine.api.format.Index44Compatibility;
 import org.neo4j.storageengine.migration.AbstractStoreMigrationParticipant;
+import org.neo4j.storageengine.migration.TokenIndexMigrator;
 
 /**
  * Migrates a store from one storage engine to another by doing something close to what store copy does
@@ -230,6 +231,9 @@ public class AcrossEngineMigrationParticipant extends AbstractStoreMigrationPart
         storeFiles.addAll(idFiles);
         storeFiles.add(toplevelIndexFolder);
         storeFiles.add(profiles);
+        // If migrating from <5 the legacy token indexes are not in the index folder
+        storeFiles.add(dir.file(TokenIndexMigrator.LEGACY_LABEL_INDEX_STORE));
+        storeFiles.add(dir.file(TokenIndexMigrator.LEGACY_RELATIONSHIP_TYPE_INDEX_STORE));
         fileOperation(
                 DELETE_INCLUDING_DIRS,
                 fileSystem,

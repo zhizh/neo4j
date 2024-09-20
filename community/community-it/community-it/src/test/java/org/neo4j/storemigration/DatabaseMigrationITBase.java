@@ -21,6 +21,7 @@ package org.neo4j.storemigration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.neo4j.configuration.GraphDatabaseInternalSettings.automatic_upgrade_enabled;
 import static org.neo4j.configuration.GraphDatabaseInternalSettings.include_versions_under_development;
 import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME;
@@ -356,6 +357,10 @@ public abstract class DatabaseMigrationITBase {
         assertThat(fs.fileExists(luceneNativeDir.rootDirectory()))
                 .as("index directory should have been removed during migration")
                 .isFalse();
+
+        // The legacy location for scanstores should have been cleared
+        assertFalse(fs.fileExists(databaseLayout.file("neostore.labelscanstore.db")));
+        assertFalse(fs.fileExists(databaseLayout.file("neostore.relationshiptypescanstore.db")));
     }
 
     private static IndexDirectoryStructure getIndexProviderDirectoryStructure(
