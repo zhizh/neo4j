@@ -71,7 +71,8 @@ public class KernelToken extends KernelTokenRead implements Token {
     public int labelCreateForName(String labelName, boolean internal) throws KernelException {
         ktx.assertOpen();
         TransactionState txState = ktx.txState();
-        int id = reserveTokenId(commandCreationContext::reserveLabelTokenId, tokenHolders.labelTokens());
+        int id =
+                reserveTokenId(() -> commandCreationContext.reserveLabelTokenId(labelName), tokenHolders.labelTokens());
         txState.labelDoCreateForName(labelName, internal, id);
         return id;
     }
@@ -81,7 +82,8 @@ public class KernelToken extends KernelTokenRead implements Token {
         ktx.assertOpen();
         TransactionState txState = ktx.txState();
         int id = reserveTokenId(
-                commandCreationContext::reserveRelationshipTypeTokenId, tokenHolders.relationshipTypeTokens());
+                () -> commandCreationContext.reserveRelationshipTypeTokenId(relationshipTypeName),
+                tokenHolders.relationshipTypeTokens());
         txState.relationshipTypeDoCreateForName(relationshipTypeName, internal, id);
         return id;
     }
@@ -119,7 +121,9 @@ public class KernelToken extends KernelTokenRead implements Token {
     public int propertyKeyCreateForName(String propertyKeyName, boolean internal) throws KernelException {
         ktx.assertOpen();
         TransactionState txState = ktx.txState();
-        int id = reserveTokenId(commandCreationContext::reservePropertyKeyTokenId, tokenHolders.propertyKeyTokens());
+        int id = reserveTokenId(
+                () -> commandCreationContext.reservePropertyKeyTokenId(propertyKeyName),
+                tokenHolders.propertyKeyTokens());
         txState.propertyKeyDoCreateForName(propertyKeyName, internal, id);
         return id;
     }

@@ -174,14 +174,13 @@ public class CommandCreationContextIT {
                                 commandCreationContext.reserveRelationship(-1, 0, 0, false, false)),
                 arguments(
                         (Function<NeoStores, CommonAbstractStore<?, ?>>) NeoStores::getLabelTokenStore,
-                        (ToLongFunction<CommandCreationContext>) CommandCreationContext::reserveLabelTokenId),
+                        (ToLongFunction<CommandCreationContext>) ctx -> ctx.reserveLabelTokenId("label")),
                 arguments(
                         (Function<NeoStores, CommonAbstractStore<?, ?>>) NeoStores::getPropertyKeyTokenStore,
-                        (ToLongFunction<CommandCreationContext>) CommandCreationContext::reservePropertyKeyTokenId),
+                        (ToLongFunction<CommandCreationContext>) ctx -> ctx.reservePropertyKeyTokenId("key")),
                 arguments(
                         (Function<NeoStores, CommonAbstractStore<?, ?>>) NeoStores::getRelationshipTypeTokenStore,
-                        (ToLongFunction<CommandCreationContext>)
-                                CommandCreationContext::reserveRelationshipTypeTokenId));
+                        (ToLongFunction<CommandCreationContext>) ctx -> ctx.reserveRelationshipTypeTokenId("type")));
     }
 
     private static void prepareIdGenerator(IdGenerator idGenerator) {

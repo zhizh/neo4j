@@ -193,7 +193,7 @@ class KernelTokenTest {
         // then
         InOrder inOrder = inOrder(ktx, commandCreationContext);
         inOrder.verify(ktx).txState();
-        inOrder.verify(commandCreationContext).reserveLabelTokenId();
+        inOrder.verify(commandCreationContext).reserveLabelTokenId("MyLabel");
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -205,7 +205,7 @@ class KernelTokenTest {
         // then
         InOrder inOrder = inOrder(ktx, commandCreationContext);
         inOrder.verify(ktx).txState();
-        inOrder.verify(commandCreationContext).reservePropertyKeyTokenId();
+        inOrder.verify(commandCreationContext).reservePropertyKeyTokenId("MyKey");
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -217,7 +217,7 @@ class KernelTokenTest {
         // then
         InOrder inOrder = inOrder(ktx, commandCreationContext);
         inOrder.verify(ktx).txState();
-        inOrder.verify(commandCreationContext).reserveRelationshipTypeTokenId();
+        inOrder.verify(commandCreationContext).reserveRelationshipTypeTokenId("MyType");
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -293,7 +293,7 @@ class KernelTokenTest {
     @Test
     void mustSkipAlreadyAllocatedPropertyKeyTokenIds() throws Exception {
         when(propertyKeyTokens.hasToken(13)).thenReturn(true);
-        when(commandCreationContext.reservePropertyKeyTokenId()).thenReturn(13, 13, 14);
+        when(commandCreationContext.reservePropertyKeyTokenId("poke")).thenReturn(13, 13, 14);
         int id = kernelToken.propertyKeyCreateForName("poke", false);
         assertEquals(14, id);
     }
@@ -301,7 +301,7 @@ class KernelTokenTest {
     @Test
     void mustSkipAlreadyAllocatedLabelTokenIds() throws Exception {
         when(labelTokens.hasToken(13)).thenReturn(true);
-        when(commandCreationContext.reserveLabelTokenId()).thenReturn(13, 13, 14);
+        when(commandCreationContext.reserveLabelTokenId("poke")).thenReturn(13, 13, 14);
         int id = kernelToken.labelCreateForName("poke", false);
         assertEquals(14, id);
     }
@@ -309,7 +309,7 @@ class KernelTokenTest {
     @Test
     void mustSkipAlreadyAllocatedRelationshipTypeTokenIds() throws Exception {
         when(relationshipTypeTokens.hasToken(13)).thenReturn(true);
-        when(commandCreationContext.reserveRelationshipTypeTokenId()).thenReturn(13, 13, 14);
+        when(commandCreationContext.reserveRelationshipTypeTokenId("poke")).thenReturn(13, 13, 14);
         int id = kernelToken.relationshipTypeCreateForName("poke", false);
         assertEquals(14, id);
     }

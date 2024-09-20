@@ -76,21 +76,24 @@ public interface CommandCreationContext
 
     /**
      * Reserves a label token id.
+     * @param tokenName the name of the token to reserve the id for
      * @return a unique label token id.
      */
-    int reserveLabelTokenId();
+    int reserveLabelTokenId(String tokenName);
 
     /**
      * Reserves a property key token id.
+     * @param tokenName the name of the token to reserve the id for
      * @return a unique property key token id.
      */
-    int reservePropertyKeyTokenId();
+    int reservePropertyKeyTokenId(String tokenName);
 
     /**
      * Reserves a relationship type token id.
+     * @param tokenName the name of the token to reserve the id for
      * @return a unique relationship type token id.
      */
-    int reserveRelationshipTypeTokenId();
+    int reserveRelationshipTypeTokenId(String tokenName);
 
     @Override
     void close();

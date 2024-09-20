@@ -143,17 +143,17 @@ class RecordStorageCommandCreationContext implements CommandCreationContext {
     }
 
     @Override
-    public int reserveRelationshipTypeTokenId() {
+    public int reserveRelationshipTypeTokenId(String tokenName) {
         return toIntExact(nextId(StoreType.RELATIONSHIP_TYPE_TOKEN));
     }
 
     @Override
-    public int reservePropertyKeyTokenId() {
+    public int reservePropertyKeyTokenId(String tokenName) {
         return toIntExact(nextId(StoreType.PROPERTY_KEY_TOKEN));
     }
 
     @Override
-    public int reserveLabelTokenId() {
+    public int reserveLabelTokenId(String tokenName) {
         return toIntExact(nextId(StoreType.LABEL_TOKEN));
     }
 
