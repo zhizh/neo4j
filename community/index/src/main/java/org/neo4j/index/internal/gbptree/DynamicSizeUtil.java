@@ -466,7 +466,6 @@ public class DynamicSizeUtil {
         assert index == keyCount : "expected " + keyCount + " alive blocks, found only " + index;
     }
 
-    @VisibleForTesting
     public static int keyValueSizeCapFromPageSize(int pageSize) {
         return Math.min(FIXED_MAX_KEY_VALUE_SIZE_CAP, OffloadStoreImpl.keyValueSizeCapFromPageSize(pageSize));
     }

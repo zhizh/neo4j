@@ -94,6 +94,7 @@ public enum KernelVersion {
     public static final KernelVersion VERSION_CHECKPOINT_NOT_COMPLETED_POSITION_INTRODUCED = V5_22;
     public static final KernelVersion VERSION_VECTOR_QUANTIZATION_AND_HYPER_PARAMS = V5_23;
     public static final KernelVersion VERSION_PARTITIONED_BLOCK_INDEX_RULE_VALUES = V5_23;
+    public static final KernelVersion VERSION_PARTITIONED_BLOCK_TOKENS = GLORIOUS_FUTURE;
 
     // Keep updated each time there is an new schema rule added
     // related to IntegrityValidator

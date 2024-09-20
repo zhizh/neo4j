@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
+import org.neo4j.configuration.Config;
+import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.exceptions.UnderlyingStorageException;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.layout.DatabaseLayout;
@@ -154,15 +156,20 @@ public class TransactionLogInitializer {
     }
 
     private LogFilesSpan buildLogFiles(DatabaseLayout layout, Path transactionLogsDirectory) throws IOException {
-        LogFiles logFiles = LogFilesBuilder.builder(layout, fs, metadataCache)
+        LogFilesBuilder builder = LogFilesBuilder.builder(layout, fs, metadataCache)
                 .withLogVersionRepository(metadataProvider)
                 .withTransactionIdStore(metadataProvider)
                 .withAppendIndexProvider(metadataProvider)
                 .withStoreId(metadataProvider.getStoreId())
                 .withLogsDirectory(transactionLogsDirectory)
                 .withStorageEngineFactory(storageEngineFactory)
-                .withDatabaseHealth(new DatabaseHealth(HealthEventGenerator.NO_OP, NullLog.getInstance()))
-                .build();
+                .withDatabaseHealth(new DatabaseHealth(HealthEventGenerator.NO_OP, NullLog.getInstance()));
+        if (metadataCache.kernelVersion() == KernelVersion.GLORIOUS_FUTURE) {
+            builder.withConfig(Config.defaults(
+                    GraphDatabaseInternalSettings.latest_kernel_version,
+                    metadataCache.kernelVersion().version()));
+        }
+        LogFiles logFiles = builder.build();
         return new LogFilesSpan(new Lifespan(logFiles), logFiles);
     }
 
