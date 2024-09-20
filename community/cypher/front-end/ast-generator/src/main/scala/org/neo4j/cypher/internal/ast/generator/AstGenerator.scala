@@ -1773,17 +1773,23 @@ class AstGenerator(
     yieldAll <- boolean
     use <- option(_use)
   } yield {
+    val returnCypher5Types = whenAstDifferUseCypherVersion.equals(CypherVersion.Cypher5)
     val showClauses = yields match {
-      case Some(Right(w)) => Seq(ShowTransactionsClause(ids, Some(w), List.empty, yieldAll = false)(pos))
+      case Some(Right(w)) =>
+        Seq(ShowTransactionsClause(ids, Some(w), List.empty, yieldAll = false, returnCypher5Types)(pos))
       case Some(Left((y, Some(r)))) =>
         val (w, yi) = turnYieldToWith(y)
-        Seq(ShowTransactionsClause(ids, None, yi, yieldAll = false)(pos), w, r)
+        Seq(ShowTransactionsClause(ids, None, yi, yieldAll = false, returnCypher5Types)(pos), w, r)
       case Some(Left((y, None))) =>
         val (w, yi) = turnYieldToWith(y)
-        Seq(ShowTransactionsClause(ids, None, yi, yieldAll = false)(pos), w)
+        Seq(ShowTransactionsClause(ids, None, yi, yieldAll = false, returnCypher5Types)(pos), w)
       case _ if yieldAll =>
-        Seq(ShowTransactionsClause(ids, None, List.empty, yieldAll = true)(pos), getFullWithStarFromYield)
-      case _ => Seq(ShowTransactionsClause(ids, None, List.empty, yieldAll = false)(pos))
+        Seq(
+          ShowTransactionsClause(ids, None, List.empty, yieldAll = true, returnCypher5Types)(pos),
+          getFullWithStarFromYield
+        )
+      case _ =>
+        Seq(ShowTransactionsClause(ids, None, List.empty, yieldAll = false, returnCypher5Types)(pos))
     }
     val fullClauses = use.map(u => u +: showClauses).getOrElse(showClauses)
     SingleQuery(fullClauses)(pos)
@@ -1879,7 +1885,8 @@ class AstGenerator(
     yields <- _yield
     yieldAll <- boolean
     clause <- oneOf(
-      (item: List[CommandResultItem], all: Boolean) => ShowTransactionsClause(ids, None, item, all)(pos),
+      (item: List[CommandResultItem], all: Boolean) =>
+        ShowTransactionsClause(ids, None, item, all, whenAstDifferUseCypherVersion.equals(CypherVersion.Cypher5))(pos),
       (item: List[CommandResultItem], all: Boolean) => ShowFunctionsClause(funcType, exec, None, item, all)(pos),
       (item: List[CommandResultItem], all: Boolean) => ShowProceduresClause(exec, None, item, all)(pos),
       (item: List[CommandResultItem], all: Boolean) => ShowSettingsClause(ids, None, item, all)(pos),

@@ -1768,7 +1768,7 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     val scalaIds =
       ids.asScala.left.map(_.asScala.toList) // if left: map the string list to scala, if right: changes nothing
     val (yieldAll, yieldedItems) = getYieldAllAndYieldItems(yieldClause)
-    ShowTransactionsClause(scalaIds, Option(where), yieldedItems, yieldAll)(p)
+    ShowTransactionsClause(scalaIds, Option(where), yieldedItems, yieldAll, returnCypher5Types = true)(p)
   }
 
   override def terminateTransactionsClause(

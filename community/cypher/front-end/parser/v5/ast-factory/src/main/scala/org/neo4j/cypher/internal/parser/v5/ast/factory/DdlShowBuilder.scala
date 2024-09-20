@@ -646,7 +646,7 @@ object DdlShowBuilder {
 
     def buildShowTransactions(position: InputPosition): Seq[Clause] = {
       buildClauses(
-        ShowTransactionsClause(names, where, yieldedItems, yieldAll)(position)
+        ShowTransactionsClause(names, where, yieldedItems, yieldAll, returnCypher5Types = true)(position)
       )
     }
 

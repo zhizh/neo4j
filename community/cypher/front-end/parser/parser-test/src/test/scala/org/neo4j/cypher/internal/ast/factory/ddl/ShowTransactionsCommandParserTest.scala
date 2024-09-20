@@ -28,103 +28,120 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
 
   Seq("TRANSACTION", "TRANSACTIONS").foreach { transactionKeyword =>
     test(s"SHOW $transactionKeyword") {
-      assertAst(
-        singleQuery(ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = false)(defaultPos))
+      assertAstVersionBased(fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = false, fromCypher5)(defaultPos)
+        )
       )
     }
 
     test(s"SHOW $transactionKeyword 'db1-transaction-123'") {
-      assertAst(
+      assertAstVersionBased(fromCypher5 =>
         singleQuery(
           ShowTransactionsClause(
             Right(literalString("db1-transaction-123")),
             None,
             List.empty,
-            yieldAll = false
+            yieldAll = false,
+            fromCypher5
           )(defaultPos)
         )
       )
     }
 
     test(s"""SHOW $transactionKeyword "db1-transaction-123"""") {
-      assertAst(
+      assertAstVersionBased(fromCypher5 =>
         singleQuery(
           ShowTransactionsClause(
             Right(literalString("db1-transaction-123")),
             None,
             List.empty,
-            yieldAll = false
+            yieldAll = false,
+            fromCypher5
           )(defaultPos)
         )
       )
     }
 
     test(s"SHOW $transactionKeyword 'my.db-transaction-123'") {
-      assertAst(
+      assertAstVersionBased(fromCypher5 =>
         singleQuery(ShowTransactionsClause(
           Right(literalString("my.db-transaction-123")),
           None,
           List.empty,
-          yieldAll = false
+          yieldAll = false,
+          fromCypher5
         )(defaultPos))
       )
     }
 
     test(s"SHOW $transactionKeyword $$param") {
-      assertAst(singleQuery(ShowTransactionsClause(
-        Right(parameter("param", CTAny)),
-        None,
-        List.empty,
-        yieldAll = false
-      )(defaultPos)))
+      assertAstVersionBased(fromCypher5 =>
+        singleQuery(ShowTransactionsClause(
+          Right(parameter("param", CTAny)),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(defaultPos))
+      )
     }
 
     test(s"SHOW $transactionKeyword $$where") {
-      assertAst(singleQuery(ShowTransactionsClause(
-        Right(parameter("where", CTAny)),
-        None,
-        List.empty,
-        yieldAll = false
-      )(defaultPos)))
+      assertAstVersionBased(fromCypher5 =>
+        singleQuery(ShowTransactionsClause(
+          Right(parameter("where", CTAny)),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(defaultPos))
+      )
     }
 
     test(s"""SHOW $transactionKeyword 'db1 - transaction - 123', "db2-transaction-45a6"""") {
-      assertAst(singleQuery(ShowTransactionsClause(
-        Left(List("db1 - transaction - 123", "db2-transaction-45a6")),
-        None,
-        List.empty,
-        yieldAll = false
-      )(defaultPos)))
+      assertAstVersionBased(fromCypher5 =>
+        singleQuery(ShowTransactionsClause(
+          Left(List("db1 - transaction - 123", "db2-transaction-45a6")),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(defaultPos))
+      )
     }
 
     test(s"SHOW $transactionKeyword 'yield-transaction-123'") {
-      assertAst(
+      assertAstVersionBased(fromCypher5 =>
         singleQuery(ShowTransactionsClause(
           Right(literalString("yield-transaction-123")),
           None,
           List.empty,
-          yieldAll = false
+          yieldAll = false,
+          fromCypher5
         )(defaultPos))
       )
     }
 
     test(s"SHOW $transactionKeyword 'where-transaction-123'") {
-      assertAst(
+      assertAstVersionBased(fromCypher5 =>
         singleQuery(ShowTransactionsClause(
           Right(literalString("where-transaction-123")),
           None,
           List.empty,
-          yieldAll = false
+          yieldAll = false,
+          fromCypher5
         )(defaultPos))
       )
     }
 
     test(s"USE db SHOW $transactionKeyword") {
-      assertAst(
-        singleQuery(
-          use(List("db")),
-          ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = false)(pos)
-        ),
+      assertAstVersionBased(
+        fromCypher5 =>
+          singleQuery(
+            use(List("db")),
+            ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = false, fromCypher5)(pos)
+          ),
         comparePosition = false
       )
     }
@@ -132,170 +149,206 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
   }
 
   test("SHOW TRANSACTION db-transaction-123") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Right(subtract(subtract(varFor("db"), varFor("transaction")), literalInt(123))),
-        None,
-        List.empty,
-        yieldAll = false
-      )(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Right(subtract(subtract(varFor("db"), varFor("transaction")), literalInt(123))),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTION 'neo4j'+'-transaction-'+3") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Right(add(add(literalString("neo4j"), literalString("-transaction-")), literalInt(3))),
-        None,
-        List.empty,
-        yieldAll = false
-      )(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Right(add(add(literalString("neo4j"), literalString("-transaction-")), literalInt(3))),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTION ('neo4j'+'-transaction-'+3)") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Right(add(add(literalString("neo4j"), literalString("-transaction-")), literalInt(3))),
-        None,
-        List.empty,
-        yieldAll = false
-      )(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Right(add(add(literalString("neo4j"), literalString("-transaction-")), literalInt(3))),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS ['db1-transaction-123', 'db2-transaction-456']") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Right(listOfString("db1-transaction-123", "db2-transaction-456")),
-        None,
-        List.empty,
-        yieldAll = false
-      )(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Right(listOfString("db1-transaction-123", "db2-transaction-456")),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTION foo") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("foo")), None, List.empty, yieldAll = false)(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("foo")), None, List.empty, yieldAll = false, fromCypher5)(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTION x+2") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(add(varFor("x"), literalInt(2))), None, List.empty, yieldAll = false)(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(add(varFor("x"), literalInt(2))), None, List.empty, yieldAll = false, fromCypher5)(
+          pos
+        )
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("YIELD")), None, List.empty, yieldAll = false)(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("YIELD")), None, List.empty, yieldAll = false, fromCypher5)(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD (123 + xyz)") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Right(function("YIELD", add(literalInt(123), varFor("xyz")))),
-        None,
-        List.empty,
-        yieldAll = false
-      )(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Right(function("YIELD", add(literalInt(123), varFor("xyz")))),
+          None,
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS ALL") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("ALL")), None, List.empty, yieldAll = false)(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("ALL")), None, List.empty, yieldAll = false, fromCypher5)(pos)
+      )
+    )
   }
 
   // Filtering tests
 
   test("SHOW TRANSACTION WHERE transactionId = 'db1-transaction-123'") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        Some(where(equals(varFor("transactionId"), literalString("db1-transaction-123")))),
-        List.empty,
-        yieldAll = false
-      )(defaultPos)
-    ))
-  }
-
-  test("SHOW TRANSACTIONS YIELD database") {
-    assertAst(
+    assertAstVersionBased(fromCypher5 =>
       singleQuery(
         ShowTransactionsClause(
           Left(List.empty),
-          None,
-          List(commandResultItem("database")),
-          yieldAll = false
-        )(pos),
-        withFromYield(returnAllItems.withDefaultOrderOnColumns(List("database")))
-      ),
+          Some(where(equals(varFor("transactionId"), literalString("db1-transaction-123")))),
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(defaultPos)
+      )
+    )
+  }
+
+  test("SHOW TRANSACTIONS YIELD database") {
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Left(List.empty),
+            None,
+            List(commandResultItem("database")),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems.withDefaultOrderOnColumns(List("database")))
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS 'db1-transaction-123', 'db2-transaction-456' YIELD *") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List("db1-transaction-123", "db2-transaction-456")),
-        None,
-        List.empty,
-        yieldAll = true
-      )(
-        defaultPos
-      ),
-      withFromYield(returnAllItems)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List("db1-transaction-123", "db2-transaction-456")),
+          None,
+          List.empty,
+          yieldAll = true,
+          fromCypher5
+        )(defaultPos),
+        withFromYield(returnAllItems)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS 'db1-transaction-123', 'db2-transaction-456', 'yield' YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Left(List("db1-transaction-123", "db2-transaction-456", "yield")),
-          None,
-          List.empty,
-          yieldAll = true
-        )(pos),
-        withFromYield(returnAllItems)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Left(List("db1-transaction-123", "db2-transaction-456", "yield")),
+            None,
+            List.empty,
+            yieldAll = true,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS YIELD * ORDER BY transactionId SKIP 2 LIMIT 5") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = true)(pos),
-        withFromYield(returnAllItems, Some(orderBy(sortItem(varFor("transactionId")))), Some(skip(2)), Some(limit(5)))
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = true, fromCypher5)(pos),
+          withFromYield(returnAllItems, Some(orderBy(sortItem(varFor("transactionId")))), Some(skip(2)), Some(limit(5)))
+        ),
       comparePosition = false
     )
   }
 
   test("USE db SHOW TRANSACTIONS YIELD transactionId, activeLockCount AS pp WHERE pp < 50 RETURN transactionId") {
-    assertAst(
-      singleQuery(
-        use(List("db")),
-        ShowTransactionsClause(
-          Left(List.empty),
-          None,
-          List(
-            commandResultItem("transactionId"),
-            commandResultItem("activeLockCount", Some("pp"))
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          use(List("db")),
+          ShowTransactionsClause(
+            Left(List.empty),
+            None,
+            List(
+              commandResultItem("transactionId"),
+              commandResultItem("activeLockCount", Some("pp"))
+            ),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(
+            returnAllItems.withDefaultOrderOnColumns(List("transactionId", "pp")),
+            where = Some(where(lessThan(varFor("pp"), literalInt(50L))))
           ),
-          yieldAll = false
-        )(pos),
-        withFromYield(
-          returnAllItems.withDefaultOrderOnColumns(List("transactionId", "pp")),
-          where = Some(where(lessThan(varFor("pp"), literalInt(50L))))
+          return_(variableReturnItem("transactionId"))
         ),
-        return_(variableReturnItem("transactionId"))
-      ),
       comparePosition = false
     )
   }
@@ -303,27 +356,29 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
   test(
     "USE db SHOW TRANSACTIONS YIELD transactionId, activeLockCount AS pp ORDER BY pp SKIP 2 LIMIT 5 WHERE pp < 50 RETURN transactionId"
   ) {
-    assertAst(
-      singleQuery(
-        use(List("db")),
-        ShowTransactionsClause(
-          Left(List.empty),
-          None,
-          List(
-            commandResultItem("transactionId"),
-            commandResultItem("activeLockCount", Some("pp"))
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          use(List("db")),
+          ShowTransactionsClause(
+            Left(List.empty),
+            None,
+            List(
+              commandResultItem("transactionId"),
+              commandResultItem("activeLockCount", Some("pp"))
+            ),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(
+            returnAllItems.withDefaultOrderOnColumns(List("transactionId", "pp")),
+            Some(orderBy(sortItem(varFor("pp")))),
+            Some(skip(2)),
+            Some(limit(5)),
+            Some(where(lessThan(varFor("pp"), literalInt(50L))))
           ),
-          yieldAll = false
-        )(pos),
-        withFromYield(
-          returnAllItems.withDefaultOrderOnColumns(List("transactionId", "pp")),
-          Some(orderBy(sortItem(varFor("pp")))),
-          Some(skip(2)),
-          Some(limit(5)),
-          Some(where(lessThan(varFor("pp"), literalInt(50L))))
+          return_(variableReturnItem("transactionId"))
         ),
-        return_(variableReturnItem("transactionId"))
-      ),
       comparePosition = false
     )
   }
@@ -331,81 +386,97 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
   test(
     "USE db SHOW TRANSACTIONS YIELD transactionId, activeLockCount AS pp ORDER BY pp OFFSET 2 LIMIT 5 WHERE pp < 50 RETURN transactionId"
   ) {
-    assertAst(
-      singleQuery(
-        use(List("db")),
-        ShowTransactionsClause(
-          Left(List.empty),
-          None,
-          List(
-            commandResultItem("transactionId"),
-            commandResultItem("activeLockCount", Some("pp"))
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          use(List("db")),
+          ShowTransactionsClause(
+            Left(List.empty),
+            None,
+            List(
+              commandResultItem("transactionId"),
+              commandResultItem("activeLockCount", Some("pp"))
+            ),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(
+            returnAllItems.withDefaultOrderOnColumns(List("transactionId", "pp")),
+            Some(orderBy(sortItem(varFor("pp")))),
+            Some(skip(2)),
+            Some(limit(5)),
+            Some(where(lessThan(varFor("pp"), literalInt(50L))))
           ),
-          yieldAll = false
-        )(pos),
-        withFromYield(
-          returnAllItems.withDefaultOrderOnColumns(List("transactionId", "pp")),
-          Some(orderBy(sortItem(varFor("pp")))),
-          Some(skip(2)),
-          Some(limit(5)),
-          Some(where(lessThan(varFor("pp"), literalInt(50L))))
+          return_(variableReturnItem("transactionId"))
         ),
-        return_(variableReturnItem("transactionId"))
-      ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS $param YIELD transactionId AS TRANSACTION, database AS OUTPUT") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(parameter("param", CTAny)),
-          None,
-          List(commandResultItem("transactionId", Some("TRANSACTION")), commandResultItem("database", Some("OUTPUT"))),
-          yieldAll = false
-        )(pos),
-        withFromYield(returnAllItems.withDefaultOrderOnColumns(List("TRANSACTION", "OUTPUT")))
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(parameter("param", CTAny)),
+            None,
+            List(
+              commandResultItem("transactionId", Some("TRANSACTION")),
+              commandResultItem("database", Some("OUTPUT"))
+            ),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems.withDefaultOrderOnColumns(List("TRANSACTION", "OUTPUT")))
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS 'where' YIELD transactionId AS TRANSACTION, database AS OUTPUT") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(literalString("where")),
-          None,
-          List(commandResultItem("transactionId", Some("TRANSACTION")), commandResultItem("database", Some("OUTPUT"))),
-          yieldAll = false
-        )(pos),
-        withFromYield(returnAllItems.withDefaultOrderOnColumns(List("TRANSACTION", "OUTPUT")))
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(literalString("where")),
+            None,
+            List(
+              commandResultItem("transactionId", Some("TRANSACTION")),
+              commandResultItem("database", Some("OUTPUT"))
+            ),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems.withDefaultOrderOnColumns(List("TRANSACTION", "OUTPUT")))
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTION 'db1-transaction-123' WHERE transactionId = 'db1-transaction-124'") {
-    assertAst(
-      singleQuery(ShowTransactionsClause(
-        Right(literalString("db1-transaction-123")),
-        Some(where(equals(varFor("transactionId"), literalString("db1-transaction-124")))),
-        List.empty,
-        yieldAll = false
-      )(pos)),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(ShowTransactionsClause(
+          Right(literalString("db1-transaction-123")),
+          Some(where(equals(varFor("transactionId"), literalString("db1-transaction-124")))),
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTION 'yield' WHERE transactionId = 'where'") {
-    assertAst(
-      singleQuery(ShowTransactionsClause(
-        Right(literalString("yield")),
-        Some(where(equals(varFor("transactionId"), literalString("where")))),
-        List.empty,
-        yieldAll = false
-      )(pos)),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(ShowTransactionsClause(
+          Right(literalString("yield")),
+          Some(where(equals(varFor("transactionId"), literalString("where")))),
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)),
       comparePosition = false
     )
   }
@@ -413,13 +484,15 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
   test(
     "SHOW TRANSACTION 'db1-transaction-123', 'db1-transaction-124' WHERE transactionId IN ['db1-transaction-124', 'db1-transaction-125']"
   ) {
-    assertAst(
-      singleQuery(ShowTransactionsClause(
-        Left(List("db1-transaction-123", "db1-transaction-124")),
-        Some(where(in(varFor("transactionId"), listOfString("db1-transaction-124", "db1-transaction-125")))),
-        List.empty,
-        yieldAll = false
-      )(pos)),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(ShowTransactionsClause(
+          Left(List("db1-transaction-123", "db1-transaction-124")),
+          Some(where(in(varFor("transactionId"), listOfString("db1-transaction-124", "db1-transaction-125")))),
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)),
       comparePosition = false
     )
   }
@@ -427,382 +500,440 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
   test(
     "SHOW TRANSACTION db1-transaction-123 WHERE transactionId IN ['db1-transaction-124', 'db1-transaction-125']"
   ) {
-    assertAst(
-      singleQuery(ShowTransactionsClause(
-        Right(subtract(subtract(varFor("db1"), varFor("transaction")), literalInt(123))),
-        Some(where(in(varFor("transactionId"), listOfString("db1-transaction-124", "db1-transaction-125")))),
-        List.empty,
-        yieldAll = false
-      )(pos)),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(ShowTransactionsClause(
+          Right(subtract(subtract(varFor("db1"), varFor("transaction")), literalInt(123))),
+          Some(where(in(varFor("transactionId"), listOfString("db1-transaction-124", "db1-transaction-125")))),
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS ['db1-transaction-123', 'db2-transaction-456'] YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(listOfString("db1-transaction-123", "db2-transaction-456")),
-          None,
-          List.empty,
-          yieldAll = true
-        )(pos),
-        withFromYield(returnAllItems)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(listOfString("db1-transaction-123", "db2-transaction-456")),
+            None,
+            List.empty,
+            yieldAll = true,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS $x+'123' YIELD transactionId AS TRANSACTION, database AS SHOW") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(add(parameter("x", CTAny), literalString("123"))),
-          None,
-          List(commandResultItem("transactionId", Some("TRANSACTION")), commandResultItem("database", Some("SHOW"))),
-          yieldAll = false
-        )(pos),
-        withFromYield(returnAllItems.withDefaultOrderOnColumns(List("TRANSACTION", "SHOW")))
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(add(parameter("x", CTAny), literalString("123"))),
+            None,
+            List(commandResultItem("transactionId", Some("TRANSACTION")), commandResultItem("database", Some("SHOW"))),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems.withDefaultOrderOnColumns(List("TRANSACTION", "SHOW")))
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS where YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("where")),
-          None,
-          List.empty,
-          yieldAll = true
-        )(pos),
-        withFromYield(returnAllItems)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("where")),
+            None,
+            List.empty,
+            yieldAll = true,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS yield YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("yield")),
-          None,
-          List.empty,
-          yieldAll = true
-        )(pos),
-        withFromYield(returnAllItems)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("yield")),
+            None,
+            List.empty,
+            yieldAll = true,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS show YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("show")),
-          None,
-          List.empty,
-          yieldAll = true
-        )(pos),
-        withFromYield(returnAllItems)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("show")),
+            None,
+            List.empty,
+            yieldAll = true,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS terminate YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("terminate")),
-          None,
-          List.empty,
-          yieldAll = true
-        )(pos),
-        withFromYield(returnAllItems)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("terminate")),
+            None,
+            List.empty,
+            yieldAll = true,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS YIELD yield") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Left(List.empty),
-          None,
-          List(commandResultItem("yield")),
-          yieldAll = false
-        )(pos),
-        withFromYield(returnAllItems.withDefaultOrderOnColumns(List("yield")))
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Left(List.empty),
+            None,
+            List(commandResultItem("yield")),
+            yieldAll = false,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems.withDefaultOrderOnColumns(List("yield")))
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS where WHERE true") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("where")),
-          Some(where(trueLiteral)),
-          List.empty,
-          yieldAll = false
-        )(pos)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("where")),
+            Some(where(trueLiteral)),
+            List.empty,
+            yieldAll = false,
+            fromCypher5
+          )(pos)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS yield WHERE true") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("yield")),
-          Some(where(trueLiteral)),
-          List.empty,
-          yieldAll = false
-        )(pos)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("yield")),
+            Some(where(trueLiteral)),
+            List.empty,
+            yieldAll = false,
+            fromCypher5
+          )(pos)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS show WHERE true") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("show")),
-          Some(where(trueLiteral)),
-          List.empty,
-          yieldAll = false
-        )(pos)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("show")),
+            Some(where(trueLiteral)),
+            List.empty,
+            yieldAll = false,
+            fromCypher5
+          )(pos)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS terminate WHERE true") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("terminate")),
-          Some(where(trueLiteral)),
-          List.empty,
-          yieldAll = false
-        )(pos)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("terminate")),
+            Some(where(trueLiteral)),
+            List.empty,
+            yieldAll = false,
+            fromCypher5
+          )(pos)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS `yield` YIELD *") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("yield")),
-          None,
-          List.empty,
-          yieldAll = true
-        )(pos),
-        withFromYield(returnAllItems)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("yield")),
+            None,
+            List.empty,
+            yieldAll = true,
+            fromCypher5
+          )(pos),
+          withFromYield(returnAllItems)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS `where` WHERE true") {
-    assertAst(
-      singleQuery(
-        ShowTransactionsClause(
-          Right(varFor("where")),
-          Some(where(trueLiteral)),
-          List.empty,
-          yieldAll = false
-        )(pos)
-      ),
+    assertAstVersionBased(
+      fromCypher5 =>
+        singleQuery(
+          ShowTransactionsClause(
+            Right(varFor("where")),
+            Some(where(trueLiteral)),
+            List.empty,
+            yieldAll = false,
+            fromCypher5
+          )(pos)
+        ),
       comparePosition = false
     )
   }
 
   test("SHOW TRANSACTIONS YIELD a ORDER BY a WHERE a = 1") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a")),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("a")),
-        Some(orderBy(sortItem(varFor("a")))),
-        where = Some(where(equals(varFor("a"), literalInt(1))))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a")),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("a")),
+          Some(orderBy(sortItem(varFor("a")))),
+          where = Some(where(equals(varFor("a"), literalInt(1))))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a AS b ORDER BY b WHERE b = 1") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a", Some("b"))),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("b")),
-        Some(orderBy(sortItem(varFor("b")))),
-        where = Some(where(equals(varFor("b"), literalInt(1))))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a", Some("b"))),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("b")),
+          Some(orderBy(sortItem(varFor("b")))),
+          where = Some(where(equals(varFor("b"), literalInt(1))))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a AS b ORDER BY a WHERE a = 1") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a", Some("b"))),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("b")),
-        Some(orderBy(sortItem(varFor("b")))),
-        where = Some(where(equals(varFor("b"), literalInt(1))))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a", Some("b"))),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("b")),
+          Some(orderBy(sortItem(varFor("b")))),
+          where = Some(where(equals(varFor("b"), literalInt(1))))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a ORDER BY EXISTS { (a) } WHERE EXISTS { (a) }") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a")),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("a")),
-        Some(orderBy(sortItem(simpleExistsExpression(patternForMatch(nodePat(Some("a"))), None)))),
-        where = Some(where(simpleExistsExpression(patternForMatch(nodePat(Some("a"))), None)))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a")),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("a")),
+          Some(orderBy(sortItem(simpleExistsExpression(patternForMatch(nodePat(Some("a"))), None)))),
+          where = Some(where(simpleExistsExpression(patternForMatch(nodePat(Some("a"))), None)))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a ORDER BY EXISTS { (b) } WHERE EXISTS { (b) }") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a")),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("a")),
-        Some(orderBy(sortItem(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))),
-        where = Some(where(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a")),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("a")),
+          Some(orderBy(sortItem(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))),
+          where = Some(where(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a AS b ORDER BY COUNT { (b) } WHERE EXISTS { (b) }") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a", Some("b"))),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("b")),
-        Some(orderBy(sortItem(simpleCountExpression(patternForMatch(nodePat(Some("b"))), None)))),
-        where = Some(where(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a", Some("b"))),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("b")),
+          Some(orderBy(sortItem(simpleCountExpression(patternForMatch(nodePat(Some("b"))), None)))),
+          where = Some(where(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a AS b ORDER BY EXISTS { (a) } WHERE COLLECT { MATCH (a) RETURN a } <> []") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a", Some("b"))),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("b")),
-        Some(orderBy(sortItem(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))),
-        where = Some(where(notEquals(
-          simpleCollectExpression(patternForMatch(nodePat(Some("b"))), None, return_(returnItem(varFor("b"), "a"))),
-          listOf()
-        )))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a", Some("b"))),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("b")),
+          Some(orderBy(sortItem(simpleExistsExpression(patternForMatch(nodePat(Some("b"))), None)))),
+          where = Some(where(notEquals(
+            simpleCollectExpression(patternForMatch(nodePat(Some("b"))), None, return_(returnItem(varFor("b"), "a"))),
+            listOf()
+          )))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a AS b ORDER BY b + COUNT { () } WHERE b OR EXISTS { () }") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a", Some("b"))),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("b")),
-        Some(orderBy(sortItem(add(varFor("b"), simpleCountExpression(patternForMatch(nodePat()), None))))),
-        where = Some(where(or(varFor("b"), simpleExistsExpression(patternForMatch(nodePat()), None))))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a", Some("b"))),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("b")),
+          Some(orderBy(sortItem(add(varFor("b"), simpleCountExpression(patternForMatch(nodePat()), None))))),
+          where = Some(where(or(varFor("b"), simpleExistsExpression(patternForMatch(nodePat()), None))))
+        )
       )
-    ))
+    )
   }
 
   test("SHOW TRANSACTIONS YIELD a AS b ORDER BY a + EXISTS { () } WHERE a OR ALL (x IN [1, 2] WHERE x IS :: INT)") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List.empty),
-        None,
-        List(commandResultItem("a", Some("b"))),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("b")),
-        Some(orderBy(sortItem(add(varFor("b"), simpleExistsExpression(patternForMatch(nodePat()), None))))),
-        where = Some(where(or(
-          varFor("b"),
-          AllIterablePredicate(
-            varFor("x"),
-            listOfInt(1, 2),
-            Some(isTyped(varFor("x"), IntegerType(isNullable = true)(pos)))
-          )(pos)
-        )))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List.empty),
+          None,
+          List(commandResultItem("a", Some("b"))),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("b")),
+          Some(orderBy(sortItem(add(varFor("b"), simpleExistsExpression(patternForMatch(nodePat()), None))))),
+          where = Some(where(or(
+            varFor("b"),
+            AllIterablePredicate(
+              varFor("x"),
+              listOfInt(1, 2),
+              Some(isTyped(varFor("x"), IntegerType(isNullable = true)(pos)))
+            )(pos)
+          )))
+        )
       )
-    ))
+    )
   }
 
   test(
     "SHOW TRANSACTIONS 'id', 'id' YIELD username as transactionId, transactionId as username WHERE size(transactionId) > 0 RETURN transactionId as username"
   ) {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Left(List("id", "id")),
-        None,
-        List(
-          commandResultItem("username", Some("transactionId")),
-          commandResultItem("transactionId", Some("username"))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Left(List("id", "id")),
+          None,
+          List(
+            commandResultItem("username", Some("transactionId")),
+            commandResultItem("transactionId", Some("username"))
+          ),
+          yieldAll = false,
+          fromCypher5
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("transactionId", "username")),
+          where = Some(where(
+            greaterThan(size(varFor("transactionId")), literalInt(0))
+          ))
         ),
-        yieldAll = false
-      )(pos),
-      withFromYield(
-        returnAllItems.withDefaultOrderOnColumns(List("transactionId", "username")),
-        where = Some(where(
-          greaterThan(size(varFor("transactionId")), literalInt(0))
-        ))
-      ),
-      return_(aliasedReturnItem("transactionId", "username"))
-    ))
+        return_(aliasedReturnItem("transactionId", "username"))
+      )
+    )
   }
 
   // Negative tests
@@ -990,57 +1121,73 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
   // Brief/verbose not allowed
 
   test("SHOW TRANSACTION BRIEF") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("BRIEF")), None, List.empty, yieldAll = false)(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("BRIEF")), None, List.empty, yieldAll = false, fromCypher5)(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS BRIEF YIELD *") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("BRIEF")), None, List.empty, yieldAll = true)(pos),
-      withFromYield(returnAllItems)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("BRIEF")), None, List.empty, yieldAll = true, fromCypher5)(pos),
+        withFromYield(returnAllItems)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS BRIEF WHERE transactionId = 'db1-transaction-123'") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Right(varFor("BRIEF")),
-        Some(where(equals(varFor("transactionId"), literalString("db1-transaction-123")))),
-        List.empty,
-        yieldAll = false
-      )(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Right(varFor("BRIEF")),
+          Some(where(equals(varFor("transactionId"), literalString("db1-transaction-123")))),
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTION VERBOSE") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("VERBOSE")), None, List.empty, yieldAll = false)(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("VERBOSE")), None, List.empty, yieldAll = false, fromCypher5)(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS VERBOSE YIELD *") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("VERBOSE")), None, List.empty, yieldAll = true)(pos),
-      withFromYield(returnAllItems)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("VERBOSE")), None, List.empty, yieldAll = true, fromCypher5)(pos),
+        withFromYield(returnAllItems)
+      )
+    )
   }
 
   test("SHOW TRANSACTIONS VERBOSE WHERE transactionId = 'db1-transaction-123'") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(
-        Right(varFor("VERBOSE")),
-        Some(where(equals(varFor("transactionId"), literalString("db1-transaction-123")))),
-        List.empty,
-        yieldAll = false
-      )(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(
+          Right(varFor("VERBOSE")),
+          Some(where(equals(varFor("transactionId"), literalString("db1-transaction-123")))),
+          List.empty,
+          yieldAll = false,
+          fromCypher5
+        )(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTION OUTPUT") {
-    assertAst(singleQuery(
-      ShowTransactionsClause(Right(varFor("OUTPUT")), None, List.empty, yieldAll = false)(pos)
-    ))
+    assertAstVersionBased(fromCypher5 =>
+      singleQuery(
+        ShowTransactionsClause(Right(varFor("OUTPUT")), None, List.empty, yieldAll = false, fromCypher5)(pos)
+      )
+    )
   }
 
   test("SHOW TRANSACTION BRIEF OUTPUT") {

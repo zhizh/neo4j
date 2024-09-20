@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.interpreted.commands.showcommands
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.StringUtils.EMPTY
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.ShowColumn
 import org.neo4j.cypher.internal.ast.ShowTransactionsClause.activeLockCountColumn
@@ -75,6 +76,8 @@ import org.neo4j.kernel.api.query.QuerySnapshot
 import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.memory.HeapHighWaterMarkTracker
 import org.neo4j.values.AnyValue
+import org.neo4j.values.storable.DurationValue
+import org.neo4j.values.storable.Value
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.MapValue
 import org.neo4j.values.virtual.VirtualValues
@@ -94,8 +97,10 @@ import scala.jdk.CollectionConverters.MapHasAsScala
 case class ShowTransactionsCommand(
   givenIds: Either[List[String], Expression],
   defaultColumns: List[ShowColumn],
-  yieldColumns: List[CommandResultItem]
+  yieldColumns: List[CommandResultItem],
+  cypherVersion: CypherVersion
 ) extends Command(defaultColumns, yieldColumns) {
+  private val returnCypher5Values: Boolean = cypherVersion == CypherVersion.Cypher5
 
   private val needQueryColumns =
     requestedColumnsNames.contains(currentQueryColumn) ||
@@ -161,7 +166,7 @@ case class ShowTransactionsCommand(
         val statistic = transaction.transactionStatistic
         val clientInfo = transaction.clientInfo
 
-        val (
+        val QueryColumns(
           currentQueryId,
           currentQuery,
           outerTransactionId,
@@ -192,40 +197,42 @@ case class ShowTransactionsCommand(
           // The id of the transaction
           case `transactionIdColumn` => Some(transactionIdColumn -> Values.stringValue(txId))
           // The id of the currently executing query
-          case `currentQueryIdColumn` => Some(currentQueryIdColumn -> Values.stringValue(currentQueryId))
+          case `currentQueryIdColumn` => Some(currentQueryIdColumn -> currentQueryId)
           // The id of the connection the transaction belongs to
           case `connectionIdColumn` =>
             Some(connectionIdColumn -> Values.stringValue(clientInfo.map[String](_.connectionId).orElse(EMPTY)))
           // The client address
           case `clientAddressColumn` =>
-            Some(clientAddressColumn -> Values.stringValue(clientInfo.map[String](_.clientAddress).orElse(EMPTY)))
+            val defaultValue = if (returnCypher5Values) EMPTY else null
+            val clientAddress = clientInfo.map[String](_.clientAddress).orElse(defaultValue)
+            Some(clientAddressColumn -> Values.stringOrNoValue(clientAddress))
           // The name of the user running the transaction
           case `usernameColumn` => Some(usernameColumn -> Values.stringValue(transaction.subject.executingUser()))
           // The currently executing query
-          case `currentQueryColumn` => Some(currentQueryColumn -> Values.stringValue(currentQuery))
+          case `currentQueryColumn` => Some(currentQueryColumn -> currentQuery)
           // The start time of the transaction
           case `startTimeColumn` =>
-            Some(startTimeColumn -> Values.stringValue(formatTimeString(transaction.startTime(), zoneId)))
+            Some(startTimeColumn -> getDatetimeFromMillis(transaction.startTime(), zoneId))
           // The status of the transaction (terminated, blocked, closing or running)
           case `statusColumn` => Some(statusColumn -> Values.stringValue(status))
           // The time elapsed
           case `elapsedTimeColumn` =>
             Some(elapsedTimeColumn -> getDurationOrNullFromMillis(statistic.getElapsedTimeMillis))
           // Id of outer transaction if it exists
-          case `outerTransactionIdColumn` => Some(outerTransactionIdColumn -> Values.stringValue(outerTransactionId))
+          case `outerTransactionIdColumn` => Some(outerTransactionIdColumn -> outerTransactionId)
           // Metadata for the transaction
           case `metaDataColumn` => Some(metaDataColumn -> getMapValue(transaction.getMetaData))
           // Parameters for the currently executing query
           case `parametersColumn` => Some(parametersColumn -> parameters)
           // Planner for the currently executing query
-          case `plannerColumn` => Some(plannerColumn -> Values.stringValue(planner))
+          case `plannerColumn` => Some(plannerColumn -> planner)
           // Runtime for the currently executing query
-          case `runtimeColumn` => Some(runtimeColumn -> Values.stringValue(runtime))
+          case `runtimeColumn` => Some(runtimeColumn -> runtime)
           // Indexes used by the currently executing query
           case `indexesColumn` => Some(indexesColumn -> indexes)
           // The start time of the currently executing query
           case `currentQueryStartTimeColumn` =>
-            Some(currentQueryStartTimeColumn -> Values.stringValue(queryStartTime))
+            Some(currentQueryStartTimeColumn -> queryStartTime)
           // Protocol for the transaction
           case `protocolColumn` =>
             Some(protocolColumn -> Values.stringValue(clientInfo.map[String](_.protocol).orElse(EMPTY)))
@@ -233,7 +240,7 @@ case class ShowTransactionsCommand(
           case `requestUriColumn` =>
             Some(requestUriColumn -> Values.stringOrNoValue(clientInfo.map[String](_.requestURI).orElse(null)))
           // The status of the currently executing query (parsing, planning, planned, running, waiting)
-          case `currentQueryStatusColumn` => Some(currentQueryStatusColumn -> Values.stringValue(queryStatus))
+          case `currentQueryStatusColumn` => Some(currentQueryStatusColumn -> queryStatus)
           // Any string a dedicated kernel API will write to track the transaction progress
           case `statusDetailsColumn` => Some(statusDetailsColumn -> Values.stringValue(statusDetails))
           // Resource information for the transaction
@@ -297,11 +304,13 @@ case class ShowTransactionsCommand(
       val query = querySnapshot.get
 
       val currentQueryId =
-        if (requestedColumnsNames.contains(currentQueryIdColumn)) QueryId(query.internalQueryId).toString
-        else EMPTY
+        if (requestedColumnsNames.contains(currentQueryIdColumn))
+          Values.stringValue(QueryId(query.internalQueryId).toString)
+        else Values.NO_VALUE
       val currentQuery =
-        if (requestedColumnsNames.contains(currentQueryColumn)) query.obfuscatedQueryText.orElse(EMPTY)
-        else EMPTY
+        if (requestedColumnsNames.contains(currentQueryColumn))
+          Values.stringValue(query.obfuscatedQueryText.orElse(EMPTY))
+        else Values.NO_VALUE
       val outerTransactionId =
         if (requestedColumnsNames.contains(outerTransactionIdColumn)) {
           val parentDbName = query.parentDbName()
@@ -310,20 +319,21 @@ case class ShowTransactionsCommand(
           val querySessionTransactionId =
             if (parentTransactionId > -1L) parentTransactionId else query.transactionId()
           val querySessionTransaction = TransactionId(querySessionDbName, querySessionTransactionId).toString
-          if (querySessionTransaction == txId) EMPTY else querySessionTransaction
-        } else EMPTY
+          if (querySessionTransaction == txId) Values.stringValue(EMPTY)
+          else Values.stringValue(querySessionTransaction)
+        } else Values.NO_VALUE
       val parameters =
         if (requestedColumnsNames.contains(parametersColumn))
           query.obfuscatedQueryParameters().orElse(MapValue.EMPTY)
-        else MapValue.EMPTY
+        else Values.NO_VALUE
       val planner = if (requestedColumnsNames.contains(plannerColumn)) {
         val maybePlanner = query.planner
-        if (maybePlanner == null) EMPTY else maybePlanner
-      } else EMPTY
+        if (maybePlanner == null) Values.stringValue(EMPTY) else Values.stringValue(maybePlanner)
+      } else Values.NO_VALUE
       val runtime = if (requestedColumnsNames.contains(runtimeColumn)) {
         val maybeRuntime = query.runtime
-        if (maybeRuntime == null) EMPTY else maybeRuntime
-      } else EMPTY
+        if (maybeRuntime == null) Values.stringValue(EMPTY) else Values.stringValue(maybeRuntime)
+      } else Values.NO_VALUE
       val indexes = if (requestedColumnsNames.contains(indexesColumn))
         VirtualValues.list(query.indexes.asScala.toList.map(m => {
           val scalaMap = m.asScala
@@ -331,29 +341,33 @@ case class ShowTransactionsCommand(
           val vals: Array[AnyValue] = scalaMap.values.map(Values.stringValue).toArray
           VirtualValues.map(keys, vals)
         }): _*)
-      else VirtualValues.EMPTY_LIST
+      else Values.NO_VALUE
       val queryStartTime = if (requestedColumnsNames.contains(currentQueryStartTimeColumn))
-        formatTimeString(query.startTimestampMillis, zoneId)
-      else EMPTY
-      val queryStatus = if (requestedColumnsNames.contains(currentQueryStatusColumn)) query.status else EMPTY
+        getDatetimeFromMillis(query.startTimestampMillis, zoneId)
+      else Values.NO_VALUE
+      val queryStatus =
+        if (requestedColumnsNames.contains(currentQueryStatusColumn)) Values.stringValue(query.status)
+        else Values.NO_VALUE
       val queryActiveLockCount = if (requestedColumnsNames.contains(currentQueryActiveLockCountColumn))
         Values.longValue(query.activeLockCount)
       else Values.NO_VALUE
       val queryElapsedTime = if (requestedColumnsNames.contains(currentQueryElapsedTimeColumn))
-        getDurationOrNullFromMicro(query.elapsedTimeMicros)
+        getDurationFromMicro(query.elapsedTimeMicros)
       else Values.NO_VALUE
       val queryCpuTime = if (requestedColumnsNames.contains(currentQueryCpuTimeColumn)) {
         val optionalCpuTime = query.cpuTimeMicros
-        if (optionalCpuTime.isPresent) getDurationOrNullFromMicro(optionalCpuTime.getAsLong)
-        else Values.NO_VALUE
+        if (optionalCpuTime.isPresent) getDurationFromMicro(optionalCpuTime.getAsLong)
+        else if (returnCypher5Values) Values.NO_VALUE
+        else DurationValue.ZERO
       } else Values.NO_VALUE
       val queryWaitTime = if (requestedColumnsNames.contains(currentQueryWaitTimeColumn))
         Values.durationValue(Duration.ofMillis(TimeUnit.MICROSECONDS.toMillis(query.waitTimeMicros)))
       else Values.NO_VALUE
       val queryIdleTime = if (requestedColumnsNames.contains(currentQueryIdleTimeColumn)) {
         val optionalIdleTime = query.idleTimeMicros
-        if (optionalIdleTime.isPresent) getDurationOrNullFromMicro(optionalIdleTime.getAsLong)
-        else Values.NO_VALUE
+        if (optionalIdleTime.isPresent) getDurationFromMicro(optionalIdleTime.getAsLong)
+        else if (returnCypher5Values) Values.NO_VALUE
+        else DurationValue.ZERO
       } else Values.NO_VALUE
       val queryAllocatedBytes = if (requestedColumnsNames.contains(currentQueryAllocatedBytesColumn)) {
         val queryBytes = query.allocatedBytes
@@ -367,7 +381,7 @@ case class ShowTransactionsCommand(
         Values.longValue(query.pageFaults)
       else Values.NO_VALUE
 
-      (
+      QueryColumns(
         currentQueryId,
         currentQuery,
         outerTransactionId,
@@ -386,16 +400,35 @@ case class ShowTransactionsCommand(
         queryPageHits,
         queryPageFaults
       )
-    } else (
-      EMPTY,
-      EMPTY,
-      EMPTY,
+    } else if (returnCypher5Values) QueryColumns(
+      Values.stringValue(EMPTY),
+      Values.stringValue(EMPTY),
+      Values.stringValue(EMPTY),
       MapValue.EMPTY,
-      EMPTY,
-      EMPTY,
+      Values.stringValue(EMPTY),
+      Values.stringValue(EMPTY),
       VirtualValues.EMPTY_LIST,
-      EMPTY,
-      EMPTY,
+      Values.stringValue(EMPTY),
+      Values.stringValue(EMPTY),
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE
+    )
+    else QueryColumns(
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
+      Values.NO_VALUE,
       Values.NO_VALUE,
       Values.NO_VALUE,
       Values.NO_VALUE,
@@ -416,9 +449,10 @@ case class ShowTransactionsCommand(
     case _            => Values.NO_VALUE
   }
 
-  private def getDurationOrNullFromMicro(long: lang.Long) = long match {
-    case l: lang.Long => Values.durationValue(Duration.ofMillis(TimeUnit.MICROSECONDS.toMillis(l)))
-    case _            => Values.NO_VALUE
+  private def getDurationFromMicro(long: lang.Long) = long match {
+    case l: lang.Long             => Values.durationValue(Duration.ofMillis(TimeUnit.MICROSECONDS.toMillis(l)))
+    case _ if returnCypher5Values => Values.NO_VALUE
+    case _                        => DurationValue.ZERO
   }
 
   private def getMapValue(m: util.Map[String, AnyRef]) = {
@@ -428,8 +462,9 @@ case class ShowTransactionsCommand(
     VirtualValues.map(keys, vals)
   }
 
-  private def formatTimeString(startTime: Long, zoneId: ZoneId) =
-    formatTime(startTime, zoneId).format(ISO_OFFSET_DATE_TIME)
+  private def getDatetimeFromMillis(startTime: Long, zoneId: ZoneId) =
+    if (returnCypher5Values) Values.stringValue(formatTime(startTime, zoneId).format(ISO_OFFSET_DATE_TIME))
+    else Values.temporalValue(formatTime(startTime, zoneId))
 
   private def getStatus(
     handle: KernelTransactionHandle,
@@ -464,5 +499,25 @@ case class ShowTransactionsCommand(
     } else {
       (TransactionId.RUNNING_STATE, handle.getStatusDetails)
     }
+
+  private case class QueryColumns(
+    currentQueryId: Value,
+    currentQuery: Value,
+    outerTransactionId: Value,
+    parameters: AnyValue,
+    planner: Value,
+    runtime: Value,
+    indexes: AnyValue,
+    queryStartTime: Value,
+    queryStatus: Value,
+    queryActiveLockCount: Value,
+    queryElapsedTime: Value,
+    queryCpuTime: Value,
+    queryWaitTime: Value,
+    queryIdleTime: Value,
+    queryAllocatedBytes: Value,
+    queryPageHits: Value,
+    queryPageFaults: Value
+  )
 
 }

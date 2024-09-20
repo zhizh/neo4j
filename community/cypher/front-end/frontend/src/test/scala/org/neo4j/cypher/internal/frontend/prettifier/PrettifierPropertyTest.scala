@@ -21,6 +21,7 @@ import org.neo4j.cypher.internal.ast.CreateConstraint
 import org.neo4j.cypher.internal.ast.NodeKey
 import org.neo4j.cypher.internal.ast.RelationshipKey
 import org.neo4j.cypher.internal.ast.ShowConstraintsClause
+import org.neo4j.cypher.internal.ast.ShowTransactionsClause
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.generator.AstGenerator
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
@@ -68,6 +69,7 @@ class PrettifierPropertyTest extends CypherFunSuite
       case _: ShowConstraintsClause => true
       case c: CreateConstraint =>
         c.constraintType.isInstanceOf[NodeKey] || c.constraintType.isInstanceOf[RelationshipKey]
+      case _: ShowTransactionsClause => true
     }
   }
 }

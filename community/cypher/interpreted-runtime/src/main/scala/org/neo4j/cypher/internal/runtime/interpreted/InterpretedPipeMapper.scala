@@ -993,7 +993,7 @@ case class InterpretedPipeMapper(
           case Right(e) => Right(buildExpression(e))
           case Left(l)  => Left(l)
         }
-        CommandPipe(ShowTransactionsCommand(newIds, columns, yields))(id)
+        CommandPipe(ShowTransactionsCommand(newIds, columns, yields, cypherVersion))(id)
 
       case TerminateTransactions(ids, columns, yields, _) =>
         val newIds = ids match {

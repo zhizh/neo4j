@@ -2476,7 +2476,8 @@ object ShowTransactionsClause {
     ids: Either[List[String], Expression],
     where: Option[Where],
     yieldItems: List[CommandResultItem],
-    yieldAll: Boolean
+    yieldAll: Boolean,
+    returnCypher5Types: Boolean
   )(position: InputPosition): ShowTransactionsClause = {
     val columns = List(
       // (column, brief)
@@ -2493,8 +2494,8 @@ object ShowTransactionsClause {
       (ShowAndTerminateColumn(plannerColumn), false),
       (ShowAndTerminateColumn(runtimeColumn), false),
       (ShowAndTerminateColumn(indexesColumn, CTList(CTMap)), false),
-      (ShowAndTerminateColumn(startTimeColumn), true),
-      (ShowAndTerminateColumn(currentQueryStartTimeColumn), false),
+      (ShowAndTerminateColumn(startTimeColumn, if (returnCypher5Types) CTString else CTDateTime), true),
+      (ShowAndTerminateColumn(currentQueryStartTimeColumn, if (returnCypher5Types) CTString else CTDateTime), false),
       (ShowAndTerminateColumn(protocolColumn), false),
       (ShowAndTerminateColumn(requestUriColumn), false),
       (ShowAndTerminateColumn(statusColumn), true),

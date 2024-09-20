@@ -2478,18 +2478,16 @@ class ConstraintCommandsParserTest extends AdministrationAndSchemaCommandParserT
   }
 
   test("CREATE CONSTRAINT FOR FOR (node:Label) REQUIRE (node.prop) IS NODE KEY") {
-    assertAstVersionBased(
-      fromCypher5 =>
-        ast.CreateConstraint.createNodeKeyConstraint(
-          varFor("node", (1, 28, 27)),
-          labelName("Label", (1, 33, 32)),
-          Seq(prop("node", "prop", (1, 49, 48))),
-          Some("FOR"),
-          ast.IfExistsThrowError,
-          ast.NoOptions,
-          fromCypher5
-        )(defaultPos),
-      comparePosition = true
+    assertAstVersionBased(fromCypher5 =>
+      ast.CreateConstraint.createNodeKeyConstraint(
+        varFor("node", (1, 28, 27)),
+        labelName("Label", (1, 33, 32)),
+        Seq(prop("node", "prop", (1, 49, 48))),
+        Some("FOR"),
+        ast.IfExistsThrowError,
+        ast.NoOptions,
+        fromCypher5
+      )(defaultPos)
     )
   }
 
@@ -4737,19 +4735,4 @@ class ConstraintCommandsParserTest extends AdministrationAndSchemaCommandParserT
         )
     }
   }
-
-  // Help methods
-
-  private def assertAstVersionBased(expected: Boolean => ast.Statements, comparePosition: Boolean = false) =
-    if (comparePosition)
-      parsesIn[ast.Statements] {
-        case Cypher5 | Cypher5JavaCc => _.toAstPositioned(expected(true))
-        case _                       => _.toAstPositioned(expected(false))
-      }
-    else
-      parsesIn[ast.Statements] {
-        case Cypher5 | Cypher5JavaCc => _.toAst(expected(true))
-        case _                       => _.toAst(expected(false))
-      }
-
 }

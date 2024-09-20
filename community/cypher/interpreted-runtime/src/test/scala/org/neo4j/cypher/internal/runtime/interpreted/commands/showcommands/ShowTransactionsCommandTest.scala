@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.runtime.interpreted.commands.showcommands
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.neo4j.configuration.Config
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.ShowTransactionsClause
 import org.neo4j.cypher.internal.expressions.Variable
@@ -51,12 +52,14 @@ import org.neo4j.lock.ActiveLock
 import org.neo4j.lock.LockType
 import org.neo4j.lock.ResourceType
 import org.neo4j.values.AnyValue
+import org.neo4j.values.storable.DurationValue
 import org.neo4j.values.storable.StringValue
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.VirtualValues
 
 import java.net.InetSocketAddress
 import java.time.Duration
+import java.time.OffsetDateTime
 import java.util
 import java.util.Collections
 
@@ -67,12 +70,24 @@ import scala.jdk.CollectionConverters.SetHasAsJava
 class ShowTransactionsCommandTest extends ShowCommandTestBase {
 
   private val defaultColumns =
-    ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = false)(InputPosition.NONE)
+    ShowTransactionsClause(
+      Left(List.empty),
+      None,
+      List.empty,
+      yieldAll = false,
+      returnCypher5Types = false
+    )(InputPosition.NONE)
       .unfilteredColumns
       .columns
 
   private val allColumns =
-    ShowTransactionsClause(Left(List.empty), None, List.empty, yieldAll = true)(InputPosition.NONE)
+    ShowTransactionsClause(
+      Left(List.empty),
+      None,
+      List.empty,
+      yieldAll = true,
+      returnCypher5Types = false
+    )(InputPosition.NONE)
       .unfilteredColumns
       .columns
 
@@ -276,7 +291,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     clientAddress: Option[String] = None,
     username: Option[String] = None,
     currentQuery: Option[String] = None,
-    startTime: Option[String] = None,
+    startTime: Option[AnyValue] = None,
     status: Option[String] = None,
     elapsedTime: Option[AnyValue] = None,
     outerTxId: Option[String] = None,
@@ -285,7 +300,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     planner: Option[String] = None,
     runtime: Option[String] = None,
     indexes: Option[List[AnyValue]] = None,
-    queryStartTime: Option[String] = None,
+    queryStartTime: Option[AnyValue] = None,
     protocol: Option[String] = None,
     requestUri: Option[String] = None,
     queryStatus: Option[String] = None,
@@ -321,7 +336,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     }
     withClue("currentQueryId:") {
       queryId.foreach(expected =>
-        resultMap(ShowTransactionsClause.currentQueryIdColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.currentQueryIdColumn) should be(Values.stringOrNoValue(expected))
       )
     }
     withClue("connectionId:") {
@@ -331,7 +346,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     }
     withClue("clientAddress:") {
       clientAddress.foreach(expected =>
-        resultMap(ShowTransactionsClause.clientAddressColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.clientAddressColumn) should be(Values.stringOrNoValue(expected))
       )
     }
     withClue("username:") {
@@ -341,12 +356,12 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     }
     withClue("currentQuery:") {
       currentQuery.foreach(expected =>
-        resultMap(ShowTransactionsClause.currentQueryColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.currentQueryColumn) should be(Values.stringOrNoValue(expected))
       )
     }
     withClue("startTime:") {
       startTime.foreach(expected =>
-        resultMap(ShowTransactionsClause.startTimeColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.startTimeColumn) should be(expected)
       )
     }
     withClue("status:") {
@@ -357,7 +372,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     }
     withClue("outerTransactionId:") {
       outerTxId.foreach(expected =>
-        resultMap(ShowTransactionsClause.outerTransactionIdColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.outerTransactionIdColumn) should be(Values.stringOrNoValue(expected))
       )
     }
     withClue("metaData:") {
@@ -368,22 +383,23 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     }
     withClue("planner:") {
       planner.foreach(expected =>
-        resultMap(ShowTransactionsClause.plannerColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.plannerColumn) should be(Values.stringOrNoValue(expected))
       )
     }
     withClue("runtime:") {
       runtime.foreach(expected =>
-        resultMap(ShowTransactionsClause.runtimeColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.runtimeColumn) should be(Values.stringOrNoValue(expected))
       )
     }
     withClue("indexes:") {
-      indexes.foreach(expected =>
-        resultMap(ShowTransactionsClause.indexesColumn) should be(VirtualValues.list(expected: _*))
-      )
+      indexes.foreach(maybeExpected => {
+        val expected = if (maybeExpected == null) Values.NO_VALUE else VirtualValues.list(maybeExpected: _*)
+        resultMap(ShowTransactionsClause.indexesColumn) should be(expected)
+      })
     }
     withClue("currentQueryStartTime:") {
       queryStartTime.foreach(expected =>
-        resultMap(ShowTransactionsClause.currentQueryStartTimeColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.currentQueryStartTimeColumn) should be(expected)
       )
     }
     withClue("protocol:") {
@@ -399,7 +415,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     }
     withClue("currentQueryStatus:") {
       queryStatus.foreach(expected =>
-        resultMap(ShowTransactionsClause.currentQueryStatusColumn) should be(Values.stringValue(expected))
+        resultMap(ShowTransactionsClause.currentQueryStatusColumn) should be(Values.stringOrNoValue(expected))
       )
     }
     withClue("statusDetails:") {
@@ -506,7 +522,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(systemTxRegistry.executingTransactions).thenReturn(Set(txHandle3).asJava)
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -516,12 +532,12 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       sortedResult.head,
       txId = tx1,
       database = userDbName,
-      queryId = "",
+      queryId = Some(null),
       connectionId = "",
-      clientAddress = "",
+      clientAddress = Some(null),
       username = username,
-      currentQuery = "",
-      startTime = "1970-01-01T00:00:00.5Z",
+      currentQuery = Some(null),
+      startTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:00.5Z")),
       status = "Terminated with reason: Status.Code[Neo.ClientError.Transaction.TransactionTimedOut]",
       elapsedTime = Values.durationValue(Duration.ofMillis(-1L))
     )
@@ -531,10 +547,10 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       database = userDbName,
       queryId = "query-2",
       connectionId = "",
-      clientAddress = "",
+      clientAddress = Some(null),
       username = AuthSubject.AUTH_DISABLED.executingUser(),
       currentQuery = "MATCH (n:IndexedLabel {indexedProperty:3}) RETURN n",
-      startTime = "1970-01-01T00:00:01.5Z",
+      startTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:01.5Z")),
       status = s"Blocked by: [$tx3]",
       elapsedTime = Values.durationValue(Duration.ofMillis(1000L))
     )
@@ -547,7 +563,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       clientAddress = "127.0.0.1:56789",
       username = username,
       currentQuery = "CREATE ROLE $name",
-      startTime = "1970-01-01T00:00:00.042Z",
+      startTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:00.042Z")),
       status = "Running",
       elapsedTime = Values.durationValue(Duration.ofMillis(300L))
     )
@@ -594,7 +610,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(systemTxRegistry.executingTransactions).thenReturn(Set(txHandle3).asJava)
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List.empty), allColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List.empty), allColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -604,24 +620,24 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       sortedResult.head,
       txId = tx1,
       database = userDbName,
-      queryId = "",
+      queryId = Some(null),
       connectionId = "",
-      clientAddress = "",
+      clientAddress = Some(null),
       username = username,
-      currentQuery = "",
-      startTime = "1970-01-01T00:00:00.5Z",
+      currentQuery = Some(null),
+      startTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:00.5Z")),
       status = "Terminated with reason: Status.Code[Neo.ClientError.Transaction.TransactionTimedOut]",
       elapsedTime = Values.durationValue(Duration.ofMillis(-1L)),
-      outerTxId = "",
+      outerTxId = Some(null),
       metaData = VirtualValues.EMPTY_MAP,
-      params = VirtualValues.EMPTY_MAP,
-      planner = "",
-      runtime = "",
-      indexes = List.empty[AnyValue],
-      queryStartTime = "",
+      params = Values.NO_VALUE,
+      planner = Some(null),
+      runtime = Some(null),
+      indexes = Some(null),
+      queryStartTime = Values.NO_VALUE,
       protocol = "embedded",
       requestUri = Some(null),
-      queryStatus = "",
+      queryStatus = Some(null),
       statusDetails = "",
       resourceInfo = VirtualValues.EMPTY_MAP,
       activeLockCount = 0L,
@@ -648,10 +664,10 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       database = userDbName,
       queryId = "query-2",
       connectionId = "",
-      clientAddress = "",
+      clientAddress = Some(null),
       username = AuthSubject.AUTH_DISABLED.executingUser(),
       currentQuery = "MATCH (n:IndexedLabel {indexedProperty:3}) RETURN n",
-      startTime = "1970-01-01T00:00:01.5Z",
+      startTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:01.5Z")),
       status = s"Blocked by: [$tx3]",
       elapsedTime = Values.durationValue(Duration.ofMillis(1000L)),
       outerTxId = s"$userDbName-transaction-2",
@@ -670,7 +686,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
           Values.stringValue("indexedProperty")
         )
       )),
-      queryStartTime = "1970-01-01T00:00:01.502Z",
+      queryStartTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:01.502Z")),
       protocol = "",
       requestUri = Some(null),
       queryStatus = "running",
@@ -681,10 +697,10 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       cpuTime = Values.durationValue(Duration.ofMillis(90L)),
       waitTime = Values.durationValue(Duration.ofMillis(3L)),
       idleTime = Values.durationValue(Duration.ofMillis(6L)),
-      queryElapsedTime = Values.durationValue(Duration.ofMillis(0L)),
-      queryCpuTime = Values.durationValue(Duration.ofMillis(0L)),
-      queryWaitTime = Values.durationValue(Duration.ofMillis(0L)),
-      queryIdleTime = Values.durationValue(Duration.ofMillis(0L)),
+      queryElapsedTime = DurationValue.ZERO,
+      queryCpuTime = DurationValue.ZERO,
+      queryWaitTime = DurationValue.ZERO,
+      queryIdleTime = DurationValue.ZERO,
       queryAllocatedBytes = Values.longValue(50L),
       allocatedDirectBytes = Values.longValue(55L),
       estimatedUsedHeapMemory = Values.longValue(10L),
@@ -703,7 +719,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       clientAddress = "127.0.0.1:56789",
       username = username,
       currentQuery = "CREATE ROLE $name",
-      startTime = "1970-01-01T00:00:00.042Z",
+      startTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:00.042Z")),
       status = "Running",
       elapsedTime = Values.durationValue(Duration.ofMillis(300L)),
       outerTxId = "",
@@ -712,7 +728,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       planner = "ADMINISTRATION",
       runtime = "SYSTEM",
       indexes = List.empty[AnyValue],
-      queryStartTime = "1970-01-01T00:00:00.042Z",
+      queryStartTime = Values.temporalValue(OffsetDateTime.parse("1970-01-01T00:00:00.042Z")),
       protocol = "bolt",
       requestUri = "127.0.0.1:7687",
       queryStatus = "running",
@@ -720,13 +736,13 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       resourceInfo = VirtualValues.map(Array("key"), Array(Values.stringValue("value"))),
       activeLockCount = 2L,
       queryActiveLockCount = Values.longValue(2L),
-      cpuTime = Values.durationValue(Duration.ofMillis(0L)),
-      waitTime = Values.durationValue(Duration.ofMillis(0L)),
-      idleTime = Values.durationValue(Duration.ofMillis(0L)),
+      cpuTime = DurationValue.ZERO,
+      waitTime = DurationValue.ZERO,
+      idleTime = DurationValue.ZERO,
       queryElapsedTime = Values.durationValue(Duration.ofMillis(2L)),
-      queryCpuTime = Values.NO_VALUE,
-      queryWaitTime = Values.durationValue(Duration.ofMillis(0L)),
-      queryIdleTime = Values.NO_VALUE,
+      queryCpuTime = DurationValue.ZERO,
+      queryWaitTime = DurationValue.ZERO,
+      queryIdleTime = DurationValue.ZERO,
       queryAllocatedBytes = Values.longValue(0L),
       allocatedDirectBytes = Values.longValue(0L),
       estimatedUsedHeapMemory = Values.longValue(0L),
@@ -745,7 +761,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(systemTxRegistry.executingTransactions).thenReturn(Set(txHandle3).asJava)
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List(tx1)), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List(tx1)), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -763,7 +779,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(systemTxRegistry.executingTransactions).thenReturn(Set(txHandle3).asJava)
 
     // When: given transactions not ordered by id
-    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then: will collect the transactions by database
@@ -781,7 +797,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(systemTxRegistry.executingTransactions).thenReturn(Set(txHandle3).asJava)
 
     // When: given transactions not ordered by id
-    val showTx = ShowTransactionsCommand(Left(List(tx2, tx3, tx1)), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List(tx2, tx3, tx1)), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then: will collect the transactions by database
@@ -799,7 +815,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
 
     // When
     val showTx =
-      ShowTransactionsCommand(Left(List("unknown-transaction-1")), defaultColumns, List.empty)
+      ShowTransactionsCommand(Left(List("unknown-transaction-1")), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -816,7 +832,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(txHandle1.isClosing).thenReturn(true)
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -844,7 +860,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(dbCtxProvider.registeredDatabases).thenReturn(databaseMap)
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -877,7 +893,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     })
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -902,7 +918,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     when(securityContext.allowsAdminAction(any())).thenReturn(PermissionState.EXPLICIT_DENY)
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty)
+    val showTx = ShowTransactionsCommand(Left(List.empty), defaultColumns, List.empty, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -940,7 +956,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     )
 
     // When
-    val showTx = ShowTransactionsCommand(Left(List.empty), allColumns, yieldColumns)
+    val showTx = ShowTransactionsCommand(Left(List.empty), allColumns, yieldColumns, CypherVersion.Cypher6)
     val result = showTx.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -948,10 +964,161 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     result should be(List(Map(
       "txId" -> Values.stringValue(tx1),
       "user" -> Values.stringValue(username),
-      ShowTransactionsClause.currentQueryColumn -> Values.stringValue(""),
+      ShowTransactionsClause.currentQueryColumn -> Values.NO_VALUE,
       ShowTransactionsClause.statusColumn -> Values.stringValue(
         "Terminated with reason: Status.Code[Neo.ClientError.Transaction.TransactionTimedOut]"
       )
     )))
+  }
+
+  test("show transactions should give back correct values with Cypher 5") {
+    // Set-up which transactions are executing:
+    val (txHandle1, txHandle2, txHandle3) = setupTxHandles()
+    when(userTxRegistry.executingTransactions).thenReturn(Set(txHandle1, txHandle2).asJava)
+    when(systemTxRegistry.executingTransactions).thenReturn(Set(txHandle3).asJava)
+
+    // When
+    val showTx = ShowTransactionsCommand(Left(List.empty), allColumns, List.empty, CypherVersion.Cypher5)
+    val result = showTx.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    result should have size 3
+    val sortedResult = result.sortBy(m => m("transactionId").asInstanceOf[StringValue].stringValue())
+    checkResult(
+      sortedResult.head,
+      txId = tx1,
+      database = userDbName,
+      queryId = "",
+      connectionId = "",
+      clientAddress = "",
+      username = username,
+      currentQuery = "",
+      startTime = Values.stringValue("1970-01-01T00:00:00.5Z"),
+      status = "Terminated with reason: Status.Code[Neo.ClientError.Transaction.TransactionTimedOut]",
+      elapsedTime = Values.durationValue(Duration.ofMillis(-1L)),
+      outerTxId = "",
+      metaData = VirtualValues.EMPTY_MAP,
+      params = VirtualValues.EMPTY_MAP,
+      planner = "",
+      runtime = "",
+      indexes = List.empty[AnyValue],
+      queryStartTime = Values.stringValue(""),
+      protocol = "embedded",
+      requestUri = Some(null),
+      queryStatus = "",
+      statusDetails = "",
+      resourceInfo = VirtualValues.EMPTY_MAP,
+      activeLockCount = 0L,
+      queryActiveLockCount = Values.NO_VALUE,
+      cpuTime = Values.NO_VALUE,
+      waitTime = Values.durationValue(Duration.ofMillis(-1L)),
+      idleTime = Values.NO_VALUE,
+      queryElapsedTime = Values.NO_VALUE,
+      queryCpuTime = Values.NO_VALUE,
+      queryWaitTime = Values.NO_VALUE,
+      queryIdleTime = Values.NO_VALUE,
+      queryAllocatedBytes = Values.NO_VALUE,
+      allocatedDirectBytes = Values.NO_VALUE,
+      estimatedUsedHeapMemory = Values.NO_VALUE,
+      pageHits = 0L,
+      pageFaults = 0L,
+      queryPageHits = Values.NO_VALUE,
+      queryPageFaults = Values.NO_VALUE,
+      startOfInitStackTrace = "java.lang.Throwable: Transaction initialization stacktrace."
+    )
+    checkResult(
+      sortedResult(1),
+      txId = tx2,
+      database = userDbName,
+      queryId = "query-2",
+      connectionId = "",
+      clientAddress = "",
+      username = AuthSubject.AUTH_DISABLED.executingUser(),
+      currentQuery = "MATCH (n:IndexedLabel {indexedProperty:3}) RETURN n",
+      startTime = Values.stringValue("1970-01-01T00:00:01.5Z"),
+      status = s"Blocked by: [$tx3]",
+      elapsedTime = Values.durationValue(Duration.ofMillis(1000L)),
+      outerTxId = s"$userDbName-transaction-2",
+      metaData = VirtualValues.EMPTY_MAP,
+      params = VirtualValues.EMPTY_MAP,
+      planner = "COST",
+      runtime = "PIPELINED",
+      indexes = List[AnyValue](VirtualValues.map(
+        Array("indexType", "entityType", "identifier", "labelId", "label", "propertyKey"),
+        Array(
+          Values.stringValue("SCHEMA INDEX"),
+          Values.stringValue("NODE"),
+          Values.stringValue("n"),
+          Values.stringValue("0"),
+          Values.stringValue("IndexedLabel"),
+          Values.stringValue("indexedProperty")
+        )
+      )),
+      queryStartTime = Values.stringValue("1970-01-01T00:00:01.502Z"),
+      protocol = "",
+      requestUri = Some(null),
+      queryStatus = "running",
+      statusDetails = "",
+      resourceInfo = VirtualValues.EMPTY_MAP,
+      activeLockCount = 1L,
+      queryActiveLockCount = Values.longValue(1L),
+      cpuTime = Values.durationValue(Duration.ofMillis(90L)),
+      waitTime = Values.durationValue(Duration.ofMillis(3L)),
+      idleTime = Values.durationValue(Duration.ofMillis(6L)),
+      queryElapsedTime = DurationValue.ZERO,
+      queryCpuTime = DurationValue.ZERO,
+      queryWaitTime = DurationValue.ZERO,
+      queryIdleTime = DurationValue.ZERO,
+      queryAllocatedBytes = Values.longValue(50L),
+      allocatedDirectBytes = Values.longValue(55L),
+      estimatedUsedHeapMemory = Values.longValue(10L),
+      pageHits = 7L,
+      pageFaults = 2L,
+      queryPageHits = Values.longValue(5L),
+      queryPageFaults = Values.longValue(1L),
+      startOfInitStackTrace = ""
+    )
+    checkResult(
+      sortedResult(2),
+      txId = tx3,
+      database = systemDbName,
+      queryId = "query-3",
+      connectionId = "testConnection",
+      clientAddress = "127.0.0.1:56789",
+      username = username,
+      currentQuery = "CREATE ROLE $name",
+      startTime = Values.stringValue("1970-01-01T00:00:00.042Z"),
+      status = "Running",
+      elapsedTime = Values.durationValue(Duration.ofMillis(300L)),
+      outerTxId = "",
+      metaData = VirtualValues.map(Array("key"), Array(Values.stringValue("value"))),
+      params = VirtualValues.map(Array("name"), Array(Values.stringValue("Foo"))),
+      planner = "ADMINISTRATION",
+      runtime = "SYSTEM",
+      indexes = List.empty[AnyValue],
+      queryStartTime = Values.stringValue("1970-01-01T00:00:00.042Z"),
+      protocol = "bolt",
+      requestUri = "127.0.0.1:7687",
+      queryStatus = "running",
+      statusDetails = "I'm a status detail string",
+      resourceInfo = VirtualValues.map(Array("key"), Array(Values.stringValue("value"))),
+      activeLockCount = 2L,
+      queryActiveLockCount = Values.longValue(2L),
+      cpuTime = DurationValue.ZERO,
+      waitTime = DurationValue.ZERO,
+      idleTime = DurationValue.ZERO,
+      queryElapsedTime = Values.durationValue(Duration.ofMillis(2L)),
+      queryCpuTime = Values.NO_VALUE,
+      queryWaitTime = DurationValue.ZERO,
+      queryIdleTime = Values.NO_VALUE,
+      queryAllocatedBytes = Values.longValue(0L),
+      allocatedDirectBytes = Values.longValue(0L),
+      estimatedUsedHeapMemory = Values.longValue(0L),
+      pageHits = 0L,
+      pageFaults = 0L,
+      queryPageHits = Values.longValue(0L),
+      queryPageFaults = Values.longValue(0L),
+      startOfInitStackTrace = ""
+    )
   }
 }
