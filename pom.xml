@@ -999,6 +999,17 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>custom-vm-target</id>
+      <activation>
+        <property>
+          <name>env.VM_TARGET_VERSION</name>
+        </property>
+      </activation>
+      <properties>
+          <vm.target.version>${env.VM_TARGET_VERSION}</vm.target.version>
+      </properties>
+    </profile>
 
     <!-- Disable parallel execution with "-DsequentialTests" -->
     <profile>
