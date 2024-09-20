@@ -155,6 +155,21 @@ public class StubCursorFactory implements CursorFactory {
         return this;
     }
 
+    public StubCursorFactory withFullRelationshipTraversalCursors(RelationshipTraversalCursor... cursors) {
+        fullRelationshipTraversalCursors.addAll(Arrays.asList(cursors));
+        return this;
+    }
+
+    public StubCursorFactory withFullPropertyCursors(PropertyCursor... cursors) {
+        fullPropertyCursors.addAll(Arrays.asList(cursors));
+        return this;
+    }
+
+    public StubCursorFactory withFullNodeCursors(NodeCursor... cursors) {
+        fullNodeCursors.addAll(Arrays.asList(cursors));
+        return this;
+    }
+
     private <T> T poll(Queue<T> queue) {
         T poll = queue.poll();
         if (continueWithLastItem && queue.isEmpty()) {
