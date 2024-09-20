@@ -94,9 +94,8 @@ public class SchemaNameUtil {
                         constraint.asPropertyTypeConstraint().propertyType().hashCode());
             }
             if (constraint.isRelationshipEndpointConstraint()) {
-                // We only use the endpoint type for this constraint, because we want two of these constraints
-                // that target the same relationship type and endpoint but different labels to have the same name,
-                // since they will be conflicting for logic purposes.
+                key = hf.update(
+                        key, constraint.asRelationshipEndpointConstraint().endpointLabelId());
                 key = hf.update(
                         key,
                         constraint
