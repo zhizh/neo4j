@@ -233,7 +233,7 @@ object NotificationWrapping {
       NotificationCodeWithDescription.missingParameterForExplain(
         graphdb.InputPosition.empty,
         NotificationDetail.missingParameters(parameters.asJava),
-        parameters.map(parameter => "$" + parameter).asJava
+        parameters.asJava
       )
     case CodeGenerationFailedNotification(failingConf, fallbackRuntimeConf, cause) =>
       NotificationCodeWithDescription.codeGenerationFailed(

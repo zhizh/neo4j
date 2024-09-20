@@ -27,7 +27,7 @@ public class GqlHelper {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N27)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.input, input)
-                .withParam(GqlParams.StringParam.var, variable)
+                .withParam(GqlParams.StringParam.variable, variable)
                 .withParam(GqlParams.ListParam.valueTypeList, validTypes)
                 .build();
     }

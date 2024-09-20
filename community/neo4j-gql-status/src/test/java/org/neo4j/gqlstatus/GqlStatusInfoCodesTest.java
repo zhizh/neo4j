@@ -20,9 +20,13 @@
 package org.neo4j.gqlstatus;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_42I13;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +65,7 @@ public class GqlStatusInfoCodesTest {
                         allUniqueParams.put(
                                 p,
                                 p.process("⚠️this-should-be-ok-since-boolean-processor-is-StringValueOf-%s⚠️"
-                                        .formatted(p.name()))); // a little wonky - opinions?
+                                        .formatted(p.name())));
                     } else if (GqlParams.ListParam.class == e && p instanceof GqlParams.ListParam par) {
                         allUniqueParams.put(p, List.of("⚠️very-unique-param-value-%s⚠️".formatted(p.name())));
                     } else if (GqlParams.NumberParam.class == e) {
@@ -157,39 +161,21 @@ public class GqlStatusInfoCodesTest {
     }
 
     @Test
-    void verifyMessageEndsWithFullStop() {
+    void verifyMessageEndsWithFullStopOrParam() {
         Set<GqlStatusInfoCodes> whitelist = EnumSet.noneOf(GqlStatusInfoCodes.class);
-        whitelist.add(GqlStatusInfoCodes.STATUS_01N00);
-        whitelist.add(GqlStatusInfoCodes.STATUS_42I45);
-        whitelist.add(GqlStatusInfoCodes.STATUS_42N89);
-        whitelist.add(GqlStatusInfoCodes.STATUS_50N00);
-        whitelist.add(GqlStatusInfoCodes.STATUS_50N01);
-        whitelist.add(GqlStatusInfoCodes.STATUS_51N54);
-        whitelist.add(GqlStatusInfoCodes.STATUS_52U00);
-        whitelist.add(GqlStatusInfoCodes.STATUS_01N70);
-        whitelist.add(GqlStatusInfoCodes.STATUS_22N65);
-        whitelist.add(GqlStatusInfoCodes.STATUS_22N66);
-        whitelist.add(GqlStatusInfoCodes.STATUS_22N67);
-        whitelist.add(GqlStatusInfoCodes.STATUS_22N70);
-        whitelist.add(GqlStatusInfoCodes.STATUS_22N71);
-        whitelist.add(GqlStatusInfoCodes.STATUS_42I24);
-        whitelist.add(GqlStatusInfoCodes.STATUS_51N57);
-        whitelist.add(GqlStatusInfoCodes.STATUS_52N23);
-        whitelist.add(GqlStatusInfoCodes.STATUS_01N62);
         ArrayList<String> dontNeedWhiteList = new ArrayList<>();
-        ArrayList<String> lackingFullStop = new ArrayList<>();
+        ArrayList<String> badEnding = new ArrayList<>();
         for (GqlStatusInfoCodes gqlCode : GqlStatusInfoCodes.values()) {
-            var message = gqlCode.getMessage(Map.of());
-            if (!message.isEmpty()) {
-                var lastChar = message.charAt(message.length() - 1);
+            var template = gqlCode.getTemplate();
+            if (!template.isEmpty()) {
+                var lastChar = template.charAt(template.length() - 1);
                 var endsWithFullStop = String.valueOf(lastChar).matches("[.!?]");
-                if (endsWithFullStop && whitelist.contains(gqlCode)) {
+                var endsWithParam = template.endsWith(GqlParams.substitution);
+                if ((endsWithFullStop || endsWithParam) && whitelist.contains(gqlCode)) {
                     dontNeedWhiteList.add("\n" + gqlCode.name());
-                    // fail("Message for " + gqlCode + " doesn't need to be whitelisted");
                 }
-                if (!endsWithFullStop && !whitelist.contains(gqlCode)) {
-                    lackingFullStop.add("\n" + gqlCode.name());
-                    // fail(gqlCode + " has message not ending in a full stop");
+                if (!endsWithFullStop && !endsWithParam && !whitelist.contains(gqlCode)) {
+                    badEnding.add("\n" + gqlCode.name());
                 }
             }
         }
@@ -197,8 +183,8 @@ public class GqlStatusInfoCodesTest {
             // If it's whitelisted but it's not needed, please remove it
             fail("Messages for " + dontNeedWhiteList + "don't need to be whitelisted");
         }
-        if (!lackingFullStop.isEmpty()) {
-            fail(lackingFullStop + "\nhave messages not ending with full stop");
+        if (!badEnding.isEmpty()) {
+            fail(badEnding + "\nhave messages not ending with full stop");
         }
     }
 
@@ -247,6 +233,41 @@ public class GqlStatusInfoCodesTest {
     }
 
     @Test
+    void verifySingleWhitespaces() {
+        Set<GqlStatusInfoCodes> whitelist = EnumSet.noneOf(GqlStatusInfoCodes.class);
+        whitelist.add(STATUS_42I13);
+        var regex = "\\s\\s";
+        Pattern pattern = Pattern.compile(regex);
+        ArrayList<String> dontNeedWhiteList = new ArrayList<>();
+        ArrayList<String> multipleWhitespaces = new ArrayList<>();
+        for (GqlStatusInfoCodes gqlCode : GqlStatusInfoCodes.values()) {
+            var template = gqlCode.getTemplate();
+            var subcond = gqlCode.getSubCondition();
+            var whiteListed = whitelist.contains(gqlCode);
+            var templateHasMultipleWhitespaces = false;
+            var subcondHasMultipleWhitespaces = false;
+            if (!template.isEmpty()) {
+                templateHasMultipleWhitespaces = pattern.matcher(template).find();
+            }
+            if (!subcond.isEmpty()) {
+                subcondHasMultipleWhitespaces = pattern.matcher(subcond).find();
+            }
+            if (!subcondHasMultipleWhitespaces && !templateHasMultipleWhitespaces && whiteListed) {
+                dontNeedWhiteList.add("\n" + gqlCode.name());
+            } else if ((subcondHasMultipleWhitespaces || templateHasMultipleWhitespaces) && !whiteListed) {
+                multipleWhitespaces.add("\n" + gqlCode.name());
+            }
+        }
+        if (!dontNeedWhiteList.isEmpty()) {
+            // If it's whitelisted but it's not needed, please remove it
+            fail("Messages for " + dontNeedWhiteList + "don't need to be whitelisted");
+        }
+        if (!multipleWhitespaces.isEmpty()) {
+            fail(multipleWhitespaces + "\nhave messages with multiple whitespaces");
+        }
+    }
+
+    @Test
     void verifyMessageIsNotOnlyWhitespace() {
         for (var gqlCode : GqlStatusInfoCodes.values()) {
             var message = gqlCode.getMessage(Map.of());
@@ -260,12 +281,9 @@ public class GqlStatusInfoCodesTest {
     void verifyGetMessageHandlesFaultyParameters() {
         String[] badParam = {"AA", "BBB", "CCC", "DDD", "EEE"};
         for (var gqlCode : GqlStatusInfoCodes.values()) {
-            try {
-                var message = gqlCode.getMessage((Object[]) badParam);
-            } catch (Exception e) {
-                fail("The code " + gqlCode + " throws an exception when passed String parameters. Exception: "
-                        + e.getMessage());
-            }
+            assertDoesNotThrow(
+                    () -> gqlCode.getMessage((Object[]) badParam),
+                    "The code " + gqlCode + " throws an exception when passed String parameters.");
         }
     }
 
@@ -295,37 +313,19 @@ public class GqlStatusInfoCodesTest {
         for (var gqlCode : GqlStatusInfoCodes.values()) {
             if (gqlCode.getJoinStyles() != null) {
                 for (var joinStyle : gqlCode.getJoinStyles().keySet()) {
-                    if (!gqlCode.getStatusParameterKeys().contains(joinStyle)) {
-                        fail("The code " + gqlCode + " has JoinStyle key " + joinStyle
-                                + " but no matching parameter key");
-                    }
+                    assertTrue(
+                            gqlCode.getStatusParameterKeys().contains(joinStyle),
+                            "The code " + gqlCode + " has JoinStyle key " + joinStyle
+                                    + " but no matching parameter key");
                 }
             }
         }
     }
 
     @Test
-    void verifyRegex() {
-        String joinWord = " and"; // Replace this with your actual joinWord
-
-        String myString = "Some initial words 'A', 'B' and 'C' and some trailing words"; // Example string
-
-        String regex = String.format(
-                "['`]A['`], [`']B['] %s [`']C[`']",
-                joinWord); // String.format("\\['`]?A['`]?\\s*,\\s*['`]?B['`]?%s['`]?C['`]?", Pattern.quote(joinWord));
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(myString);
-        if (matcher.find()) {
-            System.out.println("Match found!");
-        } else {
-            System.out.println("No match found.");
-        }
-    }
-
-    @Test
     void verifyJoinStyle() {
         var joinStyledCodes = Arrays.stream(GqlStatusInfoCodes.values())
-                .filter(e -> e.getJoinStyles() != null)
+                .filter(e -> !emptyMap().equals(e.getJoinStyles()))
                 .collect(Collectors.toList());
         String joinWord = ",";
         for (var gqlCode : joinStyledCodes) {
@@ -343,16 +343,18 @@ public class GqlStatusInfoCodesTest {
                     };
                 }
             }
+            // Expected here is the String "A, B<joinWord>C" but with any formatting of elements (for now 'A', `A` or
+            // $`A`) allowed
             String expected = String.format(
-                    "(?:(['`]?)|(`)(\\$))A(\\1|\\2), (\\1|\\2\\3)B(\\1|\\2)%s (\\1|\\2\\3)C(\\1|\\2)",
+                    "(?:(['`]?)|(\\$)(`))A(\\1|\\3), (\\1|\\2\\3)B(\\1|\\3)%s (\\1|\\2\\3)C(\\1|\\3)",
                     Pattern.quote(joinWord)); // Might need to update the %s here if GqlParams.substitution changes
             Pattern pattern = Pattern.compile(expected);
             Matcher matcher = pattern.matcher(gqlCode.getMessage(msgParams));
-            if (!matcher.find()) {
-                var msg = gqlCode.getMessage(msgParams);
-                fail("The expected list-joinstyle was not inserted into the message string for code " + gqlCode
-                        + ". Got: " + msg);
-            }
+            var msg = gqlCode.getMessage(msgParams);
+            assertTrue(
+                    matcher.find(),
+                    "The expected list-joinstyle was not inserted into the message string for code " + gqlCode
+                            + ". Got: " + msg);
         }
     }
 
@@ -382,8 +384,8 @@ public class GqlStatusInfoCodesTest {
         byte[] gqlHash = DigestUtils.sha256(gqlBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            -4, -97, -115, 111, 78, 0, 16, 67, 83, 49, 104, -26, -76, 49, -76, 109, -7, 101, 13, -113, 92, 10, 49, -62,
-            62, -124, 88, 9, 29, 12, -39, -43
+            -51, -29, 19, -36, 59, -23, 12, -15, -33, 100, -38, 23, -92, -7, -90, -120, 118, 84, -82, -19, -73, -114,
+            13, 45, -53, -122, -12, -115, -88, -44, -33, -31
         };
 
         if (!Arrays.equals(gqlHash, expectedHash)) {

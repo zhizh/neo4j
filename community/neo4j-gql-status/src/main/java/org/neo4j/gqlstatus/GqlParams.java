@@ -145,12 +145,13 @@ public class GqlParams {
         transactionId2(new STRLIT()),
         url(new VERBATIM()),
         user(new IDENT()),
-        value(new VAL()), // Some ambiguous param can be in multiple types i suppose
+        value(new VAL()),
         valueType(new VALTYPE()),
-        var(new IDENT());
+        variable(new IDENT());
 
         public final Processor processor;
 
+        @Override
         public String process(Object s) {
             return processor.process(s);
         }
@@ -177,6 +178,7 @@ public class GqlParams {
 
         public final Processor processor;
 
+        @Override
         public String process(Object s) {
             return processor.process(s);
         }
@@ -200,10 +202,11 @@ public class GqlParams {
         serverList(new NELIST().withInner(StringParam.server.processor)),
         valueList(new NELIST().withInner(StringParam.value.processor)),
         valueTypeList(new NELIST().withInner(StringParam.valueType.processor)),
-        varList(new NELIST().withInner(StringParam.var.processor));
+        variableList(new NELIST().withInner(StringParam.variable.processor));
 
         public final ListProcessor processor;
 
+        @Override
         public String process(Object s) {
             return processor.process(s);
         }
@@ -223,6 +226,7 @@ public class GqlParams {
 
         public final Processor processor;
 
+        @Override
         public String process(Object s) {
             return processor.process(s);
         }
@@ -256,14 +260,14 @@ public class GqlParams {
     public abstract static class ListProcessor extends Processor implements HasJoinStyle {
 
         private static String formatList(List<?> list, SpecialRule joinStyle) {
+            if (joinStyle == null) return commadFormat(list);
             if (joinStyle.equals(JoinStyle.ANDED)) {
                 return andedFormat(list);
             } else if (joinStyle.equals(JoinStyle.ORED)) {
                 return oredFormat(list);
-            } else if (joinStyle.equals(JoinStyle.COMMAD)) {
+            } else {
                 return commadFormat(list);
             }
-            return commadFormat(list);
         }
 
         private static String oredFormat(List<?> list) {
@@ -287,6 +291,21 @@ public class GqlParams {
             else if (list.size() == 1) return String.valueOf(list.get(0));
             StringBuilder sb = initialCommas(list);
             sb.append(", ").append(String.valueOf(list.get(list.size() - 1)));
+            return joinListWithConjunction(list, ",");
+        }
+
+        private static String joinListWithConjunction(List<?> list, String conjunction) {
+            if (list.isEmpty()) return "";
+            if (list.size() == 1) return String.valueOf(list.get(0));
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(list.get(0));
+
+            for (int i = 1; i < list.size() - 1; i++) {
+                sb.append(", ").append(list.get(i));
+            }
+            sb.append(conjunction).append(" ").append(list.get(list.size() - 1));
+
             return sb.toString();
         }
 
@@ -310,6 +329,7 @@ public class GqlParams {
             return formatList(param, joinStyle);
         }
 
+        @Override
         public String process(List<?> list, JoinStyle joinStyle) {
             return listProcess(list, joinStyle, inner);
         }
@@ -328,26 +348,30 @@ public class GqlParams {
     public static class VERBATIM extends Processor {}
 
     public static class IDENT extends Processor {
+        @Override
         public String process(Object s) {
             return "`" + s + "`";
         }
     }
 
     public static class CALLABLE_IDENT extends Processor {
+        @Override
         public String process(Object s) {
             return s + "()";
         }
     }
 
     public static class STRLIT extends Processor {
+        @Override
         public String process(Object s) {
             return "'" + s + "'";
         }
     }
 
     public static class PARAM extends Processor {
+        @Override
         public String process(Object s) {
-            return "`$" + s + "`";
+            return "$`" + s + "`";
         }
     }
 
@@ -364,6 +388,7 @@ public class GqlParams {
     public static class COORDINATES extends Processor {}
 
     public static class UPPER extends Processor {
+        @Override
         public String process(Object s) {
             if (inner != null) {
                 s = inner.process(s);
@@ -373,6 +398,7 @@ public class GqlParams {
     }
 
     public static class CHAR_RANGE extends Processor {
+        @Override
         public String process(Object o) {
             return "`" + o + "`";
         }

@@ -62,10 +62,8 @@ public class SimpleMessageFormatter {
         if (statusParameterKeys == null) return String.valueOf(params[currentParam]);
 
         var paramKey = statusParameterKeys[currentParam];
-        var joinStyle = joinStyles != null ? joinStyles.get(paramKey) : null;
-        if (joinStyle != null
-                && paramKey instanceof GqlParams.ListParam key
-                && params[currentParam] instanceof List<?> list) {
+        if (paramKey instanceof GqlParams.ListParam key && params[currentParam] instanceof List<?> list) {
+            var joinStyle = joinStyles.get(paramKey);
             return key.process(list, joinStyle);
         } else {
             return paramKey.process(params[currentParam]);

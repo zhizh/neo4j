@@ -297,7 +297,7 @@ class NotificationCodeWithDescriptionTest {
                                 -1,
                                 -1,
                                 -1,
-                                Map.of("varList", List.of("n", "node2")))
+                                Map.of("variableList", List.of("n", "node2")))
                         .asMap(),
                 "warn: join hint unfulfillable. Unable to create a plan with 'JOIN ON `n`, `node2`'. Try to change the join key(s) or restructure your query.");
     }
@@ -547,9 +547,9 @@ class NotificationCodeWithDescriptionTest {
                                 -1,
                                 -1,
                                 -1,
-                                Map.of("feat1", ":A:|B", "feat2", ":A|B"))
+                                Map.of("feat1", "':A:|B'", "feat2", "':A|B'"))
                         .asMap(),
-                "warn: feature deprecated with replacement. :A:|B is deprecated. It is replaced by :A|B.");
+                "warn: feature deprecated with replacement. ':A:|B' is deprecated. It is replaced by ':A|B'.");
     }
 
     @Test
@@ -573,9 +573,9 @@ class NotificationCodeWithDescriptionTest {
                                 -1,
                                 -1,
                                 -1,
-                                Map.of("feat1", "SET a = b", "feat2", "SET a = properties(b)"))
+                                Map.of("feat1", "'SET a = b'", "feat2", "'SET a = properties(b)'"))
                         .asMap(),
-                "warn: feature deprecated with replacement. SET a = b is deprecated. It is replaced by SET a = properties(b).");
+                "warn: feature deprecated with replacement. 'SET a = b' is deprecated. It is replaced by 'SET a = properties(b)'.");
     }
 
     @Test
@@ -878,7 +878,7 @@ class NotificationCodeWithDescriptionTest {
                                 -1,
                                 Map.of("paramList", List.of("param1")))
                         .asMap(),
-                "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$param1`. Provide the parameter(s).");
+                "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) $`param1`. Provide the parameter(s).");
     }
 
     @Test
@@ -906,7 +906,7 @@ class NotificationCodeWithDescriptionTest {
                                 -1,
                                 Map.of("paramList", List.of("param1", "param2")))
                         .asMap(),
-                "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$param1` and `$param2`. Provide the parameter(s).");
+                "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) $`param1` and $`param2`. Provide the parameter(s).");
     }
 
     @Test
@@ -987,7 +987,8 @@ class NotificationCodeWithDescriptionTest {
                 NotificationCategory.GENERIC,
                 NotificationClassification.GENERIC,
                 "03N60",
-                new DiagnosticRecord(info, NotificationClassification.GENERIC, -1, -1, -1, Map.of("var", "v")).asMap(),
+                new DiagnosticRecord(info, NotificationClassification.GENERIC, -1, -1, -1, Map.of("variable", "v"))
+                        .asMap(),
                 "info: subquery variable shadowing. The variable `v` in the subquery uses the same name as a variable from the outer query. Use 'WITH `v`' in the subquery to import the one from the outer scope unless you want it to be a new variable.");
     }
 
@@ -1126,7 +1127,7 @@ class NotificationCodeWithDescriptionTest {
                                 -1,
                                 -1,
                                 -1,
-                                Map.of("var", "r", "pat", "()-[r]->()<-[r]-()"))
+                                Map.of("variable", "r", "pat", "()-[r]->()<-[r]-()"))
                         .asMap(),
                 "warn: repeated relationship pattern variable. `r` is repeated in '()-[r]->()<-[r]-()', which leads to no results.");
     }
@@ -1151,7 +1152,7 @@ class NotificationCodeWithDescriptionTest {
                                 -1,
                                 -1,
                                 -1,
-                                Map.of("var", "r", "pat", "()-[r*]->()-[r*]->()"))
+                                Map.of("variable", "r", "pat", "()-[r*]->()-[r*]->()"))
                         .asMap(),
                 "warn: repeated relationship pattern variable. `r` is repeated in '()-[r*]->()-[r*]->()', which leads to no results.");
     }
@@ -1799,8 +1800,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            38, 46, -89, 96, 13, -3, 17, 93, -74, -18, -1, 30, -100, -89, -25, 121, -77, -70, -67, 39, 93, 16, -28, -38,
-            122, 3, -125, -122, 117, 54, 16, 50
+            4, 100, -18, -97, 106, -89, 41, 35, 116, -65, 46, -50, 121, -5, -41, 78, 122, -38, 76, -14, -82, 80, 75,
+            -25, 75, -7, 48, 2, 51, 120, 55, 20
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {

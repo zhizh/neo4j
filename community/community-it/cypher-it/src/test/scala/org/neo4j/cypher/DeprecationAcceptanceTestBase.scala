@@ -334,7 +334,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. :A|:B|:C is deprecated. It is replaced by :A|B|C.",
+          "warn: feature deprecated with replacement. ':A|:B|:C' is deprecated. It is replaced by ':A|B|C'.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -372,7 +372,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. SET g = r is deprecated. It is replaced by SET g = properties(r).",
+          "warn: feature deprecated with replacement. 'SET g = r' is deprecated. It is replaced by 'SET g = properties(r)'.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -387,7 +387,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. SET g = k is deprecated. It is replaced by SET g = properties(k).",
+          "warn: feature deprecated with replacement. 'SET g = k' is deprecated. It is replaced by 'SET g = properties(k)'.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -402,7 +402,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. SET g += r is deprecated. It is replaced by SET g += properties(r).",
+          "warn: feature deprecated with replacement. 'SET g += r' is deprecated. It is replaced by 'SET g += properties(r)'.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -417,7 +417,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N01.getStatusString,
-          "warn: feature deprecated with replacement. SET g += k is deprecated. It is replaced by SET g += properties(k).",
+          "warn: feature deprecated with replacement. 'SET g += k' is deprecated. It is replaced by 'SET g += properties(k)'.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -901,7 +901,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
         ),
         TestGqlStatusObject(
           STATUS_01N60.getStatusString,
-          s"warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$$$$a${unicode}bc`. Provide the parameter(s).",
+          s"warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) $$`a${unicode}bc`. Provide the parameter(s).",
           SeverityLevel.WARNING,
           NotificationClassification.GENERIC
         ),
@@ -1001,7 +1001,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       ),
       TestGqlStatusObject(
         STATUS_01N60.getStatusString,
-        "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$$\u2e2fb\u206Ec`. Provide the parameter(s).",
+        "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) $`\u2e2fb\u206Ec`. Provide the parameter(s).",
         SeverityLevel.WARNING,
         NotificationClassification.GENERIC
       ),
@@ -1083,7 +1083,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
         ),
         TestGqlStatusObject(
           STATUS_01N60.getStatusString,
-          "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) `$$\u2e2fbc`. Provide the parameter(s).",
+          "warn: parameter missing. The query plan cannot be cached and is not executable without 'EXPLAIN' due to the undefined parameter(s) $`\u2e2fbc`. Provide the parameter(s).",
           SeverityLevel.WARNING,
           NotificationClassification.GENERIC
         ),

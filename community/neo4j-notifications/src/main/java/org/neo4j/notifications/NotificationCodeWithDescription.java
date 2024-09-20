@@ -20,6 +20,7 @@
 package org.neo4j.notifications;
 
 import java.util.List;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfo;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.gqlstatus.SimpleMessageFormatter;
@@ -437,14 +438,18 @@ public enum NotificationCodeWithDescription {
 
     public static NotificationImplementation deprecatedRelationshipTypeSeparator(
             InputPosition position, String param, String deprecated, String replacement) {
+        var formattedDeprecated = GqlParams.StringParam.cmd.process(deprecated);
+        var formattedReplacement = GqlParams.StringParam.cmd.process(replacement);
         return DEPRECATED_RELATIONSHIP_TYPE_SEPARATOR.notificationWithParameters(
-                position, new String[] {param}, new String[] {deprecated, replacement});
+                position, new String[] {param}, new String[] {formattedDeprecated, formattedReplacement});
     }
 
     public static NotificationImplementation deprecatedNodeOrRelationshipOnRhsSetClause(
             InputPosition position, String deprecated, String replacement) {
+        var formattedDeprecated = GqlParams.StringParam.cmd.process(deprecated);
+        var formattedReplacement = GqlParams.StringParam.cmd.process(replacement);
         return DEPRECATED_NODE_OR_RELATIONSHIP_ON_RHS_SET_CLAUSE.notificationWithParameters(
-                position, new String[] {}, new String[] {deprecated, replacement});
+                position, new String[] {}, new String[] {formattedDeprecated, formattedReplacement});
     }
 
     public static NotificationImplementation deprecatedPropertyReferenceInCreate(InputPosition position, String param) {
