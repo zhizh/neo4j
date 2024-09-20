@@ -247,10 +247,10 @@ class SchemaRuleTest {
         assertName(nodeTypeConstraintBoolString, "constraint_c99ece6");
         assertName(nodeTypeConstraintIntBool, "constraint_f37a6b9f");
         assertName(nodeTypeConstraintBoolInt, "constraint_f37a6b9f");
-        assertName(relationshipEndpointStartConstraint, "constraint_296e757a");
-        assertName(relationshipEndpointStartAnotherLabelConstraint, "constraint_296e757a");
-        assertName(relationshipEndpointStartAnotherRelTypeConstraint, "constraint_1a8bd035");
-        assertName(relationshipEndpointEndConstraint, "constraint_e7ebc167");
+        assertName(relationshipEndpointStartConstraint, "constraint_1c619983");
+        assertName(relationshipEndpointStartAnotherLabelConstraint, "constraint_c3dfc973");
+        assertName(relationshipEndpointStartAnotherRelTypeConstraint, "constraint_c295018");
+        assertName(relationshipEndpointEndConstraint, "constraint_c8e153f6");
         assertName(labelCoexistenceConstraint, "constraint_4da3555e");
         assertName(labelCoexistenceAnotherConstrainedLabelConstraint, "constraint_c634a948");
         assertName(labelCoexistenceAnotherRequiredLabelConstraint, "constraint_4a5a94e4");
