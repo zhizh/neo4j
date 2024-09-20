@@ -52,9 +52,9 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.Neo4jTypes;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.api.procedure.CallableUserFunction;
-import org.neo4j.kernel.api.procedure.CypherVersionScope;
+import org.neo4j.kernel.api.procedure.QueryLanguageVersionScope;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.impl.util.DefaultValueMapper;
 import org.neo4j.kernel.impl.util.ValueUtils;
@@ -353,18 +353,18 @@ public class UserFunctionTest {
     void shouldOverloadNameWhenDifferentVersions() throws KernelException {
         var pairs = compile(ClassWithVersionedFunctions.class).stream()
                 .map((p) -> Tuples.pair(
-                        p.signature().name().toString(), p.signature().supportedCypherScopes()));
+                        p.signature().name().toString(), p.signature().supportedQueryLanguageScopes()));
         assertThat(pairs)
                 .containsExactlyInAnyOrder(
-                        Tuples.pair("root.chamber", CypherScope.ALL_SCOPES),
-                        Tuples.pair("root.echo", Set.of(CypherScope.CYPHER_5)),
-                        Tuples.pair("root.echo", Set.of(CypherScope.CYPHER_FUTURE)));
+                        Tuples.pair("root.chamber", QueryLanguageScope.ALL_SCOPES),
+                        Tuples.pair("root.echo", Set.of(QueryLanguageScope.CYPHER_5)),
+                        Tuples.pair("root.echo", Set.of(QueryLanguageScope.CYPHER_25)));
     }
 
     @Test
-    void shouldIgnoreEmptyCypherScopeRequirement() throws KernelException {
-        assertThat(compile(EmptyScopeRequirement.class).get(0).signature().supportedCypherScopes())
-                .isEqualTo(CypherScope.ALL_SCOPES);
+    void shouldIgnoreEmptyLanguageScopeRequirement() throws KernelException {
+        assertThat(compile(EmptyScopeRequirement.class).get(0).signature().supportedQueryLanguageScopes())
+                .isEqualTo(QueryLanguageScope.ALL_SCOPES);
     }
 
     private org.neo4j.kernel.api.procedure.Context prepareContext() {
@@ -508,13 +508,13 @@ public class UserFunctionTest {
 
     public static class ClassWithVersionedFunctions {
         @UserFunction(name = "root.echo")
-        @CypherVersionScope(scope = {CypherScope.CYPHER_5})
+        @QueryLanguageVersionScope(scope = {QueryLanguageScope.CYPHER_5})
         public LongValue echo() {
             return longValue(5);
         }
 
         @UserFunction(name = "root.echo")
-        @CypherVersionScope(scope = {CypherScope.CYPHER_FUTURE})
+        @QueryLanguageVersionScope(scope = {QueryLanguageScope.CYPHER_25})
         public LongValue echoV6() {
             return longValue(6);
         }
@@ -527,7 +527,7 @@ public class UserFunctionTest {
 
     public static class EmptyScopeRequirement {
         @UserFunction(name = "root.echo")
-        @CypherVersionScope(scope = {})
+        @QueryLanguageVersionScope(scope = {})
         public LongValue echo() {
             return longValue(5);
         }

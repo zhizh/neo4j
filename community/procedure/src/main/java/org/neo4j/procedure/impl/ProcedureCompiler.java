@@ -39,16 +39,16 @@ import org.neo4j.internal.kernel.api.procs.FieldSignature;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.api.exceptions.ComponentInjectionException;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.procedure.CallableProcedure;
 import org.neo4j.kernel.api.procedure.CallableUserAggregationFunction;
 import org.neo4j.kernel.api.procedure.CallableUserFunction;
-import org.neo4j.kernel.api.procedure.CypherVersionScope;
 import org.neo4j.kernel.api.procedure.FailedLoadAggregatedFunction;
 import org.neo4j.kernel.api.procedure.FailedLoadFunction;
 import org.neo4j.kernel.api.procedure.FailedLoadProcedure;
+import org.neo4j.kernel.api.procedure.QueryLanguageVersionScope;
 import org.neo4j.kernel.api.procedure.SystemProcedure;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.procedure.Admin;
@@ -339,16 +339,16 @@ class ProcedureCompiler {
         return ProcedureCompilation.compileProcedure(signature, setters, method, parentClassLoader);
     }
 
-    private static Set<CypherScope> getSupportedCypherVersions(Method method) throws IllegalArgumentException {
-        var annotation = method.getAnnotation(CypherVersionScope.class);
+    private static Set<QueryLanguageScope> getSupportedCypherVersions(Method method) throws IllegalArgumentException {
+        var annotation = method.getAnnotation(QueryLanguageVersionScope.class);
         if (annotation == null) {
             // If there is no annotation, then we assume that the method supports all cypher language versions
-            return CypherScope.ALL_SCOPES;
+            return QueryLanguageScope.ALL_SCOPES;
         }
 
         var scope = annotation.scope();
         if (scope == null || scope.length == 0) {
-            return CypherScope.ALL_SCOPES;
+            return QueryLanguageScope.ALL_SCOPES;
         }
 
         return EnumSet.copyOf(Arrays.asList(scope));

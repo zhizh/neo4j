@@ -41,7 +41,7 @@ import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
 import org.neo4j.internal.kernel.api.security.AbstractSecurityLog;
 import org.neo4j.internal.kernel.api.security.PermissionState;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.api.ResourceMonitor;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.procedure.CallableProcedure;
@@ -90,7 +90,7 @@ public class ProcedureRegistry {
                     "Procedures with zero output fields must be declared as VOID");
         }
 
-        var supportedScopes = signature.supportedCypherScopes();
+        var supportedScopes = signature.supportedQueryLanguageScopes();
         for (var scope : supportedScopes) {
             if (procedures.contains(name, scope)) {
                 throw new ProcedureException(
@@ -111,7 +111,7 @@ public class ProcedureRegistry {
     public void register(CallableUserFunction function) throws ProcedureException {
         UserFunctionSignature signature = function.signature();
         QualifiedName name = signature.name();
-        var supportedScopes = signature.supportedCypherScopes();
+        var supportedScopes = signature.supportedQueryLanguageScopes();
 
         for (var scope : supportedScopes) {
             if (aggregationFunctions.contains(name, scope)) {
@@ -140,7 +140,7 @@ public class ProcedureRegistry {
     public void register(CallableUserAggregationFunction function) throws ProcedureException {
         UserFunctionSignature signature = function.signature();
         QualifiedName name = signature.name();
-        var supportedScopes = signature.supportedCypherScopes();
+        var supportedScopes = signature.supportedQueryLanguageScopes();
 
         for (var scope : supportedScopes) {
             if (functions.contains(name, scope)) {
@@ -176,7 +176,7 @@ public class ProcedureRegistry {
         }
     }
 
-    public ProcedureHandle procedure(QualifiedName name, CypherScope scope) throws ProcedureException {
+    public ProcedureHandle procedure(QualifiedName name, QueryLanguageScope scope) throws ProcedureException {
         CallableProcedure proc = procedures.getByKey(name, scope);
         if (proc == null) {
             throw noSuchProcedure(name);
@@ -184,7 +184,7 @@ public class ProcedureRegistry {
         return new ProcedureHandle(proc.signature(), procedures.idOfKey(name, scope));
     }
 
-    public UserFunctionHandle function(QualifiedName name, CypherScope scope) {
+    public UserFunctionHandle function(QualifiedName name, QueryLanguageScope scope) {
         CallableUserFunction func = functions.getByKey(name, scope);
         if (func == null) {
             return null;
@@ -192,7 +192,7 @@ public class ProcedureRegistry {
         return new UserFunctionHandle(func.signature(), functions.idOfKey(name, scope));
     }
 
-    public UserFunctionHandle aggregationFunction(QualifiedName name, CypherScope scope) {
+    public UserFunctionHandle aggregationFunction(QualifiedName name, QueryLanguageScope scope) {
         CallableUserAggregationFunction func = aggregationFunctions.getByKey(name, scope);
         if (func == null) {
             return null;
@@ -279,9 +279,9 @@ public class ProcedureRegistry {
                 id);
     }
 
-    public Stream<ProcedureSignature> getAllProcedures(CypherScope scope) {
+    public Stream<ProcedureSignature> getAllProcedures(QueryLanguageScope scope) {
         return stream(procedures, CallableProcedure::signature, (signature) -> signature
-                .supportedCypherScopes()
+                .supportedQueryLanguageScopes()
                 .contains(scope));
     }
 
@@ -289,9 +289,9 @@ public class ProcedureRegistry {
         return getIdsOf(procedures, predicate);
     }
 
-    public Stream<UserFunctionSignature> getAllNonAggregatingFunctions(CypherScope scope) {
+    public Stream<UserFunctionSignature> getAllNonAggregatingFunctions(QueryLanguageScope scope) {
         return stream(functions, CallableUserFunction::signature, (signature) -> signature
-                .supportedCypherScopes()
+                .supportedQueryLanguageScopes()
                 .contains(scope));
     }
 
@@ -299,9 +299,9 @@ public class ProcedureRegistry {
         return getIdsOf(functions, predicate);
     }
 
-    public Stream<UserFunctionSignature> getAllAggregatingFunctions(CypherScope scope) {
+    public Stream<UserFunctionSignature> getAllAggregatingFunctions(QueryLanguageScope scope) {
         return stream(aggregationFunctions, CallableUserAggregationFunction::signature, (signature) -> signature
-                .supportedCypherScopes()
+                .supportedQueryLanguageScopes()
                 .contains(scope));
     }
 

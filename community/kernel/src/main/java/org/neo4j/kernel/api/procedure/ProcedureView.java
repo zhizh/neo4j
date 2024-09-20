@@ -29,24 +29,24 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserAggregationReducer;
 import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.api.ResourceMonitor;
 import org.neo4j.values.AnyValue;
 
 public interface ProcedureView {
-    ProcedureHandle procedure(QualifiedName name, CypherScope scope) throws ProcedureException;
+    ProcedureHandle procedure(QualifiedName name, QueryLanguageScope scope) throws ProcedureException;
 
-    UserFunctionHandle function(QualifiedName name, CypherScope scope);
+    UserFunctionHandle function(QualifiedName name, QueryLanguageScope scope);
 
-    UserFunctionHandle aggregationFunction(QualifiedName name, CypherScope scope);
+    UserFunctionHandle aggregationFunction(QualifiedName name, QueryLanguageScope scope);
 
-    Stream<ProcedureSignature> getAllProcedures(CypherScope scope);
+    Stream<ProcedureSignature> getAllProcedures(QueryLanguageScope scope);
 
-    Stream<UserFunctionSignature> getAllNonAggregatingFunctions(CypherScope scope);
+    Stream<UserFunctionSignature> getAllNonAggregatingFunctions(QueryLanguageScope scope);
 
-    Stream<UserFunctionSignature> getAllAggregatingFunctions(CypherScope scope);
+    Stream<UserFunctionSignature> getAllAggregatingFunctions(QueryLanguageScope scope);
 
-    /* Note: The id-based functions have no concept of CypherScope.*/
+    /* Note: The id-based functions have no concept of QueryLanguageScope.*/
 
     ResourceRawIterator<AnyValue[], ProcedureException> callProcedure(
             Context ctx, int id, AnyValue[] input, ResourceMonitor resourceMonitor) throws ProcedureException;

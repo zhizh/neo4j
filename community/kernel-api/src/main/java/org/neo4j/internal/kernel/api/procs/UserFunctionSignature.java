@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.neo4j.internal.helpers.collection.Iterables;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 
 /**
  * This describes the signature of a function, made up of its namespace, name, and input/output description.
@@ -49,7 +49,7 @@ public final class UserFunctionSignature {
     private final boolean isBuiltIn;
     private final boolean internal;
     private final boolean threadSafe;
-    private final Set<CypherScope> supportedCypherScopes;
+    private final Set<QueryLanguageScope> supportedQueryLanguageScopes;
 
     @Deprecated(forRemoval = true)
     @SuppressWarnings("unused")
@@ -76,7 +76,7 @@ public final class UserFunctionSignature {
                 isBuiltIn,
                 internal,
                 threadSafe,
-                CypherScope.ALL_SCOPES);
+                QueryLanguageScope.ALL_SCOPES);
     }
 
     @Deprecated(forRemoval = true)
@@ -104,7 +104,7 @@ public final class UserFunctionSignature {
                 isBuiltIn,
                 internal,
                 threadSafe,
-                CypherScope.ALL_SCOPES);
+                QueryLanguageScope.ALL_SCOPES);
     }
 
     public UserFunctionSignature(
@@ -119,7 +119,7 @@ public final class UserFunctionSignature {
             boolean isBuiltIn,
             boolean internal,
             boolean threadSafe,
-            Set<CypherScope> supportedCypherScopes) {
+            Set<QueryLanguageScope> supportedQueryLanguageScopes) {
         this.name = name;
         this.inputSignature = unmodifiableList(inputSignature);
         this.type = type;
@@ -131,7 +131,7 @@ public final class UserFunctionSignature {
         this.isBuiltIn = isBuiltIn;
         this.internal = internal;
         this.threadSafe = threadSafe;
-        this.supportedCypherScopes = supportedCypherScopes;
+        this.supportedQueryLanguageScopes = supportedQueryLanguageScopes;
     }
 
     public QualifiedName name() {
@@ -178,8 +178,8 @@ public final class UserFunctionSignature {
         return threadSafe;
     }
 
-    public Set<CypherScope> supportedCypherScopes() {
-        return supportedCypherScopes;
+    public Set<QueryLanguageScope> supportedQueryLanguageScopes() {
+        return supportedQueryLanguageScopes;
     }
 
     @Override
@@ -216,7 +216,7 @@ public final class UserFunctionSignature {
         private String description;
         private String category;
         private boolean threadSafe;
-        private Set<CypherScope> supportedCypherScopes = CypherScope.ALL_SCOPES;
+        private Set<QueryLanguageScope> supportedQueryLanguageScopes = QueryLanguageScope.ALL_SCOPES;
 
         public Builder(QualifiedName name) {
             this.name = name;
@@ -265,8 +265,8 @@ public final class UserFunctionSignature {
             return this;
         }
 
-        public Builder supportedCypherScopes(CypherScope... versions) {
-            this.supportedCypherScopes = EnumSet.copyOf(Arrays.asList(versions));
+        public Builder supportedQueryLanguageScopes(QueryLanguageScope... versions) {
+            this.supportedQueryLanguageScopes = EnumSet.copyOf(Arrays.asList(versions));
             return this;
         }
 
@@ -286,7 +286,7 @@ public final class UserFunctionSignature {
                     false,
                     false,
                     threadSafe,
-                    supportedCypherScopes);
+                    supportedQueryLanguageScopes);
         }
     }
 

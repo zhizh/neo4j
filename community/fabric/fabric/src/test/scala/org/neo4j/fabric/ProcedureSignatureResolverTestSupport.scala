@@ -23,8 +23,8 @@ import org.neo4j.collection.ResourceRawIterator
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.compiler.helpers.ProcedureLookup
 import org.neo4j.cypher.internal.compiler.helpers.SignatureResolver
-import org.neo4j.cypher.internal.frontend.phases.CypherScope
 import org.neo4j.cypher.internal.frontend.phases.ProcedureSignatureResolver
+import org.neo4j.cypher.internal.frontend.phases.QueryLanguageScope
 import org.neo4j.cypher.internal.frontend.phases.ScopedProcedureSignatureResolver
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException
 import org.neo4j.internal.kernel.api.procs
@@ -74,13 +74,19 @@ trait ProcedureSignatureResolverTestSupport {
 
   val signatures: ProcedureSignatureResolver = new SignatureResolver(new ProcedureLookup {
 
-    override def procedure(name: procs.QualifiedName, scope: org.neo4j.kernel.api.CypherScope): ProcedureHandle = {
+    override def procedure(
+      name: procs.QualifiedName,
+      scope: org.neo4j.kernel.api.QueryLanguageScope
+    ): ProcedureHandle = {
       callableProcedures.zipWithIndex
         .collectFirst { case (p, i) if p.signature().name() == name => new procs.ProcedureHandle(p.signature(), i) }
         .getOrElse(throw new RuntimeException(s"No such procedure $name"))
     }
 
-    override def function(name: procs.QualifiedName, scope: org.neo4j.kernel.api.CypherScope): UserFunctionHandle = {
+    override def function(
+      name: procs.QualifiedName,
+      scope: org.neo4j.kernel.api.QueryLanguageScope
+    ): UserFunctionHandle = {
       callableUseFunctions.zipWithIndex
         .collectFirst { case (f, i) if f.signature().name() == name => new UserFunctionHandle(f.signature(), i) }
         .orNull
@@ -89,7 +95,7 @@ trait ProcedureSignatureResolverTestSupport {
   })
 
   val scopedSignatures: ScopedProcedureSignatureResolver =
-    ScopedProcedureSignatureResolver.from(signatures, CypherScope.from(CypherVersion.Default))
+    ScopedProcedureSignatureResolver.from(signatures, QueryLanguageScope.from(CypherVersion.Default))
 
   private def mkFunction(
     name: Seq[String],
@@ -143,7 +149,7 @@ trait ProcedureSignatureResolverTestSupport {
       false,
       false,
       false,
-      org.neo4j.kernel.api.CypherScope.ALL_SCOPES
+      org.neo4j.kernel.api.QueryLanguageScope.ALL_SCOPES
     )) {
       override def apply(
         ctx: Context,

@@ -19,8 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.helpers
 
-import org.neo4j.cypher.internal.frontend.phases.CypherScope
-import org.neo4j.cypher.internal.frontend.phases.CypherScope.toKernelScope
 import org.neo4j.cypher.internal.frontend.phases.DeprecationInfo
 import org.neo4j.cypher.internal.frontend.phases.FieldSignature
 import org.neo4j.cypher.internal.frontend.phases.ProcedureAccessMode
@@ -31,6 +29,8 @@ import org.neo4j.cypher.internal.frontend.phases.ProcedureSchemaWriteAccess
 import org.neo4j.cypher.internal.frontend.phases.ProcedureSignature
 import org.neo4j.cypher.internal.frontend.phases.ProcedureSignatureResolver
 import org.neo4j.cypher.internal.frontend.phases.QualifiedName
+import org.neo4j.cypher.internal.frontend.phases.QueryLanguageScope
+import org.neo4j.cypher.internal.frontend.phases.QueryLanguageScope.toKernelScope
 import org.neo4j.cypher.internal.frontend.phases.ScopedProcedureSignatureResolver
 import org.neo4j.cypher.internal.frontend.phases.UserFunctionSignature
 import org.neo4j.cypher.internal.options.CypherVersion
@@ -72,18 +72,18 @@ import java.util.Optional
 import scala.jdk.CollectionConverters.ListHasAsScala
 
 trait ProcedureLookup {
-  def function(name: procs.QualifiedName, scope: org.neo4j.kernel.api.CypherScope): UserFunctionHandle
-  def procedure(name: procs.QualifiedName, scope: org.neo4j.kernel.api.CypherScope): ProcedureHandle
+  def function(name: procs.QualifiedName, scope: org.neo4j.kernel.api.QueryLanguageScope): UserFunctionHandle
+  def procedure(name: procs.QualifiedName, scope: org.neo4j.kernel.api.QueryLanguageScope): ProcedureHandle
   def signatureVersion: Long
 }
 
 final class SignatureResolver(lookup: ProcedureLookup) extends ProcedureSignatureResolver {
 
-  override def functionSignature(name: QualifiedName, scope: CypherScope): Option[UserFunctionSignature] =
+  override def functionSignature(name: QualifiedName, scope: QueryLanguageScope): Option[UserFunctionSignature] =
     Option(lookup.function(SignatureResolver.asKernelQualifiedName(name), toKernelScope(scope)))
       .map(fcn => SignatureResolver.toCypherFunction(fcn))
 
-  override def procedureSignature(name: QualifiedName, scope: CypherScope): ProcedureSignature = {
+  override def procedureSignature(name: QualifiedName, scope: QueryLanguageScope): ProcedureSignature = {
     val kn = new procs.QualifiedName(name.namespace.toArray, name.name)
     SignatureResolver.toCypherProcedure(lookup.procedure(kn, toKernelScope(scope)))
   }
@@ -94,19 +94,19 @@ final class SignatureResolver(lookup: ProcedureLookup) extends ProcedureSignatur
 object SignatureResolver {
 
   def from(p: Procedures): ProcedureSignatureResolver = new SignatureResolver(new ProcedureLookup {
-    override def function(n: procs.QualifiedName, s: api.CypherScope): UserFunctionHandle = p.functionGet(n, s)
-    override def procedure(n: procs.QualifiedName, s: api.CypherScope): ProcedureHandle = p.procedureGet(n, s)
+    override def function(n: procs.QualifiedName, s: api.QueryLanguageScope): UserFunctionHandle = p.functionGet(n, s)
+    override def procedure(n: procs.QualifiedName, s: api.QueryLanguageScope): ProcedureHandle = p.procedureGet(n, s)
     override def signatureVersion: Long = p.signatureVersion()
   })
 
   def from(p: ProcedureView): ProcedureSignatureResolver = new SignatureResolver(new ProcedureLookup {
-    override def function(n: procs.QualifiedName, s: api.CypherScope): UserFunctionHandle = p.function(n, s)
-    override def procedure(n: procs.QualifiedName, s: api.CypherScope): ProcedureHandle = p.procedure(n, s)
+    override def function(n: procs.QualifiedName, s: api.QueryLanguageScope): UserFunctionHandle = p.function(n, s)
+    override def procedure(n: procs.QualifiedName, s: api.QueryLanguageScope): ProcedureHandle = p.procedure(n, s)
     override def signatureVersion: Long = p.signatureVersion()
   })
 
   def from(p: ProcedureView, v: CypherVersion): ScopedProcedureSignatureResolver =
-    ScopedProcedureSignatureResolver.from(from(p), CypherScope.from(v.actualVersion))
+    ScopedProcedureSignatureResolver.from(from(p), QueryLanguageScope.from(v.actualVersion))
 
   def toCypherProcedure(handle: ProcedureHandle): ProcedureSignature = {
     val signature = handle.signature()

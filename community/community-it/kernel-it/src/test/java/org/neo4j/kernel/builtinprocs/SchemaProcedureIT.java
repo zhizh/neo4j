@@ -37,8 +37,8 @@ import org.neo4j.internal.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.internal.kernel.api.procs.ProcedureCallContext;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.schema.IndexPrototype;
-import org.neo4j.kernel.api.CypherScope;
 import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.api.security.AnonymousContext;
 import org.neo4j.kernel.impl.api.integrationtest.KernelIntegrationTest;
 import org.neo4j.values.AnyValue;
@@ -58,7 +58,7 @@ class SchemaProcedureIT extends KernelIntegrationTest {
         try (var statement = kernelTransaction.acquireStatement()) {
 
             RawIterator<AnyValue[], ProcedureException> stream = procs.procedureCallRead(
-                    procs.procedureGet(new QualifiedName("db", "schema", "visualization"), CypherScope.CYPHER_5)
+                    procs.procedureGet(new QualifiedName("db", "schema", "visualization"), QueryLanguageScope.CYPHER_5)
                             .id(),
                     new AnyValue[0],
                     ProcedureCallContext.EMPTY);
@@ -94,7 +94,7 @@ class SchemaProcedureIT extends KernelIntegrationTest {
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
             RawIterator<AnyValue[], ProcedureException> stream = procs.procedureCallRead(
-                    procs.procedureGet(new QualifiedName("db", "schema", "visualization"), CypherScope.CYPHER_5)
+                    procs.procedureGet(new QualifiedName("db", "schema", "visualization"), QueryLanguageScope.CYPHER_5)
                             .id(),
                     new AnyValue[0],
                     ProcedureCallContext.EMPTY);
@@ -138,7 +138,7 @@ class SchemaProcedureIT extends KernelIntegrationTest {
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
             RawIterator<AnyValue[], ProcedureException> stream = procs.procedureCallRead(
-                    procs.procedureGet(new QualifiedName("db", "schema", "visualization"), CypherScope.CYPHER_5)
+                    procs.procedureGet(new QualifiedName("db", "schema", "visualization"), QueryLanguageScope.CYPHER_5)
                             .id(),
                     new AnyValue[0],
                     ProcedureCallContext.EMPTY);

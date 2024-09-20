@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.neo4j.internal.helpers.collection.Iterables;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.UnsupportedDatabaseTypes;
 
@@ -57,7 +57,7 @@ public class ProcedureSignature {
     private final boolean internal;
     private final boolean allowExpiredCredentials;
     private final boolean threadSafe;
-    private final Set<CypherScope> supportedCypherScopes;
+    private final Set<QueryLanguageScope> supportedQueryLanguageScopes;
 
     @Deprecated(forRemoval = true)
     @SuppressWarnings("unused")
@@ -92,7 +92,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 true,
-                CypherScope.ALL_SCOPES);
+                QueryLanguageScope.ALL_SCOPES);
     }
 
     @Deprecated(forRemoval = true)
@@ -128,7 +128,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 threadSafe,
-                CypherScope.ALL_SCOPES);
+                QueryLanguageScope.ALL_SCOPES);
     }
 
     @Deprecated(forRemoval = true)
@@ -164,7 +164,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 threadSafe,
-                CypherScope.ALL_SCOPES);
+                QueryLanguageScope.ALL_SCOPES);
     }
 
     public ProcedureSignature(
@@ -183,7 +183,7 @@ public class ProcedureSignature {
             boolean internal,
             boolean allowExpiredCredentials,
             boolean threadSafe,
-            Set<CypherScope> supportedCypherScopes) {
+            Set<QueryLanguageScope> supportedQueryLanguageScopes) {
         this(
                 name,
                 inputSignature,
@@ -200,7 +200,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 threadSafe,
-                supportedCypherScopes,
+                supportedQueryLanguageScopes,
                 new UnsupportedDatabaseTypes.DatabaseType[0]);
     }
 
@@ -220,7 +220,7 @@ public class ProcedureSignature {
             boolean internal,
             boolean allowExpiredCredentials,
             boolean threadSafe,
-            Set<CypherScope> supportedCypherScopes,
+            Set<QueryLanguageScope> supportedQueryLanguageScopes,
             UnsupportedDatabaseTypes.DatabaseType[] unsupportedDbTypes) {
         this.name = name;
         this.inputSignature = unmodifiableList(inputSignature);
@@ -238,7 +238,7 @@ public class ProcedureSignature {
         this.internal = internal;
         this.allowExpiredCredentials = allowExpiredCredentials;
         this.threadSafe = threadSafe;
-        this.supportedCypherScopes = supportedCypherScopes;
+        this.supportedQueryLanguageScopes = supportedQueryLanguageScopes;
     }
 
     public QualifiedName name() {
@@ -309,8 +309,8 @@ public class ProcedureSignature {
         return threadSafe;
     }
 
-    public Set<CypherScope> supportedCypherScopes() {
-        return this.supportedCypherScopes;
+    public Set<QueryLanguageScope> supportedQueryLanguageScopes() {
+        return this.supportedQueryLanguageScopes;
     }
 
     @Override
@@ -361,7 +361,7 @@ public class ProcedureSignature {
         private boolean allowExpiredCredentials;
         private boolean threadSafe;
 
-        private Set<CypherScope> supportedCypherScopes = CypherScope.ALL_SCOPES;
+        private Set<QueryLanguageScope> supportedQueryLanguageScopes = QueryLanguageScope.ALL_SCOPES;
 
         public Builder(QualifiedName name) {
             this.name = name;
@@ -469,8 +469,8 @@ public class ProcedureSignature {
             return this;
         }
 
-        public Builder supportedCypherScopes(CypherScope... versions) {
-            this.supportedCypherScopes = EnumSet.copyOf(Arrays.asList(versions));
+        public Builder supportedQueryLanguageScopes(QueryLanguageScope... versions) {
+            this.supportedQueryLanguageScopes = EnumSet.copyOf(Arrays.asList(versions));
             return this;
         }
 
@@ -491,7 +491,7 @@ public class ProcedureSignature {
                     internal,
                     allowExpiredCredentials,
                     threadSafe,
-                    supportedCypherScopes);
+                    supportedQueryLanguageScopes);
         }
     }
 

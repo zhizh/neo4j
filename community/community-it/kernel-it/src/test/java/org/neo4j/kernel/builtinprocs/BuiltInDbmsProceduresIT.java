@@ -53,7 +53,7 @@ import org.neo4j.internal.kernel.api.Procedures;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.ProcedureCallContext;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.impl.api.integrationtest.KernelIntegrationTest;
 import org.neo4j.values.AnyValue;
 import org.neo4j.values.storable.BooleanValue;
@@ -102,8 +102,8 @@ class BuiltInDbmsProceduresIT extends KernelIntegrationTest {
         QualifiedName procedureName = new QualifiedName("dbms", "clientConfig");
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
-            int procedureId =
-                    procs.procedureGet(procedureName, CypherScope.CYPHER_5).id();
+            int procedureId = procs.procedureGet(procedureName, QueryLanguageScope.CYPHER_5)
+                    .id();
             RawIterator<AnyValue[], ProcedureException> callResult =
                     procs.procedureCallDbms(procedureId, new AnyValue[] {}, ProcedureCallContext.EMPTY);
             List<AnyValue[]> config = asList(callResult);
@@ -155,8 +155,8 @@ class BuiltInDbmsProceduresIT extends KernelIntegrationTest {
         QualifiedName procedureName = new QualifiedName("dbms", "listCapabilities");
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
-            int procedureId =
-                    procs.procedureGet(procedureName, CypherScope.CYPHER_5).id();
+            int procedureId = procs.procedureGet(procedureName, QueryLanguageScope.CYPHER_5)
+                    .id();
             RawIterator<AnyValue[], ProcedureException> callResult =
                     procs.procedureCallDbms(procedureId, new AnyValue[] {}, ProcedureCallContext.EMPTY);
             List<AnyValue[]> capabilities = asList(callResult);
@@ -180,8 +180,8 @@ class BuiltInDbmsProceduresIT extends KernelIntegrationTest {
         QualifiedName procedureName = new QualifiedName("dbms", "listCapabilities");
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
-            int procedureId =
-                    procs.procedureGet(procedureName, CypherScope.CYPHER_5).id();
+            int procedureId = procs.procedureGet(procedureName, QueryLanguageScope.CYPHER_5)
+                    .id();
             RawIterator<AnyValue[], ProcedureException> callResult =
                     procs.procedureCallDbms(procedureId, new AnyValue[] {}, ProcedureCallContext.EMPTY);
             List<AnyValue[]> capabilities = asList(callResult);
@@ -199,7 +199,7 @@ class BuiltInDbmsProceduresIT extends KernelIntegrationTest {
         QualifiedName procedureName = new QualifiedName("dbms", "listCapabilities");
         var procs = procs();
         int procedureId =
-                procs.procedureGet(procedureName, CypherScope.CYPHER_5).id();
+                procs.procedureGet(procedureName, QueryLanguageScope.CYPHER_5).id();
         try (var statement = kernelTransaction.acquireStatement()) {
 
             // first call
@@ -240,8 +240,8 @@ class BuiltInDbmsProceduresIT extends KernelIntegrationTest {
         QualifiedName procedureName = new QualifiedName("dbms", "listAllCapabilities");
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
-            int procedureId =
-                    procs.procedureGet(procedureName, CypherScope.CYPHER_5).id();
+            int procedureId = procs.procedureGet(procedureName, QueryLanguageScope.CYPHER_5)
+                    .id();
             RawIterator<AnyValue[], ProcedureException> callResult =
                     procs.procedureCallDbms(procedureId, new AnyValue[] {}, ProcedureCallContext.EMPTY);
             List<AnyValue[]> capabilities = asList(callResult);
@@ -273,8 +273,8 @@ class BuiltInDbmsProceduresIT extends KernelIntegrationTest {
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
 
-            int procedureId =
-                    procs.procedureGet(procedureName, CypherScope.CYPHER_5).id();
+            int procedureId = procs.procedureGet(procedureName, QueryLanguageScope.CYPHER_5)
+                    .id();
             RawIterator<AnyValue[], ProcedureException> callResult =
                     procs.procedureCallDbms(procedureId, new AnyValue[] {}, ProcedureCallContext.EMPTY);
             List<AnyValue[]> capabilities = asList(callResult);
@@ -299,8 +299,8 @@ class BuiltInDbmsProceduresIT extends KernelIntegrationTest {
         QualifiedName procedureName = new QualifiedName("dbms", "listConfig");
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
-            int procedureId =
-                    procs.procedureGet(procedureName, CypherScope.CYPHER_5).id();
+            int procedureId = procs.procedureGet(procedureName, QueryLanguageScope.CYPHER_5)
+                    .id();
             RawIterator<AnyValue[], ProcedureException> callResult = procs.procedureCallDbms(
                     procedureId, toArray(stringValue(searchString)), ProcedureCallContext.EMPTY);
             return asList(callResult);

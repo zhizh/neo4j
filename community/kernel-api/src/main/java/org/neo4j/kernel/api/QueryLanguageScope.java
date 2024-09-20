@@ -23,9 +23,10 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-public enum CypherScope {
-    CYPHER_FUTURE,
+public enum QueryLanguageScope {
+    CYPHER_25,
     CYPHER_5;
 
-    public static final Set<CypherScope> ALL_SCOPES = Collections.unmodifiableSet(EnumSet.allOf(CypherScope.class));
+    public static final Set<QueryLanguageScope> ALL_SCOPES =
+            Collections.unmodifiableSet(EnumSet.allOf(QueryLanguageScope.class));
 }

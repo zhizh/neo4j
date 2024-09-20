@@ -42,8 +42,8 @@ import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.internal.schema.LabelSchemaDescriptor;
-import org.neo4j.kernel.api.CypherScope;
 import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.api.security.AnonymousContext;
 import org.neo4j.kernel.internal.Version;
 import org.neo4j.values.AnyValue;
@@ -63,7 +63,7 @@ class SystemBuiltInProceduresIT extends KernelIntegrationTest implements Procedu
         try (var statement = kernelTransaction.acquireStatement()) {
 
             RawIterator<AnyValue[], ProcedureException> stream = procs.procedureCallRead(
-                    procs.procedureGet(new QualifiedName("db", "info"), CypherScope.CYPHER_5)
+                    procs.procedureGet(new QualifiedName("db", "info"), QueryLanguageScope.CYPHER_5)
                             .id(),
                     new AnyValue[0],
                     EMPTY);
@@ -82,7 +82,7 @@ class SystemBuiltInProceduresIT extends KernelIntegrationTest implements Procedu
         try (var statement = kernelTransaction.acquireStatement()) {
 
             RawIterator<AnyValue[], ProcedureException> stream = procs.procedureCallRead(
-                    procs.procedureGet(new QualifiedName("dbms", "info"), CypherScope.CYPHER_5)
+                    procs.procedureGet(new QualifiedName("dbms", "info"), QueryLanguageScope.CYPHER_5)
                             .id(),
                     new AnyValue[0],
                     EMPTY);
@@ -147,7 +147,7 @@ class SystemBuiltInProceduresIT extends KernelIntegrationTest implements Procedu
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
             RawIterator<AnyValue[], ProcedureException> stream = procs.procedureCallRead(
-                    procs.procedureGet(new QualifiedName("dbms", "components"), CypherScope.CYPHER_5)
+                    procs.procedureGet(new QualifiedName("dbms", "components"), QueryLanguageScope.CYPHER_5)
                             .id(),
                     new AnyValue[0],
                     EMPTY);

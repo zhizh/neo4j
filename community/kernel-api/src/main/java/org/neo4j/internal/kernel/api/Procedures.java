@@ -29,7 +29,7 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserAggregationReducer;
 import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.values.AnyValue;
 
 public interface Procedures {
@@ -40,13 +40,13 @@ public interface Procedures {
      * @param scope
      * @return A handle to the function or null if no function was found.
      */
-    UserFunctionHandle functionGet(QualifiedName name, CypherScope scope);
+    UserFunctionHandle functionGet(QualifiedName name, QueryLanguageScope scope);
 
     /**
      * Fetch all non-aggregating functions
      * @return all non-aggregating functions
      */
-    Stream<UserFunctionSignature> functionGetAll(CypherScope scope);
+    Stream<UserFunctionSignature> functionGetAll(QueryLanguageScope scope);
 
     /**
      * Get a handle to the given aggregation function
@@ -55,13 +55,13 @@ public interface Procedures {
      * @param scope
      * @return A handle to the function or null if no function was found.
      */
-    UserFunctionHandle aggregationFunctionGet(QualifiedName name, CypherScope scope);
+    UserFunctionHandle aggregationFunctionGet(QualifiedName name, QueryLanguageScope scope);
 
     /**
      * Fetch all aggregating functions
      * @return all aggregating functions
      */
-    Stream<UserFunctionSignature> aggregationFunctionGetAll(CypherScope scope);
+    Stream<UserFunctionSignature> aggregationFunctionGetAll(QueryLanguageScope scope);
 
     /**
      * Fetch a procedure handle
@@ -71,14 +71,14 @@ public interface Procedures {
      * @return a procedure handle
      * @throws ProcedureException if there is no procedure was found for the name.
      */
-    ProcedureHandle procedureGet(QualifiedName name, CypherScope scope) throws ProcedureException;
+    ProcedureHandle procedureGet(QualifiedName name, QueryLanguageScope scope) throws ProcedureException;
 
     /**
      * Fetch all procedures
      * @return all procedures
      * @throws ProcedureException
      */
-    Stream<ProcedureSignature> proceduresGetAll(CypherScope scope) throws ProcedureException;
+    Stream<ProcedureSignature> proceduresGetAll(QueryLanguageScope scope) throws ProcedureException;
 
     /**
      * Invoke a read-only procedure by id.

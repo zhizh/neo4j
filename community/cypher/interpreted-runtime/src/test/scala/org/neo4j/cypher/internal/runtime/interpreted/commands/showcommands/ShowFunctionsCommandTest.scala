@@ -46,7 +46,7 @@ import org.neo4j.internal.kernel.api.security.AuthSubject
 import org.neo4j.internal.kernel.api.security.PermissionState
 import org.neo4j.internal.kernel.api.security.PrivilegeAction.SHOW_ROLE
 import org.neo4j.internal.kernel.api.security.Segment
-import org.neo4j.kernel.api.CypherScope.CYPHER_5
+import org.neo4j.kernel.api.QueryLanguageScope.CYPHER_5
 import org.neo4j.kernel.impl.query.FunctionInformation
 import org.neo4j.kernel.impl.query.FunctionInformation.InputInformation
 import org.neo4j.values.AnyValue

@@ -31,7 +31,7 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserAggregationReducer;
 import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.CypherScope;
+import org.neo4j.kernel.api.QueryLanguageScope;
 import org.neo4j.kernel.api.ResourceMonitor;
 import org.neo4j.kernel.api.procedure.Context;
 import org.neo4j.kernel.api.procedure.ProcedureView;
@@ -105,32 +105,32 @@ public class ProcedureViewImpl implements ProcedureView {
     }
 
     @Override
-    public ProcedureHandle procedure(QualifiedName name, CypherScope scope) throws ProcedureException {
+    public ProcedureHandle procedure(QualifiedName name, QueryLanguageScope scope) throws ProcedureException {
         return registry.procedure(name, scope);
     }
 
     @Override
-    public UserFunctionHandle function(QualifiedName name, CypherScope scope) {
+    public UserFunctionHandle function(QualifiedName name, QueryLanguageScope scope) {
         return registry.function(name, scope);
     }
 
     @Override
-    public UserFunctionHandle aggregationFunction(QualifiedName name, CypherScope scope) {
+    public UserFunctionHandle aggregationFunction(QualifiedName name, QueryLanguageScope scope) {
         return registry.aggregationFunction(name, scope);
     }
 
     @Override
-    public Stream<ProcedureSignature> getAllProcedures(CypherScope scope) {
+    public Stream<ProcedureSignature> getAllProcedures(QueryLanguageScope scope) {
         return registry.getAllProcedures(scope);
     }
 
     @Override
-    public Stream<UserFunctionSignature> getAllNonAggregatingFunctions(CypherScope scope) {
+    public Stream<UserFunctionSignature> getAllNonAggregatingFunctions(QueryLanguageScope scope) {
         return registry.getAllNonAggregatingFunctions(scope);
     }
 
     @Override
-    public Stream<UserFunctionSignature> getAllAggregatingFunctions(CypherScope scope) {
+    public Stream<UserFunctionSignature> getAllAggregatingFunctions(QueryLanguageScope scope) {
         return registry.getAllAggregatingFunctions(scope);
     }
 
