@@ -151,12 +151,7 @@ object AdministrationCommandRuntime {
   }
 
   protected def hashPassword(initialPassword: Array[Byte]): TextValue = {
-    try {
-      Values.utf8Value(SystemGraphCredential.createCredentialForPassword(initialPassword, secureHasher).serialize())
-    } finally {
-      // TODO: Make this work again (we have places we need this un-zero'd later for checking if password is duplicated)
-      // if (initialPassword != null) java.util.Arrays.fill(initialPassword, 0.toByte)
-    }
+    Values.utf8Value(SystemGraphCredential.createCredentialForPassword(initialPassword, secureHasher).serialize())
   }
 
   protected def validateAndFormatEncryptedPassword(password: Array[Byte]): TextValue =
