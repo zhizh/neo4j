@@ -118,5 +118,16 @@
             <artifactId>scalacheck_${scala.binary.version}</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.lihaoyi</groupId>
+            <artifactId>pprint_${scala.binary.version}</artifactId>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.lihaoyi</groupId>
+                    <artifactId>sourcecode_${scala.binary.version}</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 </project>

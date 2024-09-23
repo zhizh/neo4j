@@ -611,9 +611,11 @@ MIT License
   Cucumber-JVM: Gherkin Vintage
   Cucumber-JVM: Plugin
   DataTable
+  fansi_2.13
   fastparse_2.13
   geny_2.13
   mockito-core
+  pprint_2.13
   sourcecode_2.13
 ------------------------------------------------------------------------------
 

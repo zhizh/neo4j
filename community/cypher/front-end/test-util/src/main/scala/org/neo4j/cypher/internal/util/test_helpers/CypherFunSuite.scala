@@ -32,7 +32,8 @@ abstract class CypherFunSuite
     with MockitoSugar
     with AnyFunSuiteLike
     with Matchers
-    with BeforeAndAfterEach {
+    with BeforeAndAfterEach
+    with CompareAsPrettyStrings {
 
   def argCaptor[T <: AnyRef](implicit manifest: Manifest[T]): ArgumentCaptor[T] = {
     ArgumentCaptor.forClass(manifest.runtimeClass.asInstanceOf[Class[T]])
