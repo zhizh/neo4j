@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.expressions
 
+import org.neo4j.cypher.internal.label_expressions.LabelExpressionDynamicLeafExpression
 import org.neo4j.cypher.internal.label_expressions.LabelExpressionLeafName
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.InputPosition
@@ -43,4 +44,16 @@ case class RelTypeName(name: String)(val position: InputPosition) extends LabelE
 case class LabelOrRelTypeName(name: String)(val position: InputPosition) extends LabelExpressionLeafName {
   def asLabelName: LabelName = LabelName(name)(position)
   def asRelTypeName: RelTypeName = RelTypeName(name)(position)
+}
+
+case class DynamicLabelExpression(expression: Expression, all: Boolean = true)(val position: InputPosition)
+    extends LabelExpressionDynamicLeafExpression with ElementTypeName
+
+case class DynamicRelTypeExpression(expression: Expression, all: Boolean = true)(val position: InputPosition)
+    extends LabelExpressionDynamicLeafExpression with ElementTypeName
+
+case class DynamicLabelOrRelTypeExpression(expression: Expression, all: Boolean = true)(val position: InputPosition)
+    extends LabelExpressionDynamicLeafExpression {
+  def asDynamicLabelExpression: DynamicLabelExpression = DynamicLabelExpression(expression, all)(position)
+  def asDynamicRelTypeExpression: DynamicRelTypeExpression = DynamicRelTypeExpression(expression, all)(position)
 }

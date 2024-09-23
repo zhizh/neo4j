@@ -32,6 +32,8 @@ import org.neo4j.cypher.internal.ast.RelationshipPropertyType
 import org.neo4j.cypher.internal.ast.RelationshipPropertyUniqueness
 import org.neo4j.cypher.internal.ast.prettifier.Prettifier
 import org.neo4j.cypher.internal.compiler.phases.LogicalPlanState
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.ElementTypeName
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.Parameter
@@ -689,6 +691,14 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
     // returns (entityId, EntityType)
     case label: LabelName     => (ctx.getOrCreateLabelId(label.name), EntityType.NODE)
     case relType: RelTypeName => (ctx.getOrCreateRelTypeId(relType.name), EntityType.RELATIONSHIP)
+    case _: DynamicLabelExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Labels here"
+      )
+    case _: DynamicRelTypeExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Relationships here"
+      )
   }
 
   private def getMultipleEntityInfo(entityName: Either[List[LabelName], List[RelTypeName]], ctx: QueryContext) =
@@ -869,6 +879,14 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
   private def getPrettyEntityPattern(entityName: ElementTypeName): PrettyString = entityName match {
     case label: LabelName     => pretty"(e:${asPrettyString(label)})"
     case relType: RelTypeName => pretty"()-[e:${asPrettyString(relType)}]-()"
+    case _: DynamicLabelExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Labels here"
+      )
+    case _: DynamicRelTypeExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Labels here"
+      )
   }
 
   private def getPrettyEntityPattern(isNode: Boolean, entityName: String): PrettyString =

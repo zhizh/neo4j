@@ -84,6 +84,12 @@ class PrettifierIT extends CypherFunSuite {
         |  WHERE n:A|B""".stripMargin,
     "MATCH (n:N WHERE n.prop > 0)" -> "MATCH (n:N WHERE n.prop > 0)",
     "MATCH (n:N {foo: 5} WHERE n.prop > 0)" -> "MATCH (n:N {foo: 5} WHERE n.prop > 0)",
+    "match (n  : $( 'a' + 'b'):$( c))" -> "MATCH (n:$all(\"a\" + \"b\"):$all(c))",
+    "Match (n: $ANY( x) & $ALL(y) | $(q))" -> "MATCH (n:($any(x)&$all(y))|$all(q))",
+    "create (n  : $( 'a' + 'b'):B: C: $(D))" -> "CREATE (n:$all(\"a\" + \"b\"):B:C:$all(D))",
+    "create (n: $ANY( x) & $ALL(y) | $(q))" -> "CREATE (n:($any(x)&$all(y))|$all(q))",
+    "merge (n  : $( 'a' + 'b'):$( c):D:E)" -> "MERGE (n:$all(\"a\" + \"b\"):$all(c):D:E)",
+    "merge (n: $ANY( x) & $ALL(y) | $(q))" -> "MERGE (n:($any(x)&$all(y))|$all(q))",
     "create (a)--(b) RETURN a" ->
       """CREATE (a)--(b)
         |RETURN a""".stripMargin,

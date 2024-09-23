@@ -16,7 +16,10 @@
  */
 package org.neo4j.cypher.internal.frontend.label_expressions
 
+import org.neo4j.cypher.internal.ast.semantics.SemanticError
+import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.frontend.NameBasedSemanticAnalysisTestSuite
+import org.neo4j.cypher.internal.util.InputPosition
 
 class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysisTestSuite {
 
@@ -637,5 +640,108 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
     // We can only at runtime detect whether y:A|B is gpm-only (if applied to a node),
     // or both gpm and legacy (if applied to a relationship).
     runSemanticAnalysis().errors shouldBe empty
+  }
+
+  // Dynamic labels and types
+  test("MATCH (n:$(\"label\")) RETURN *") {
+    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
+      "Setting labels or types dynamically is not supported."
+    )
+
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("MATCH (n:A&B&$(\"label\")) RETURN *") {
+    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
+      "Setting labels or types dynamically is not supported."
+    )
+
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("MATCH (n)-[:$(\"label\")]->() RETURN *") {
+    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
+      "Setting labels or types dynamically is not supported."
+    )
+
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("MATCH (n:$(1)) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+      SemanticError(
+        "Type mismatch: expected String or List<String> but was Integer",
+        InputPosition(11, 1, 12)
+      )
+    )
+  }
+
+  test("MATCH (n:$(null)) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+      SemanticError(
+        "Null is not a valid token name. Token names cannot be empty or contain any null-bytes.",
+        InputPosition(9, 1, 10)
+      )
+    )
+  }
+
+  test("MATCH (n:$([\"A\", \"\"])) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+      SemanticError(
+        "'' is not a valid token name. Token names cannot be empty or contain any null-bytes.",
+        InputPosition(9, 1, 10)
+      )
+    )
+  }
+
+  test("MATCH (n)-[:$(point({x:22, y:44}))]-() RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+      SemanticError(
+        "Type mismatch: expected String or List<String> but was Point",
+        InputPosition(14, 1, 15)
+      )
+    )
+  }
+
+  test("MATCH (n:$([1])) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+      SemanticError(
+        "Type mismatch: expected String or List<String> but was List<Integer>",
+        InputPosition(11, 1, 12)
+      )
+    )
+  }
+
+  test("MATCH (n:$([''])) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+      SemanticError(
+        "'' is not a valid token name. Token names cannot be empty or contain any null-bytes.",
+        InputPosition(9, 1, 10)
+      )
+    )
+  }
+
+  test("MATCH (n:$all(['Foo', 'Bar'])) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n:$any(['Foo', 'Bar'])) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n:$(['Foo', 'Bar'])) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n)-[:$all(['Foo', 'Bar'])]-() RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n)-[:$any(['Foo', 'Bar'])]-() RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n)-[:$(['Foo', 'Bar'])]-() RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
   }
 }

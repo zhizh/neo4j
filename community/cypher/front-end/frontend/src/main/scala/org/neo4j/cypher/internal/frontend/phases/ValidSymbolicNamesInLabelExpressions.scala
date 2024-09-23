@@ -16,6 +16,9 @@
  */
 package org.neo4j.cypher.internal.frontend.phases
 
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicLabelOrRelTypeExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.LabelOrRelTypeName
 import org.neo4j.cypher.internal.expressions.NodePattern
@@ -27,6 +30,7 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.rewriting.ValidatingCondition
 import org.neo4j.cypher.internal.util.CancellationChecker
 import org.neo4j.cypher.internal.util.Foldable.FoldableAny
+import org.neo4j.cypher.internal.util.Foldable.SkipChildren
 
 import scala.collection.mutable.ListBuffer
 
@@ -63,9 +67,21 @@ object ValidSymbolicNamesInLabelExpressions extends ValidatingCondition {
     errors: ListBuffer[String]
   ): ListBuffer[String] =
     errors.addAll(
-      labelExpression.folder(cancellationChecker).treeFindByClass[SymbolicName].filterNot(symbolicNamePredicate).map(
-        symbolicName =>
-          s"Illegal symbolic name $symbolicName inside a $context at position: ${symbolicName.position}"
-      )
+      labelExpression.folder(cancellationChecker).treeFold(Seq.empty[String]) {
+        case DynamicRelTypeExpression(_, _) =>
+          // Don't look inside Dynamic Type Expressions()
+          errors => SkipChildren(errors)
+        case DynamicLabelExpression(_, _) =>
+          // Don't look inside Dynamic Label Expressions()
+          errors => SkipChildren(errors)
+        case DynamicLabelOrRelTypeExpression(_, _) =>
+          // Don't look inside Dynamic Label or Type Expressions()
+          errors => SkipChildren(errors)
+        case symbolicName: SymbolicName if !symbolicNamePredicate(symbolicName) =>
+          errors =>
+            SkipChildren(
+              errors :+ s"Illegal symbolic name $symbolicName inside a $context at position: ${symbolicName.position}"
+            )
+      }
     )
 }

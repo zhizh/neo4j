@@ -36,6 +36,8 @@ import org.neo4j.cypher.internal.ast.prettifier.Prettifier
 import org.neo4j.cypher.internal.expressions
 import org.neo4j.cypher.internal.expressions.Ands
 import org.neo4j.cypher.internal.expressions.DecimalDoubleLiteral
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.ElementTypeName
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
@@ -3581,6 +3583,18 @@ case class LogicalPlan2PlanDescription(
       case relType: RelTypeName =>
         val prettyType = asPrettyString(relType.name)
         pretty"()-[:$prettyType]-()"
+      case dynamicLabel @ DynamicLabelExpression(_, all) if all =>
+        val prettyLabel = asPrettyString(dynamicLabel.expression)
+        pretty"(:all$$($prettyLabel))"
+      case dynamicLabel: DynamicLabelExpression =>
+        val prettyLabel = asPrettyString(dynamicLabel.expression)
+        pretty"(:any$$($prettyLabel))"
+      case dynamicType @ DynamicRelTypeExpression(_, all) if all =>
+        val prettyType = asPrettyString(dynamicType.expression)
+        pretty"()-[:all$$($prettyType)]-()"
+      case dynamicType: DynamicRelTypeExpression =>
+        val prettyType = asPrettyString(dynamicType.expression)
+        pretty"()-[:all$$($prettyType)]-()"
     }
     indexInfoString(indexType, nameOption, pattern, propertyString, options)
   }
@@ -3644,6 +3658,18 @@ case class LogicalPlan2PlanDescription(
     val entityInfo = entityName match {
       case label: LabelName     => pretty"($prettyEntity:${asPrettyString(label)})"
       case relType: RelTypeName => pretty"()-[$prettyEntity:${asPrettyString(relType)}]-()"
+      case dynamicLabel @ DynamicLabelExpression(_, all) if all =>
+        val prettyLabel = asPrettyString(dynamicLabel.expression)
+        pretty"($prettyEntity:all$$($prettyLabel))"
+      case dynamicLabel: DynamicLabelExpression =>
+        val prettyLabel = asPrettyString(dynamicLabel.expression)
+        pretty"($prettyEntity:any$$($prettyLabel))"
+      case dynamicType @ DynamicRelTypeExpression(_, all) if all =>
+        val prettyType = asPrettyString(dynamicType.expression)
+        pretty"()-[$prettyEntity:all$$($prettyType)]-()"
+      case dynamicType: DynamicRelTypeExpression =>
+        val prettyType = asPrettyString(dynamicType.expression)
+        pretty"()-[$prettyEntity:all$$($prettyType)]-()"
     }
     val onOrFor = if (useForAndRequire) pretty"FOR" else pretty"ON"
     val assertOrRequire = if (useForAndRequire) pretty"REQUIRE" else pretty"ASSERT"

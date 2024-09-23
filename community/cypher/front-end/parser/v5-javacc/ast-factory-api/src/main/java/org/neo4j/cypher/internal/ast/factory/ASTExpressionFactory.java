@@ -99,6 +99,8 @@ public interface ASTExpressionFactory<
 
     LABEL_EXPRESSION labelLeaf(POS p, String e, ENTITY_TYPE entityType, boolean containsIs);
 
+    LABEL_EXPRESSION dynamicLabelLeaf(POS p, EXPRESSION e, ENTITY_TYPE entityType, boolean all, boolean containsIs);
+
     LABEL_EXPRESSION labelColonConjunction(POS p, LABEL_EXPRESSION lhs, LABEL_EXPRESSION rhs, boolean containsIs);
 
     LABEL_EXPRESSION labelColonDisjunction(POS p, LABEL_EXPRESSION lhs, LABEL_EXPRESSION rhs, boolean containsIs);

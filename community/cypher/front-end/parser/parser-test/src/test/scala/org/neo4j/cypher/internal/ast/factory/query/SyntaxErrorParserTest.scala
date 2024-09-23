@@ -80,7 +80,7 @@ class SyntaxErrorParserTest extends AstParsingTestBase {
   test("call") { invalid("", "an identifier, '(' or '{'", 4) }
   test("load csv") { invalid("", "'FROM' or 'WITH HEADERS'", 8) }
   test("match (a)-[r]>(b) return *") { invalid(">", "'-'", 13) }
-  test("match (a)-[:]->(b) return *") { invalid("]", "a node label/relationship type name, '%' or '('", 12) }
+  test("match (a)-[:]->(b) return *") { invalid("]", "a node label/relationship type name, '$', '%' or '('", 12) }
 
   test("match (a)-[->() return *") {
     invalid("-", "a parameter, a variable name, '*', ':', 'IS', 'WHERE', ']' or '{'", 11)
@@ -95,17 +95,17 @@ class SyntaxErrorParserTest extends AstParsingTestBase {
   test("atch (n) return *") {
     invalid("atch", clauseExpected(CypherVersion.Cypher5), clauseExpected(CypherVersion.Cypher6), 0)
   }
-  test("match (n:*) return *") { invalid("*", "a node label/relationship type name, '%' or '('", 9) }
+  test("match (n:*) return *") { invalid("*", "a node label/relationship type name, '$', '%' or '('", 9) }
   test("match (n:Label|) return *") { invalid("|", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 14) }
   test("match (n:Label:) return *") { invalid(":", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 14) }
   test("match (n:Label:1Label) return *") { invalid(":", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 14) }
-  test("match (n:1Label) return *") { invalid("1Label", "a node label/relationship type name, '%' or '('", 9) }
+  test("match (n:1Label) return *") { invalid("1Label", "a node label/relationship type name, '$', '%' or '('", 9) }
   test("match (n:`1Labe`l`) return *") { invalid("l", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 16) }
   test("match (n {p}) return *") { invalid("}", "':'", 11) }
   test("match (n {p:}) return *") { invalid("}", "an expression", 12) }
   test("match (n {p:{}) return *") { invalid(")", "an expression, ',' or '}'", 14) }
   test("create (a)-[r]>(b) return *") { invalid(">", "'-'", 14) }
-  test("create (a)-[:]->(b) return *") { invalid("]", "a node label/relationship type name, '%' or '('", 13) }
+  test("create (a)-[:]->(b) return *") { invalid("]", "a node label/relationship type name, '$', '%' or '('", 13) }
 
   test("create (a)-[->() return *") {
     invalid("-", "a parameter, a variable name, '*', ':', 'IS', 'WHERE', ']' or '{'", 12)
@@ -120,16 +120,16 @@ class SyntaxErrorParserTest extends AstParsingTestBase {
   test("reate (n) return *") {
     invalid("reate", clauseExpected(CypherVersion.Cypher5), clauseExpected(CypherVersion.Cypher6), 0)
   }
-  test("create (n:*) return *") { invalid("*", "a node label/relationship type name, '%' or '('", 10) }
+  test("create (n:*) return *") { invalid("*", "a node label/relationship type name, '$', '%' or '('", 10) }
   test("create (n:Label|) return *") { invalid("|", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 15) }
   test("create (n:Label:) return *") { invalid(":", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 15) }
   test("create (n:Label:1Label) return *") { invalid(":", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 15) }
-  test("create (n:1Label) return *") { invalid("1Label", "a node label/relationship type name, '%' or '('", 10) }
+  test("create (n:1Label) return *") { invalid("1Label", "a node label/relationship type name, '$', '%' or '('", 10) }
   test("create (n:`1Labe`l`) return *") { invalid("l", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 17) }
   test("create (n {p:{}) return *") { invalid(")", "an expression, ',' or '}'", 15) }
   test("create (n {p:}) return *") { invalid("}", "an expression", 13) }
   test("merge (a)-[r]>(b) return *") { invalid(">", "'-'", 13) }
-  test("merge (a)-[:]->(b) return *") { invalid("]", "a node label/relationship type name, '%' or '('", 12) }
+  test("merge (a)-[:]->(b) return *") { invalid("]", "a node label/relationship type name, '$', '%' or '('", 12) }
 
   test("merge (a)-[->() return *") {
     invalid("-", "a parameter, a variable name, '*', ':', 'IS', 'WHERE', ']' or '{'", 11)
@@ -144,11 +144,11 @@ class SyntaxErrorParserTest extends AstParsingTestBase {
   test("erge (n) return *") {
     invalid("erge", clauseExpected(CypherVersion.Cypher5), clauseExpected(CypherVersion.Cypher6), 0)
   }
-  test("merge (n:*) return *") { invalid("*", "a node label/relationship type name, '%' or '('", 9) }
+  test("merge (n:*) return *") { invalid("*", "a node label/relationship type name, '$', '%' or '('", 9) }
   test("merge (n:Label|) return *") { invalid("|", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 14) }
   test("merge (n:Label:) return *") { invalid(":", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 14) }
   test("merge (n:Label:1Label) return *") { invalid(":", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 14) }
-  test("merge (n:1Label) return *") { invalid("1Label", "a node label/relationship type name, '%' or '('", 9) }
+  test("merge (n:1Label) return *") { invalid("1Label", "a node label/relationship type name, '$', '%' or '('", 9) }
   test("merge (n:`1Labe`l`) return *") { invalid("l", "a parameter, '&', ')', ':', 'WHERE', '{' or '|'", 16) }
   test("merge (n {p}) return *") { invalid("}", "':'", 11) }
   test("merge (n {p:}) return *") { invalid("}", "an expression", 12) }

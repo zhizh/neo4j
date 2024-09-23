@@ -24,7 +24,6 @@ import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.UnaliasedReturnItem
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
-import org.neo4j.cypher.internal.ast.test.util.LegacyAstParsingTestSupport
 import org.neo4j.cypher.internal.expressions.And
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.ExtractScope
@@ -48,7 +47,7 @@ import org.neo4j.cypher.internal.util.symbols.CTAny
 /**
  * Label expression in Node patterns
  */
-class NodeLabelExpressionsParserTest extends AstParsingTestBase with LegacyAstParsingTestSupport {
+class NodeLabelExpressionsParserTest extends AstParsingTestBase {
 
   test("(n)") {
     parsesTo[NodePattern] {
@@ -65,6 +64,50 @@ class NodeLabelExpressionsParserTest extends AstParsingTestBase with LegacyAstPa
       nodePat(
         name = Some("n"),
         labelExpression = Some(labelLeaf("A", (1, 4, 3))),
+        namePos = (1, 2, 1),
+        position = (1, 1, 0)
+      )
+    }
+  }
+
+  test("(n:$(A))") {
+    parsesTo[NodePattern] {
+      nodePat(
+        name = Some("n"),
+        labelExpression = Some(dynamicLabelLeaf(varFor("A"))),
+        namePos = (1, 2, 1),
+        position = (1, 1, 0)
+      )
+    }
+  }
+
+  test("(n:$([\"A\", \"B\", \"C\"]))") {
+    parsesTo[NodePattern] {
+      nodePat(
+        name = Some("n"),
+        labelExpression = Some(dynamicLabelLeaf(listOfString("A", "B", "C"))),
+        namePos = (1, 2, 1),
+        position = (1, 1, 0)
+      )
+    }
+  }
+
+  test("(n:$any(A))") {
+    parsesTo[NodePattern] {
+      nodePat(
+        name = Some("n"),
+        labelExpression = Some(dynamicLabelLeaf(varFor("A"), all = false)),
+        namePos = (1, 2, 1),
+        position = (1, 1, 0)
+      )
+    }
+  }
+
+  test("(n:$all(A))") {
+    parsesTo[NodePattern] {
+      nodePat(
+        name = Some("n"),
+        labelExpression = Some(dynamicLabelLeaf(varFor("A"))),
         namePos = (1, 2, 1),
         position = (1, 1, 0)
       )
@@ -417,15 +460,66 @@ class NodeLabelExpressionsParserTest extends AstParsingTestBase with LegacyAstPa
       )
     }
   }
+
+  test("(n:$(A)&B&$any(list[0]))") {
+    parsesTo[NodePattern] {
+      nodePat(
+        name = Some("n"),
+        labelExpression = Some(
+          labelConjunctions(
+            Seq(
+              dynamicLabelLeaf(varFor("A")),
+              labelLeaf("B"),
+              dynamicLabelLeaf(containerIndex(varFor("list"), literalInt(0)), all = false)
+            ),
+            (1, 7, 6)
+          )
+        ),
+        namePos = (1, 2, 1),
+        position = (1, 1, 0)
+      )
+    }
+  }
+
+  test("(n:$(A)|B|$(list[0]) $map)") {
+    parsesTo[NodePattern] {
+      nodePat(
+        name = Some("n"),
+        labelExpression = Some(
+          labelDisjunctions(
+            Seq(
+              dynamicLabelLeaf(varFor("A")),
+              labelLeaf("B"),
+              dynamicLabelLeaf(containerIndex(varFor("list"), literalInt(0)))
+            ),
+            (1, 7, 6)
+          )
+        ),
+        Some(parameter("map", CTAny)),
+        namePos = (1, 2, 1),
+        position = (1, 1, 0)
+      )
+    }
+  }
 }
 
-class RelationshipTypeExpressionParserTest extends AstParsingTestBase with LegacyAstParsingTestSupport {
+class RelationshipTypeExpressionParserTest extends AstParsingTestBase {
 
   test("-[r:R|S]->") {
     parsesTo[RelationshipPattern] {
       relPat(
         Some("r"),
         Some(labelDisjunction(labelRelTypeLeaf("R"), labelRelTypeLeaf("S"))),
+        position = (1, 1, 0)
+      )
+    }
+  }
+
+  test("-[r:$(R)|$(\"S\")]->") {
+    parsesTo[RelationshipPattern] {
+      relPat(
+        Some("r"),
+        Some(labelDisjunction(dynamicRelTypeLeaf(varFor("R")), dynamicRelTypeLeaf(literalString("S")))),
         position = (1, 1, 0)
       )
     }
@@ -467,7 +561,7 @@ class RelationshipTypeExpressionParserTest extends AstParsingTestBase with Legac
   }
 }
 
-class MatchNodeLabelExpressionsParserTest extends AstParsingTestBase with LegacyAstParsingTestSupport {
+class MatchNodeLabelExpressionsParserTest extends AstParsingTestBase {
 
   //              000000000111111111122222222223333333333
   //              123456789012345678901234567890123456789
@@ -548,7 +642,7 @@ class MatchNodeLabelExpressionsParserTest extends AstParsingTestBase with Legacy
   }
 }
 
-class ExpressionLabelExpressionsParserTest extends AstParsingTestBase with LegacyAstParsingTestSupport {
+class ExpressionLabelExpressionsParserTest extends AstParsingTestBase {
 
   test("[p = (n)<-[]-() WHERE ()<-[:A|B]-(n) | p]") {
     parsesTo[Expression] {
@@ -699,6 +793,20 @@ class ExpressionLabelExpressionsParserTest extends AstParsingTestBase with Legac
             )
           )
         ),
+        None
+      )
+    }
+  }
+
+  test("[x IN [1,2,3] WHERE n:$(A)]") {
+    parsesTo[Expression] {
+      listComprehension(
+        varFor("x"),
+        listOfInt(1, 2, 3),
+        Some(labelExpressionPredicate(
+          varFor("n", position = (1, 21, 20)),
+          dynamicLabelOrRelTypeLeaf(varFor("A"))
+        )),
         None
       )
     }

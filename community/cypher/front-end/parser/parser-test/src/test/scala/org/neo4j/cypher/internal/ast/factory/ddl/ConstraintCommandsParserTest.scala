@@ -4310,6 +4310,30 @@ class ConstraintCommandsParserTest extends AdministrationAndSchemaCommandParserT
     }
   }
 
+  test(
+    "CREATE CONSTRAINT FOR (node:$(Label)) REQUIRE (node.prop) IS NODE KEY"
+  ) {
+    failsParsing[ast.Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input '$': expected an identifier")
+      case _ =>
+        _.withSyntaxError("""Invalid input '$': expected an identifier (line 1, column 29 (offset: 28))
+                            |"CREATE CONSTRAINT FOR (node:$(Label)) REQUIRE (node.prop) IS NODE KEY"
+                            |                             ^""".stripMargin)
+    }
+  }
+
+  test(
+    "CREATE CONSTRAINT $name FOR ()-[r:$(R)]-() REQUIRE r.prop IS NOT NULL"
+  ) {
+    failsParsing[ast.Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input '$': expected an identifier")
+      case _ =>
+        _.withSyntaxError("""Invalid input '$': expected an identifier (line 1, column 35 (offset: 34))
+                            |"CREATE CONSTRAINT $name FOR ()-[r:$(R)]-() REQUIRE r.prop IS NOT NULL"
+                            |                                   ^""".stripMargin)
+    }
+  }
+
   // Drop constraint by schema (throws in parsing)
 
   test("DROP CONSTRAINT ON (node:Label) ASSERT (node.prop) IS NODE KEY") {

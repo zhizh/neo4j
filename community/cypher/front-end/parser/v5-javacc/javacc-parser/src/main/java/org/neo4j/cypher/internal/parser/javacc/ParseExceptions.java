@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ParseExceptions extends RuntimeException {
-    public static List<String> expected(int[][] expectedTokenSequences, String[] tokenImage) {
+    public static List<String> expected(int[][] expectedTokenSequences, String[] tokenImage, String currentToken) {
         HashMap<Integer, Long> tokenCount = new HashMap<>();
         Arrays.stream(expectedTokenSequences)
                 .flatMapToInt(Arrays::stream)
@@ -33,12 +33,13 @@ public class ParseExceptions extends RuntimeException {
                 .forEach((token) -> {
                     tokenCount.put(token, tokenCount.getOrDefault(token, 0L) + 1L);
                 });
-        List<String> strings = processExpectedList(tokenCount, tokenImage);
+        List<String> strings = processExpectedList(tokenCount, tokenImage, currentToken);
         Collections.sort(strings);
         return strings;
     }
 
-    public static List<String> processExpectedList(Map<Integer, Long> expectedTokens, String[] tokenImage) {
+    public static List<String> processExpectedList(
+            Map<Integer, Long> expectedTokens, String[] tokenImage, String curentToken) {
         long identifiers = expectedTokens.getOrDefault(CypherConstants.IDENTIFIER, 0L);
         long plusCount = expectedTokens.getOrDefault(CypherConstants.PLUS, 0L);
         long expressions = Math.min(identifiers, plusCount);
@@ -51,7 +52,7 @@ public class ParseExceptions extends RuntimeException {
         List<String> expectedMessage = expectedTokens.keySet().stream()
                 .map(token -> {
                     String image = tokenImage[token];
-                    return image.equals("\"$\"") ? "a parameter" : image;
+                    return image.equals("\"$\"") && !curentToken.equals(":") ? "a parameter" : image;
                 })
                 .collect(Collectors.toList());
         if (identifiers - expressions > 0) {

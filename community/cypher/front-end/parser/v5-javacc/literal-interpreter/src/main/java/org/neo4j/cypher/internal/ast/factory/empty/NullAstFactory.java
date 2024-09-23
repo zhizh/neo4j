@@ -234,6 +234,11 @@ public class NullAstFactory
     }
 
     @Override
+    public NULL dynamicLabelLeaf(NULL p, NULL e, NULL entityType, boolean all, boolean containsIs) {
+        return null;
+    }
+
+    @Override
     public NULL labelColonConjunction(NULL p, NULL lhs, NULL rhs, boolean containsIs) {
         return null;
     }

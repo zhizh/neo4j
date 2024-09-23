@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.frontend.label_expressions
 
+import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.frontend.SemanticAnalysisTestSuiteWithDefaultQuery
 import org.neo4j.cypher.internal.util.test_helpers.TestName
 
@@ -184,6 +185,93 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithUpdateStatement(state
   test("(n IS A)-[r IS R]->(m:B) RETURN *") {
     // Mixing colon (not as conjunction) and IS keyword should be allowed as they are both part of GQL
     runSemanticAnalysis().errors shouldBe empty
+  }
+
+  // Dynamic labels and types
+  test("(n:$(\"label\"))") {
+    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
+      "Setting labels or types dynamically is not supported."
+    )
+
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("(n:A&B&$(\"label\"))") {
+    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
+      "Setting labels or types dynamically is not supported."
+    )
+
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("(n)-[:$(\"label\")]->()") {
+    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
+      "Setting labels or types dynamically is not supported."
+    )
+
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("(n:$(1))") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      "Type mismatch: expected String or List<String> but was Integer"
+    )
+  }
+
+  test("(n)-[:$(1 + 3.0)]->()") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      "Type mismatch: expected String or List<String> but was Float"
+    )
+  }
+
+  test("(n:$([1]))") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      "Type mismatch: expected String or List<String> but was List<Integer>"
+    )
+  }
+
+  test("(n:$(['']))") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      "'' is not a valid token name. Token names cannot be empty or contain any null-bytes."
+    )
+  }
+
+  test("(n:$([null]))") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      "Null is not a valid token name. Token names cannot be empty or contain any null-bytes."
+    )
+  }
+
+  test("(n:$all(['Foo', 'Bar']))") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+  }
+
+  test("(n:$any(['Foo', 'Bar']))") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      "Dynamic labels using `$any()` are not allowed in CREATE or MERGE."
+    )
+  }
+
+  test("(n:$(['Foo', 'Bar']))") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+  }
+
+  test("(n)-[:$any('Foo')]->()") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      "Dynamic labels using `$any()` are not allowed in CREATE or MERGE."
+    )
+  }
+
+  test("(n)-[:$(['Foo', 'Bar'])]->()") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      s"A single relationship type must be specified for $statement"
+    )
+  }
+
+  test("(n)-[:$([])]->()") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages.toSet shouldEqual Set(
+      s"Exactly one relationship type must be specified for $statement. Did you forget to prefix your relationship type with a ':'?"
+    )
   }
 }
 

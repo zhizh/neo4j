@@ -80,7 +80,7 @@ Feature: DynamicLabelsAcceptance
       REMOVE n.genre
       RETURN labels(n) as newLabels
       """
-    Then the result should be, in any order:
+    Then the result should be (ignoring element order for lists):
       | newLabels          |
       | ['Movie','Horror'] |
     And the side effects should be:
@@ -484,6 +484,368 @@ Feature: DynamicLabelsAcceptance
       """
     Then a TokenNameError should be raised at runtime: *
 
+  Scenario Outline: Dynamic Labels in MATCH clause: all and default case
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Foo:Bar:Baz), (:Baz)
+      """
+
+    When executing query:
+      """
+       MATCH (n:$<all>(["Foo", "Bar"]))
+       RETURN labels(n) AS labels;
+      """
+    Then the result should be (ignoring element order for lists):
+      | labels                 |
+      | ['Foo', 'Bar']         |
+      | ['Foo', 'Bar', 'Baz']  |
+    Examples:
+      | all |
+      | all |
+      |     |
+
+  Scenario: Dynamic Labels in MATCH clause: any
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Foo:Bar:Baz), (:Baz)
+      """
+
+    When executing query:
+      """
+       MATCH (n:$any(["Foo", "Bar"]))
+       RETURN labels(n) AS labels;
+      """
+    Then the result should be (ignoring element order for lists):
+      | labels                 |
+      | ['Foo']                |
+      | ['Foo', 'Bar']         |
+      | ['Foo', 'Bar', 'Baz']  |
+
+  Scenario Outline: Dynamic Labels in MATCH clause with empty list: all and default case
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Foo:Bar:Baz), (:Baz)
+      """
+
+    When executing query:
+      """
+       MATCH (n:$<all>([]))
+       RETURN labels(n) AS labels;
+      """
+    Then the result should be (ignoring element order for lists):
+      | labels                 |
+      | ['Foo']                |
+      | ['Baz']                |
+      | ['Foo', 'Bar']         |
+      | ['Foo', 'Bar', 'Baz']  |
+    Examples:
+      | all |
+      | all |
+      |     |
+
+  Scenario: Dynamic Labels in MATCH clause with empty list: any
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Foo:Bar:Baz), (:Baz)
+      """
+
+    When executing query:
+      """
+       MATCH (n:$any([]))
+       RETURN labels(n) AS labels;
+      """
+    Then the result should be, in any order:
+      | labels                 |
+
+  Scenario Outline: Dynamic Labels in MATCH should error if a null or empty string is present
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Foo:Bar:Baz), (:Baz)
+      """
+
+    When executing query:
+      """
+       MATCH (n:$<allOrAny>(<invalidValue>))
+       RETURN labels(n) AS labels;
+      """
+    Then a SyntaxError should be raised at compile time: *
+    Examples:
+      | allOrAny | invalidValue |
+      | all      | null         |
+      | any      | null         |
+      |          | null         |
+      | all      | ''           |
+      | any      | ''           |
+      |          | ''           |
+      | all      | [null]       |
+      | any      | [null]       |
+      |          | [null]       |
+      | all      | ['']         |
+      | any      | ['']         |
+      |          | ['']         |
+      | all      | 1 + 2        |
+      | any      | 1 + 2        |
+      |          | 1 + 2        |
+
+  Scenario Outline: Dynamic Types in MATCH clause: all and default case
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:Foo)-[:REL1]->(:Foo:Bar), (:Foo:Bar:Baz)-[:REL2]->(:Baz)
+      """
+
+    When executing query:
+      """
+       MATCH ()-[r:$<all>(["REL1", "REL2"])]->()
+       RETURN r;
+      """
+    Then the result should be, in any order:
+      | labels |
+    Examples:
+      | all |
+      | all |
+      |     |
+
+  Scenario: Dynamic Types in MATCH clause: any
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:Foo)-[:REL1]->(:Foo:Bar), (:Foo:Bar:Baz)-[:REL2]->(:Baz)
+      """
+
+    When executing query:
+      """
+       MATCH ()-[r:$any(["REL1", "REL2"])]->()
+       RETURN type(r);
+      """
+    Then the result should be, in any order:
+      | labels |
+      | 'REL1' |
+      | 'REL2' |
+
+  Scenario Outline: Dynamic Types in CREATE/MERGE clause
+    Given an empty graph
+
+    When executing query:
+      """
+       <clause> ()-[r:$(<input>)]->()
+       RETURN type(r)
+      """
+    Then the result should be, in any order:
+      | labels |
+      | 'FOO'  |
+    And the side effects should be:
+      | +labels        | 1 |
+      | +relationships | 1 |
+      | +nodes         | 3 |
+    Examples:
+      | clause | input   |
+      | CREATE | 'FOO'   |
+      | MERGE  | 'FOO'   |
+      | CREATE | ['FOO'] |
+      | MERGE  | ['FOO'] |
+
+  Scenario Outline: CREATE or MERGE with invalid input for Dynamic Types
+    Given an empty graph
+    When executing query:
+      """
+       <clause> ()-[:$(<invalidInput>)]->()
+      """
+    Then a SyntaxError should be raised at compile time: *
+    Examples:
+      | clause | invalidInput   |
+      | CREATE | null           |
+      | MERGE  | null           |
+      | CREATE | ''             |
+      | MERGE  | ''             |
+      | CREATE | []             |
+      | MERGE  | []             |
+      | CREATE | [null]         |
+      | MERGE  | [null]         |
+      | CREATE | ['']           |
+      | MERGE  | ['']           |
+      | CREATE | ['Foo', 'Bar'] |
+      | MERGE  | ['Foo', 'Bar'] |
+      | CREATE | 1 + 2          |
+      | MERGE  | 1 + 2          |
+
+  Scenario: Dynamic Labels/Types in with parameters in CREATE clause
+    Given an empty graph
+    And parameters are:
+      | a | 'label1'   |
+      | b | 'label2'   |
+      | c | {prop: 1}  |
+      | d | 'TYPE'     |
+
+    When executing query:
+      """
+       CREATE (n :$($a):$($b) $c)-[r:$($d) $c]->()
+       RETURN labels(n) AS labels, type(r) AS type  
+      """
+    Then the result should be (ignoring element order for lists):
+      | labels               | type   |
+      | ['label1', 'label2'] | 'TYPE' |
+    And the side effects should be:
+      | +labels        | 3 |
+      | +relationships | 1 |
+      | +nodes         | 2 |
+      | +properties    | 2 |
+
+  Scenario: Dynamic Labels/Types in with variables in CREATE clause
+    Given an empty graph
+
+    When executing query:
+      """
+       WITH "label1" AS a, "label2" AS b, "TYPE" AS c
+       CREATE (n :$(a):$(b))-[r:$(c)]->()
+       RETURN labels(n) AS labels, type(r) AS type  
+      """
+    Then the result should be (ignoring element order for lists):
+      | labels               | type   |
+      | ['label1', 'label2'] | 'TYPE' |
+    And the side effects should be:
+      | +labels        | 3 |
+      | +relationships | 1 |
+      | +nodes         | 2 |
+
+  Scenario: Dynamic Labels from a Collect in CREATE clause
+    Given an empty graph
+
+    When executing query:
+      """
+       CREATE (n :$(COLLECT { UNWIND range(0, 3) AS id RETURN "Node_" + id }))
+       RETURN labels(n) AS labels
+      """
+    Then the result should be (ignoring element order for lists):
+      | labels                                   |
+      | ['Node_0', 'Node_1', 'Node_2', 'Node_3'] |
+    And the side effects should be:
+      | +labels        | 4 |
+      | +nodes         | 1 |
+
+  Scenario: Dynamic Labels with a negation label expression in MATCH
+    Given an empty graph
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Bar)
+      """
+
+    When executing query:
+      """
+       MATCH (n:$("Foo")&!$("Bar")) 
+       RETURN labels(n) AS labels
+      """
+    Then the result should be, in any order:
+      | labels  |
+      | ['Foo'] |
+
+  Scenario: Dynamic Labels empty list in MATCH
+    Given an empty graph
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Bar)
+      """
+
+    When executing query:
+      """
+       MATCH (n:$([])) 
+       RETURN count(n) AS count
+      """
+    Then the result should be, in any order:
+      | count  |
+      | 3      |
+
+  Scenario: Dynamic Labels in MATCH with negation on any - !$any(labels) == !(label1|label2)
+    Given an empty graph
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Bar)
+      """
+
+    When executing query:
+      """
+       WITH ["Foo", "Bar"] AS labels
+       MATCH (n :!$any(labels))
+       RETURN labels(n)
+      """
+    Then the result should be, in any order:
+      | count  |
+      | 0      |
+
+  Scenario: Dynamic Labels in MATCH with negation on all - !$all(labels) == !(label1&label2)
+    Given an empty graph
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Bar)
+      """
+
+    When executing query:
+      """
+       WITH ["Foo", "Bar"] AS labels
+       MATCH (n :!$all(labels))
+       RETURN labels(n)
+      """
+    Then the result should be, in any order:
+      | count  |
+      | 2      |
+
+  Scenario: Dynamic Labels in MATCH with all and any - !$all(labels)&$any(labels)) == !(label1&label2)&(label1|label2)
+    Given an empty graph
+      """
+      CREATE (:Foo), (:Foo:Bar), (:Bar), (:Baz)
+      """
+
+    When executing query:
+      """
+       WITH ["Foo", "Bar"] AS labels
+       MATCH (n :!$all(labels)&$any(labels)) 
+       RETURN labels(n) AS labels
+      """
+    Then the result should be, in any order:
+      | labels  |
+      | ['Foo'] |
+      | ['Bar'] |
+
+  Scenario Outline: Should throw type errors when a node property being used as a dynamic label is invalid
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:A {prop:<invalid_value>})
+      """
+    When executing query:
+      """
+      MATCH (n)
+      <clause> (n:$(n.prop))
+      RETURN labels(n) AS labels
+      """
+    Then a TypeError should be raised at runtime: *
+    Examples:
+      | clause | invalid_value |
+      | CREATE | 1             |
+      | MERGE  | 1             |
+      | CREATE | null          |
+      | MERGE  | null          |
+
+  @allowCustomErrors
+  Scenario Outline: Should throw token type errors when a node property being used as a dynamic label is invalid token
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:A {prop:<invalid_value>})
+      """
+    When executing query:
+      """
+      MATCH (n)
+      <clause> (n:$(n.prop))
+      RETURN labels(n) AS labels
+      """
+    Then a TokenNameError should be raised at runtime: *
+    Examples:
+      | clause | invalid_value |
+      | CREATE | ''            |
+      | MERGE  | ''            |
+
 
   Scenario: Should throw type errors when removing dynamic labels that resolve to null
     Given an empty graph
@@ -499,3 +861,23 @@ Feature: DynamicLabelsAcceptance
       RETURN labels(n) AS labels
       """
     Then a TypeError should be raised at runtime: *
+    
+  Scenario: Dynamic Labels from a Collect in CREATE clause acting on graph data
+    Given an empty graph
+    And having executed:
+      """
+      CREATE (:A)-[:T1]->(:B) 
+      CREATE (:A)-[:T2]->(:B) 
+      CREATE (:A)-[:T3]->(:B)
+      """
+    When executing query:
+      """
+       CREATE (n :$(COLLECT { MATCH (:A)-[r]-(:B) RETURN type(r) }))
+       RETURN labels(n) AS labels
+      """
+    Then the result should be (ignoring element order for lists):
+      | labels             |
+      | ['T1', 'T2', 'T3'] |
+    And the side effects should be:
+      | +labels        | 3 |
+      | +nodes         | 1 |

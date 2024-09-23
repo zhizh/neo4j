@@ -1242,6 +1242,50 @@ class InsertParserTest extends AstParsingTestBase {
     }
   }
 
+  test("INSERT (IS $(A))") {
+    failsParsing[Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input '$'")
+      case _ => _.withSyntaxError(
+          """Invalid input '$': expected an identifier, ')', ':', 'IS' or '{' (line 1, column 12 (offset: 11))
+            |"INSERT (IS $(A))"
+            |            ^""".stripMargin
+        )
+    }
+  }
+
+  test("INSERT (:$(A))") {
+    failsParsing[Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input ':'")
+      case _ => _.withSyntaxError(
+          """Invalid input '$': expected an identifier (line 1, column 10 (offset: 9))
+            |"INSERT (:$(A))"
+            |          ^""".stripMargin
+        )
+    }
+  }
+
+  test("INSERT ()-[IS $(A)]->()") {
+    failsParsing[Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input '$'")
+      case _ => _.withSyntaxError(
+          """Invalid input '$': expected an identifier, ':' or 'IS' (line 1, column 15 (offset: 14))
+            |"INSERT ()-[IS $(A)]->()"
+            |               ^""".stripMargin
+        )
+    }
+  }
+
+  test("INSERT ()-[:$(A)]->()") {
+    failsParsing[Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input '$'")
+      case _ => _.withSyntaxError(
+          """Invalid input '$': expected an identifier (line 1, column 13 (offset: 12))
+            |"INSERT ()-[:$(A)]->()"
+            |             ^""".stripMargin
+        )
+    }
+  }
+
   test("INSERT (:A:B)") {
     failsParsing[Statements].withMessageStart(
       "Colon `:` conjunction is not allowed in INSERT. Use `CREATE` or conjunction with ampersand `&` instead. (line 1, column 11 (offset: 10))"

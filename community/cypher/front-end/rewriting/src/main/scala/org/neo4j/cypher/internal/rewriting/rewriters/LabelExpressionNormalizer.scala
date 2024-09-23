@@ -34,6 +34,7 @@ import org.neo4j.cypher.internal.expressions.RELATIONSHIP_TYPE
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.True
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.util.Rewriter
 import org.neo4j.cypher.internal.util.topDown
@@ -83,6 +84,11 @@ case class LabelExpressionNormalizer(entityExpression: Expression, entityType: O
       HasTypes(copy(entityExpression), Seq(name))(name.position)
 
     case leaf @ Leaf(_, _) =>
+      throw new IllegalArgumentException(
+        s"Unexpected non-implemented label expression leaf $leaf when rewriting label expressions"
+      )
+
+    case leaf @ DynamicLeaf(_, _) => // TODO
       throw new IllegalArgumentException(
         s"Unexpected non-implemented label expression leaf $leaf when rewriting label expressions"
       )

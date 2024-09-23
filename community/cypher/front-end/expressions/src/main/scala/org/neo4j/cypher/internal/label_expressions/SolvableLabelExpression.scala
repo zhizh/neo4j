@@ -20,6 +20,7 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonConjunct
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonDisjunction
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Conjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
@@ -122,6 +123,8 @@ object SolvableLabelExpression {
     labelExpression match {
       case Wildcard(_) =>
         TailCalls.done(SolvableLabelExpression.wildcard)
+      case DynamicLeaf(_, _) =>
+        TailCalls.done(SolvableLabelExpression.dynamic)
       case Leaf(label, _) =>
         TailCalls.done(SolvableLabelExpression.label(label.name))
       case Negation(not: LabelExpression, _) =>
@@ -150,6 +153,15 @@ object SolvableLabelExpression {
    * :%
    */
   def wildcard: SolvableLabelExpression =
+    build(Set.empty) {
+      case KnownLabels(labels) => labels.nonEmpty
+      case SomeUnknownLabels   => true
+    }
+
+  /**
+   * :$()
+   */
+  def dynamic: SolvableLabelExpression =
     build(Set.empty) {
       case KnownLabels(labels) => labels.nonEmpty
       case SomeUnknownLabels   => true

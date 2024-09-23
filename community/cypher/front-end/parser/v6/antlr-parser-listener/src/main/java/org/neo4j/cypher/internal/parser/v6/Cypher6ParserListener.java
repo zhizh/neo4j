@@ -151,6 +151,8 @@ public interface Cypher6ParserListener extends ParseTreeListener {
 
     void exitDynamicExpression(Cypher6Parser.DynamicExpressionContext ctx);
 
+    void exitDynamicAnyAllExpression(Cypher6Parser.DynamicAnyAllExpressionContext ctx);
+
     void exitDynamicLabelType(Cypher6Parser.DynamicLabelTypeContext ctx);
 
     void exitLabelType(Cypher6Parser.LabelTypeContext ctx);

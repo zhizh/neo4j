@@ -221,6 +221,8 @@ import org.neo4j.cypher.internal.ast.Yield
 import org.neo4j.cypher.internal.ast.YieldOrWhere
 import org.neo4j.cypher.internal.ast.prettifier.Prettifier.escapeName
 import org.neo4j.cypher.internal.expressions.CoerceTo
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
 import org.neo4j.cypher.internal.expressions.Expression
@@ -362,9 +364,14 @@ case class Prettifier(
           options
         ) =>
         val startOfCommand = getStartOfCommand(name, ifExistsDo, indexType.command)
+        val anyAll: Boolean => String = (a) => if (a) "all" else "any"
         val pattern = entityName match {
           case LabelName(label)     => s"(${backtick(variable)}:${backtick(label)})"
           case RelTypeName(relType) => s"()-[${backtick(variable)}:${backtick(relType)}]-()"
+          case DynamicLabelExpression(expression, all) =>
+            s"(${backtick(variable)}:${anyAll(all)}$$(${expr(expression)}))"
+          case DynamicRelTypeExpression(expression, all) =>
+            s"()-[${backtick(variable)}:${anyAll(all)}$$(${expr(expression)})]-()"
         }
         s"${startOfCommand}FOR $pattern ON ${propertiesToString(properties)}${asString(options)}"
 
@@ -395,9 +402,14 @@ case class Prettifier(
 
       case CreateConstraint(Variable(variable), entityName, properties, name, constraintType, ifExistsDo, options) =>
         val startOfCommand = getStartOfCommand(name, ifExistsDo, "CONSTRAINT")
+        val anyAll: Boolean => String = (a) => if (a) "all" else "any"
         val pattern = entityName match {
           case LabelName(label)     => s"(${backtick(variable)}:${backtick(label)})"
           case RelTypeName(relType) => s"()-[${backtick(variable)}:${backtick(relType)}]-()"
+          case DynamicLabelExpression(expression, all) =>
+            s"(${backtick(variable)}:${anyAll(all)}$$(${expr(expression)}))"
+          case DynamicRelTypeExpression(expression, all) =>
+            s"()-[${backtick(variable)}:${anyAll(all)}$$(${expr(expression)})]-()"
         }
         s"${startOfCommand}FOR $pattern REQUIRE ${propertiesToString(properties)} ${constraintType.predicate}${asString(options)}"
 

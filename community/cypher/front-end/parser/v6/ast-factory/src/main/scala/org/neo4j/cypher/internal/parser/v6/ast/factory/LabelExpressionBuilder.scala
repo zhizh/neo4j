@@ -16,8 +16,10 @@
  */
 package org.neo4j.cypher.internal.parser.v6.ast.factory
 
+import org.antlr.v4.runtime.RuleContext
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.neo4j.cypher.internal.expressions
+import org.neo4j.cypher.internal.expressions.DynamicLabelOrRelTypeExpression
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.LabelOrRelTypeName
@@ -45,6 +47,8 @@ import org.neo4j.cypher.internal.parser.ast.util.Util.semanticDirection
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.AnyLabelContext
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.AnyLabelIsContext
+import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.DynamicLabelContext
+import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.DynamicLabelIsContext
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.LabelNameContext
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.LabelNameIsContext
 import org.neo4j.cypher.internal.parser.v6.Cypher6Parser.ParenthesizedLabelExpressionContext
@@ -95,6 +99,10 @@ trait LabelExpressionBuilder extends Cypher6ParserListener {
 
   final override def exitDynamicExpression(ctx: Cypher6Parser.DynamicExpressionContext): Unit = {
     ctx.ast = ctxChild(ctx, 2).ast
+  }
+
+  final override def exitDynamicAnyAllExpression(ctx: Cypher6Parser.DynamicAnyAllExpressionContext): Unit = {
+    ctx.ast = DynamicLabelOrRelTypeExpression(ctx.expression().ast(), ctx.ANY() == null)(pos(ctx))
   }
 
   final override def exitDynamicLabelType(ctx: Cypher6Parser.DynamicLabelTypeContext): Unit = {
@@ -249,14 +257,7 @@ trait LabelExpressionBuilder extends Cypher6ParserListener {
       case ctx: AnyLabelContext =>
         Wildcard()(pos(ctx))
       case ctx: LabelNameContext =>
-        var parent = ctx.parent
-        var isLabel = 0
-        while (isLabel == 0) {
-          if (parent == null || parent.getRuleIndex == Cypher6Parser.RULE_postFix) isLabel = 3
-          else if (parent.getRuleIndex == Cypher6Parser.RULE_nodePattern) isLabel = 1
-          else if (parent.getRuleIndex == Cypher6Parser.RULE_relationshipPattern) isLabel = 2
-          else parent = parent.getParent
-        }
+        val isLabel = getIsLabel(ctx)
         isLabel match {
           case 1 =>
             LabelExpression.Leaf(
@@ -271,9 +272,37 @@ trait LabelExpressionBuilder extends Cypher6ParserListener {
               LabelOrRelTypeName(ctx.symbolicNameString().ast())(pos(ctx))
             )
         }
+      case ctx: DynamicLabelContext =>
+        val isLabel = getIsLabel(ctx)
+        isLabel match {
+          case 1 =>
+            LabelExpression.DynamicLeaf(
+              ctx.dynamicAnyAllExpression().ast[DynamicLabelOrRelTypeExpression]().asDynamicLabelExpression
+            )
+          case 2 =>
+            LabelExpression.DynamicLeaf(
+              ctx.dynamicAnyAllExpression().ast[DynamicLabelOrRelTypeExpression]().asDynamicRelTypeExpression
+            )
+          case 3 =>
+            LabelExpression.DynamicLeaf(
+              ctx.dynamicAnyAllExpression().ast()
+            )
+        }
       case _ =>
         throw new IllegalStateException("Parsed an unknown LabelExpression1 type")
     }
+  }
+
+  def getIsLabel(ctx: RuleContext): Int = {
+    var parent = ctx.parent
+    var isLabel = 0
+    while (isLabel == 0) {
+      if (parent == null || parent.getRuleIndex == Cypher6Parser.RULE_postFix) isLabel = 3
+      else if (parent.getRuleIndex == Cypher6Parser.RULE_nodePattern) isLabel = 1
+      else if (parent.getRuleIndex == Cypher6Parser.RULE_relationshipPattern) isLabel = 2
+      else parent = parent.getParent
+    }
+    isLabel
   }
 
   final override def exitLabelExpression1Is(
@@ -307,6 +336,32 @@ trait LabelExpressionBuilder extends Cypher6ParserListener {
           case 3 =>
             LabelExpression.Leaf(
               LabelOrRelTypeName(ctx.symbolicLabelNameString().ast())(pos(ctx)),
+              containsIs = true
+            )
+        }
+      case ctx: DynamicLabelIsContext =>
+        var parent = ctx.parent
+        var isLabel = 0
+        while (isLabel == 0) {
+          if (parent == null || parent.getRuleIndex == Cypher6Parser.RULE_postFix) isLabel = 3
+          else if (parent.getRuleIndex == Cypher6Parser.RULE_nodePattern) isLabel = 1
+          else if (parent.getRuleIndex == Cypher6Parser.RULE_relationshipPattern) isLabel = 2
+          else parent = parent.getParent
+        }
+        isLabel match {
+          case 1 =>
+            LabelExpression.DynamicLeaf(
+              ctx.dynamicAnyAllExpression().ast[DynamicLabelOrRelTypeExpression]().asDynamicLabelExpression,
+              containsIs = true
+            )
+          case 2 =>
+            LabelExpression.DynamicLeaf(
+              ctx.dynamicAnyAllExpression().ast[DynamicLabelOrRelTypeExpression]().asDynamicRelTypeExpression,
+              containsIs = true
+            )
+          case 3 =>
+            LabelExpression.DynamicLeaf(
+              ctx.dynamicAnyAllExpression().ast(),
               containsIs = true
             )
         }

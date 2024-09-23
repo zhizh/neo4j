@@ -1343,6 +1343,11 @@ public class LiteralInterpreter
     }
 
     @Override
+    public NULL dynamicLabelLeaf(NULL p, Object e, NULL entityType, boolean all, boolean containsIs) {
+        throw new UnsupportedOperationException("dynamicLabelLeaf is not a literal");
+    }
+
+    @Override
     public NULL labelColonConjunction(NULL p, NULL lhs, NULL rhs, boolean containsIs) {
         throw new UnsupportedOperationException("labelColonConjunction is not a literal");
     }

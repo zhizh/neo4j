@@ -359,6 +359,9 @@ import org.neo4j.cypher.internal.expressions.Contains
 import org.neo4j.cypher.internal.expressions.CountStar
 import org.neo4j.cypher.internal.expressions.DecimalDoubleLiteral
 import org.neo4j.cypher.internal.expressions.Divide
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicLabelOrRelTypeExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.EndsWith
 import org.neo4j.cypher.internal.expressions.EntityType
 import org.neo4j.cypher.internal.expressions.Equals
@@ -476,6 +479,7 @@ import org.neo4j.cypher.internal.expressions.Xor
 import org.neo4j.cypher.internal.expressions.functions.Labels
 import org.neo4j.cypher.internal.expressions.functions.Type
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.AnyType
@@ -929,20 +933,20 @@ class AstGenerator(
   // ----------------------------------
 
   def _relationshipsPattern: Gen[RelationshipsPattern] = for {
-    chain <- _relationshipChain
+    chain <- _relationshipChain(false)
   } yield RelationshipsPattern(chain)(pos)
 
   def _patternExpr: Gen[PatternExpression] = for {
     pattern <- _relationshipsPattern
   } yield PatternExpression(pattern)(None, None)
 
-  def _shortestPaths: Gen[ShortestPathsPatternPart] = for {
-    element <- _patternElement
+  def _shortestPaths(dynamicLabelsAllowed: Boolean): Gen[ShortestPathsPatternPart] = for {
+    element <- _patternElement(dynamicLabelsAllowed)
     single <- boolean
   } yield ShortestPathsPatternPart(element, single)(pos)
 
   def _shortestPathExpr: Gen[ShortestPathExpression] = for {
-    pattern <- _shortestPaths
+    pattern <- _shortestPaths(false)
   } yield ShortestPathExpression(pattern)
 
   def _existsExpression: Gen[ExistsExpression] = for {
@@ -1045,16 +1049,20 @@ class AstGenerator(
     )
   }
 
-  def _labelExpression(entityType: Option[EntityType], containsIs: Boolean): Gen[LabelExpression] = {
+  def _labelExpression(
+    entityType: Option[EntityType],
+    containsIs: Boolean,
+    dynamicLabelsAllowed: Boolean
+  ): Gen[LabelExpression] = {
 
     def _labelExpressionConjunction(): Gen[LabelExpression.Conjunctions] = for {
-      lhs <- _labelExpression(entityType, containsIs)
-      rhs <- _labelExpression(entityType, containsIs)
+      lhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
+      rhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
     } yield LabelExpression.Conjunctions.flat(lhs, rhs, pos, containsIs)
 
     def _labelExpressionDisjunction(): Gen[LabelExpression.Disjunctions] = for {
-      lhs <- _labelExpression(entityType, containsIs)
-      rhs <- _labelExpression(entityType, containsIs)
+      lhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
+      rhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
     } yield LabelExpression.Disjunctions.flat(lhs, rhs, pos, containsIs)
 
     for {
@@ -1065,24 +1073,51 @@ class AstGenerator(
             case Some(NODE_TYPE)         => _labelName.map(Leaf(_, containsIs))
             case Some(RELATIONSHIP_TYPE) => _relTypeName.map(Leaf(_, containsIs))
             case None                    => _labelOrTypeName.map(Leaf(_, containsIs))
+          }),
+          lzy(entityType match {
+            case Some(NODE_TYPE) if dynamicLabelsAllowed => _dynamicLabelExpression.map(DynamicLeaf(_, containsIs))
+            case Some(NODE_TYPE)                         => _labelName.map(Leaf(_, containsIs))
+            case Some(RELATIONSHIP_TYPE) if dynamicLabelsAllowed =>
+              _dynamicRelTypeExpression.map(DynamicLeaf(_, containsIs))
+            case Some(RELATIONSHIP_TYPE)      => _relTypeName.map(Leaf(_, containsIs))
+            case None if dynamicLabelsAllowed => _dynamicLabelOrRelTypeExpression.map(DynamicLeaf(_, containsIs))
+            case None                         => _labelOrTypeName.map(Leaf(_, containsIs))
           })
         ),
         1 -> oneOf[LabelExpression](
           lzy(_labelExpressionConjunction()),
           lzy(_labelExpressionDisjunction()),
-          lzy(_labelExpression(entityType, containsIs).map(LabelExpression.Negation(_, containsIs)(pos)))
+          lzy(_labelExpression(entityType, containsIs, dynamicLabelsAllowed).map(LabelExpression.Negation(
+            _,
+            containsIs
+          )(pos)))
         )
       )
     } yield labelExpr
   }
 
+  def _dynamicLabelExpression: Gen[DynamicLabelExpression] = for {
+    expr <- _expression
+    all <- boolean
+  } yield DynamicLabelExpression(expr, all)(pos)
+
+  def _dynamicRelTypeExpression: Gen[DynamicRelTypeExpression] = for {
+    expr <- _expression
+    all <- boolean
+  } yield DynamicRelTypeExpression(expr, all)(pos)
+
+  def _dynamicLabelOrRelTypeExpression: Gen[DynamicLabelOrRelTypeExpression] = for {
+    expr <- _expression
+    all <- boolean
+  } yield DynamicLabelOrRelTypeExpression(expr, all)(pos)
+
   // PATTERNS
   // ==========================================================================
 
-  def _nodePattern: Gen[NodePattern] = for {
+  def _nodePattern(dynamicLabelsAllowed: Boolean): Gen[NodePattern] = for {
     variable <- option(_variable)
     containsIs <- boolean
-    labelExpression <- option(_labelExpression(Some(NODE_TYPE), containsIs))
+    labelExpression <- option(_labelExpression(Some(NODE_TYPE), containsIs, dynamicLabelsAllowed))
     properties <- option(oneOf(_map, _parameter))
     predicate <- variable match {
       case Some(someVariable) =>
@@ -1106,10 +1141,10 @@ class AstGenerator(
       SemanticDirection.BOTH
     )
 
-  def _relationshipPattern: Gen[RelationshipPattern] = for {
+  def _relationshipPattern(dynamicLabelsAllowed: Boolean): Gen[RelationshipPattern] = for {
     variable <- option(_variable)
     containsIs <- boolean
-    labelExpression <- option(_labelExpression(Some(RELATIONSHIP_TYPE), containsIs))
+    labelExpression <- option(_labelExpression(Some(RELATIONSHIP_TYPE), containsIs, dynamicLabelsAllowed))
     length <- option(option(_range))
     properties <- option(oneOf(_map, _parameter))
     direction <- _semanticDirection
@@ -1123,15 +1158,15 @@ class AstGenerator(
     }
   } yield RelationshipPattern(variable, labelExpression, length, properties, predicate, direction)(pos)
 
-  def _relationshipChain: Gen[RelationshipChain] = for {
-    element <- _pathPrimary
-    relationship <- _relationshipPattern
-    rightNode <- _nodePattern
+  def _relationshipChain(dynamicLabelsAllowed: Boolean): Gen[RelationshipChain] = for {
+    element <- _pathPrimary(dynamicLabelsAllowed)
+    relationship <- _relationshipPattern(dynamicLabelsAllowed)
+    rightNode <- _nodePattern(dynamicLabelsAllowed)
   } yield RelationshipChain(element, relationship, rightNode)(pos)
 
-  def _pathPrimary: Gen[SimplePattern] = oneOf(
-    _nodePattern,
-    lzy(_relationshipChain)
+  def _pathPrimary(dynamicLabelsAllowed: Boolean): Gen[SimplePattern] = oneOf(
+    _nodePattern(dynamicLabelsAllowed),
+    lzy(_relationshipChain(dynamicLabelsAllowed))
   )
 
   def _generalQuantifier: Gen[IntervalQuantifier] = for {
@@ -1150,24 +1185,24 @@ class AstGenerator(
     _fixedQuantifier
   )
 
-  def _quantifiedPath: Gen[QuantifiedPath] = for {
-    primary <- _pathFactor
+  def _quantifiedPath(dynamicLabelsAllowed: Boolean): Gen[QuantifiedPath] = for {
+    primary <- _pathFactor(dynamicLabelsAllowed)
     quantifier <- _quantifier
     where <- option(_expression)
   } yield QuantifiedPath(PatternPart(primary), quantifier, where)(pos)
 
-  def _pathFactor: Gen[PathFactor] = oneOf(
-    lzy(_quantifiedPath),
-    lzy(_pathPrimary)
+  def _pathFactor(dynamicLabelsAllowed: Boolean): Gen[PathFactor] = oneOf(
+    lzy(_quantifiedPath(dynamicLabelsAllowed)),
+    lzy(_pathPrimary(dynamicLabelsAllowed))
   )
 
-  def _pathConcatenation: Gen[PathConcatenation] = for {
-    elements <- twoOrMore(_pathFactor)
+  def _pathConcatenation(dynamicLabelsAllowed: Boolean): Gen[PathConcatenation] = for {
+    elements <- twoOrMore(_pathFactor(dynamicLabelsAllowed))
   } yield PathConcatenation(elements)(pos)
 
-  def _patternElement: Gen[PatternElement] = oneOf(
-    lzy(_pathFactor),
-    lzy(_pathConcatenation)
+  def _patternElement(dynamicLabelsAllowed: Boolean): Gen[PatternElement] = oneOf(
+    lzy(_pathFactor(dynamicLabelsAllowed)),
+    lzy(_pathConcatenation(dynamicLabelsAllowed))
   )
 
   def _selector: Gen[Selector] = for {
@@ -1182,7 +1217,7 @@ class AstGenerator(
   } yield selector
 
   def _anonPatternPart: Gen[AnonymousPatternPart] = for {
-    element <- _patternElement
+    element <- _patternElement(true)
     single <- boolean
     part <- oneOf(
       PathPatternPart(element),

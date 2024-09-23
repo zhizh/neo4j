@@ -25,6 +25,7 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonConjunct
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonDisjunction
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Conjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
@@ -507,6 +508,7 @@ class AddUniquenessPredicatesPropertyTest extends CypherFunSuite with CypherScal
       case Negation(e, _)                   => 1 + size(e)
       case Wildcard(_)                      => 1
       case Leaf(_, _)                       => 1
+      case DynamicLeaf(_, _)                => 1
     }
 
     var seed = org.scalacheck.rng.Seed.random()

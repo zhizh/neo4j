@@ -29,6 +29,7 @@ import org.neo4j.cypher.internal.expressions.GraphPatternQuantifier
 import org.neo4j.cypher.internal.expressions.IntervalQuantifier
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.LabelOrRelTypeName
+import org.neo4j.cypher.internal.expressions.ListLiteral
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.MapExpression
 import org.neo4j.cypher.internal.expressions.NODE_TYPE
@@ -66,6 +67,7 @@ import org.neo4j.cypher.internal.expressions.SymbolicName
 import org.neo4j.cypher.internal.expressions.UnsignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonDisjunction
+import org.neo4j.cypher.internal.label_expressions.LabelExpressionDynamicLeafExpression
 import org.neo4j.cypher.internal.label_expressions.SolvableLabelExpression
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
@@ -81,6 +83,7 @@ import org.neo4j.cypher.internal.util.symbols.CTMap
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTPath
 import org.neo4j.cypher.internal.util.symbols.CTRelationship
+import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.topDown
 
 object SemanticPatternCheck extends SemanticAnalysisTooling {
@@ -289,11 +292,13 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
       case x: RelationshipChain =>
         check(ctx, x.element) chain
           check(ctx, x.relationship) chain
+          checkDynamicLabels(ctx, x.relationship.labelExpression) chain
           check(ctx, x.rightNode)
 
       case x: NodePattern =>
         checkNodeProperties(ctx, x.properties) chain
           checkLabelExpressions(ctx, x.labelExpression) chain
+          checkDynamicLabels(ctx, x.labelExpression) chain
           checkPredicate(ctx, x)
 
       case PathConcatenation(factors) =>
@@ -827,6 +832,35 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
         SemanticExpressionCheck.checkLabelExpression(Some(NODE_TYPE), labelExpression)
     }
 
+  private def checkDynamicLabels(ctx: SemanticContext, labelExpression: Option[LabelExpression]): SemanticCheck = {
+    labelExpression.foldSemanticCheck { labelExpression =>
+      val dynamicLabelExpressions = labelExpression.folder.findAllByClass[LabelExpressionDynamicLeafExpression]
+      val dynamicLabels = dynamicLabelExpressions.map(_.expression)
+      whenState(
+        !_.features.contains(SemanticFeature.DynamicLabelsAndTypes)
+      ) {
+        dynamicLabels.map {
+          e => SemanticError("Setting labels or types dynamically is not supported.", e.position)
+        }
+      } chain when(
+        ctx != SemanticContext.Match && ctx != SemanticContext.Expression
+      ) {
+        { (state: SemanticState) =>
+          val errors = dynamicLabelExpressions.filter(!_.all).map { dynamicLabel =>
+            SemanticError(
+              s"""Dynamic labels using `$$any()` are not allowed in CREATE or MERGE.""".stripMargin,
+              dynamicLabel.position
+            )
+          }
+          SemanticCheckResult(state, errors)
+        }
+      } chain
+        SemanticExpressionCheck.simple(dynamicLabels) chain
+        SemanticPatternCheck.checkValidDynamicLabels(dynamicLabels, labelExpression.position) chain
+        SemanticExpressionCheck.expectType(CTString.covariant | CTList(CTString).covariant, dynamicLabels)
+    }
+  }
+
   def checkValidPropertyKeyNamesInReturnItems(returnItems: ReturnItems): SemanticCheck = {
     val propertyKeys = returnItems.items.collect { case item =>
       item.expression.folder.findAllByClass[Property] map (prop => prop.propertyKey)
@@ -851,12 +885,18 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
       case _                        => None
     }.headOption.map(message => SemanticError(message, pos))
 
-  def checkValidDynamicLabels(labelNames: Seq[Expression], pos: InputPosition): SemanticCheck =
+  def checkValidDynamicLabels(labelNames: Seq[Expression], pos: InputPosition): SemanticCheck = {
     labelNames.view.flatMap {
-      case StringLiteral(name) => checkValidTokenName(name)
-      case _: Null             => checkValidTokenName(null)
-      case _                   => None
+      case StringLiteral(name) => checkValidTokenName(name).toSeq
+      case ListLiteral(expressions) =>
+        expressions.collect {
+          case StringLiteral(name) => checkValidTokenName(name)
+          case _: Null             => checkValidTokenName(null)
+        }.flatten
+      case _: Null => checkValidTokenName(null)
+      case _       => Seq.empty
     }.headOption.map(message => SemanticError(message, pos))
+  }
 
   private def checkValidTokenName(name: String): Option[String] = {
     if (name == null || name.isEmpty || name.contains("\u0000")) {

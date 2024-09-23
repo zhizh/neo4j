@@ -42,6 +42,9 @@ import org.neo4j.cypher.internal.expressions.DecimalDoubleLiteral
 import org.neo4j.cypher.internal.expressions.DifferentRelationships
 import org.neo4j.cypher.internal.expressions.Disjoint
 import org.neo4j.cypher.internal.expressions.Divide
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicLabelOrRelTypeExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.ElementIdToLongId
 import org.neo4j.cypher.internal.expressions.EndsWith
 import org.neo4j.cypher.internal.expressions.Equals
@@ -169,6 +172,7 @@ import org.neo4j.cypher.internal.expressions.functions.Size
 import org.neo4j.cypher.internal.expressions.functions.StartNode
 import org.neo4j.cypher.internal.expressions.functions.Sum
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.util.DummyPosition
@@ -714,6 +718,30 @@ trait AstConstructionTestSupport {
 
   def labelLeaf(name: String, position: InputPosition = pos, containsIs: Boolean = false): LabelExpression =
     Leaf(LabelName(name)(position), containsIs)
+
+  def dynamicLabelLeaf(
+    expression: Expression,
+    position: InputPosition = pos,
+    all: Boolean = true,
+    containsIs: Boolean = false
+  ): LabelExpression =
+    DynamicLeaf(DynamicLabelExpression(expression, all = all)(position), containsIs)
+
+  def dynamicRelTypeLeaf(
+    expression: Expression,
+    position: InputPosition = pos,
+    all: Boolean = true,
+    containsIs: Boolean = false
+  ): LabelExpression =
+    DynamicLeaf(DynamicRelTypeExpression(expression, all = all)(position), containsIs)
+
+  def dynamicLabelOrRelTypeLeaf(
+    expression: Expression,
+    position: InputPosition = pos,
+    all: Boolean = true,
+    containsIs: Boolean = false
+  ): LabelExpression =
+    DynamicLeaf(DynamicLabelOrRelTypeExpression(expression, all = all)(position), containsIs)
 
   def labelRelTypeLeaf(name: String, position: InputPosition = pos, containsIs: Boolean = false): LabelExpression =
     Leaf(RelTypeName(name)(position), containsIs)

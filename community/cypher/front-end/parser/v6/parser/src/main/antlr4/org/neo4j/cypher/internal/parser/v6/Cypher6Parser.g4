@@ -319,6 +319,10 @@ nodeLabelsIs
 dynamicExpression
    : DOLLAR LPAREN expression RPAREN
    ;
+   
+dynamicAnyAllExpression
+   : DOLLAR (ALL | ANY)? LPAREN expression RPAREN
+   ;
 
 dynamicLabelType
    : COLON dynamicExpression
@@ -400,12 +404,14 @@ labelExpression2Is
 labelExpression1
    : LPAREN labelExpression4 RPAREN #ParenthesizedLabelExpression
    | PERCENT                        #AnyLabel
+   | dynamicAnyAllExpression        #DynamicLabel
    | symbolicNameString             #LabelName
    ;
 
 labelExpression1Is
    : LPAREN labelExpression4Is RPAREN #ParenthesizedLabelExpressionIs
    | PERCENT                          #AnyLabelIs
+   | dynamicAnyAllExpression          #DynamicLabelIs
    | symbolicLabelNameString          #LabelNameIs
    ;
 

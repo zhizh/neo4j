@@ -114,6 +114,8 @@ public abstract class AbstractCypher5AstBuilder implements Cypher5ParserListener
             case Cypher5Parser.RULE_nodeLabelsIs -> exitNodeLabelsIs((Cypher5Parser.NodeLabelsIsContext) ctx);
             case Cypher5Parser.RULE_dynamicExpression -> exitDynamicExpression(
                     (Cypher5Parser.DynamicExpressionContext) ctx);
+            case Cypher5Parser.RULE_dynamicAnyAllExpression -> exitDynamicAnyAllExpression(
+                    (Cypher5Parser.DynamicAnyAllExpressionContext) ctx);
             case Cypher5Parser.RULE_dynamicLabelType -> exitDynamicLabelType(
                     (Cypher5Parser.DynamicLabelTypeContext) ctx);
             case Cypher5Parser.RULE_labelType -> exitLabelType((Cypher5Parser.LabelTypeContext) ctx);

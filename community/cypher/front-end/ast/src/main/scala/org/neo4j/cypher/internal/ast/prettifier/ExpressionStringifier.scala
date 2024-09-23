@@ -122,9 +122,11 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonConjunct
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonDisjunction
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Conjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
+import org.neo4j.cypher.internal.label_expressions.LabelExpressionDynamicLeafExpression
 import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.logical.plans.CoerceToPredicate
 import org.neo4j.cypher.internal.util.InputPosition
@@ -637,9 +639,11 @@ private class DefaultExpressionStringifier(
   }
 
   private def stringifyLabelExpressionAtom(labelExpression: LabelExpression): String = labelExpression match {
-    case Leaf(name, _) => apply(name)
-    case _: Wildcard   => s"%"
-    case le            => s"(${stringifyLabelExpression(le)})"
+    case Leaf(name, _)                                                    => apply(name)
+    case DynamicLeaf(l: LabelExpressionDynamicLeafExpression, _) if l.all => s"$$all(${stringify(l.expression)})"
+    case DynamicLeaf(l: LabelExpressionDynamicLeafExpression, _)          => s"$$any(${stringify(l.expression)})"
+    case _: Wildcard                                                      => s"%"
+    case le                                                               => s"(${stringifyLabelExpression(le)})"
   }
 }
 

@@ -22,6 +22,8 @@ import org.neo4j.cypher.internal.ast.semantics.SemanticCheck.when
 import org.neo4j.cypher.internal.ast.semantics.SemanticCheckResult
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.ast.semantics.SemanticExpressionCheck
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.ElementTypeName
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.FunctionName
@@ -340,6 +342,14 @@ sealed trait CreateSingleLabelPropertyIndex extends CreateIndex {
   val (isNodeIndex: Boolean, entityIndexDescription: String) = entityName match {
     case _: LabelName   => (true, indexType.nodeDescription)
     case _: RelTypeName => (false, indexType.relDescription)
+    case _: DynamicLabelExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Labels here"
+      )
+    case _: DynamicRelTypeExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Relationships here"
+      )
   }
 
   override def semanticCheck: SemanticCheck =
@@ -809,6 +819,14 @@ private case class CreateConstraintCommand(
   val entityType: CypherType = entityName match {
     case _: LabelName   => CTNode
     case _: RelTypeName => CTRelationship
+    case _: DynamicLabelExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Labels here"
+      )
+    case _: DynamicRelTypeExpression =>
+      throw new IllegalStateException(
+        s"Did not expect Dynamic Relationships here"
+      )
   }
 
   override def semanticCheck: SemanticCheck = checkIfExistsDoAndOptions() chain super.semanticCheck
@@ -835,8 +853,10 @@ private case class CreatePropertyTypeConstraint(
   private val normalizedPropertyType: CypherType = CypherType.normalizeTypes(propertyType)
 
   val (entityType: CypherType, constraintType: CreateConstraintType) = entityName match {
-    case _: LabelName   => (CTNode, NodePropertyType(normalizedPropertyType))
-    case _: RelTypeName => (CTRelationship, RelationshipPropertyType(normalizedPropertyType))
+    case _: LabelName                => (CTNode, NodePropertyType(normalizedPropertyType))
+    case _: RelTypeName              => (CTRelationship, RelationshipPropertyType(normalizedPropertyType))
+    case _: DynamicLabelExpression   => (CTNode, NodePropertyType(normalizedPropertyType))
+    case _: DynamicRelTypeExpression => (CTRelationship, RelationshipPropertyType(normalizedPropertyType))
   }
 
   override def semanticCheck: SemanticCheck =

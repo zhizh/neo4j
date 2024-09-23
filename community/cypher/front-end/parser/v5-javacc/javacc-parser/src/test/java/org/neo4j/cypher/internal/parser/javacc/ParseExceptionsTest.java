@@ -25,7 +25,7 @@ public class ParseExceptionsTest {
     void removeSingleIdentifierToken() {
         int[][] expectedTokenSequence = {{CypherConstants.IDENTIFIER, CypherConstants.ACCESS}};
         Assertions.assertEquals(
-                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage),
+                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage, ""),
                 Arrays.asList("an identifier"));
     }
 
@@ -33,8 +33,16 @@ public class ParseExceptionsTest {
     void removeSingleIdentifierTokenWithParameter() {
         int[][] expectedTokenSequence = {{CypherConstants.IDENTIFIER, CypherConstants.ACCESS, CypherConstants.DOLLAR}};
         Assertions.assertEquals(
-                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage),
+                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage, ""),
                 Arrays.asList("a parameter", "an identifier"));
+    }
+
+    @Test
+    void removeSingleIdentifierTokenWithDynamicExpression() {
+        int[][] expectedTokenSequence = {{CypherConstants.IDENTIFIER, CypherConstants.ACCESS, CypherConstants.DOLLAR}};
+        Assertions.assertEquals(
+                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage, ":"),
+                Arrays.asList("\"$\"", "an identifier"));
     }
 
     @Test
@@ -42,7 +50,7 @@ public class ParseExceptionsTest {
         int[][] expectedTokenSequence = {{CypherConstants.IDENTIFIER, CypherConstants.ACCESS}, {CypherConstants.ACCESS}
         };
         Assertions.assertEquals(
-                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage),
+                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage, ""),
                 Arrays.asList("\"ACCESS\"", "an identifier"));
     }
 
@@ -53,7 +61,7 @@ public class ParseExceptionsTest {
             {CypherConstants.ACCESS, CypherConstants.UNSIGNED_DECIMAL_INTEGER}
         };
         Assertions.assertEquals(
-                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage),
+                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage, ""),
                 Arrays.asList("an expression"));
     }
 
@@ -64,7 +72,7 @@ public class ParseExceptionsTest {
             {CypherConstants.PLUS, CypherConstants.UNSIGNED_DECIMAL_INTEGER}
         };
         Assertions.assertEquals(
-                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage),
+                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage, ""),
                 Arrays.asList("\"+\"", "an expression"));
     }
 
@@ -74,7 +82,7 @@ public class ParseExceptionsTest {
             {CypherConstants.IDENTIFIER, CypherConstants.PLUS}, {CypherConstants.IDENTIFIER, CypherConstants.PLUS}
         };
         Assertions.assertEquals(
-                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage),
+                ParseExceptions.expected(expectedTokenSequence, CypherConstants.tokenImage, ""),
                 Arrays.asList("an expression"));
     }
 }

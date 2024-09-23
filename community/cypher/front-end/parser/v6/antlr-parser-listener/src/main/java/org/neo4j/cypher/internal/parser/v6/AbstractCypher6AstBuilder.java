@@ -112,6 +112,8 @@ public abstract class AbstractCypher6AstBuilder implements Cypher6ParserListener
             case Cypher6Parser.RULE_nodeLabelsIs -> exitNodeLabelsIs((Cypher6Parser.NodeLabelsIsContext) ctx);
             case Cypher6Parser.RULE_dynamicExpression -> exitDynamicExpression(
                     (Cypher6Parser.DynamicExpressionContext) ctx);
+            case Cypher6Parser.RULE_dynamicAnyAllExpression -> exitDynamicAnyAllExpression(
+                    (Cypher6Parser.DynamicAnyAllExpressionContext) ctx);
             case Cypher6Parser.RULE_dynamicLabelType -> exitDynamicLabelType(
                     (Cypher6Parser.DynamicLabelTypeContext) ctx);
             case Cypher6Parser.RULE_labelType -> exitLabelType((Cypher6Parser.LabelTypeContext) ctx);

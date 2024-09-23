@@ -139,6 +139,7 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonConjunct
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonDisjunction
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Conjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
@@ -445,6 +446,7 @@ object ClauseConverters {
       case Some(d: Disjunctions)               => fail(d)
       case Some(w: Wildcard)                   => fail(w)
       case Some(l @ Leaf(_, _))                => fail(l)
+      case Some(d @ DynamicLeaf(_, _))         => fail(d)
     }
   }
 

@@ -244,4 +244,61 @@ class OtherLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   ) {
     runSemanticAnalysis().errorMessages shouldBe empty
   }
+
+  test(
+    """
+      |MATCH (n)
+      |WITH [x IN [n] WHERE n:$(A)] AS labelCheck
+      |RETURN labelCheck
+      |""".stripMargin
+  ) {
+    runSemanticAnalysis().errorMessages shouldEqual Seq(
+      "Dynamic Label and Types are only allowed in MATCH, CREATE, MERGE, SET and REMOVE clauses."
+    )
+  }
+
+  test(
+    """
+      |MATCH (n)
+      |WHERE n:$(A)
+      |RETURN n
+      |""".stripMargin
+  ) {
+    runSemanticAnalysis().errorMessages shouldEqual Seq(
+      "Dynamic Label and Types are only allowed in MATCH, CREATE, MERGE, SET and REMOVE clauses."
+    )
+  }
+
+  test(
+    """
+      |MATCH (n)
+      |RETURN n:$(A)
+      |""".stripMargin
+  ) {
+    runSemanticAnalysis().errorMessages shouldEqual Seq(
+      "Dynamic Label and Types are only allowed in MATCH, CREATE, MERGE, SET and REMOVE clauses."
+    )
+  }
+
+  test(
+    """
+      |MATCH (n WHERE n:$(A))
+      |RETURN n
+      |""".stripMargin
+  ) {
+    runSemanticAnalysis().errorMessages shouldEqual Seq(
+      "Dynamic Label and Types are only allowed in MATCH, CREATE, MERGE, SET and REMOVE clauses."
+    )
+  }
+
+  test(
+    """
+      |MATCH ()-[r WHERE r:$(A)]->()
+      |RETURN r
+      |""".stripMargin
+  ) {
+    runSemanticAnalysis().errorMessages shouldEqual Seq(
+      "Dynamic Label and Types are only allowed in MATCH, CREATE, MERGE, SET and REMOVE clauses."
+    )
+  }
 }

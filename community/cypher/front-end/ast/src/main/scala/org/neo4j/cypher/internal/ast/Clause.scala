@@ -47,6 +47,7 @@ import org.neo4j.cypher.internal.ast.semantics.optionSemanticChecking
 import org.neo4j.cypher.internal.expressions.And
 import org.neo4j.cypher.internal.expressions.Ands
 import org.neo4j.cypher.internal.expressions.Contains
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.EndsWith
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.Expression
@@ -60,6 +61,7 @@ import org.neo4j.cypher.internal.expressions.In
 import org.neo4j.cypher.internal.expressions.InequalityExpression
 import org.neo4j.cypher.internal.expressions.IsNotNull
 import org.neo4j.cypher.internal.expressions.LabelOrRelTypeName
+import org.neo4j.cypher.internal.expressions.ListLiteral
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.MapExpression
 import org.neo4j.cypher.internal.expressions.MatchMode.DifferentRelationships
@@ -97,6 +99,7 @@ import org.neo4j.cypher.internal.expressions.functions.GraphByElementId
 import org.neo4j.cypher.internal.expressions.functions.GraphByName
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.util.ASTNode
@@ -646,22 +649,29 @@ trait SingleRelTypeCheck {
     }
   }
 
+  private def exactlyOneRelErrorMessage(relName: String): String =
+    s"Exactly one relationship type must be specified for $relName. Did you forget to prefix your relationship type with a ':'?"
+
+  private def tooManyTypesRelErrorMessage(maybePlain: String, exampleString: String, relName: String): String =
+    s"A single ${maybePlain}relationship type ${exampleString}must be specified for ${relName}"
+
   private def checkRelTypes(rel: RelationshipPattern): SemanticCheck =
     rel.labelExpression match {
-      case None => SemanticError(
-          s"Exactly one relationship type must be specified for ${self.name}. Did you forget to prefix your relationship type with a ':'?",
-          rel.position
-        )
+      case None                          => SemanticError(exactlyOneRelErrorMessage(self.name), rel.position)
       case Some(Leaf(RelTypeName(_), _)) => success
+      case Some(DynamicLeaf(DynamicRelTypeExpression(expr, _), _)) => expr match {
+          case ListLiteral(list) if list.isEmpty =>
+            SemanticError(exactlyOneRelErrorMessage(self.name), rel.position)
+          case ListLiteral(list) if list.size != 1 =>
+            SemanticError(tooManyTypesRelErrorMessage("", "", self.name), rel.position)
+          case _ => success
+        }
       case Some(other) =>
         val types = other.flatten.distinct
         val (maybePlain, exampleString) =
           if (types.size == 1) ("plain ", s"like `:${types.head.name}` ")
           else ("", "")
-        SemanticError(
-          s"A single ${maybePlain}relationship type ${exampleString}must be specified for ${self.name}",
-          rel.position
-        )
+        SemanticError(tooManyTypesRelErrorMessage(maybePlain, exampleString, self.name), rel.position)
     }
 }
 

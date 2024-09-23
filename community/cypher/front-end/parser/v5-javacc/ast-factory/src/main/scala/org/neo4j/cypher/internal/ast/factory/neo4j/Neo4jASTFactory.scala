@@ -357,6 +357,9 @@ import org.neo4j.cypher.internal.expressions.Contains
 import org.neo4j.cypher.internal.expressions.CountStar
 import org.neo4j.cypher.internal.expressions.DecimalDoubleLiteral
 import org.neo4j.cypher.internal.expressions.Divide
+import org.neo4j.cypher.internal.expressions.DynamicLabelExpression
+import org.neo4j.cypher.internal.expressions.DynamicLabelOrRelTypeExpression
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.EndsWith
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
@@ -458,6 +461,7 @@ import org.neo4j.cypher.internal.expressions.Xor
 import org.neo4j.cypher.internal.expressions.functions.Normalize
 import org.neo4j.cypher.internal.expressions.functions.Trim
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.parser.common.ast.factory.ASTExceptionFactory
@@ -3180,6 +3184,19 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
       case EntityType.NODE                 => Leaf(LabelName(n)(p), containsIs)
       case EntityType.NODE_OR_RELATIONSHIP => Leaf(LabelOrRelTypeName(n)(p), containsIs)
       case EntityType.RELATIONSHIP         => Leaf(RelTypeName(n)(p), containsIs)
+    }
+
+  override def dynamicLabelLeaf(
+    p: InputPosition,
+    n: Expression,
+    entityType: EntityType,
+    all: Boolean,
+    containsIs: Boolean
+  ): LabelExpression =
+    entityType match {
+      case EntityType.NODE                 => DynamicLeaf(DynamicLabelExpression(n, all)(p), containsIs)
+      case EntityType.NODE_OR_RELATIONSHIP => DynamicLeaf(DynamicLabelOrRelTypeExpression(n, all)(p), containsIs)
+      case EntityType.RELATIONSHIP         => DynamicLeaf(DynamicRelTypeExpression(n, all)(p), containsIs)
     }
 
   override def labelColonConjunction(

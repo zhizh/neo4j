@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonConjunct
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonDisjunction
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Conjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.InputPosition
@@ -52,8 +53,9 @@ sealed trait LabelExpression extends ASTNode {
   def containsGpmSpecificLabelExpression: Boolean = this match {
     case conj: ColonConjunction =>
       conj.lhs.containsGpmSpecificLabelExpression || conj.rhs.containsGpmSpecificLabelExpression
-    case _: Leaf => false
-    case _       => true
+    case _: Leaf        => false
+    case _: DynamicLeaf => false
+    case _              => true
   }
 
   def containsGpmSpecificRelTypeExpression: Boolean = this match {
@@ -61,8 +63,9 @@ sealed trait LabelExpression extends ASTNode {
       children.exists(_.containsGpmSpecificRelTypeExpression)
     case ColonDisjunction(lhs, rhs, _) =>
       lhs.containsGpmSpecificRelTypeExpression || rhs.containsGpmSpecificRelTypeExpression
-    case _: Leaf => false
-    case _       => true
+    case _: Leaf        => false
+    case _: DynamicLeaf => false
+    case _              => true
   }
 
   /**
@@ -71,14 +74,30 @@ sealed trait LabelExpression extends ASTNode {
    * leaf (:A)
    * colon conjunction (:A:B)
    * conjunction(:A&B)
+   * dynamicLabels (:$(A))
    */
   def containsMatchSpecificLabelExpression: Boolean = this match {
     case conj: ColonConjunction =>
       conj.lhs.containsMatchSpecificLabelExpression || conj.rhs.containsMatchSpecificLabelExpression
     case conj: Conjunctions =>
       conj.children.exists(expr => expr.containsMatchSpecificLabelExpression)
-    case _: Leaf => false
-    case _       => true
+    case _: Leaf        => false
+    case _: DynamicLeaf => false
+    case _              => true
+  }
+
+  /**
+   * Dynamic Label Expressions are only allowed in:
+   * CREATE, MATCH, MERGE, SET and REMOVE clauses at this time.
+   */
+  def containsDynamicLabelOrTypeExpression: Boolean = this match {
+    case conj: ColonConjunction =>
+      conj.lhs.containsDynamicLabelOrTypeExpression || conj.rhs.containsDynamicLabelOrTypeExpression
+    case conj: Conjunctions =>
+      conj.children.exists(expr => expr.containsDynamicLabelOrTypeExpression)
+    case _: Leaf        => false
+    case _: DynamicLeaf => true
+    case _              => false
   }
 
   def replaceColonSyntax: LabelExpression = this.endoRewrite(bottomUp({
@@ -93,6 +112,11 @@ sealed trait LabelExpression extends ASTNode {
 }
 
 trait LabelExpressionLeafName extends SymbolicName
+
+trait LabelExpressionDynamicLeafExpression extends ASTNode {
+  def expression: Expression
+  def all: Boolean
+}
 
 sealed trait BinaryLabelExpression extends LabelExpression {
   def lhs: LabelExpression
@@ -196,6 +220,20 @@ object LabelExpression {
     // We are breaking the implicit assumption that every ASTNode has a position as second parameter list.
     // That is why, we need to adjust the dup method's behaviour
     override def dup(children: Seq[AnyRef]): Leaf.this.type = children match {
+      case Seq(name, containsIs, _: InputPosition) => super.dup(Seq(name, containsIs))
+      case _                                       => super.dup(children)
+    }
+  }
+
+  case class DynamicLeaf(expr: LabelExpressionDynamicLeafExpression, override val containsIs: Boolean = false)
+      extends LabelExpression {
+    val position: InputPosition = expr.position
+
+    override def flatten: Seq[LabelExpressionLeafName] = Seq.empty // TODO
+
+    // We are breaking the implicit assumption that every ASTNode has a position as second parameter list.
+    // That is why, we need to adjust the dup method's behaviour
+    override def dup(children: Seq[AnyRef]): DynamicLeaf.this.type = children match {
       case Seq(name, containsIs, _: InputPosition) => super.dup(Seq(name, containsIs))
       case _                                       => super.dup(children)
     }

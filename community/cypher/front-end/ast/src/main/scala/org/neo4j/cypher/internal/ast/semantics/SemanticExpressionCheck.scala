@@ -424,6 +424,12 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
 
       case x: LabelExpressionPredicate =>
         check(ctx, x.entity) chain
+          when(x.labelExpression.containsDynamicLabelOrTypeExpression) {
+            error(
+              s"Dynamic Label and Types are only allowed in MATCH, CREATE, MERGE, SET and REMOVE clauses.",
+              x.position
+            )
+          } chain
           expectType(CTNode.covariant | CTRelationship.covariant, x.entity) chain
           checkLabelExpressionForLegacyRelationshipTypeDisjunction(x.entity, x.labelExpression) ifOkChain
           checkLabelExpression(None, x.labelExpression) chain

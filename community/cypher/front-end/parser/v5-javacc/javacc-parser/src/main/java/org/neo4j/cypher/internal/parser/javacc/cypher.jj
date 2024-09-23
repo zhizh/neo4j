@@ -1601,12 +1601,12 @@ STATEMENTS Statements() throws Exception:
         Token t = e.currentToken.next;
         if ( e.getMessage().contains( "Encountered \"<EOF>\"" ) )
         {
-            throw exceptionFactory.syntaxException( t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage ), e,
+            throw exceptionFactory.syntaxException( t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage, e.currentToken.image ), e,
                                                    t.endOffset + 1, t.endLine, t.endColumn + 1 );
         }
         else
         {
-            throw exceptionFactory.syntaxException( t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage ), e,
+            throw exceptionFactory.syntaxException( t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage, e.currentToken.image ), e,
                                                    t.beginOffset, t.beginLine, t.beginColumn );
         }
     } catch ( InvalidUnicodeLiteral e ) {
@@ -2753,7 +2753,10 @@ NODE_PATTERN NodePatternComplex(Token t) throws Exception:
        LOOKAHEAD(LabelExpression(astFactory.nodeType()) <WHERE> Expression() <RPAREN>)
             labelExpression = LabelExpression(astFactory.nodeType())
             <WHERE> predicate=Expression()
-       | LOOKAHEAD(2) v=Variable() properties=Properties() ( <WHERE> predicate=Expression() )?
+       | LOOKAHEAD(<IS> <DOLLAR> (<ANY> | <ALL>)? <LPAREN>) labelExpression = LabelExpression(astFactory.nodeType())
+                                                                        ( properties=Properties() )?
+                                                                        ( <WHERE> predicate=Expression() )?
+       | LOOKAHEAD(3) v=Variable() properties=Properties() ( <WHERE> predicate=Expression() )?
        | LOOKAHEAD(Variable() <WHERE> Expression() <RPAREN>) v=Variable() <WHERE> predicate=Expression()
        | LOOKAHEAD(<WHERE> Expression() <RPAREN>) <WHERE> predicate=Expression()
        | LOOKAHEAD(3) v=Variable()
@@ -2883,7 +2886,7 @@ REMOVE_ITEM RemoveNodeLabelsIs(VARIABLE v) throws Exception:
     }
 }
 
-EXPRESSION LabelExpressionPredicate(EXPRESSION subject) :
+EXPRESSION LabelExpressionPredicate(EXPRESSION subject) throws Exception :
 {
     LABEL_EXPRESSION exp = null;
 }
@@ -3120,6 +3123,10 @@ REL_PATTERN RelationshipPatternComplex(Token firstToken, boolean left) throws Ex
             labelExpression = LabelExpression(astFactory.relationshipType())
             ( pathLength=PathLength() )?
             <WHERE> predicate=Expression()
+       | LOOKAHEAD(<IS> <DOLLAR> (<ANY> | <ALL>)? <LPAREN>) labelExpression = LabelExpression(astFactory.relationshipType())
+                                                                        ( pathLength=PathLength() )?
+                                                                        ( properties=Properties() )?
+                                                                        ( <WHERE> predicate=Expression() )?
        | LOOKAHEAD(v=Variable() ( PathLength() )? properties=Properties()) v=Variable()
             ( pathLength=PathLength() )?
             properties=Properties()
@@ -3218,7 +3225,7 @@ PATH_LENGTH PathLengthLiteral( Token t ) :
 
 // LABEL EXPRESSIONS
 
-LABEL_EXPRESSION LabelExpression( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression( ENTITY_TYPE type ) throws Exception :
 {
     LABEL_EXPRESSION e;
 }
@@ -3245,7 +3252,7 @@ LABEL_EXPRESSION LabelExpression( ENTITY_TYPE type ) :
     }
 }
 
-LABEL_EXPRESSION LabelExpression4( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression4( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3267,7 +3274,7 @@ LABEL_EXPRESSION LabelExpression4( ENTITY_TYPE type ) :
 }
 
 
-LABEL_EXPRESSION LabelExpression4Is( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression4Is( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3287,7 +3294,7 @@ LABEL_EXPRESSION LabelExpression4Is( ENTITY_TYPE type ) :
         return e;
     }
 }
-LABEL_EXPRESSION LabelExpression4ExpectingBar( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression4ExpectingBar( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3310,7 +3317,7 @@ LABEL_EXPRESSION LabelExpression4ExpectingBar( ENTITY_TYPE type ) :
     }
 }
 
-LABEL_EXPRESSION LabelExpression4ExpectingBarIs( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression4ExpectingBarIs( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3333,7 +3340,7 @@ LABEL_EXPRESSION LabelExpression4ExpectingBarIs( ENTITY_TYPE type ) :
     }
 }
 
-LABEL_EXPRESSION LabelExpression3( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression3( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3355,7 +3362,7 @@ LABEL_EXPRESSION LabelExpression3( ENTITY_TYPE type ) :
 }
 
 
-LABEL_EXPRESSION LabelExpression3Is( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression3Is( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3376,7 +3383,7 @@ LABEL_EXPRESSION LabelExpression3Is( ENTITY_TYPE type ) :
     }
 }
 
-LABEL_EXPRESSION LabelExpression2( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression2( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3391,7 +3398,7 @@ LABEL_EXPRESSION LabelExpression2( ENTITY_TYPE type ) :
     }
 }
 
-LABEL_EXPRESSION LabelExpression2Is( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression2Is( ENTITY_TYPE type ) throws Exception :
 {
     Token t;
     LABEL_EXPRESSION e;
@@ -3406,17 +3413,20 @@ LABEL_EXPRESSION LabelExpression2Is( ENTITY_TYPE type ) :
     }
 }
 
-LABEL_EXPRESSION LabelExpression1( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression1( ENTITY_TYPE type ) throws Exception :
 {
     LABEL_EXPRESSION e = null;
     String label = null;
     Token t;
     labelExpressionStack.push(ExpectBar.DO_NOT_EXPECT_BAR);
+    EXPRESSION dynamicExpression;
+    Boolean all = true;
 }
 {
     (
         <LPAREN> e=LabelExpression4(type) <RPAREN>
         | t = <PERCENT> { e = astFactory.labelWildcard( pos ( t ), false ); }
+        | t = <DOLLAR> (<ALL> | <ANY> { all = false; })? <LPAREN> dynamicExpression = Expression() <RPAREN> { e = astFactory.dynamicLabelLeaf( pos ( t ), dynamicExpression, type, all, false ); }
         | t=SymbolicNameString() { e = astFactory.labelLeaf( pos ( t ), t.image, type, false ); }
     )
     {
@@ -3425,17 +3435,20 @@ LABEL_EXPRESSION LabelExpression1( ENTITY_TYPE type ) :
     }
 }
 
-LABEL_EXPRESSION LabelExpression1Is( ENTITY_TYPE type ) :
+LABEL_EXPRESSION LabelExpression1Is( ENTITY_TYPE type ) throws Exception :
 {
     LABEL_EXPRESSION e = null;
     String label = null;
     Token t;
     labelExpressionStack.push(ExpectBar.DO_NOT_EXPECT_BAR);
+    EXPRESSION dynamicExpression;
+    Boolean all = true;
 }
 {
     (
         <LPAREN> e=LabelExpression4Is(type) <RPAREN>
         | t = <PERCENT> { e = astFactory.labelWildcard( pos ( t ), true ); }
+        | t = <DOLLAR> (<ALL> | <ANY> { all = false; })? <LPAREN> dynamicExpression = Expression() <RPAREN> { e = astFactory.dynamicLabelLeaf( pos ( t ), dynamicExpression, type, all, true ); }
         | t=SymbolicLabelNameString() { e = astFactory.labelLeaf( pos ( t ), t.image, type, true ); }
     )
     {
