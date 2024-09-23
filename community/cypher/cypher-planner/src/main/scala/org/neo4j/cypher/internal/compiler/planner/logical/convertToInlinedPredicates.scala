@@ -47,6 +47,22 @@ import org.neo4j.cypher.internal.util.topDown
 
 object convertToInlinedPredicates {
 
+  sealed trait Mode {
+    def predicatesOutsideRepetition: Seq[Expression]
+  }
+
+  object Mode {
+
+    case object Trail extends Mode {
+      override def predicatesOutsideRepetition: Seq[Expression] = Seq.empty
+    }
+
+    /**
+    * @param predicatesOutsideRepetition - the predicates on outerStartNode and outerEndNode
+    */
+    case class Shortest(override val predicatesOutsideRepetition: Seq[Expression]) extends Mode
+  }
+
   /**
    * This method converts the inner predicates of a qpp into node/relationship varlength predicates.
    * This assumes that there is a single relationship pattern within the QPP. This needs to be validated by rewriters themselves since they all have different representations and criteria.
@@ -61,8 +77,8 @@ object convertToInlinedPredicates {
    * @param predicatesToInline - the predicates on the innerStartNode, innerEndNode and innerRelationship that have to be converted to inlined predicates.
    * @param pathRepetition - the number of times the relationship pattern should repeat
    * @param pathDirection - the direction of the relationship in the pattern
-   * @param predicatesOutsideRepetition - the predicates on outerStartNode and outerEndNode
    * @param anonymousVariableNameGenerator - a variable name generator for both node and relationship predicates
+   * @param mode - different rules apply for rewriting Trail or Shortest
    * @return maybeInlinedPredicates - inlined node and relationship predicates on new anonymous variables. Returns None if the predicates are not inlinable.
    */
   def apply(
@@ -74,15 +90,16 @@ object convertToInlinedPredicates {
     predicatesToInline: Seq[Expression],
     pathRepetition: Repetition,
     pathDirection: SemanticDirection,
-    predicatesOutsideRepetition: Seq[Expression],
-    anonymousVariableNameGenerator: AnonymousVariableNameGenerator
+    anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
+    mode: Mode
   ): Option[InlinedPredicates] = {
     val anonymousNodeVariable = varFor(anonymousVariableNameGenerator.nextName)
     val anonymousRelationshipVariable = varFor(anonymousVariableNameGenerator.nextName)
 
-    def isAPredicateOnInnerRelationButNotNodes(predicate: Expression): Boolean = predicate.dependencies(
-      innerRelationship
-    ) && !predicate.dependencies.contains(innerEndNode) && !predicate.dependencies.contains(innerStartNode)
+    def isAPredicateOnInnerRelationButNotNodes(predicate: Expression): Boolean =
+      Set(innerStartNode, innerEndNode, innerRelationship)
+        .intersect(predicate.dependencies) == Set(innerRelationship)
+
     def isAPredicateOnInnerVariables(predicate: Expression): Boolean =
       predicate.dependencies.exists(Set(innerStartNode, innerEndNode, innerRelationship).contains)
 
@@ -90,7 +107,7 @@ object convertToInlinedPredicates {
       innerPredicate: Expression,
       outerVariable: LogicalVariable
     ): Boolean = {
-      predicatesOutsideRepetition.contains(innerPredicate.replaceAllOccurrencesBy(
+      mode.predicatesOutsideRepetition.contains(innerPredicate.replaceAllOccurrencesBy(
         innerPredicate.dependencies.head,
         outerVariable
       ))
@@ -113,62 +130,55 @@ object convertToInlinedPredicates {
       // 1. (outerStartNode)((innerStartNode{prop:1})--(innerEndNode))*(outerEndNode{prop:1})
       // 2. (outerStartNode)((innerStartNode{prop:1})--(innerEndNode{prop:1}))+(outerEndNode)
       // 3. (outerStartNode{prop:1})((innerStartNode{prop:1})--(innerEndNode{prop:1}))*(outerEndNode)
-      case Seq(`innerStartNode`) => outsideContainsSamePredicateWithVariable(
-          innerPredicate,
-          outerEndNode
-        ) || (innerPredicatesContainsSamePredicateWithVariable(
-          innerPredicate,
-          innerEndNode
-        ) && (pathRepetition.min > 0 || outsideContainsSamePredicateWithVariable(innerPredicate, outerStartNode)))
+      case Seq(`innerStartNode`) =>
+        outsideContainsSamePredicateWithVariable(innerPredicate, outerEndNode) ||
+        (innerPredicatesContainsSamePredicateWithVariable(innerPredicate, innerEndNode) &&
+          (pathRepetition.min > 0 || outsideContainsSamePredicateWithVariable(innerPredicate, outerStartNode)))
 
       // predicate {prop: 1} is applicable on all nodes if
       // 1. (outerStartNode{prop:1})((innerStartNode)--(innerEndNode{prop:1}))*(outerEndNode)
       // 2. (outerStartNode)((innerStartNode{prop:1})--(innerEndNode{prop:1}))+(outerEndNode)
       // 3. (outerStartNode)((innerStartNode{prop:1})--(innerEndNode{prop:1}))*(outerEndNode{prop:1})
-      case Seq(`innerEndNode`) => outsideContainsSamePredicateWithVariable(
-          innerPredicate,
-          outerStartNode
-        ) || (innerPredicatesContainsSamePredicateWithVariable(
-          innerPredicate,
-          innerStartNode
-        ) && (pathRepetition.min > 0 || outsideContainsSamePredicateWithVariable(innerPredicate, outerEndNode)))
+      case Seq(`innerEndNode`) =>
+        outsideContainsSamePredicateWithVariable(innerPredicate, outerStartNode) ||
+        (innerPredicatesContainsSamePredicateWithVariable(innerPredicate, innerStartNode) &&
+          (pathRepetition.min > 0 || outsideContainsSamePredicateWithVariable(innerPredicate, outerEndNode)))
       case _ => false
     }
 
     def rewriteToRelationshipPredicate(nodePredicate: Expression): Option[Expression] = {
-      val maybeRewrittenRelationshipPredicate = pathDirection match {
-        case OUTGOING => Some(nodePredicate.endoRewrite(NodeToRelationshipExpressionRewriter(
+      val rewrittenRelationshipPredicate = pathDirection match {
+        case OUTGOING => nodePredicate.endoRewrite(NodeToRelationshipExpressionRewriter(
             startNode = innerStartNode,
             globalRelationshipVariable = innerRelationship,
             endNode = innerEndNode,
             perIterationRelationshipVariable = anonymousRelationshipVariable,
             nameGenerator = anonymousVariableNameGenerator
-          )))
+          ))
         case INCOMING =>
-          Some(nodePredicate.endoRewrite(NodeToRelationshipExpressionRewriter(
+          nodePredicate.endoRewrite(NodeToRelationshipExpressionRewriter(
             startNode = innerEndNode,
             globalRelationshipVariable = innerRelationship,
             endNode = innerStartNode,
             perIterationRelationshipVariable = anonymousRelationshipVariable,
             nameGenerator = anonymousVariableNameGenerator
-          )))
+          ))
         case BOTH =>
           // Replace the innerStartNode by TraversalEndpoint(newAnonymousVariable, From)
           // Replace the innerEndNode by TraversalEndpoint(newAnonymousVariable, To)
-          Some(nodePredicate.endoRewrite(NodeToRelationshipExpressionRewriter(
+          nodePredicate.endoRewrite(NodeToRelationshipExpressionRewriter(
             startNode = innerStartNode,
             globalRelationshipVariable = innerRelationship,
             endNode = innerEndNode,
             perIterationRelationshipVariable = anonymousRelationshipVariable,
             nameGenerator = anonymousVariableNameGenerator,
             isDirected = false
-          )))
+          ))
       }
-      maybeRewrittenRelationshipPredicate.filter(pred => {
-        val containsTraversalEndpointExpression = pred.folder.treeFind[Expression] {
+      Option(rewrittenRelationshipPredicate).filter(pred => {
+        pred.dependencies.contains(anonymousRelationshipVariable) || pred.folder.treeExists {
           case _: TraversalEndpoint => true
         }
-        pred.dependencies.contains(anonymousRelationshipVariable) || containsTraversalEndpointExpression.isDefined
       })
     }
 
@@ -179,37 +189,26 @@ object convertToInlinedPredicates {
             anonymousNodeVariable,
             predicate
               .replaceAllOccurrencesBy(innerStartNode, anonymousNodeVariable)
-              .replaceAllOccurrencesBy(
-                innerEndNode,
-                anonymousNodeVariable
-              )
+              .replaceAllOccurrencesBy(innerEndNode, anonymousNodeVariable)
           ))
         } else if (isAPredicateOnInnerRelationButNotNodes(predicate)) {
           Some(VariablePredicate(
             anonymousRelationshipVariable,
             predicate.replaceAllOccurrencesBy(innerRelationship, anonymousRelationshipVariable)
           ))
-        } else if (
-          isAPredicateOnInnerVariables(
-            predicate
-          )
-        ) {
+        } else if (isAPredicateOnInnerVariables(predicate)) {
           rewriteToRelationshipPredicate(predicate)
-            .flatMap(rewrittenPred =>
-              Some(VariablePredicate(anonymousRelationshipVariable, rewrittenPred))
-            )
+            .map(VariablePredicate(anonymousRelationshipVariable, _))
         } else {
           None
         }
       })
-    inlinedPredicates.flatMap(inlinedPredicates => {
+
+    inlinedPredicates.map { inlinedPredicates =>
       val (nodePredicates, relationshipPredicates) =
         inlinedPredicates.toSeq.partition(_.variable == anonymousNodeVariable)
-      Some(InlinedPredicates(
-        nodePredicates.distinct,
-        relationshipPredicates
-      ))
-    })
+      InlinedPredicates(nodePredicates.distinct, relationshipPredicates)
+    }
   }
 }
 

@@ -253,8 +253,10 @@ case class StatefulShortestToFindShortestRewriter(
         predicatesToInline = nodePredicates ++ relationshipPredicates.map(rel =>
           rel.predicate.replaceAllOccurrencesBy(rel.variable, innerRelationshipVariable)
         ),
-        predicatesOutsideRepetition =
-          solveds.get(statefulShortestPath.source.id).asSinglePlannerQuery.queryGraph.selections.flatPredicates,
+        mode = convertToInlinedPredicates.Mode.Shortest(
+          predicatesOutsideRepetition =
+            solveds.get(statefulShortestPath.source.id).asSinglePlannerQuery.queryGraph.selections.flatPredicates
+        ),
         pathDirection = qpp.patternRelationships.head.dir,
         pathRepetition = qpp.repetition,
         anonymousVariableNameGenerator = anonymousVariableNameGenerator

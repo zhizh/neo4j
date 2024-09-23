@@ -26,6 +26,7 @@ import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.expressions.SemanticDirection.BOTH
 import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
+import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint.From
@@ -34,15 +35,9 @@ import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.Repetition
 import org.neo4j.cypher.internal.util.UpperBound.Unlimited
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.scalatest.OptionValues
 
-class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstructionTestSupport {
-
-  private case class Input(
-    innerPredicates: Seq[Expression] = Seq.empty,
-    outerPredicates: Seq[Expression] = Seq.empty,
-    minRep: Int = 0,
-    direction: SemanticDirection = BOTH
-  )
+class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstructionTestSupport with OptionValues {
 
   private val outerStart = v"outerStart"
   private val innerStart = v"innerStart"
@@ -50,115 +45,135 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
   private val outerEnd = v"outerEnd"
   private val rel = v"rel"
 
-  private def rewrite(input: Input): Option[InlinedPredicates] = convertToInlinedPredicates(
-    outerStart,
-    innerStart,
-    innerEnd,
-    outerEnd,
-    rel,
-    predicatesToInline = input.innerPredicates,
-    pathRepetition = Repetition(min = input.minRep, max = Unlimited),
-    pathDirection = input.direction,
-    predicatesOutsideRepetition = input.outerPredicates,
-    anonymousVariableNameGenerator = new AnonymousVariableNameGenerator()
-  )
+  private object TO {
+
+    object prop {
+      def equalsOne(tempVar: Variable): Expression = traversalEndpointPropEqualsOne(tempVar, To)
+    }
+  }
+
+  private object FROM {
+
+    object prop {
+      def equalsOne(tempVar: Variable): Expression = traversalEndpointPropEqualsOne(tempVar, From)
+    }
+  }
+
+  private def traversalEndpointPropEqualsOne(tempVar: Variable, endpoint: TraversalEndpoint.Endpoint): Expression = {
+    equals(
+      propExpression(TraversalEndpoint(tempVar, endpoint), "prop"),
+      literalInt(1)
+    )
+  }
+
+  private def rewrite(
+    innerPredicates: Seq[Expression] = Seq.empty,
+    minRep: Int = 0,
+    direction: SemanticDirection = BOTH,
+    mode: convertToInlinedPredicates.Mode = convertToInlinedPredicates.Mode.Trail
+  ): Option[InlinedPredicates] = {
+    convertToInlinedPredicates(
+      outerStart,
+      innerStart,
+      innerEnd,
+      outerEnd,
+      rel,
+      predicatesToInline = innerPredicates,
+      pathRepetition = Repetition(min = minRep, max = Unlimited),
+      pathDirection = direction,
+      mode = mode,
+      anonymousVariableNameGenerator = new AnonymousVariableNameGenerator()
+    )
+  }
 
   test("Rewrites (outerStart{prop:1})((innerStart)--(innerEnd))+(outerEnd{prop:1})") {
-    rewrite(Input(
-      outerPredicates = Seq(propEquality("outerStart", "prop", 1), propEquality("outerEnd", "prop", 1)),
-      minRep = 1
-    )) shouldBe Some(InlinedPredicates())
+    rewrite(minRep = 1).value shouldBe InlinedPredicates()
   }
 
   test("Rewrites (outerStart)((innerStart{prop:1})--(innerEnd{prop:1}))+(outerEnd)") {
-    rewrite(Input(
+    rewrite(
       innerPredicates = Seq(propEquality("innerStart", "prop", 1), propEquality("innerEnd", "prop", 1)),
       minRep = 1
-    )) shouldEqual Some(InlinedPredicates(nodePredicates =
+    ).value shouldEqual InlinedPredicates(nodePredicates =
       Seq(VariablePredicate(v"  UNNAMED0", propEquality("  UNNAMED0", "prop", 1)))
-    ))
+    )
   }
 
   test("Rewrites (outerStart)((innerStart{prop:1})--(innerEnd))+(outerEnd{prop:1})") {
-    rewrite(Input(
+    rewrite(
       innerPredicates = Seq(propEquality("innerStart", "prop", 1)),
-      outerPredicates = Seq(propEquality("outerEnd", "prop", 1)),
       minRep = 1
-    )) shouldEqual Some(InlinedPredicates(nodePredicates =
-      Seq(VariablePredicate(v"  UNNAMED0", propEquality("  UNNAMED0", "prop", 1)))
-    ))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", FROM.prop.equalsOne(v"  UNNAMED2")))
+    )
   }
 
   test("Rewrites (outerStart)((innerStart{prop:1})--(innerEnd))*(outerEnd{prop:1})") {
-    rewrite(Input(
-      innerPredicates = Seq(propEquality("innerStart", "prop", 1)),
-      outerPredicates = Seq(propEquality("outerEnd", "prop", 1))
-    )) shouldEqual Some(InlinedPredicates(nodePredicates =
-      Seq(VariablePredicate(v"  UNNAMED0", propEquality("  UNNAMED0", "prop", 1)))
-    ))
+    rewrite(
+      innerPredicates = Seq(propEquality("innerStart", "prop", 1))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", FROM.prop.equalsOne(v"  UNNAMED2")))
+    )
   }
 
   test("Rewrites (outerStart{prop:1})((innerStart)--(innerEnd{prop:1}))*(outerEnd)") {
-    rewrite(Input(
-      innerPredicates = Seq(propEquality("innerEnd", "prop", 1)),
-      outerPredicates = Seq(propEquality("outerStart", "prop", 1))
-    )) shouldEqual Some(InlinedPredicates(nodePredicates =
-      Seq(VariablePredicate(v"  UNNAMED0", propEquality("  UNNAMED0", "prop", 1)))
-    ))
+    rewrite(
+      innerPredicates = Seq(propEquality("innerEnd", "prop", 1))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", TO.prop.equalsOne(v"  UNNAMED2")))
+    )
   }
 
   test("Rewrites (outerStart)((innerStart)-[rel{prop:1}]-(innerEnd))*(outerEnd)") {
-    rewrite(Input(
+    rewrite(
       innerPredicates = Seq(propEquality("rel", "prop", 1))
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
-        Seq(VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)))
-      ))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)))
+    )
   }
 
   test(
     "Rewrite (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE innerStart.prop <> innerEnd.prop)*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(propEquality("rel", "prop", 1), notEquals(prop("innerStart", "prop"), prop("innerEnd", "prop"))),
       direction = OUTGOING
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
-        Seq(
-          VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
-          VariablePredicate(
-            v"  UNNAMED1",
-            notEquals(prop(startNode("  UNNAMED1"), "prop"), prop(endNode("  UNNAMED1"), "prop"))
-          )
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(
+        VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
+        VariablePredicate(
+          v"  UNNAMED1",
+          notEquals(prop(startNode("  UNNAMED1"), "prop"), prop(endNode("  UNNAMED1"), "prop"))
         )
-      ))
+      )
+    )
   }
 
   test(
     "Rewrite (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE innerStart.prop <> innerEnd.prop)+(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(propEquality("rel", "prop", 1), notEquals(prop("innerStart", "prop"), prop("innerEnd", "prop"))),
       direction = OUTGOING,
-      minRep = 1
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
-        Seq(
-          VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
-          VariablePredicate(
-            v"  UNNAMED1",
-            notEquals(prop(startNode("  UNNAMED1"), "prop"), prop(endNode("  UNNAMED1"), "prop"))
-          )
+      minRep = 1,
+      mode = convertToInlinedPredicates.Mode.Shortest(Seq.empty)
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(
+        VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
+        VariablePredicate(
+          v"  UNNAMED1",
+          notEquals(prop(startNode("  UNNAMED1"), "prop"), prop(endNode("  UNNAMED1"), "prop"))
         )
-      ))
+      )
+    )
   }
 
   test(
     "Rewrite (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE innerStart.prop = 2 AND innerEnd.prop = 3)*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(
           propEquality("rel", "prop", 1),
@@ -166,20 +181,19 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
           propEquality("innerEnd", "prop", 3)
         ),
       direction = OUTGOING
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
-        Seq(
-          VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
-          VariablePredicate(v"  UNNAMED1", equals(prop(startNode("  UNNAMED1"), "prop"), literalInt(2))),
-          VariablePredicate(v"  UNNAMED1", equals(prop(endNode("  UNNAMED1"), "prop"), literalInt(3)))
-        )
-      ))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(
+        VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
+        VariablePredicate(v"  UNNAMED1", equals(prop(startNode("  UNNAMED1"), "prop"), literalInt(2))),
+        VariablePredicate(v"  UNNAMED1", equals(prop(endNode("  UNNAMED1"), "prop"), literalInt(3)))
+      )
+    )
   }
 
   test(
     "Rewrites (outerStart)((innerStart)<-[rel{prop:1}]-(innerEnd) WHERE innerStart.prop = 2 AND innerEnd.prop = 3)*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(
           propEquality("rel", "prop", 1),
@@ -187,60 +201,60 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
           propEquality("innerEnd", "prop", 3)
         ),
       direction = INCOMING
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
-        Seq(
-          VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
-          VariablePredicate(v"  UNNAMED1", equals(prop(endNode("  UNNAMED1"), "prop"), literalInt(2))),
-          VariablePredicate(v"  UNNAMED1", equals(prop(startNode("  UNNAMED1"), "prop"), literalInt(3)))
-        )
-      ))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(
+        VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
+        VariablePredicate(v"  UNNAMED1", equals(prop(endNode("  UNNAMED1"), "prop"), literalInt(2))),
+        VariablePredicate(v"  UNNAMED1", equals(prop(startNode("  UNNAMED1"), "prop"), literalInt(3)))
+      )
+    )
   }
 
   test(
     "Rewrites (outerStart)((innerStart)-[rel]->(innerEnd) WHERE innerEnd.prop = outerStart.prop)*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(
           equals(prop("innerEnd", "prop"), prop("outerStart", "prop"))
         ),
       direction = OUTGOING
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
+    ).value shouldEqual
+      InlinedPredicates(relationshipPredicates =
         Seq(
           VariablePredicate(v"  UNNAMED1", equals(prop(endNode("  UNNAMED1"), "prop"), prop("outerStart", "prop")))
         )
-      ))
+      )
   }
 
   test(
     "Rewrites (outerStart)((innerStart)-[rel]->(innerEnd) WHERE innerStart.prop = outerEnd.prop)*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(
           equals(prop("innerStart", "prop"), prop("outerEnd", "prop"))
         ),
       direction = OUTGOING
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
+    ).value shouldEqual
+      InlinedPredicates(relationshipPredicates =
         Seq(
           VariablePredicate(v"  UNNAMED1", equals(prop(startNode("  UNNAMED1"), "prop"), prop("outerEnd", "prop")))
         )
-      ))
+      )
   }
 
   test(
     "Rewrites (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE innerStart.prop <> innerEnd.prop)+(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(propEquality("rel", "prop", 1), notEquals(prop("innerStart", "prop"), prop("innerEnd", "prop"))),
       direction = OUTGOING,
-      minRep = 1
-    )) shouldEqual
-      Some(InlinedPredicates(relationshipPredicates =
+      minRep = 1,
+      mode = convertToInlinedPredicates.Mode.Shortest(Seq.empty)
+    ).value shouldEqual
+      InlinedPredicates(relationshipPredicates =
         Seq(
           VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
           VariablePredicate(
@@ -248,108 +262,78 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
             notEquals(prop(startNode("  UNNAMED1"), "prop"), prop(endNode("  UNNAMED1"), "prop"))
           )
         )
-      ))
+      )
   }
 
-  test(
-    "Rewrite (outerStart{prop:1})((innerStart{prop:1})--(innerEnd{prop:1}))*(outerEnd)"
-  ) {
-    rewrite(Input(
+  test("Rewrite (outerStart{prop:1})((innerStart{prop:1})--(innerEnd{prop:1}))*(outerEnd)") {
+    rewrite(
       innerPredicates =
-        Seq(propEquality("innerStart", "prop", 1), propEquality("innerEnd", "prop", 1)),
-      outerPredicates = Seq(propEquality("outerStart", "prop", 1))
-    )) shouldEqual
-      Some(InlinedPredicates(nodePredicates =
+        Seq(propEquality("innerStart", "prop", 1), propEquality("innerEnd", "prop", 1))
+    ).value shouldEqual
+      InlinedPredicates(relationshipPredicates =
         Seq(
-          VariablePredicate(v"  UNNAMED0", propEquality("  UNNAMED0", "prop", 1))
+          VariablePredicate(v"  UNNAMED1", FROM.prop.equalsOne(v"  UNNAMED2")),
+          VariablePredicate(v"  UNNAMED1", TO.prop.equalsOne(v"  UNNAMED3"))
         )
-      ))
+      )
   }
 
   test(
     "Rewrite (outerStart)((innerStart{prop:1})--(innerEnd{prop:1}))*(outerEnd{prop:1})"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
-        Seq(propEquality("innerStart", "prop", 1), propEquality("innerEnd", "prop", 1)),
-      outerPredicates = Seq(propEquality("outerEnd", "prop", 1))
-    )) shouldEqual
-      Some(InlinedPredicates(nodePredicates =
+        Seq(propEquality("innerStart", "prop", 1), propEquality("innerEnd", "prop", 1))
+    ).value shouldEqual
+      InlinedPredicates(relationshipPredicates =
         Seq(
-          VariablePredicate(v"  UNNAMED0", propEquality("  UNNAMED0", "prop", 1))
+          VariablePredicate(v"  UNNAMED1", FROM.prop.equalsOne(v"  UNNAMED2")),
+          VariablePredicate(v"  UNNAMED1", TO.prop.equalsOne(v"  UNNAMED3"))
         )
-      ))
+      )
   }
 
   test(
     "Rewrite (outerStart)((innerStart{prop:1})--(innerEnd{prop:1}))*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates = Seq(propEquality("innerStart", "prop", 1), propEquality("innerEnd", "prop", 1))
-    )) shouldBe Some(InlinedPredicates(relationshipPredicates =
+    ).value shouldBe InlinedPredicates(relationshipPredicates =
       Seq(
-        VariablePredicate(
-          v"  UNNAMED1",
-          equals(
-            propExpression(TraversalEndpoint(v"  UNNAMED2", From), "prop"),
-            literalInt(1)
-          )
-        ),
-        VariablePredicate(
-          v"  UNNAMED1",
-          equals(
-            propExpression(TraversalEndpoint(v"  UNNAMED3", To), "prop"),
-            literalInt(1)
-          )
-        )
+        VariablePredicate(v"  UNNAMED1", FROM.prop.equalsOne(v"  UNNAMED2")),
+        VariablePredicate(v"  UNNAMED1", TO.prop.equalsOne(v"  UNNAMED3"))
       )
-    ))
+    )
   }
 
   test(
     "Rewrite (outerStart)((innerStart)--(innerEnd{prop:1}))+(outerEnd{prop:1})"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates = Seq(propEquality("innerEnd", "prop", 1)),
-      outerPredicates = Seq(propEquality("outerEnd", "prop", 1)),
       minRep = 1
-    )) shouldBe Some(InlinedPredicates(relationshipPredicates =
-      Seq(VariablePredicate(
-        v"  UNNAMED1",
-        equals(
-          propExpression(TraversalEndpoint(v"  UNNAMED2", To), "prop"),
-          literalInt(1)
-        )
-      ))
-    ))
+    ).value shouldBe InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", TO.prop.equalsOne(v"  UNNAMED2")))
+    )
   }
 
   test(
     "Rewrite (outerStart{prop: 1})((innerStart{prop:1})--(innerEnd))*(outerEnd)"
   ) {
-    rewrite(Input(
-      innerPredicates = Seq(propEquality("innerStart", "prop", 1)),
-      outerPredicates = Seq(propEquality("outerStart", "prop", 1))
-    )) shouldBe Some(InlinedPredicates(relationshipPredicates =
-      Seq(
-        VariablePredicate(
-          v"  UNNAMED1",
-          equals(
-            propExpression(TraversalEndpoint(v"  UNNAMED2", From), "prop"),
-            literalInt(1)
-          )
-        )
-      )
-    ))
+    rewrite(
+      innerPredicates = Seq(propEquality("innerStart", "prop", 1))
+    ).value shouldBe InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", FROM.prop.equalsOne(v"  UNNAMED2")))
+    )
   }
 
   test(
     "Rewrite (outerStart)((innerStart)-[rel{prop:1}]-(innerEnd) WHERE innerStart.prop <> innerEnd.prop)*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(propEquality("rel", "prop", 1), notEquals(prop("innerStart", "prop"), prop("innerEnd", "prop")))
-    )) shouldBe Some(InlinedPredicates(relationshipPredicates =
+    ).value shouldBe InlinedPredicates(relationshipPredicates =
       Seq(
         VariablePredicate(v"  UNNAMED1", propEquality("  UNNAMED1", "prop", 1)),
         VariablePredicate(
@@ -360,13 +344,13 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
           )
         )
       )
-    ))
+    )
   }
 
   test(
     "Should rewrite (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE NOT exists((innerEnd)--(innerEnd)))+(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(
           propEquality("rel", "prop", 1),
@@ -375,54 +359,43 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
           ).withComputedScopeDependencies(Set(innerEnd))))
         ),
       direction = OUTGOING,
-      minRep = 1
-    )) shouldBe None
+      minRep = 1,
+      mode = convertToInlinedPredicates.Mode.Shortest(Seq.empty)
+    ) shouldBe None
   }
 
   test(
     "(outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE unknownVar.prop= 3)*(outerEnd)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates =
         Seq(
           propEquality("rel", "prop", 1),
           propEquality("unknownVar", "prop", 3)
         ),
       direction = OUTGOING
-    )) shouldBe None
+    ) shouldBe None
   }
 
   test(
     "Rewrite (outerStart)((innerStart{prop:1})-[r]-(innerEnd))+(outerEnd) or (outerEnd)((innerEnd)-[r]-(innerStart{prop:1}))+(outerStart)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates = Seq(propEquality("innerStart", "prop", 1)),
       minRep = 1
-    )) shouldEqual Some(InlinedPredicates(relationshipPredicates =
-      Seq(VariablePredicate(
-        v"  UNNAMED1",
-        equals(
-          propExpression(TraversalEndpoint(v"  UNNAMED2", From), "prop"),
-          literalInt(1)
-        )
-      ))
-    ))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", FROM.prop.equalsOne(v"  UNNAMED2")))
+    )
   }
 
   test(
     "Rewrite (outerStart)((innerStart)-[r]-(innerEnd{prop:1}))+(outerEnd) or (outerEnd)((innerEnd{prop:1})-[r]-(innerStart))+(outerStart)"
   ) {
-    rewrite(Input(
+    rewrite(
       innerPredicates = Seq(propEquality("innerEnd", "prop", 1)),
       minRep = 1
-    )) shouldEqual Some(InlinedPredicates(relationshipPredicates =
-      Seq(VariablePredicate(
-        v"  UNNAMED1",
-        equals(
-          propExpression(TraversalEndpoint(v"  UNNAMED2", To), "prop"),
-          literalInt(1)
-        )
-      ))
-    ))
+    ).value shouldEqual InlinedPredicates(relationshipPredicates =
+      Seq(VariablePredicate(v"  UNNAMED1", TO.prop.equalsOne(v"  UNNAMED2")))
+    )
   }
 }

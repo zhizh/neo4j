@@ -44,7 +44,6 @@ import org.neo4j.cypher.internal.logical.plans.Selection.LabelAndRelTypeInfo
 import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.VarExpand
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Solveds
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.Repetition
@@ -90,7 +89,6 @@ import org.neo4j.cypher.internal.util.topDown
  * This rewriter should run before [[UniquenessRewriter]] so that relationship uniqueness predicates may be rewritten.
  */
 case class TrailToVarExpandRewriter(
-  solveds: Solveds, // This is TEMPORARY. We only need this to see if a predicate is applicable on all nodes in the path. Once we get a new api for internal nodes, we will get rid of this.
   labelAndRelTypeInfos: LabelAndRelTypeInfos,
   otherAttributes: Attributes[LogicalPlan],
   anonymousVariableNameGenerator: AnonymousVariableNameGenerator
@@ -114,7 +112,7 @@ case class TrailToVarExpandRewriter(
       predicatesToInline = predicates,
       pathRepetition = trail.repetition,
       pathDirection = expand.dir,
-      predicatesOutsideRepetition = solveds.get(trail.id).asSinglePlannerQuery.queryGraph.selections.flatPredicates,
+      mode = convertToInlinedPredicates.Mode.Trail,
       anonymousVariableNameGenerator = anonymousVariableNameGenerator
     )
       .map(inlinedPredicates => {

@@ -2969,9 +2969,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan shouldEqual expected
   }
 
-  test(
-    "should rewrite simple queries to bidirectional queries to inlinable NODE predicates if the predicates overlaps with the outernodes"
-  ) {
+  test("should rewrite simple queries to bidirectional queries to inlinable TraversalEndpoint predicates") {
     val planner = plannerBuilder()
       .setAllNodesCardinality(100)
       .setLabelCardinality("A", 10)
@@ -2993,10 +2991,15 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     val expected = planner.subPlanBuilder()
       .distinct("e AS e")
-      .bfsPruningVarExpand(
+      .bfsPruningVarExpandExpr(
         "(anon_0)-[:R*0..]-(e)",
-        nodePredicates = Seq(Predicate("anon_1", "anon_1.prop = 'bar'")),
-        relationshipPredicates = Seq(),
+        relationshipPredicates = Seq(VariablePredicate(
+          v"anon_1",
+          equals(
+            propExpression(TraversalEndpoint(v"anon_2", To), "prop"),
+            literalString("bar")
+          )
+        )),
         mode = ExpandAll
       )
       .filter("anon_0.prop = 'bar'")

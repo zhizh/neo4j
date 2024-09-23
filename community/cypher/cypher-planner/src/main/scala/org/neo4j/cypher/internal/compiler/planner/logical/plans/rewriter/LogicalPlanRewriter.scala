@@ -90,7 +90,6 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
         anonymousVariableNameGenerator
       )),
       Some(TrailToVarExpandRewriter(
-        solveds,
         labelAndRelTypeInfos,
         otherAttributes.withAlso(solveds, cardinalities, effectiveCardinalities, providedOrders),
         anonymousVariableNameGenerator
