@@ -202,6 +202,7 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
                     currentTargets = targets.iterate();
                 } else {
                     targetSaturated = true;
+                    hooks.finished();
                     return null;
                 }
             }
@@ -256,7 +257,6 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
         if (foundNodes.hasMore()) {
             bfsExpander.expand();
         } else if (!propagator.hasScheduled()) {
-            hooks.noMoreNodes();
             return false;
         }
 

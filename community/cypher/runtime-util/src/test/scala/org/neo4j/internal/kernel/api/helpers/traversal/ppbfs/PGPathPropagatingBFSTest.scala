@@ -53,6 +53,7 @@ import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.ReturnPath
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.LoggingPPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.VisualizingPPBSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder.MultiRelationshipBuilder.r
@@ -1283,6 +1284,9 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     def toList: Seq[A] = build().asScala.toList
 
     def logged(level: LoggingPPBFSHooks = LoggingPPBFSHooks.debug): FixtureBuilder[A] = copy(hooks = level)
+
+    /** Render graphviz to stdout */
+    def viz(): FixtureBuilder[A] = copy(hooks = new VisualizingPPBSHooks)
 
     /** Run the iterator with event hooks attached */
     def events(): Seq[EventRecorder.Event] = {

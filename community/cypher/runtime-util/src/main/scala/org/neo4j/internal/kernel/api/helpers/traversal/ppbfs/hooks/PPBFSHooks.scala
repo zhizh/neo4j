@@ -69,7 +69,7 @@ abstract class PPBFSHooks {
   // PGPathPropagatingBFS
   def nextLevel(currentDepth: Int): Unit = {}
   def trace(currentDepth: Int): Unit = {}
-  def noMoreNodes(): Unit = {}
+  def finished(): Unit = {}
 
   // Propagator
   def propagate(

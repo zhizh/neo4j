@@ -44,7 +44,7 @@ public abstract sealed class TwoWaySignpost implements Measurable {
     public final NodeState forwardNode;
 
     // Source signpost
-    protected final Lengths lengths;
+    public final Lengths lengths;
 
     // targetSignpost
     protected int minTargetDistance = NO_TARGET_DISTANCE;
