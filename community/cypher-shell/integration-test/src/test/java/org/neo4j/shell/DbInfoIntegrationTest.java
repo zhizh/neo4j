@@ -21,10 +21,11 @@ package org.neo4j.shell;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.neo4j.test.assertion.Assert.assertEventually;
 import static org.neo4j.test.assertion.Assert.assertNever;
+import static org.neo4j.test.assertion.Assert.awaitUntilAsserted;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,6 +63,7 @@ class DbInfoIntegrationTest extends TestHarness {
 
     @Test
     void fillsInInformationInDbInfo() throws Exception {
+        assumeAtLeastVersion("5.0.0");
         var testBuilder = (TestBuilder) buildTest();
         testBuilder
                 .addArgs("-u", USER, "-p", PASSWORD, "--enable-autocompletions")
@@ -74,26 +76,49 @@ class DbInfoIntegrationTest extends TestHarness {
                         "CREATE USER foo IF NOT EXISTS SET PASSWORD 'something';")
                 .run()
                 .assertSuccessAndConnected();
-        var dbInfo = testBuilder.dbInfo;
-        assertEventually(
-                () -> dbInfo,
-                db -> {
-                    return db.labels.containsAll(List.of("A", "B", "C"))
-                            && db.propertyKeys.contains("name")
-                            && db.functions.contains("abs")
-                            && db.procedures.contains("dbms.info")
-                            && db.aliasNames.contains("nacho")
-                            && db.roleNames.contains("PUBLIC")
-                            && db.databaseNames.contains("neo4j")
-                            && db.userNames.containsAll(List.of(USER, "foo"))
-                            && db.parameters().containsKey("x");
-                },
-                1,
-                MINUTES);
+        final var dbInfo = testBuilder.dbInfo;
+
+        awaitUntilAsserted(() -> {
+            assertThat(dbInfo.labels).contains("A", "B", "C");
+            assertThat(dbInfo.propertyKeys).contains("name");
+            assertThat(dbInfo.functions).contains("abs");
+            assertThat(dbInfo.procedures).contains("dbms.info");
+            assertThat(dbInfo.aliasNames).contains("nacho");
+            assertThat(dbInfo.roleNames).contains("PUBLIC");
+            assertThat(dbInfo.databaseNames).contains("neo4j");
+            assertThat(dbInfo.userNames).contains(USER, "foo");
+            assertThat(dbInfo.parameters()).containsKey("x");
+        });
+    }
+
+    // TODO Auto completions are not accurate for older versions, should we disable it completely?
+    @Test
+    void fillsInInformationInDbInfoVersion4() throws Exception {
+        assumeVersionBefore("5.0.0");
+        var testBuilder = (TestBuilder) buildTest();
+        testBuilder
+                .addArgs("-u", USER, "-p", PASSWORD, "--enable-autocompletions")
+                .userInputLines(":param x => 1;", "CREATE (n:A { name: \"Nacho\" });", "CREATE (n:B);", "CREATE (n:C);")
+                .run()
+                .assertSuccessAndConnected();
+        final var dbInfo = testBuilder.dbInfo;
+
+        awaitUntilAsserted(() -> {
+            assertThat(dbInfo.labels).contains("A", "B", "C");
+            assertThat(dbInfo.propertyKeys).contains("name");
+            assertThat(dbInfo.functions).contains("abs");
+            assertThat(dbInfo.procedures).contains("dbms.info");
+            assertThat(dbInfo.aliasNames).isEmpty(); // 4 do not support aliases
+            assertThat(dbInfo.roleNames).contains("PUBLIC");
+            assertThat(dbInfo.databaseNames).isEmpty(); // Polling query do not work in 4
+            assertThat(dbInfo.userNames).contains(USER, "foo");
+            assertThat(dbInfo.parameters()).containsKey("x");
+        });
     }
 
     @Test
     void doesNotFillDbInfoWhenCompletionsDisabled() throws Exception {
+        assumeAtLeastVersion("5.0.0");
         var testBuilder = (TestBuilder) buildTest();
         testBuilder
                 .addArgs("-u", USER, "-p", PASSWORD)

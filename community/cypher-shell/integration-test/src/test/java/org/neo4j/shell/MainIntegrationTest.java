@@ -40,7 +40,6 @@ import static org.neo4j.shell.Conditions.notContains;
 import static org.neo4j.shell.Conditions.startsWith;
 import static org.neo4j.shell.DatabaseManager.DEFAULT_DEFAULT_DB_NAME;
 import static org.neo4j.shell.DatabaseManager.SYSTEM_DB_NAME;
-import static org.neo4j.shell.test.Util.testConnectionConfig;
 import static org.neo4j.shell.util.Versions.majorVersion;
 
 import java.io.BufferedReader;
@@ -58,19 +57,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.neo4j.driver.exceptions.ClientException;
 import org.neo4j.function.ThrowingAction;
-import org.neo4j.function.ThrowingConsumer;
-import org.neo4j.function.ThrowingFunction;
-import org.neo4j.shell.cli.AccessMode;
-import org.neo4j.shell.cli.Format;
-import org.neo4j.shell.completions.DbInfoImpl;
 import org.neo4j.shell.exception.CommandException;
-import org.neo4j.shell.parameter.ParameterService;
 import org.neo4j.shell.parser.StatementParser.CypherStatement;
-import org.neo4j.shell.prettyprint.PrettyConfig;
-import org.neo4j.shell.prettyprint.PrettyPrinter;
-import org.neo4j.shell.state.BoltStateHandler;
 import org.neo4j.shell.test.AssertableMain;
-import org.neo4j.shell.util.Version;
 import org.neo4j.shell.util.Versions;
 
 // NOTE! Consider adding tests to integration-test-expect instead of here.
@@ -79,7 +68,6 @@ class MainIntegrationTest extends TestHarness {
     private static final String newLine = System.lineSeparator();
     private static final String GOOD_BYE = format(":exit%n%nBye!%n");
 
-    private final Version serverVersion = Versions.version(runInDbAndReturn("", CypherShell::getServerVersion));
     private final Condition<String> endsWithInteractiveExit = endsWith(format("> %s", GOOD_BYE));
 
     private Condition<String> returned42AndExited() {
@@ -1670,45 +1658,6 @@ class MainIntegrationTest extends TestHarness {
         return buildTest();
     }
 
-    private void runInSystemDb(ThrowingConsumer<CypherShell, Exception> systemDbConsumer) {
-        runInSystemDbAndReturn(shell -> {
-            systemDbConsumer.accept(shell);
-            return null;
-        });
-    }
-
-    private void runInDb(String database, ThrowingConsumer<CypherShell, Exception> consumer) {
-        runInDbAndReturn(database, shell -> {
-            consumer.accept(shell);
-            return null;
-        });
-    }
-
-    private <T> T runInDbAndReturn(String database, ThrowingFunction<CypherShell, T, Exception> systemDbConsumer) {
-        CypherShell shell = null;
-        try {
-            var boltHandler = new BoltStateHandler(false, AccessMode.WRITE);
-            var printer = new PrettyPrinter(new PrettyConfig(Format.PLAIN, false, 100, false));
-            var parameters = ParameterService.create(boltHandler);
-            var dbInfo = new DbInfoImpl(parameters, boltHandler, true);
-            shell = new CypherShell(new StringLinePrinter(), boltHandler, dbInfo, printer, parameters);
-            shell.connect(testConnectionConfig("neo4j://localhost:7687")
-                    .withUsernameAndPasswordAndDatabase(USER, PASSWORD, database));
-            return systemDbConsumer.apply(shell);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to execute statements during test setup: " + e.getMessage(), e);
-        } finally {
-            if (shell != null) {
-                shell.disconnect();
-            }
-        }
-    }
-
-    private <T> T runInSystemDbAndReturn(ThrowingFunction<CypherShell, T, Exception> systemDbConsumer) {
-        var systemDb = serverVersion.major() >= 4 ? "system" : ""; // Before version 4 we don't support multi databases
-        return runInDbAndReturn(systemDb, systemDbConsumer);
-    }
-
     private static void createOrReplaceUser(
             CypherShell shell, String name, String password, boolean requirePasswordChange) throws CommandException {
         if (majorVersion(shell.getServerVersion()) >= 4) {
@@ -1756,14 +1705,6 @@ class MainIntegrationTest extends TestHarness {
         } finally {
             runInSystemDb(shell -> shell.execute(CypherStatement.complete(start)));
         }
-    }
-
-    private void assumeAtLeastVersion(String version) {
-        assumeTrue(serverVersion.compareTo(Versions.version(version)) > 0);
-    }
-
-    private void assumeVersionBefore(String version) {
-        assumeTrue(serverVersion.compareTo(Versions.version(version)) < 0);
     }
 
     private static void assertFileContains(Path file, String find) throws IOException {

@@ -27,9 +27,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.neo4j.driver.Record;
+import org.neo4j.shell.log.Logger;
 import org.neo4j.shell.state.BoltStateHandler;
 
 public class QueryPoller implements AutoCloseable {
+    private static final Logger log = Logger.create();
     private final ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> pollingThread;
     Runnable pollingWorkload;
@@ -47,7 +49,7 @@ public class QueryPoller implements AutoCloseable {
 
     public static String fetchProcedures = "SHOW PROCEDURES YIELD name";
     public static String fetchFunctions = "SHOW FUNCTIONS YIELD name";
-    public static String fetchDatabases = "SHOW DATABASE YIELD name, aliases;";
+    public static String fetchDatabases = "SHOW DATABASES YIELD name, aliases;";
     public static String fetchRoles = "SHOW ROLES YIELD role;";
     public static String fetchUsers = "SHOW USERS YIELD user;";
 
@@ -75,6 +77,7 @@ public class QueryPoller implements AutoCloseable {
                         }
                     }
                 } catch (Exception e) {
+                    log.warn("Failed to fetch auto completion metadata with query: " + q.query, e);
                 }
             }
         };

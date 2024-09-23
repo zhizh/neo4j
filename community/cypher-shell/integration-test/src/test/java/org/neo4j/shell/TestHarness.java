@@ -20,28 +20,39 @@
 package org.neo4j.shell;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.neo4j.shell.ShellRunner.shouldBeInteractive;
 import static org.neo4j.shell.terminal.CypherShellTerminalBuilder.terminalBuilder;
+import static org.neo4j.shell.test.Util.testConnectionConfig;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import org.neo4j.function.ThrowingConsumer;
+import org.neo4j.function.ThrowingFunction;
+import org.neo4j.shell.cli.AccessMode;
 import org.neo4j.shell.cli.Format;
 import org.neo4j.shell.completions.CompletionEngine;
 import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.completions.DbInfoImpl;
 import org.neo4j.shell.log.Logger;
 import org.neo4j.shell.parameter.ParameterService;
+import org.neo4j.shell.prettyprint.PrettyConfig;
+import org.neo4j.shell.prettyprint.PrettyPrinter;
 import org.neo4j.shell.printer.AnsiPrinter;
 import org.neo4j.shell.state.BoltStateHandler;
 import org.neo4j.shell.terminal.CypherShellTerminal;
 import org.neo4j.shell.terminal.TestSimplePrompt;
 import org.neo4j.shell.test.AssertableMain;
+import org.neo4j.shell.util.Version;
+import org.neo4j.shell.util.Versions;
 
 public class TestHarness {
     public static final String USER = "neo4j";
     public static final String PASSWORD = "neo";
+
+    protected final Version serverVersion = Versions.version(runInDbAndReturn("", CypherShell::getServerVersion));
 
     AssertableMain.AssertableMainBuilder buildTest() {
         return new TestBuilder().outputInteractive(true);
@@ -127,5 +138,52 @@ public class TestHarness {
 
             return new AssertableMain(exitCode, out, err, main.getCypherShell());
         }
+    }
+
+    protected void assumeAtLeastVersion(String version) {
+        assumeTrue(serverVersion.compareTo(Versions.version(version)) > 0);
+    }
+
+    protected void assumeVersionBefore(String version) {
+        assumeTrue(serverVersion.compareTo(Versions.version(version)) < 0);
+    }
+
+    protected void runInSystemDb(ThrowingConsumer<CypherShell, Exception> systemDbConsumer) {
+        runInSystemDbAndReturn(shell -> {
+            systemDbConsumer.accept(shell);
+            return null;
+        });
+    }
+
+    protected void runInDb(String database, ThrowingConsumer<CypherShell, Exception> consumer) {
+        runInDbAndReturn(database, shell -> {
+            consumer.accept(shell);
+            return null;
+        });
+    }
+
+    protected <T> T runInDbAndReturn(String database, ThrowingFunction<CypherShell, T, Exception> systemDbConsumer) {
+        CypherShell shell = null;
+        try {
+            var boltHandler = new BoltStateHandler(false, AccessMode.WRITE);
+            var printer = new PrettyPrinter(new PrettyConfig(Format.PLAIN, false, 100, false));
+            var parameters = ParameterService.create(boltHandler);
+            var dbInfo = new DbInfoImpl(parameters, boltHandler, true);
+            shell = new CypherShell(new StringLinePrinter(), boltHandler, dbInfo, printer, parameters);
+            shell.connect(testConnectionConfig("neo4j://localhost:7687")
+                    .withUsernameAndPasswordAndDatabase(USER, PASSWORD, database));
+            return systemDbConsumer.apply(shell);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to execute statements during test setup: " + e.getMessage(), e);
+        } finally {
+            if (shell != null) {
+                shell.disconnect();
+            }
+        }
+    }
+
+    protected <T> T runInSystemDbAndReturn(ThrowingFunction<CypherShell, T, Exception> systemDbConsumer) {
+        var systemDb = serverVersion.major() >= 4 ? "system" : ""; // Before version 4 we don't support multi databases
+        return runInDbAndReturn(systemDb, systemDbConsumer);
     }
 }
