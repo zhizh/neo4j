@@ -36,7 +36,7 @@ import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
 import org.neo4j.internal.kernel.api.security.SecurityContext;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.procedure.Context;
 import org.neo4j.kernel.api.procedure.ProcedureView;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
@@ -64,34 +64,34 @@ public class FabricProcedures implements Procedures {
     }
 
     @Override
-    public UserFunctionHandle functionGet(QualifiedName name, QueryLanguageScope scope) {
+    public UserFunctionHandle functionGet(QualifiedName name, QueryLanguage scope) {
         return view.function(name, scope);
     }
 
     @Override
-    public Stream<UserFunctionSignature> functionGetAll(QueryLanguageScope scope) {
+    public Stream<UserFunctionSignature> functionGetAll(QueryLanguage scope) {
         return notAvailable();
     }
 
     @Override
-    public UserFunctionHandle aggregationFunctionGet(QualifiedName name, QueryLanguageScope scope) {
+    public UserFunctionHandle aggregationFunctionGet(QualifiedName name, QueryLanguage scope) {
         return notAvailable();
     }
 
     @Override
-    public Stream<UserFunctionSignature> aggregationFunctionGetAll(QueryLanguageScope scope) {
+    public Stream<UserFunctionSignature> aggregationFunctionGetAll(QueryLanguage scope) {
         return notAvailable();
     }
 
     @Override
-    public ProcedureHandle procedureGet(QualifiedName name, QueryLanguageScope scope) throws ProcedureException {
+    public ProcedureHandle procedureGet(QualifiedName name, QueryLanguage scope) throws ProcedureException {
         // Note:  Bolt checks connections by invoking `dbms.routing.getRoutingTable`.
         // This means that we have to be able to resolve this symbol in the planning step.
         return view.procedure(name, scope);
     }
 
     @Override
-    public Stream<ProcedureSignature> proceduresGetAll(QueryLanguageScope scope) throws ProcedureException {
+    public Stream<ProcedureSignature> proceduresGetAll(QueryLanguage scope) throws ProcedureException {
         return notAvailable();
     }
 

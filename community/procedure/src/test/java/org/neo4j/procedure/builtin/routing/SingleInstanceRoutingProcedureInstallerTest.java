@@ -42,7 +42,7 @@ import org.neo4j.dbms.routing.RoutingService;
 import org.neo4j.dbms.routing.SingleAddressRoutingTableProvider;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
 import org.neo4j.kernel.database.DatabaseReferenceRepository;
 import org.neo4j.kernel.database.DefaultDatabaseResolver;
@@ -89,7 +89,7 @@ class SingleInstanceRoutingProcedureInstallerTest {
 
         Set<QualifiedName> actualNames = procedures
                 .getCurrentView()
-                .getAllProcedures(QueryLanguageScope.CYPHER_5)
+                .getAllProcedures(QueryLanguage.CYPHER_5)
                 .map(ProcedureSignature::name)
                 .collect(toSet());
 

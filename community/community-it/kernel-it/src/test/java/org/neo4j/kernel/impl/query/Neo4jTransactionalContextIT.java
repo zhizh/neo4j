@@ -67,7 +67,7 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.security.LoginContext;
 import org.neo4j.kernel.GraphDatabaseQueryService;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.QueryRegistry;
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -834,7 +834,7 @@ class Neo4jTransactionalContextIT {
         var procsRegistry = databaseAPI.getDependencyResolver().resolveDependency(GlobalProcedures.class);
         var txSetMetaData = procsRegistry
                 .getCurrentView()
-                .procedure(new QualifiedName("tx", "setMetaData"), QueryLanguageScope.CYPHER_5);
+                .procedure(new QualifiedName("tx", "setMetaData"), QueryLanguage.CYPHER_5);
         var id = txSetMetaData.id();
         var procContext = new ProcedureCallContext(id, EMPTY_STRING_ARRAY, false, "", false, "runtimeUsed");
 

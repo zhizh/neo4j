@@ -77,24 +77,24 @@ case class QualifiedName(namespace: Seq[String], name: String) {
   override def toString: String = (namespace :+ name).mkString(".")
 }
 
-// Should have one to one mapping with org.neo4j.kernel.api.QueryLanguageScope
-sealed trait QueryLanguageScope
+// Should have one to one mapping with org.neo4j.kernel.api.QueryLanguage
+sealed trait QueryLanguage
 
-object QueryLanguageScope {
-  case object Cypher5 extends QueryLanguageScope
-  case object Cypher25 extends QueryLanguageScope
-  val All: Set[QueryLanguageScope] = Set(Cypher5, Cypher25)
+object QueryLanguage {
+  case object Cypher5 extends QueryLanguage
+  case object Cypher25 extends QueryLanguage
+  val All: Set[QueryLanguage] = Set(Cypher5, Cypher25)
 
-  def from(version: CypherVersion): QueryLanguageScope = version match {
-    case CypherVersion.Cypher5 => QueryLanguageScope.Cypher5
-    case CypherVersion.Cypher6 => QueryLanguageScope.Cypher25
+  def from(version: CypherVersion): QueryLanguage = version match {
+    case CypherVersion.Cypher5 => QueryLanguage.Cypher5
+    case CypherVersion.Cypher6 => QueryLanguage.Cypher25
   }
 
-  def toKernelScope(scope: QueryLanguageScope): org.neo4j.kernel.api.QueryLanguageScope = scope match {
-    case QueryLanguageScope.Cypher5  => org.neo4j.kernel.api.QueryLanguageScope.CYPHER_5
-    case QueryLanguageScope.Cypher25 => org.neo4j.kernel.api.QueryLanguageScope.CYPHER_25
+  def toKernelScope(scope: QueryLanguage): org.neo4j.kernel.api.QueryLanguage = scope match {
+    case QueryLanguage.Cypher5  => org.neo4j.kernel.api.QueryLanguage.CYPHER_5
+    case QueryLanguage.Cypher25 => org.neo4j.kernel.api.QueryLanguage.CYPHER_25
   }
-  def toKernelScope(version: CypherVersion): org.neo4j.kernel.api.QueryLanguageScope = toKernelScope(from(version))
+  def toKernelScope(version: CypherVersion): org.neo4j.kernel.api.QueryLanguage = toKernelScope(from(version))
 }
 
 case class FieldSignature(

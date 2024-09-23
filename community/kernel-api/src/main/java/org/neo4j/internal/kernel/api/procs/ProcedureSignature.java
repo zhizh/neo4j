@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.neo4j.internal.helpers.collection.Iterables;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.UnsupportedDatabaseTypes;
 
@@ -57,7 +57,7 @@ public class ProcedureSignature {
     private final boolean internal;
     private final boolean allowExpiredCredentials;
     private final boolean threadSafe;
-    private final Set<QueryLanguageScope> supportedQueryLanguageScopes;
+    private final Set<QueryLanguage> supportedQueryLanguages;
 
     @Deprecated(forRemoval = true)
     @SuppressWarnings("unused")
@@ -92,7 +92,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 true,
-                QueryLanguageScope.ALL_SCOPES);
+                QueryLanguage.ALL);
     }
 
     @Deprecated(forRemoval = true)
@@ -128,7 +128,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 threadSafe,
-                QueryLanguageScope.ALL_SCOPES);
+                QueryLanguage.ALL);
     }
 
     @Deprecated(forRemoval = true)
@@ -164,7 +164,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 threadSafe,
-                QueryLanguageScope.ALL_SCOPES);
+                QueryLanguage.ALL);
     }
 
     public ProcedureSignature(
@@ -183,7 +183,7 @@ public class ProcedureSignature {
             boolean internal,
             boolean allowExpiredCredentials,
             boolean threadSafe,
-            Set<QueryLanguageScope> supportedQueryLanguageScopes) {
+            Set<QueryLanguage> supportedQueryLanguages) {
         this(
                 name,
                 inputSignature,
@@ -200,7 +200,7 @@ public class ProcedureSignature {
                 internal,
                 allowExpiredCredentials,
                 threadSafe,
-                supportedQueryLanguageScopes,
+                supportedQueryLanguages,
                 new UnsupportedDatabaseTypes.DatabaseType[0]);
     }
 
@@ -220,7 +220,7 @@ public class ProcedureSignature {
             boolean internal,
             boolean allowExpiredCredentials,
             boolean threadSafe,
-            Set<QueryLanguageScope> supportedQueryLanguageScopes,
+            Set<QueryLanguage> supportedQueryLanguages,
             UnsupportedDatabaseTypes.DatabaseType[] unsupportedDbTypes) {
         this.name = name;
         this.inputSignature = unmodifiableList(inputSignature);
@@ -238,7 +238,7 @@ public class ProcedureSignature {
         this.internal = internal;
         this.allowExpiredCredentials = allowExpiredCredentials;
         this.threadSafe = threadSafe;
-        this.supportedQueryLanguageScopes = supportedQueryLanguageScopes;
+        this.supportedQueryLanguages = supportedQueryLanguages;
     }
 
     public QualifiedName name() {
@@ -309,8 +309,8 @@ public class ProcedureSignature {
         return threadSafe;
     }
 
-    public Set<QueryLanguageScope> supportedQueryLanguageScopes() {
-        return this.supportedQueryLanguageScopes;
+    public Set<QueryLanguage> supportedQueryLanguages() {
+        return this.supportedQueryLanguages;
     }
 
     @Override
@@ -361,7 +361,7 @@ public class ProcedureSignature {
         private boolean allowExpiredCredentials;
         private boolean threadSafe;
 
-        private Set<QueryLanguageScope> supportedQueryLanguageScopes = QueryLanguageScope.ALL_SCOPES;
+        private Set<QueryLanguage> supportedQueryLanguages = QueryLanguage.ALL;
 
         public Builder(QualifiedName name) {
             this.name = name;
@@ -469,8 +469,8 @@ public class ProcedureSignature {
             return this;
         }
 
-        public Builder supportedQueryLanguageScopes(QueryLanguageScope... versions) {
-            this.supportedQueryLanguageScopes = EnumSet.copyOf(Arrays.asList(versions));
+        public Builder supportedQueryLanguages(QueryLanguage... versions) {
+            this.supportedQueryLanguages = EnumSet.copyOf(Arrays.asList(versions));
             return this;
         }
 
@@ -491,7 +491,7 @@ public class ProcedureSignature {
                     internal,
                     allowExpiredCredentials,
                     threadSafe,
-                    supportedQueryLanguageScopes);
+                    supportedQueryLanguages);
         }
     }
 

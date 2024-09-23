@@ -31,7 +31,7 @@ import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.security.LoginContext;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
@@ -57,20 +57,20 @@ class TokenHoldersIdLookupTest {
         var procs = reg.getCurrentView();
         procName2id = new HashMap<>();
         for (ProcedureSignature signature :
-                procs.getAllProcedures(QueryLanguageScope.CYPHER_5).toList()) {
+                procs.getAllProcedures(QueryLanguage.CYPHER_5).toList()) {
             QualifiedName name = signature.name();
-            ProcedureHandle procedure = procs.procedure(name, QueryLanguageScope.CYPHER_5);
+            ProcedureHandle procedure = procs.procedure(name, QueryLanguage.CYPHER_5);
             procName2id.put(name.toString(), procedure.id());
         }
         funcName2id = new HashMap<>();
-        procs.getAllNonAggregatingFunctions(QueryLanguageScope.CYPHER_5).forEach(signature -> {
+        procs.getAllNonAggregatingFunctions(QueryLanguage.CYPHER_5).forEach(signature -> {
             QualifiedName name = signature.name();
-            UserFunctionHandle function = procs.function(name, QueryLanguageScope.CYPHER_5);
+            UserFunctionHandle function = procs.function(name, QueryLanguage.CYPHER_5);
             funcName2id.put(name.toString(), function.id());
         });
-        procs.getAllAggregatingFunctions(QueryLanguageScope.CYPHER_5).forEach(signature -> {
+        procs.getAllAggregatingFunctions(QueryLanguage.CYPHER_5).forEach(signature -> {
             QualifiedName name = signature.name();
-            UserFunctionHandle function = procs.aggregationFunction(name, QueryLanguageScope.CYPHER_5);
+            UserFunctionHandle function = procs.aggregationFunction(name, QueryLanguage.CYPHER_5);
             funcName2id.put(name.toString(), function.id());
         });
         idLookup = new TokenHoldersIdLookup(mockedTokenHolders(), procs, () -> false);

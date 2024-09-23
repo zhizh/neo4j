@@ -35,7 +35,7 @@ import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
 import org.neo4j.internal.kernel.api.security.AccessMode;
 import org.neo4j.internal.kernel.api.security.SecurityAuthorizationHandler;
 import org.neo4j.kernel.api.AssertOpen;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.procedure.ProcedureView;
 import org.neo4j.kernel.impl.api.ClockContext;
 import org.neo4j.kernel.impl.api.KernelTransactionImplementation;
@@ -175,37 +175,37 @@ public abstract sealed class KernelProcedures implements Procedures {
     }
 
     @Override
-    public UserFunctionHandle functionGet(QualifiedName name, QueryLanguageScope scope) {
+    public UserFunctionHandle functionGet(QualifiedName name, QueryLanguage scope) {
         performCheckBeforeOperation();
         return getProcedureCaller().procedureView.function(name, scope);
     }
 
     @Override
-    public Stream<UserFunctionSignature> functionGetAll(QueryLanguageScope scope) {
+    public Stream<UserFunctionSignature> functionGetAll(QueryLanguage scope) {
         performCheckBeforeOperation();
         return getProcedureCaller().procedureView.getAllNonAggregatingFunctions(scope);
     }
 
     @Override
-    public ProcedureHandle procedureGet(QualifiedName name, QueryLanguageScope scope) throws ProcedureException {
+    public ProcedureHandle procedureGet(QualifiedName name, QueryLanguage scope) throws ProcedureException {
         performCheckBeforeOperation();
         return getProcedureCaller().procedureView.procedure(name, scope);
     }
 
     @Override
-    public Stream<ProcedureSignature> proceduresGetAll(QueryLanguageScope scope) {
+    public Stream<ProcedureSignature> proceduresGetAll(QueryLanguage scope) {
         performCheckBeforeOperation();
         return getProcedureCaller().procedureView.getAllProcedures(scope);
     }
 
     @Override
-    public UserFunctionHandle aggregationFunctionGet(QualifiedName name, QueryLanguageScope scope) {
+    public UserFunctionHandle aggregationFunctionGet(QualifiedName name, QueryLanguage scope) {
         performCheckBeforeOperation();
         return getProcedureCaller().procedureView.aggregationFunction(name, scope);
     }
 
     @Override
-    public Stream<UserFunctionSignature> aggregationFunctionGetAll(QueryLanguageScope scope) {
+    public Stream<UserFunctionSignature> aggregationFunctionGetAll(QueryLanguage scope) {
         performCheckBeforeOperation();
         return getProcedureCaller().procedureView.getAllAggregatingFunctions(scope);
     }

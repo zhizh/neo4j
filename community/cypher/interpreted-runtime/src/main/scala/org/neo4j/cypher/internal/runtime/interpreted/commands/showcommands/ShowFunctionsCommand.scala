@@ -47,7 +47,7 @@ import org.neo4j.internal.kernel.api.security.AdminActionOnResource
 import org.neo4j.internal.kernel.api.security.AdminActionOnResource.DatabaseScope
 import org.neo4j.internal.kernel.api.security.PrivilegeAction.SHOW_ROLE
 import org.neo4j.internal.kernel.api.security.Segment
-import org.neo4j.kernel.api.QueryLanguageScope
+import org.neo4j.kernel.api.QueryLanguage
 import org.neo4j.kernel.impl.query.FunctionInformation
 import org.neo4j.kernel.impl.query.FunctionInformation.InputInformation
 import org.neo4j.values.AnyValue
@@ -63,7 +63,7 @@ case class ShowFunctionsCommand(
   columns: List[ShowColumn],
   yieldColumns: List[CommandResultItem],
   isCommunity: Boolean,
-  scope: QueryLanguageScope
+  scope: QueryLanguage
 ) extends Command(columns, yieldColumns) {
 
   private val rolesColumnRequested =

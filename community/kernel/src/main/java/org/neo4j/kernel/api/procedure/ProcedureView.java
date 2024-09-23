@@ -29,24 +29,24 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserAggregationReducer;
 import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.ResourceMonitor;
 import org.neo4j.values.AnyValue;
 
 public interface ProcedureView {
-    ProcedureHandle procedure(QualifiedName name, QueryLanguageScope scope) throws ProcedureException;
+    ProcedureHandle procedure(QualifiedName name, QueryLanguage scope) throws ProcedureException;
 
-    UserFunctionHandle function(QualifiedName name, QueryLanguageScope scope);
+    UserFunctionHandle function(QualifiedName name, QueryLanguage scope);
 
-    UserFunctionHandle aggregationFunction(QualifiedName name, QueryLanguageScope scope);
+    UserFunctionHandle aggregationFunction(QualifiedName name, QueryLanguage scope);
 
-    Stream<ProcedureSignature> getAllProcedures(QueryLanguageScope scope);
+    Stream<ProcedureSignature> getAllProcedures(QueryLanguage scope);
 
-    Stream<UserFunctionSignature> getAllNonAggregatingFunctions(QueryLanguageScope scope);
+    Stream<UserFunctionSignature> getAllNonAggregatingFunctions(QueryLanguage scope);
 
-    Stream<UserFunctionSignature> getAllAggregatingFunctions(QueryLanguageScope scope);
+    Stream<UserFunctionSignature> getAllAggregatingFunctions(QueryLanguage scope);
 
-    /* Note: The id-based functions have no concept of QueryLanguageScope.*/
+    /* Note: The id-based functions have no concept of QueryLanguage.*/
 
     ResourceRawIterator<AnyValue[], ProcedureException> callProcedure(
             Context ctx, int id, AnyValue[] input, ResourceMonitor resourceMonitor) throws ProcedureException;

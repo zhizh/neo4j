@@ -23,10 +23,9 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-public enum QueryLanguageScope {
+public enum QueryLanguage {
     CYPHER_25,
     CYPHER_5;
 
-    public static final Set<QueryLanguageScope> ALL_SCOPES =
-            Collections.unmodifiableSet(EnumSet.allOf(QueryLanguageScope.class));
+    public static final Set<QueryLanguage> ALL = Collections.unmodifiableSet(EnumSet.allOf(QueryLanguage.class));
 }

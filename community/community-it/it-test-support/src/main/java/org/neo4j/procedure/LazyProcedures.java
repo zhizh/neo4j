@@ -38,7 +38,7 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserAggregationReducer;
 import org.neo4j.internal.kernel.api.procs.UserFunctionHandle;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.ResourceMonitor;
 import org.neo4j.kernel.api.procedure.CallableProcedure;
 import org.neo4j.kernel.api.procedure.CallableUserAggregationFunction;
@@ -177,37 +177,37 @@ public class LazyProcedures implements GlobalProcedures, Consumer<Supplier<Globa
         }
 
         @Override
-        public ProcedureHandle procedure(QualifiedName name, QueryLanguageScope scope) throws ProcedureException {
+        public ProcedureHandle procedure(QualifiedName name, QueryLanguage scope) throws ProcedureException {
             initView();
             return view.procedure(name, scope);
         }
 
         @Override
-        public UserFunctionHandle function(QualifiedName name, QueryLanguageScope scope) {
+        public UserFunctionHandle function(QualifiedName name, QueryLanguage scope) {
             initView();
             return view.function(name, scope);
         }
 
         @Override
-        public UserFunctionHandle aggregationFunction(QualifiedName name, QueryLanguageScope scope) {
+        public UserFunctionHandle aggregationFunction(QualifiedName name, QueryLanguage scope) {
             initView();
             return view.aggregationFunction(name, scope);
         }
 
         @Override
-        public Stream<ProcedureSignature> getAllProcedures(QueryLanguageScope scope) {
+        public Stream<ProcedureSignature> getAllProcedures(QueryLanguage scope) {
             initView();
             return view.getAllProcedures(scope);
         }
 
         @Override
-        public Stream<UserFunctionSignature> getAllNonAggregatingFunctions(QueryLanguageScope scope) {
+        public Stream<UserFunctionSignature> getAllNonAggregatingFunctions(QueryLanguage scope) {
             initView();
             return view.getAllNonAggregatingFunctions(scope);
         }
 
         @Override
-        public Stream<UserFunctionSignature> getAllAggregatingFunctions(QueryLanguageScope scope) {
+        public Stream<UserFunctionSignature> getAllAggregatingFunctions(QueryLanguage scope) {
             initView();
             return view.getAllAggregatingFunctions(scope);
         }

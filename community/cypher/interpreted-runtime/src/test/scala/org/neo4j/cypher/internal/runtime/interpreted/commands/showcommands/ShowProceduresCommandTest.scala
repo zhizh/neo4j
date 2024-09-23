@@ -39,8 +39,8 @@ import org.neo4j.internal.kernel.api.security.AuthSubject
 import org.neo4j.internal.kernel.api.security.PermissionState
 import org.neo4j.internal.kernel.api.security.PrivilegeAction.SHOW_ROLE
 import org.neo4j.internal.kernel.api.security.Segment
-import org.neo4j.kernel.api.QueryLanguageScope
-import org.neo4j.kernel.api.QueryLanguageScope.CYPHER_5
+import org.neo4j.kernel.api.QueryLanguage
+import org.neo4j.kernel.api.QueryLanguage.CYPHER_5
 import org.neo4j.procedure.Mode
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
@@ -79,7 +79,7 @@ class ShowProceduresCommandTest extends ShowCommandTestBase {
     false,
     false,
     false,
-    QueryLanguageScope.ALL_SCOPES
+    QueryLanguage.ALL
   )
 
   private val proc2 = new ProcedureSignature(
@@ -101,7 +101,7 @@ class ShowProceduresCommandTest extends ShowCommandTestBase {
     false,
     false,
     false,
-    QueryLanguageScope.ALL_SCOPES
+    QueryLanguage.ALL
   )
 
   private val proc3 = new ProcedureSignature(
@@ -144,7 +144,7 @@ class ShowProceduresCommandTest extends ShowCommandTestBase {
     false,
     false,
     false,
-    QueryLanguageScope.ALL_SCOPES
+    QueryLanguage.ALL
   )
 
   override def beforeEach(): Unit = {
@@ -532,7 +532,7 @@ class ShowProceduresCommandTest extends ShowCommandTestBase {
       true,
       false,
       false,
-      QueryLanguageScope.ALL_SCOPES
+      QueryLanguage.ALL
     )
     when(procedures.proceduresGetAll(CYPHER_5)).thenAnswer((_) => Stream.of(proc1, internalProc))
 
@@ -563,7 +563,7 @@ class ShowProceduresCommandTest extends ShowCommandTestBase {
       false,
       false,
       false,
-      QueryLanguageScope.ALL_SCOPES
+      QueryLanguage.ALL
     )
     val deprecatedProcWithoutReplacement = new ProcedureSignature(
       new QualifiedName("proc", "deprecatedNoReplacement"),
@@ -581,7 +581,7 @@ class ShowProceduresCommandTest extends ShowCommandTestBase {
       false,
       false,
       false,
-      QueryLanguageScope.ALL_SCOPES
+      QueryLanguage.ALL
     )
     when(procedures.proceduresGetAll(CYPHER_5)).thenAnswer((_) =>
       Stream.of(deprecatedProc, deprecatedProcWithoutReplacement)

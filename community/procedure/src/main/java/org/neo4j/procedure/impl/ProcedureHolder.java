@@ -32,7 +32,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 
 /**
  * Simple in memory store for procedures.
@@ -68,7 +68,7 @@ class ProcedureHolder<T> {
         this.store = store;
     }
 
-    T getByKey(QualifiedName name, QueryLanguageScope scope) {
+    T getByKey(QualifiedName name, QueryLanguage scope) {
         int[] ids = name2entry(name);
         if (ids == null) {
             return null;
@@ -94,7 +94,7 @@ class ProcedureHolder<T> {
         return (T) element;
     }
 
-    int put(QualifiedName name, Set<QueryLanguageScope> scopes, T item, boolean caseInsensitive) {
+    int put(QualifiedName name, Set<QueryLanguage> scopes, T item, boolean caseInsensitive) {
         int[] entry = name2entry(name);
         int reference = UNUSED_REFERENCE;
 
@@ -167,7 +167,7 @@ class ProcedureHolder<T> {
         return ret;
     }
 
-    int idOfKey(QualifiedName name, QueryLanguageScope scope) {
+    int idOfKey(QualifiedName name, QueryLanguage scope) {
         int[] entry = name2entry(name);
 
         if (entry == null) {
@@ -195,7 +195,7 @@ class ProcedureHolder<T> {
         }
     }
 
-    boolean contains(QualifiedName name, QueryLanguageScope scope) {
+    boolean contains(QualifiedName name, QueryLanguage scope) {
         return getByKey(name, scope) != null;
     }
 
@@ -242,8 +242,8 @@ class ProcedureHolder<T> {
                 Map.copyOf(ref.nameToEntries), Map.copyOf(ref.caseInsensitiveName2Entries), List.copyOf(ref.store));
     }
 
-    private static boolean hasDifferentScopes(int[] entry, Set<QueryLanguageScope> scopes) {
-        for (var scope : QueryLanguageScope.ALL_SCOPES) {
+    private static boolean hasDifferentScopes(int[] entry, Set<QueryLanguage> scopes) {
+        for (var scope : QueryLanguage.ALL) {
             if (entry[scope.ordinal()] != UNUSED_REFERENCE && !scopes.contains(scope)) {
                 return true;
             }
@@ -251,9 +251,9 @@ class ProcedureHolder<T> {
         return false;
     }
 
-    private static int[] makeEntry(Set<QueryLanguageScope> scopes, int reference) {
-        int[] ids = new int[QueryLanguageScope.ALL_SCOPES.size()];
-        for (var s : QueryLanguageScope.ALL_SCOPES) {
+    private static int[] makeEntry(Set<QueryLanguage> scopes, int reference) {
+        int[] ids = new int[QueryLanguage.ALL.size()];
+        for (var s : QueryLanguage.ALL) {
             if (scopes.contains(s)) {
                 ids[s.ordinal()] = reference;
             } else {

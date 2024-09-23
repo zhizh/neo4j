@@ -23,7 +23,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 
 /**
  * Annotate a procedure with this to signal that it has requirements on the Cypher language.
@@ -32,11 +32,11 @@ import org.neo4j.kernel.api.QueryLanguageScope;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface QueryLanguageVersionScope {
+public @interface QueryLanguageScope {
     /**
      * Mark that the procedure requires a certain Cypher language version to be called.
      *
      * @return the required Cypher language versions.
      */
-    QueryLanguageScope[] scope();
+    QueryLanguage[] scope();
 }

@@ -52,7 +52,7 @@ import org.neo4j.internal.kernel.api.security.AccessMode;
 import org.neo4j.internal.kernel.api.security.SecurityContext;
 import org.neo4j.kernel.api.ExecutionContext;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.Statement;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
 import org.neo4j.kernel.impl.api.security.OverriddenAccessMode;
@@ -302,7 +302,7 @@ class ExecutionContextProcedureIT {
                 Statement statement = acquireStatement(transaction);
                 ExecutionContext executionContext = createExecutionContext(transaction)) {
             try {
-                var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguageScope.CYPHER_5);
+                var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguage.CYPHER_5);
                 transaction.rollback();
                 var procContext =
                         new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
@@ -320,7 +320,7 @@ class ExecutionContextProcedureIT {
     @Test
     void testProcedureWithWriteAccessMode() throws ProcedureException {
         doWithExecutionContext(executionContext -> {
-            var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguageScope.CYPHER_5);
+            var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguage.CYPHER_5);
             var procContext = new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
             assertThatThrownBy(() -> executionContext
                             .procedures()
@@ -334,7 +334,7 @@ class ExecutionContextProcedureIT {
     @Test
     void testProcedureWithSchemaAccessMode() throws ProcedureException {
         doWithExecutionContext(executionContext -> {
-            var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguageScope.CYPHER_5);
+            var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguage.CYPHER_5);
             var procContext = new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
             assertThatThrownBy(() -> executionContext
                             .procedures()
@@ -380,7 +380,7 @@ class ExecutionContextProcedureIT {
 
     private List<AnyValue[]> invokeProcedure(ExecutionContext executionContext, String name, AnyValue... args)
             throws ProcedureException {
-        var handle = executionContext.procedures().procedureGet(getName(name), QueryLanguageScope.CYPHER_5);
+        var handle = executionContext.procedures().procedureGet(getName(name), QueryLanguage.CYPHER_5);
         var procContext = new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
         RawIterator<AnyValue[], ProcedureException> iterator =
                 executionContext.procedures().procedureCallRead(handle.id(), args, procContext);

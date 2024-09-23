@@ -49,7 +49,7 @@ import org.neo4j.kernel.GraphDatabaseQueryService
 import org.neo4j.kernel.api.Kernel
 import org.neo4j.kernel.api.KernelTransaction
 import org.neo4j.kernel.api.KernelTransaction.Type
-import org.neo4j.kernel.api.QueryLanguageScope
+import org.neo4j.kernel.api.QueryLanguage
 import org.neo4j.kernel.api.exceptions.Status
 import org.neo4j.kernel.api.index.IndexProvider
 import org.neo4j.kernel.api.procedure.CallableProcedure
@@ -475,7 +475,7 @@ trait GraphDatabaseTestSupport
   }
 
   def getUserFunctionHandle(qualifiedName: String): UserFunctionHandle = {
-    globalProcedures.getCurrentView.function(asQualifiedName(qualifiedName), QueryLanguageScope.CYPHER_5)
+    globalProcedures.getCurrentView.function(asQualifiedName(qualifiedName), QueryLanguage.CYPHER_5)
   }
 
   def kernelMonitors: Monitors = graph.getDependencyResolver.resolveDependency(classOf[Monitors])

@@ -44,7 +44,7 @@ import org.neo4j.internal.kernel.api.security.AdminActionOnResource
 import org.neo4j.internal.kernel.api.security.AdminActionOnResource.DatabaseScope
 import org.neo4j.internal.kernel.api.security.PrivilegeAction.SHOW_ROLE
 import org.neo4j.internal.kernel.api.security.Segment
-import org.neo4j.kernel.api.QueryLanguageScope
+import org.neo4j.kernel.api.QueryLanguage
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.ListValue
@@ -61,7 +61,7 @@ case class ShowProceduresCommand(
   columns: List[ShowColumn],
   yieldColumns: List[CommandResultItem],
   isCommunity: Boolean,
-  scope: QueryLanguageScope
+  scope: QueryLanguage
 ) extends Command(columns, yieldColumns) {
 
   private val rolesColumnRequested =

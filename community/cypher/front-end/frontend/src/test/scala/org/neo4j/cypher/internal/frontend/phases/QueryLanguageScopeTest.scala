@@ -21,26 +21,26 @@ import org.reflections.Reflections
 
 import scala.jdk.CollectionConverters.SetHasAsScala
 
-class QueryLanguageScopeTest extends CypherFunSuite {
+class QueryLanguageTest extends CypherFunSuite {
 
   test("convert to kernel cypher scope") {
-    QueryLanguageScope.All.foreach { scope =>
-      QueryLanguageScope.toKernelScope(scope) should not be null
+    QueryLanguage.All.foreach { scope =>
+      QueryLanguage.toKernelScope(scope) should not be null
     }
   }
 
   test("one to one mapping to kernel scopes") {
-    QueryLanguageScope.All.map(
-      QueryLanguageScope.toKernelScope
-    ) shouldBe org.neo4j.kernel.api.QueryLanguageScope.ALL_SCOPES.asScala
-    QueryLanguageScope.All.map(
-      QueryLanguageScope.toKernelScope
-    ) shouldBe org.neo4j.kernel.api.QueryLanguageScope.values().toSet
+    QueryLanguage.All.map(
+      QueryLanguage.toKernelScope
+    ) shouldBe org.neo4j.kernel.api.QueryLanguage.ALL.asScala
+    QueryLanguage.All.map(
+      QueryLanguage.toKernelScope
+    ) shouldBe org.neo4j.kernel.api.QueryLanguage.values().toSet
   }
 
-  test("QueryLanguageScope.All should include everything") {
-    QueryLanguageScope.All.map(_.getClass) shouldBe new Reflections("org.neo4j.cypher.internal.frontend.phases")
-      .getSubTypesOf[QueryLanguageScope](classOf[QueryLanguageScope])
+  test("QueryLanguage.All should include everything") {
+    QueryLanguage.All.map(_.getClass) shouldBe new Reflections("org.neo4j.cypher.internal.frontend.phases")
+      .getSubTypesOf[QueryLanguage](classOf[QueryLanguage])
       .asScala
   }
 }

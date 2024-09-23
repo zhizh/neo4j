@@ -87,7 +87,7 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.security.SecurityContext;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.Statement;
 import org.neo4j.kernel.api.procedure.Context;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
@@ -564,10 +564,9 @@ class BuiltInProceduresTest {
         GlobalProcedures reg = new GlobalProceduresRegistry();
         TemporalFunction.registerTemporalFunctions(reg, ProcedureConfig.DEFAULT);
         var view = reg.getCurrentView();
-        assertThat(view.getAllNonAggregatingFunctions(QueryLanguageScope.CYPHER_5)
-                        .filter(f -> !f.isBuiltIn()))
+        assertThat(view.getAllNonAggregatingFunctions(QueryLanguage.CYPHER_5).filter(f -> !f.isBuiltIn()))
                 .isEmpty();
-        assertThat(view.getAllAggregatingFunctions(QueryLanguageScope.CYPHER_5).filter(f -> !f.isBuiltIn()))
+        assertThat(view.getAllAggregatingFunctions(QueryLanguage.CYPHER_5).filter(f -> !f.isBuiltIn()))
                 .isEmpty();
     }
 
@@ -636,7 +635,7 @@ class BuiltInProceduresTest {
                     case 3 -> new QualifiedName(split[0], split[1], split[2]);
                     default -> throw new IllegalArgumentException("Oops, naughty test");
                 };
-        int procId = view.procedure(qn, QueryLanguageScope.CYPHER_5).id();
+        int procId = view.procedure(qn, QueryLanguage.CYPHER_5).id();
         List<AnyValue[]> anyValues = Iterators.asList(view.callProcedure(ctx, procId, input, EMPTY_RESOURCE_TRACKER));
         List<Object[]> toReturn = new ArrayList<>(anyValues.size());
         for (AnyValue[] anyValue : anyValues) {

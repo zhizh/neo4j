@@ -36,7 +36,7 @@ import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.ProcedureCallContext;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
-import org.neo4j.kernel.api.QueryLanguageScope;
+import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.ResourceMonitor;
 import org.neo4j.kernel.api.procedure.CallableProcedure;
 import org.neo4j.kernel.api.procedure.Context;
@@ -46,13 +46,13 @@ import org.neo4j.values.storable.Values;
 class ProceduresKernelIT extends KernelIntegrationTest {
     private static final QualifiedName PROC = new QualifiedName("example", "exampleProc");
     private final ProcedureSignature signature = procedureSignature(PROC)
-            .supportedQueryLanguageScopes(QueryLanguageScope.CYPHER_5)
+            .supportedQueryLanguages(QueryLanguage.CYPHER_5)
             .in("name", NTString)
             .out("name", NTString)
             .build();
 
     private final ProcedureSignature futureSignature = procedureSignature(PROC)
-            .supportedQueryLanguageScopes(QueryLanguageScope.CYPHER_25)
+            .supportedQueryLanguages(QueryLanguage.CYPHER_25)
             .in("firstName", NTString)
             .in("lastName", NTString)
             .out("name", NTString)
@@ -68,7 +68,7 @@ class ProceduresKernelIT extends KernelIntegrationTest {
 
         // When
         ProcedureSignature found =
-                procs().procedureGet(PROC, QueryLanguageScope.CYPHER_5).signature();
+                procs().procedureGet(PROC, QueryLanguage.CYPHER_5).signature();
 
         // Then
         assertThat(found).isEqualTo(signature);
@@ -80,7 +80,7 @@ class ProceduresKernelIT extends KernelIntegrationTest {
         // When
         QualifiedName qn = new QualifiedName("db", "labels");
         ProcedureSignature found =
-                procs().procedureGet(qn, QueryLanguageScope.CYPHER_5).signature();
+                procs().procedureGet(qn, QueryLanguage.CYPHER_5).signature();
 
         // Then
         assertThat(found)
@@ -104,7 +104,7 @@ class ProceduresKernelIT extends KernelIntegrationTest {
         // When
         List<ProcedureSignature> signatures = newTransaction()
                 .procedures()
-                .proceduresGetAll(QueryLanguageScope.CYPHER_5)
+                .proceduresGetAll(QueryLanguage.CYPHER_5)
                 .toList();
 
         // Then
@@ -133,7 +133,7 @@ class ProceduresKernelIT extends KernelIntegrationTest {
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
             RawIterator<AnyValue[], ProcedureException> found = procs.procedureCallRead(
-                    procs.procedureGet(PROC, QueryLanguageScope.CYPHER_5).id(),
+                    procs.procedureGet(PROC, QueryLanguage.CYPHER_5).id(),
                     new AnyValue[] {longValue(1337)},
                     ProcedureCallContext.EMPTY);
             // Then
@@ -160,8 +160,7 @@ class ProceduresKernelIT extends KernelIntegrationTest {
         Procedures procs = procs();
         try (var statement = kernelTransaction.acquireStatement()) {
             RawIterator<AnyValue[], ProcedureException> stream = procs.procedureCallRead(
-                    procs.procedureGet(signature.name(), QueryLanguageScope.CYPHER_5)
-                            .id(),
+                    procs.procedureGet(signature.name(), QueryLanguage.CYPHER_5).id(),
                     new AnyValue[] {Values.EMPTY_STRING},
                     ProcedureCallContext.EMPTY);
 
@@ -180,7 +179,7 @@ class ProceduresKernelIT extends KernelIntegrationTest {
         // When
         List<ProcedureSignature> signatures = newTransaction()
                 .procedures()
-                .proceduresGetAll(QueryLanguageScope.CYPHER_5)
+                .proceduresGetAll(QueryLanguage.CYPHER_5)
                 .toList();
 
         // Then
