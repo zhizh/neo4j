@@ -21,7 +21,11 @@ package org.neo4j.internal.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.exceptions.KernelException;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -30,6 +34,7 @@ public class CreateConstraintFailureException extends SchemaKernelException {
 
     private final String cause;
 
+    @Deprecated
     public CreateConstraintFailureException(ConstraintDescriptor constraint, Throwable cause) {
         super(
                 Status.Schema.ConstraintCreationFailed,
@@ -53,6 +58,33 @@ public class CreateConstraintFailureException extends SchemaKernelException {
 
         this.constraint = constraint;
         this.cause = null;
+    }
+
+    public static CreateConstraintFailureException constraintCreationFailed(
+            ConstraintValidationException cause, TokenNameLookup tokenNameLookup) {
+        return constraintCreationFailed(cause.constraint, tokenNameLookup, cause.gqlStatusObject(), cause);
+    }
+
+    public static CreateConstraintFailureException constraintCreationFailed(
+            ConstraintDescriptor constraint,
+            TokenNameLookup tokenNameLookup,
+            ErrorGqlStatusObject gqlCause,
+            Throwable cause) {
+        var constraintString = constraint.userDescription(tokenNameLookup);
+        return constraintCreationFailed(constraint, constraintString, gqlCause, cause);
+    }
+
+    public static CreateConstraintFailureException constraintCreationFailed(
+            ConstraintDescriptor constraint, String constraintString, ErrorGqlStatusObject gqlCause, Throwable cause) {
+        var errorGqlStatusObjectBuilder = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N11)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(
+                        GqlParams.StringParam.constrDescrOrName,
+                        constraint.getName() != null ? constraint.getName() : constraintString);
+        if (gqlCause != null) {
+            errorGqlStatusObjectBuilder.withCause(gqlCause);
+        }
+        return new CreateConstraintFailureException(errorGqlStatusObjectBuilder.build(), constraint, cause);
     }
 
     public CreateConstraintFailureException(ConstraintDescriptor constraint, String cause) {

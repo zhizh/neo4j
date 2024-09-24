@@ -1794,7 +1794,7 @@ class NotificationCodeWithDescriptionTest {
             notificationBuilder.build();
         });
         assertThat(e.getMessage())
-                .isEqualTo("Expected parameter to be String, Boolean, Integer or List<String> but was 1.13");
+                .isEqualTo("Expected parameter to be String, Boolean, Integer, Long or List<String> but was 1.13");
     }
 
     /**

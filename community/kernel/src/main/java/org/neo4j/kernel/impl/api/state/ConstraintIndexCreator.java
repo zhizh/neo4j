@@ -109,7 +109,8 @@ public class ConstraintIndexCreator {
         } catch (AlreadyConstrainedException e) {
             throw e;
         } catch (KernelException e) {
-            throw new CreateConstraintFailureException(constraint, e);
+            throw CreateConstraintFailureException.constraintCreationFailed(
+                    constraint, constraintString, e.gqlStatusObject(), e);
         }
 
         boolean success = false;
@@ -145,8 +146,11 @@ public class ConstraintIndexCreator {
                 String indexString = index.userDescription(transaction.tokenRead());
                 throw new TransactionFailureException(
                         format("Index (%s) that we just created does not exist.", indexString), e);
-            } catch (InterruptedException | IndexPopulationFailedKernelException e) {
-                throw new CreateConstraintFailureException(constraint, e);
+            } catch (IndexPopulationFailedKernelException e) {
+                throw CreateConstraintFailureException.constraintCreationFailed(
+                        constraint, constraintString, e.gqlStatusObject(), e);
+            } catch (InterruptedException e) {
+                throw CreateConstraintFailureException.constraintCreationFailed(constraint, constraintString, null, e);
             }
 
             propertyExistenceEnforcer.existenceEnforcement(index.schema());

@@ -42,6 +42,27 @@ public class GqlHelper {
                 .build();
     }
 
+    private static ErrorGqlStatusObject getGql22N77(
+            String entityType, long entityId, String tokenType, String token, String[] propKeyList) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N77)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.entityType, entityType)
+                .withParam(GqlParams.NumberParam.entityId, entityId)
+                .withParam(GqlParams.StringParam.tokenType, tokenType)
+                .withParam(GqlParams.StringParam.token, token)
+                .withParam(GqlParams.ListParam.propKeyList, List.of(propKeyList))
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql22N77_nodes(long nodeId, String token, String[] propKeyList) {
+        return getGql22N77("NODE", nodeId, "label", token, propKeyList);
+    }
+
+    public static ErrorGqlStatusObject getGql22N77_relationships(
+            long relationshipId, String token, String[] propKeyList) {
+        return getGql22N77("RELATIONSHIP", relationshipId, "type", token, propKeyList);
+    }
+
     /**
      * Append the exception cause as the bottom GQL cause of the inner ErrorGqlStatusObject if the following applies
      * - the exception cause is an ErrorGqlStatusObject (and not e.g. a generic Java exception)

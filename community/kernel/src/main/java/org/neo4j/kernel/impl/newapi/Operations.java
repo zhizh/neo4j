@@ -2719,7 +2719,8 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             }
             return constraint;
         } catch (UniquePropertyValueValidationException | TransactionFailureException | AlreadyConstrainedException e) {
-            throw new CreateConstraintFailureException(constraint, e);
+            throw CreateConstraintFailureException.constraintCreationFailed(
+                    constraint, constraint.userDescription(token), e.gqlStatusObject(), e);
         }
     }
 

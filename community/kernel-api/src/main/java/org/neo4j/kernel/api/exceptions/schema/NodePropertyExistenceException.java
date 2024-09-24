@@ -24,6 +24,7 @@ import static java.lang.String.format;
 import java.util.function.Function;
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.LabelSchemaDescriptor;
@@ -33,7 +34,8 @@ public class NodePropertyExistenceException extends ConstraintValidationExceptio
     private final long nodeId;
     private final LabelSchemaDescriptor schema;
 
-    public NodePropertyExistenceException(
+    @Deprecated
+    private NodePropertyExistenceException(
             LabelSchemaDescriptor schema,
             Function<LabelSchemaDescriptor, ConstraintDescriptor> constraintFunc,
             ConstraintValidationException.Phase phase,
@@ -44,7 +46,7 @@ public class NodePropertyExistenceException extends ConstraintValidationExceptio
         this.nodeId = nodeId;
     }
 
-    public NodePropertyExistenceException(
+    private NodePropertyExistenceException(
             ErrorGqlStatusObject gqlStatusObject,
             LabelSchemaDescriptor schema,
             Function<LabelSchemaDescriptor, ConstraintDescriptor> constraintFunc,
@@ -55,6 +57,24 @@ public class NodePropertyExistenceException extends ConstraintValidationExceptio
 
         this.schema = schema;
         this.nodeId = nodeId;
+    }
+
+    public static NodePropertyExistenceException propertyPresenceViolation(
+            LabelSchemaDescriptor schema,
+            TokenNameLookup tokenHolders,
+            ConstraintDescriptor descriptor,
+            ConstraintValidationException.Phase phase,
+            long nodeId) {
+        var propIds = schema.getPropertyIds();
+        // This might be a way to expose hidden properties to the user with roles with no access to those properties
+        // TODO: check for user rights
+        String[] propKeyNames = new String[propIds.length];
+        for (int i = 0; i < propIds.length; i++) {
+            propKeyNames[i] = tokenHolders.propertyKeyGetName(propIds[i]);
+        }
+        ErrorGqlStatusObject gql =
+                GqlHelper.getGql22N77_nodes(nodeId, tokenHolders.labelGetName(schema.getLabelId()), propKeyNames);
+        return new NodePropertyExistenceException(gql, schema, ignored -> descriptor, phase, nodeId, tokenHolders);
     }
 
     @Override

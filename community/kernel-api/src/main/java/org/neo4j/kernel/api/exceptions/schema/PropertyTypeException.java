@@ -20,10 +20,15 @@
 package org.neo4j.kernel.api.exceptions.schema;
 
 import static java.lang.String.format;
+import static org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException.Phase.VERIFICATION;
 
 import org.neo4j.common.EntityType;
 import org.neo4j.common.TokenNameLookup;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.constraints.TypeConstraintDescriptor;
@@ -72,6 +77,28 @@ public class PropertyTypeException extends ConstraintValidationException {
         this.descriptor = descriptor;
         this.value = value;
         this.phase = phase;
+    }
+
+    public static PropertyTypeException propertyTypeVerificationFailed(
+            TypeConstraintDescriptor descriptor, long entityId, TokenNameLookup tokenNameLookup, Value value) {
+        final var schema = descriptor.schema();
+        final boolean isNode = schema.entityType() == EntityType.NODE;
+        ErrorGqlStatusObject gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N78)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.entityType, isNode ? "NODE" : "RELATIONSHIP")
+                .withParam(GqlParams.NumberParam.entityId, entityId)
+                .withParam(GqlParams.StringParam.tokenType, isNode ? "label" : "type")
+                .withParam(
+                        GqlParams.StringParam.token,
+                        isNode
+                                ? tokenNameLookup.labelGetName(schema.getLabelId())
+                                : tokenNameLookup.relationshipTypeGetName(schema.getRelTypeId()))
+                .withParam(GqlParams.StringParam.propKey, tokenNameLookup.propertyKeyGetName(schema.getPropertyId()))
+                .withParam(
+                        GqlParams.StringParam.valueType,
+                        descriptor.propertyType().userDescription())
+                .build();
+        return new PropertyTypeException(gql, descriptor, VERIFICATION, entityId, tokenNameLookup, value);
     }
 
     @Override

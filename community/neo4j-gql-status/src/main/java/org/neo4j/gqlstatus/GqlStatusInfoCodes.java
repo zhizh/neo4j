@@ -1539,7 +1539,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
                     { %s } ({ %s }) with { %s } { %s } must have the following properties: { %s }.""",
             new GqlParams.GqlParam[] {
                 GqlParams.StringParam.entityType,
-                GqlParams.StringParam.entityId,
+                GqlParams.NumberParam.entityId,
                 GqlParams.StringParam.tokenType,
                 GqlParams.StringParam.token,
                 GqlParams.ListParam.propKeyList
@@ -1553,7 +1553,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
                     { %s } ({ %s }) with { %s } { %s } must have the property { %s } with value type { %s }.""",
             new GqlParams.GqlParam[] {
                 GqlParams.StringParam.entityType,
-                GqlParams.StringParam.entityId,
+                GqlParams.NumberParam.entityId,
                 GqlParams.StringParam.tokenType,
                 GqlParams.StringParam.token,
                 GqlParams.StringParam.propKey,

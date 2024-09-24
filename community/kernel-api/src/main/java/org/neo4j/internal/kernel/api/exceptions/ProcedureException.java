@@ -19,6 +19,7 @@
  */
 package org.neo4j.internal.kernel.api.exceptions;
 
+import java.util.List;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
@@ -284,5 +285,17 @@ public class ProcedureException extends KernelException {
                 "Aggregation update method '%s' in %s must be public.",
                 procMethod,
                 procClass);
+    }
+
+    public static ProcedureException nonReloadableNamespaces(List<String> nonReloadableNamespaces, Status statusCode) {
+        ErrorGqlStatusObject gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N16)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N23)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.ListParam.namespaceList, nonReloadableNamespaces)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql, statusCode, "The following namespaces are not reloadable: %s.".formatted(nonReloadableNamespaces));
     }
 }

@@ -76,9 +76,10 @@ public class SimpleMessageFormatter {
                 && !(params[currentParam] instanceof String)
                 && !(params[currentParam] instanceof Boolean)
                 && !(params[currentParam] instanceof Integer)
+                && !(params[currentParam] instanceof Long)
                 && !(params[currentParam] instanceof List)) {
             throw new IllegalArgumentException(
-                    "Expected parameter to be String, Boolean, Integer or List<String> but was "
+                    "Expected parameter to be String, Boolean, Integer, Long or List<String> but was "
                             + params[currentParam]);
         }
     }

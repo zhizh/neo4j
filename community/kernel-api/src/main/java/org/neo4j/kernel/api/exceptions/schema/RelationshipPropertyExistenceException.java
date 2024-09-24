@@ -24,6 +24,7 @@ import static java.lang.String.format;
 import java.util.function.Function;
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.RelationTypeSchemaDescriptor;
@@ -33,7 +34,8 @@ public class RelationshipPropertyExistenceException extends ConstraintValidation
     private final RelationTypeSchemaDescriptor schema;
     private final long relationshipId;
 
-    public RelationshipPropertyExistenceException(
+    @Deprecated
+    private RelationshipPropertyExistenceException(
             RelationTypeSchemaDescriptor schema,
             Function<RelationTypeSchemaDescriptor, ConstraintDescriptor> constraintFunc,
             ConstraintValidationException.Phase phase,
@@ -44,7 +46,7 @@ public class RelationshipPropertyExistenceException extends ConstraintValidation
         this.relationshipId = relationshipId;
     }
 
-    public RelationshipPropertyExistenceException(
+    private RelationshipPropertyExistenceException(
             ErrorGqlStatusObject gqlStatusObject,
             RelationTypeSchemaDescriptor schema,
             Function<RelationTypeSchemaDescriptor, ConstraintDescriptor> constraintFunc,
@@ -60,6 +62,25 @@ public class RelationshipPropertyExistenceException extends ConstraintValidation
 
         this.schema = schema;
         this.relationshipId = relationshipId;
+    }
+
+    public static RelationshipPropertyExistenceException propertyPresenceViolation(
+            RelationTypeSchemaDescriptor schema,
+            TokenNameLookup tokenHolders,
+            ConstraintDescriptor descriptor,
+            ConstraintValidationException.Phase phase,
+            long relationshipId) {
+        // This might be a way to expose hidden properties to the user with roles with no access to those properties
+        // TODO: check for user rights
+        var propIds = schema.getPropertyIds();
+        String[] propKeyNames = new String[propIds.length];
+        for (int i = 0; i < propIds.length; i++) {
+            propKeyNames[i] = tokenHolders.propertyKeyGetName(propIds[i]);
+        }
+        ErrorGqlStatusObject gql = GqlHelper.getGql22N77_relationships(
+                relationshipId, tokenHolders.relationshipTypeGetName(schema.getRelTypeId()), propKeyNames);
+        return new RelationshipPropertyExistenceException(
+                gql, schema, ignored -> descriptor, phase, relationshipId, tokenHolders);
     }
 
     @Override
