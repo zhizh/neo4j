@@ -31,10 +31,10 @@ org.neo4j.gqlstatus.GqlRuntimeException public abstract class extends java.lang.
 org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(java.lang.String) void protected
 org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(java.lang.String, boolean, boolean) void protected
 org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(java.lang.String, java.lang.Throwable) void protected
-org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.Exception) void protected
 org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.String) void protected
 org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.String, boolean, boolean) void protected
 org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.String, java.lang.Throwable) void protected
+org.neo4j.gqlstatus.GqlRuntimeException::GqlRuntimeException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.Throwable) void protected
 org.neo4j.gqlstatus.GqlRuntimeException::gqlStatusObject() org.neo4j.gqlstatus.ErrorGqlStatusObject public
 org.neo4j.gqlstatus.GqlRuntimeException::legacyMessage() java.lang.String public
 org.neo4j.gqlstatus.NotificationClassification public final enum extends java.lang.Enum<org.neo4j.gqlstatus.NotificationClassification> implements org.neo4j.gqlstatus.GqlClassification

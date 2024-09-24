@@ -21,6 +21,7 @@ package org.neo4j.bolt.tx.error;
 
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.exceptions.Status.General;
 import org.neo4j.kernel.api.exceptions.Status.HasStatus;
@@ -43,7 +44,7 @@ public class DatabaseUnavailableTransactionCreationException extends Transaction
                 ErrorMessageHolder.getMessage(
                         gqlStatusObject, String.format("Database '%s' is unavailable.", databaseName)),
                 cause);
-        this.gqlStatusObject = gqlStatusObject;
+        this.gqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
         this.oldMessage = String.format("Database '%s' is unavailable.", databaseName);
     }
 

@@ -34,7 +34,7 @@ public abstract class GqlRuntimeException extends RuntimeException implements Er
 
     protected GqlRuntimeException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(ErrorMessageHolder.getMessage(gqlStatusObject, message), cause);
-        this.innerGqlStatusObject = gqlStatusObject;
+        this.innerGqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
         this.oldMessage = message;
     }
 
@@ -46,10 +46,10 @@ public abstract class GqlRuntimeException extends RuntimeException implements Er
         this(gqlStatusObject, message, null);
     }
 
-    protected GqlRuntimeException(ErrorGqlStatusObject gqlStatusObject, Exception ex) {
-        super(ErrorMessageHolder.getMessage(gqlStatusObject, ex.getMessage()));
-        this.innerGqlStatusObject = gqlStatusObject;
-        this.oldMessage = ErrorMessageHolder.getOldCauseMessage(ex);
+    protected GqlRuntimeException(ErrorGqlStatusObject gqlStatusObject, Throwable cause) {
+        super(ErrorMessageHolder.getMessage(gqlStatusObject, cause.getMessage()), cause);
+        this.innerGqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
+        this.oldMessage = ErrorMessageHolder.getOldCauseMessage(cause);
     }
 
     protected GqlRuntimeException(String message, boolean suppression, boolean stacktrace) {

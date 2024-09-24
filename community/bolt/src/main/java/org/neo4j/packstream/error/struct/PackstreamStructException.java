@@ -21,6 +21,7 @@ package org.neo4j.packstream.error.struct;
 
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.packstream.error.reader.PackstreamReaderException;
 
@@ -51,7 +52,7 @@ public class PackstreamStructException extends PackstreamReaderException
 
     public PackstreamStructException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(ErrorMessageHolder.getMessage(gqlStatusObject, message), cause);
-        this.gqlStatusObject = gqlStatusObject;
+        this.gqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
         this.oldMessage = message;
     }
 

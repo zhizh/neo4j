@@ -31,4 +31,38 @@ public class GqlHelper {
                 .withParam(GqlParams.ListParam.valueTypeList, validTypes)
                 .build();
     }
+
+    /**
+     * Append the exception cause as the bottom GQL cause of the inner ErrorGqlStatusObject if the following applies
+     * - the exception cause is an ErrorGqlStatusObject (and not e.g. a generic Java exception)
+     * - the inner ErrorGqlStatusObject is of type ErrorGqlStatusObjectImplementation
+     * (this should always be true, but is needed for casting)
+     *
+     * @param gqlStatusObject The current inner ErrorGqlStatusObject
+     * @param cause The exception cause
+     * @return The replaced inner ErrorGqlStatusObject
+     */
+    public static ErrorGqlStatusObject getInnerGqlStatusObject(ErrorGqlStatusObject gqlStatusObject, Throwable cause) {
+        if (cause instanceof ErrorGqlStatusObject gqlStatusObjectCause) {
+            return getErrorObjectWithRewrittenCause(gqlStatusObject, gqlStatusObjectCause);
+        } else {
+            return gqlStatusObject;
+        }
+    }
+
+    private static ErrorGqlStatusObject getErrorObjectWithRewrittenCause(
+            ErrorGqlStatusObject gqlStatusObject, ErrorGqlStatusObject exceptionCause) {
+        // This should always be true, but needed for casting
+        if (gqlStatusObject.gqlStatusObject() instanceof ErrorGqlStatusObjectImplementation gsoImplementation) {
+            ErrorGqlStatusObject newCause;
+            if (gqlStatusObject.cause().isPresent()) {
+                newCause =
+                        getErrorObjectWithRewrittenCause(gqlStatusObject.cause().get(), exceptionCause);
+            } else {
+                newCause = exceptionCause;
+            }
+            return gsoImplementation.copyWithCause(newCause);
+        }
+        return gqlStatusObject;
+    }
 }

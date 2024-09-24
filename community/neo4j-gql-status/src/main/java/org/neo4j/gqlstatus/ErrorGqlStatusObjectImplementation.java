@@ -55,6 +55,13 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         return this;
     }
 
+    public ErrorGqlStatusObject copyWithCause(ErrorGqlStatusObject cause) {
+        return new Builder(this.gqlStatusInfoCode)
+                .withParamMap(this.paramMap)
+                .withCause(cause)
+                .build();
+    }
+
     @Override
     public String legacyMessage() {
         return "";
@@ -105,7 +112,7 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
 
     public static class Builder {
         private ErrorGqlStatusObject cause = null;
-        private final Map<GqlParams.GqlParam, Object> paramMap = new HashMap<>();
+        private Map<GqlParams.GqlParam, Object> paramMap = new HashMap<>();
         private final GqlStatusInfoCodes gqlStatusInfoCode;
         private final DiagnosticRecord.Builder diagnosticRecordBuilder = DiagnosticRecord.from();
 
@@ -130,6 +137,11 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
 
         public Builder withParam(GqlParams.ListParam param, List<?> value) {
             this.paramMap.put(param, value);
+            return this;
+        }
+
+        Builder withParamMap(Map<GqlParams.GqlParam, Object> paramMap) {
+            this.paramMap = paramMap;
             return this;
         }
 

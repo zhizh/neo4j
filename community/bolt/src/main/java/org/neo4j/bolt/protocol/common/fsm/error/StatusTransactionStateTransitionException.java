@@ -22,6 +22,7 @@ package org.neo4j.bolt.protocol.common.fsm.error;
 import org.neo4j.bolt.tx.error.TransactionException;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.exceptions.Status.HasStatus;
 
@@ -42,7 +43,7 @@ public final class StatusTransactionStateTransitionException extends Transaction
             ErrorGqlStatusObject gqlStatusObject, TransactionException cause, Status status) {
         super(ErrorMessageHolder.getMessage(gqlStatusObject, ErrorMessageHolder.getOldCauseMessage(cause)), cause);
         this.status = status;
-        this.gqlStatusObject = gqlStatusObject;
+        this.gqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
         this.oldMessage = ErrorMessageHolder.getOldCauseMessage(cause);
     }
 

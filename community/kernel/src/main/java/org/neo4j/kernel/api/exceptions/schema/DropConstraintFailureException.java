@@ -61,6 +61,7 @@ public class DropConstraintFailureException extends SchemaKernelException {
     public DropConstraintFailureException(ErrorGqlStatusObject gqlStatusObject, String nameOrSchema, Throwable cause) {
         // nameOrSchema is just 'name' or 'on schema'
         super(
+                gqlStatusObject,
                 Status.Schema.ConstraintDropFailed,
                 cause,
                 "Unable to drop constraint `" + nameOrSchema + "`: " + cause.getMessage());

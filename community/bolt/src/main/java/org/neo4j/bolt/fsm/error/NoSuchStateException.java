@@ -22,6 +22,7 @@ package org.neo4j.bolt.fsm.error;
 import org.neo4j.bolt.fsm.state.StateReference;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.exceptions.Status.General;
 import org.neo4j.kernel.api.exceptions.Status.HasStatus;
@@ -45,7 +46,7 @@ public class NoSuchStateException extends StateMachineException
 
     public NoSuchStateException(ErrorGqlStatusObject gqlStatusObject, StateReference target, Throwable cause) {
         super(ErrorMessageHolder.getMessage(gqlStatusObject, "No such state: " + target.name()), cause);
-        this.gqlStatusObject = gqlStatusObject;
+        this.gqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
         this.oldMessage = "No such state: " + target.name();
 
         this.target = target;

@@ -34,7 +34,7 @@ public abstract class GqlException extends Exception implements ErrorGqlStatusOb
 
     protected GqlException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(ErrorMessageHolder.getMessage(gqlStatusObject, message), cause);
-        this.innerGqlStatusObject = gqlStatusObject;
+        this.innerGqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
         this.oldMessage = message;
     }
 
