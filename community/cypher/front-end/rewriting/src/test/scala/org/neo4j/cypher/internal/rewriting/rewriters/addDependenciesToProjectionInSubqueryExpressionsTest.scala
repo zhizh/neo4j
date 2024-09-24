@@ -531,7 +531,9 @@ class addDependenciesToProjectionInSubqueryExpressionsTest
     val expected = parse(expectedQuery, cypherExceptionFactory)
 
     val normalizedWithAndReturnClauses =
-      original.endoRewrite(normalizeWithAndReturnClauses.getRewriter(cypherExceptionFactory))
+      original.endoRewrite(normalizeWithAndReturnClauses.getRewriter(
+        cypherExceptionFactory
+      ))
     val checkResult =
       normalizedWithAndReturnClauses.semanticCheck.run(SemanticState.clean, SemanticCheckContext.default)
     val rewriter =

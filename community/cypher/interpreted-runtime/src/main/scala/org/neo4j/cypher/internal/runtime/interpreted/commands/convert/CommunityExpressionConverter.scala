@@ -883,9 +883,14 @@ case class CommunityExpressionConverter(
   }
 
   private def caseExpression(id: Id, e: internal.expressions.CaseExpression, self: ExpressionConverters) = {
+    val candidate = for {
+      expr <- e.candidate
+      name <- e.candidateVarName
+    } yield ExpressionVariable.cast(name) -> self.toCommandExpression(id, expr)
+
     val predicateAlternatives = e.alternatives
       .map { a => (self.toCommandPredicate(id, a._1), self.toCommandExpression(id, a._2)) }
-    commands.expressions.CaseExpression(predicateAlternatives, toCommandExpression(id, e.default, self))
+    commands.expressions.CaseExpression(candidate, predicateAlternatives, toCommandExpression(id, e.default, self))
   }
 
   private def hasALabelOrType(

@@ -49,15 +49,26 @@ import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
 import org.neo4j.values.storable.Values.NO_VALUE
 import org.neo4j.values.storable.Values.intValue
+import org.neo4j.values.storable.Values.stringValue
 import org.neo4j.values.virtual.VirtualValues.list
 
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicLong
 
 abstract class ExpressionTestBase[CONTEXT <: RuntimeContext](edition: Edition[CONTEXT], runtime: CypherRuntime[CONTEXT])
     extends RuntimeTestSuite(edition, runtime) {
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
+    registerFunction(new BasicUserFunction(UserFunctionSignature.functionSignature(
+      new QualifiedName("intGenerator")
+    ).out(Neo4jTypes.NTInteger).threadSafe.build()) {
+      val counter = new AtomicLong(0)
+
+      def apply(ctx: Context, input: Array[AnyValue]): AnyValue =
+        Values.longValue(counter.getAndIncrement())
+    })
+
     registerFunction(new BasicUserFunction(UserFunctionSignature.functionSignature(new QualifiedName("runtimeName"))
       .out(Neo4jTypes.NTString).threadSafe().build()) {
 
@@ -1198,6 +1209,18 @@ abstract class ExpressionTestBase[CONTEXT <: RuntimeContext](edition: Edition[CO
       .build()
 
     execute(query, runtime) should beColumns("var1").withSingleRow(false)
+  }
+
+  test("should only evaluate case expression candidate once") {
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("x")
+      .projection("CASE intGenerator() WHEN 1 THEN 'no' WHEN 0 THEN 'yes' END AS x")
+      .argument()
+      .build()
+
+    val result = execute(logicalQuery, runtime).awaitAll()
+
+    result.head.head shouldBe stringValue("yes")
   }
 }
 

@@ -70,6 +70,7 @@ import org.neo4j.cypher.internal.logical.plans.NestedPlanGetByNameExpression
 import org.neo4j.cypher.internal.logical.plans.Projection
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.Selection
+import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.cypher.internal.util.collection.immutable.ListSet
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -2844,16 +2845,16 @@ class SubqueryExpressionPlanningIntegrationTest extends CypherFunSuite with Logi
     plan.folder.findAllByClass[NestedPlanGetByNameExpression].toSet shouldBe Set(
       nestedGetColumnExpr(
         planner.subPlanBuilder()
-          .relationshipCountFromCountStore("anon_0", None, Seq("REL"), None)
+          .relationshipCountFromCountStore("anon_2", None, Seq("REL"), None)
           .build(),
-        "anon_0",
+        "anon_2",
         "COUNT { MATCH (a)-[r:REL]->(b) }"
       ),
       nestedGetColumnExpr(
         planner.subPlanBuilder()
-          .relationshipCountFromCountStore("anon_1", Some("Person"), Seq("KNOWS"), None)
+          .relationshipCountFromCountStore("anon_3", Some("Person"), Seq("KNOWS"), None)
           .build(),
-        "anon_1",
+        "anon_3",
         """COUNT { MATCH (c)-[k:KNOWS]->(d)
           |  WHERE c:Person }""".stripMargin
       )
@@ -3561,26 +3562,29 @@ class SubqueryExpressionPlanningIntegrationTest extends CypherFunSuite with Logi
 
     val expectedNestedPlan = planner.subPlanBuilder()
       .filter("b:Foo")
-      .expand("(a)-[r:X]->(b)")
-      .argument("a")
+      .expand("(`anon_1`)-[r:X]->(b)")
+      .argument("anon_1")
       .build()
 
     val npeExpression =
       nestedExistsExpr(
         expectedNestedPlan,
-        """EXISTS { MATCH (a)-[r:X]->(b)
+        """EXISTS { MATCH (`anon_1`)-[r:X]->(b)
           |  WHERE b:Foo }""".stripMargin
       )
+    val varName = Variable("anon_0")(InputPosition.NONE)
     val caseExp = caseExpression(
-      Some(prop("a", "prop")),
+      Some(varName),
+      None,
       Some(falseLiteral),
-      equals(prop("a", "prop"), literalInt(1)) -> npeExpression
+      equals(varName, literalInt(1)) -> npeExpression
     )
 
     logicalPlan should equal(
       planner.planBuilder()
         .produceResults("exists")
         .projection(Map("exists" -> caseExp))
+        .projection("a.prop AS anon_0", "a AS anon_1")
         .allNodeScan("a")
         .build()
     )
