@@ -158,6 +158,9 @@ public class PopulatingIndexProxy implements IndexProxy {
     public void reportUsageStatistics(IndexUsageStatsConsumer consumer) {}
 
     @Override
+    public void reportSizeInBytes() {}
+
+    @Override
     public String toString() {
         return getClass().getSimpleName() + "[job:" + job + "]";
     }

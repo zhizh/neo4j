@@ -57,6 +57,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 import static org.neo4j.common.Subject.AUTH_DISABLED;
 import static org.neo4j.common.Subject.SYSTEM;
+import static org.neo4j.configuration.GraphDatabaseInternalSettings.index_usage_report_frequency;
 import static org.neo4j.dbms.database.readonly.DatabaseReadOnlyChecker.writable;
 import static org.neo4j.internal.helpers.collection.Iterators.asCollection;
 import static org.neo4j.internal.helpers.collection.Iterators.asResourceIterator;
@@ -223,6 +224,7 @@ class IndexingServiceTest {
     private final JobScheduler scheduler = JobSchedulerFactory.createScheduler();
     private final StorageEngine storageEngine = mock(StorageEngine.class);
     private final FakeClock clock = Clocks.fakeClock();
+    private final Config config = Config.defaults();
 
     @BeforeEach
     void setUp() throws IndexNotFoundKernelException {
@@ -440,7 +442,7 @@ class IndexingServiceTest {
 
         life.add(IndexingServiceFactory.createIndexingService(
                 storageEngine,
-                Config.defaults(),
+                config,
                 mock(JobScheduler.class),
                 providerMap,
                 mock(IndexStoreViewFactory.class),
@@ -494,7 +496,7 @@ class IndexingServiceTest {
 
         var indexingService = IndexingServiceFactory.createIndexingService(
                 storageEngine,
-                Config.defaults(),
+                config,
                 mock(JobScheduler.class),
                 providerMap,
                 storeViewFactory,
@@ -1154,7 +1156,7 @@ class IndexingServiceTest {
 
         life.add(IndexingServiceFactory.createIndexingService(
                 storageEngine,
-                Config.defaults(),
+                config,
                 mock(JobScheduler.class),
                 providerMap,
                 mock(IndexStoreViewFactory.class),
@@ -1216,7 +1218,7 @@ class IndexingServiceTest {
 
         IndexingService indexingService = IndexingServiceFactory.createIndexingService(
                 storageEngine,
-                Config.defaults(),
+                config,
                 mock(JobScheduler.class),
                 providerMap,
                 storeViewFactory,
@@ -1388,7 +1390,7 @@ class IndexingServiceTest {
                 INSTANCE,
                 "",
                 writable(),
-                Config.defaults(),
+                config,
                 mock(KernelVersionProvider.class),
                 new DefaultFileSystemAbstraction(),
                 EMPTY_VISIBILITY_PROVIDER);
@@ -1605,7 +1607,7 @@ class IndexingServiceTest {
         };
         var indexingService = life.add(IndexingServiceFactory.createIndexingService(
                 storageEngine,
-                Config.defaults(),
+                config,
                 life.add(scheduler),
                 providerMap,
                 storeViewFactory,
@@ -1719,7 +1721,7 @@ class IndexingServiceTest {
         verify(indexStatisticsStore, times(0)).addUsageStats(eq(tokenIndex.getId()), any());
 
         // when
-        fakeClockScheduler.forward(IndexingService.USAGE_REPORT_FREQUENCY_SECONDS + 1, SECONDS);
+        fakeClockScheduler.forward(config.get(index_usage_report_frequency).toSeconds() + 1, SECONDS);
 
         // then
         verify(indexStatisticsStore, times(1)).addUsageStats(eq(index.getId()), any());
@@ -1893,7 +1895,6 @@ class IndexingServiceTest {
                 });
 
         MockIndexProviderMap providerMap = providedLife.add(new MockIndexProviderMap(indexProvider));
-        var config = Config.defaults();
         var kernelVersionProvider = mock(KernelVersionProvider.class);
         when(kernelVersionProvider.kernelVersion()).thenReturn(KernelVersion.getLatestVersion(config));
 
@@ -2070,7 +2071,7 @@ class IndexingServiceTest {
                 INSTANCE,
                 "",
                 writable(),
-                Config.defaults(),
+                config,
                 mock(KernelVersionProvider.class),
                 new DefaultFileSystemAbstraction(),
                 EMPTY_VISIBILITY_PROVIDER);

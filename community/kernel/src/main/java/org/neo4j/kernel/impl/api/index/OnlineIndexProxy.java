@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.internal.kernel.api.InternalIndexState;
 import org.neo4j.internal.kernel.api.PopulationProgress;
@@ -44,6 +45,7 @@ public class OnlineIndexProxy implements IndexProxy {
     final IndexAccessor accessor;
     private final IndexUsageTracking usageTracking;
     private final DatabaseIndexStats indexCounters;
+    private final AtomicLong cachedPreviouslyReportedSizeInBytes = new AtomicLong();
     private boolean started;
 
     // About this flag: there are two online "modes", you might say...
@@ -118,6 +120,7 @@ public class OnlineIndexProxy implements IndexProxy {
     public void drop() {
         indexProxyStrategy.removeStatisticsForIndex();
         accessor.drop();
+        indexCounters.reportChangeInSize(getDescriptor(), -cachedPreviouslyReportedSizeInBytes.getAndSet(0L));
     }
 
     @Override
@@ -212,6 +215,13 @@ public class OnlineIndexProxy implements IndexProxy {
         final var stats = usageTracking.getAndReset();
         indexCounters.reportQueryCount(descriptor, stats.readCount());
         consumer.addUsageStats(descriptor.getId(), stats);
+    }
+
+    @Override
+    public void reportSizeInBytes() {
+        final var current = accessor.sizeInBytes();
+        final var previous = cachedPreviouslyReportedSizeInBytes.getAndSet(current);
+        indexCounters.reportChangeInSize(getDescriptor(), current - previous);
     }
 
     @Override

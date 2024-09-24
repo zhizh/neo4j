@@ -22,6 +22,7 @@ package org.neo4j.index;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.neo4j.configuration.GraphDatabaseInternalSettings.index_usage_report_frequency;
 import static org.neo4j.internal.kernel.api.IndexQueryConstraints.unorderedValues;
 import static org.neo4j.internal.kernel.api.PropertyIndexQuery.allEntries;
 import static org.neo4j.internal.kernel.api.security.LoginContext.AUTH_DISABLED;
@@ -34,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.neo4j.configuration.Config;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Transaction;
@@ -58,6 +60,9 @@ class IndexUsageStatsIT {
 
     @Inject
     private GraphDatabaseAPI db;
+
+    @Inject
+    private Config config;
 
     private long beforeCreateTime;
     private long beforeQueryTime;
@@ -176,7 +181,7 @@ class IndexUsageStatsIT {
     @Test
     void shouldRunPeriodicUpdateWhenClockIsForwarded() {
         // when
-        fakeClock.forward(IndexingService.USAGE_REPORT_FREQUENCY_SECONDS, TimeUnit.SECONDS);
+        fakeClock.forward(config.get(index_usage_report_frequency).toSeconds(), TimeUnit.SECONDS);
 
         // then
         assertEventuallyIndexUsageStats(stats -> stats.trackedSince() >= beforeCreateTime);

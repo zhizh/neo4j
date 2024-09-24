@@ -57,6 +57,7 @@ import org.neo4j.common.Subject;
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.configuration.Config;
 import org.neo4j.configuration.FulltextSettings;
+import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.dbms.database.readonly.DatabaseReadOnlyChecker;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.exceptions.UnderlyingStorageException;
@@ -125,7 +126,6 @@ public class IndexingService extends LifecycleAdapter implements IndexUpdateList
     private static final String INDEX_SERVICE_INDEX_CLOSING_TAG = "indexServiceIndexClosing";
     private static final String INIT_TAG = "Initialize IndexingService";
     private static final String START_TAG = "Start index population";
-    public static final int USAGE_REPORT_FREQUENCY_SECONDS = 10;
 
     private final IndexSamplingController samplingController;
     private final IndexProxyCreator indexProxyCreator;
@@ -153,6 +153,7 @@ public class IndexingService extends LifecycleAdapter implements IndexUpdateList
     private JobHandle<?> eventuallyConsistentFulltextIndexRefreshJob;
 
     private volatile JobHandle<?> usageReportJob;
+    private volatile JobHandle<?> totalSizeReportJob;
 
     enum State {
         NOT_STARTED,
@@ -351,11 +352,23 @@ public class IndexingService extends LifecycleAdapter implements IndexUpdateList
             awaitOnlineAfterRecovery(proxy);
         });
 
+        final var usageReportFrequencyInSeconds = config.get(GraphDatabaseInternalSettings.index_usage_report_frequency)
+                .toSeconds();
         usageReportJob = jobScheduler.scheduleRecurring(
                 Group.STORAGE_MAINTENANCE,
                 this::reportUsageStatistics,
-                USAGE_REPORT_FREQUENCY_SECONDS,
-                USAGE_REPORT_FREQUENCY_SECONDS,
+                usageReportFrequencyInSeconds,
+                usageReportFrequencyInSeconds,
+                TimeUnit.SECONDS);
+
+        final var totalSizeReportFrequencyInSeconds = config.get(
+                        GraphDatabaseInternalSettings.index_total_size_report_frequency)
+                .toSeconds();
+        totalSizeReportJob = jobScheduler.scheduleRecurring(
+                Group.FILE_IO_HELPER,
+                this::reportTotalSizeStatistics,
+                totalSizeReportFrequencyInSeconds,
+                totalSizeReportFrequencyInSeconds,
                 TimeUnit.SECONDS);
 
         state = State.RUNNING;
@@ -489,6 +502,7 @@ public class IndexingService extends LifecycleAdapter implements IndexUpdateList
             eventuallyConsistentFulltextIndexRefreshJob.cancel();
         }
 
+        totalSizeReportJob.cancel();
         usageReportJob.cancel();
         indexDropController.stop();
         samplingController.stop();
@@ -876,6 +890,11 @@ public class IndexingService extends LifecycleAdapter implements IndexUpdateList
         if (kernelVersionProvider.kernelVersion().isAtLeast(KernelVersion.VERSION_INDEX_USAGE_STATISTICS_INTRODUCED)) {
             indexMapRef.getAllIndexProxies().forEach(p -> p.reportUsageStatistics(indexStatisticsStore));
         }
+    }
+
+    @VisibleForTesting
+    public void reportTotalSizeStatistics() {
+        indexMapRef.getAllIndexProxies().forEach(IndexProxy::reportSizeInBytes);
     }
 
     private final class IndexPopulationStarter implements UnaryOperator<IndexMap> {

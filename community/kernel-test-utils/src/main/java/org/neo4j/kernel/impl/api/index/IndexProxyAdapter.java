@@ -114,4 +114,7 @@ public class IndexProxyAdapter implements IndexProxy {
 
     @Override
     public void reportUsageStatistics(IndexUsageStatsConsumer consumer) {}
+
+    @Override
+    public void reportSizeInBytes() {}
 }

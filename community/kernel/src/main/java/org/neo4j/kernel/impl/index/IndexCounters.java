@@ -25,4 +25,6 @@ public interface IndexCounters {
     long getQueryCount(IndexType type);
 
     long getPopulationCount(IndexType type);
+
+    long getTotalSize(IndexType type);
 }

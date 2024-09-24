@@ -663,6 +663,18 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
             .build();
 
     @Internal
+    @Description("Set the frequency and offset for reporting index usage statistics.")
+    public static final Setting<Duration> index_usage_report_frequency = newBuilder(
+                    "internal.dbms.index.usage_report_frequency", DURATION, ofSeconds(10))
+            .build();
+
+    @Internal
+    @Description("Set the frequency and offset for reporting the total index sizes.")
+    public static final Setting<Duration> index_total_size_report_frequency = newBuilder(
+                    "internal.dbms.index.total_size_report_frequency", DURATION, ofMinutes(10))
+            .build();
+
+    @Internal
     @Description("If 'true', new database will be created without token indexes for labels and relationships.")
     public static final Setting<Boolean> skip_default_indexes_on_creation = newBuilder(
                     "internal.dbms.index.skip_default_indexes_on_creation", BOOL, false)

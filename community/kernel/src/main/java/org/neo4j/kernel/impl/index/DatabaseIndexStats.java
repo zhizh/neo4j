@@ -36,6 +36,7 @@ public class DatabaseIndexStats extends IndexMonitor.MonitorAdapter implements I
     private static class IndexTypeStats {
         final LongAdder queried = new LongAdder();
         final LongAdder populated = new LongAdder();
+        final LongAdder totalSize = new LongAdder();
     }
 
     private final Map<IndexType, IndexTypeStats> stats;
@@ -50,12 +51,17 @@ public class DatabaseIndexStats extends IndexMonitor.MonitorAdapter implements I
 
     @Override
     public long getQueryCount(IndexType type) {
-        return stats.get(type).queried.sum();
+        return stats.get(type).queried.longValue();
     }
 
     @Override
     public long getPopulationCount(IndexType type) {
-        return stats.get(type).populated.sum();
+        return stats.get(type).populated.longValue();
+    }
+
+    @Override
+    public long getTotalSize(IndexType type) {
+        return stats.get(type).totalSize.longValue();
     }
 
     public void reportQueryCount(IndexDescriptor descriptor, long queriesSinceLastReport) {
@@ -65,6 +71,10 @@ public class DatabaseIndexStats extends IndexMonitor.MonitorAdapter implements I
     @Override
     public void populationCompleteOn(IndexDescriptor descriptor) {
         stats.get(descriptor.getIndexType()).populated.increment();
+    }
+
+    public void reportChangeInSize(IndexDescriptor descriptor, long changeInSizeSinceLastReport) {
+        stats.get(descriptor.getIndexType()).totalSize.add(changeInSizeSinceLastReport);
     }
 
     @FunctionalInterface

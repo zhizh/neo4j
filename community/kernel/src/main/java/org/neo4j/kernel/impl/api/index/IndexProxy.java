@@ -124,5 +124,7 @@ public interface IndexProxy extends MinimalIndexAccessor {
      */
     void reportUsageStatistics(IndexUsageStatsConsumer consumer);
 
+    void reportSizeInBytes();
+
     default void maintenance() {}
 }

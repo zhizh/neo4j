@@ -143,6 +143,11 @@ public abstract class AbstractDelegatingIndexProxy implements IndexProxy {
     }
 
     @Override
+    public void reportSizeInBytes() {
+        getDelegate().reportSizeInBytes();
+    }
+
+    @Override
     public void maintenance() {
         getDelegate().maintenance();
     }
