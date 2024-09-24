@@ -169,10 +169,22 @@ case object PushdownPropertyReads {
         case (v, (optimum, optimumProperties)) =>
           if (optimum.cardinality < acc.incomingCardinality) {
             Some(optimum.logicalPlanId -> optimumProperties.map(propertyWithName(optimum.variableName, _)))
-          } else if (shouldCoRead(optimumProperties, plan) || databaseMode == DatabaseMode.SHARDED) { // always batch properties in a sharded properties database
+          } else if (shouldCoRead(optimumProperties, plan)) {
             Some(plan.lhs.get.id -> optimumProperties.map(propertyWithName(v.name, _)))
+          } else if (databaseMode == DatabaseMode.SHARDED) {
+            /*
+             * Ideally we would batch all properties in a sharded database. In the case of a leaf plan on the right-hand
+             * side of an apply reading a property from an argument, we're stuck. We can't batch the property right
+             * underneath it – it is a leaf plan. This rewriter doesn't have access to the left-hand side where we would
+             * want to batch the property. As a temporary fix, we simply don't batch the property here. At the time of
+             * writing, we are extracting the property batching logic from this rewriter, the new version will be able
+             * to handle this case better.
+             */
+            plan.lhs.map { lhs =>
+              lhs.id -> optimumProperties.map(propertyWithName(v.name, _))
+            }
           } else {
-            Seq.empty
+            None
           }
       }.groupBy(_._1)
         .view

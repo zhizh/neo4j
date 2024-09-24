@@ -33,6 +33,7 @@ import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
 import org.neo4j.cypher.internal.logical.plans.GetValue
+import org.neo4j.cypher.internal.logical.plans.SingleQueryExpression
 import org.neo4j.cypher.internal.planner.spi.DatabaseMode
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -485,6 +486,57 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
       .|.nodeByLabelScan("person", "Person")
       .remoteBatchProperties("cacheNFromStore[friend.creationDate]")
       .allNodeScan("friend")
+      .build()
+  }
+
+  test("should plan an index seek with property lookup on the right-hand side of an apply") {
+    /*
+     * The call sub-query is only here to enforce that person gets solved first preventing the test from being flaky.
+     * The query is strictly equivalent to:
+     *
+     *   MATCH (person:Person)
+     *   MATCH (friend:Person { id: person.id })
+     *   RETURN person.id, friend.id
+     */
+    val query =
+      """MATCH (person:Person)
+        |CALL {
+        |  WITH person
+        |  MATCH (friend:Person { id: person.id })
+        |  RETURN friend
+        |}
+        |RETURN person.id, friend.id""".stripMargin
+
+    val plan = planner.plan(query)
+
+    /*
+     * Ideally we would retrieve person.id in batches on the left-hand side of the apply, as follows:
+     *
+     *   .produceResults("`person.id`", "`friend.id`")
+     *   .projection("cacheN[person.id] AS `person.id`", "cacheN[friend.id] AS `friend.id`")
+     *   .apply()
+     *   .|.nodeIndexOperator("friend:Person(id = cacheN[person.id])", argumentIds = Set("person"), getValue = Map("id" -> GetValue), unique = true)
+     *   .remoteBatchProperties("cacheNFromStore[person.id]")
+     *   .nodeByLabelScan("person", "Person")
+     *   .build()
+     *
+     * Unfortunately, PushdownPropertyReads doesn't support it as it stands, so we retrieve person.id on the right-hand
+     * side for each person:
+     */
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("`person.id`", "`friend.id`")
+      .projection("cacheN[person.id] AS `person.id`", "cacheN[friend.id] AS `friend.id`")
+      .apply()
+      // UNIQUE friend:Person(id) WHERE id = cache[person.id], cache[friend.id]
+      .|.nodeIndexOperator(
+        "friend:Person(id)",
+        getValue = Map("id" -> GetValue),
+        argumentIds = Set("person"),
+        unique = true,
+        customQueryExpression = Some(SingleQueryExpression(cachedNodePropFromStore("person", "id")))
+      )
+      .nodeByLabelScan("person", "Person")
       .build()
   }
 }
