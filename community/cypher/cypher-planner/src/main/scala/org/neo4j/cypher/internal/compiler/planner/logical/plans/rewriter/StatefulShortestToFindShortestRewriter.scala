@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter
 
-import org.neo4j.cypher.internal.compiler.planner.logical.SkipRewriteOnZeroRepetitions
 import org.neo4j.cypher.internal.compiler.planner.logical.convertToInlinedPredicates
 import org.neo4j.cypher.internal.compiler.planner.logical.idp.extractPredicates
 import org.neo4j.cypher.internal.compiler.planner.logical.idp.extractPredicates.RelationshipPredicates
@@ -258,8 +257,7 @@ case class StatefulShortestToFindShortestRewriter(
           solveds.get(statefulShortestPath.source.id).asSinglePlannerQuery.queryGraph.selections.flatPredicates,
         pathDirection = qpp.patternRelationships.head.dir,
         pathRepetition = qpp.repetition,
-        anonymousVariableNameGenerator = anonymousVariableNameGenerator,
-        nodeToRelationshipRewriteOption = SkipRewriteOnZeroRepetitions
+        anonymousVariableNameGenerator = anonymousVariableNameGenerator
       )
         .flatMap(inlinedPredicates =>
           Some(FindShortestPaths(

@@ -41,8 +41,7 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
     innerPredicates: Seq[Expression] = Seq.empty,
     outerPredicates: Seq[Expression] = Seq.empty,
     minRep: Int = 0,
-    direction: SemanticDirection = BOTH,
-    nodeToRelationshipRewriteOption: NodeToRelationshipRewriteOption = ApplyNodeToRelationshipRewriter
+    direction: SemanticDirection = BOTH
   )
 
   private val outerStart = v"outerStart"
@@ -61,8 +60,7 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
     pathRepetition = Repetition(min = input.minRep, max = Unlimited),
     pathDirection = input.direction,
     predicatesOutsideRepetition = input.outerPredicates,
-    anonymousVariableNameGenerator = new AnonymousVariableNameGenerator(),
-    nodeToRelationshipRewriteOption = input.nodeToRelationshipRewriteOption
+    anonymousVariableNameGenerator = new AnonymousVariableNameGenerator()
   )
 
   test("Rewrites (outerStart{prop:1})((innerStart)--(innerEnd))+(outerEnd{prop:1})") {
@@ -144,8 +142,7 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
       innerPredicates =
         Seq(propEquality("rel", "prop", 1), notEquals(prop("innerStart", "prop"), prop("innerEnd", "prop"))),
       direction = OUTGOING,
-      minRep = 1,
-      nodeToRelationshipRewriteOption = SkipRewriteOnZeroRepetitions
+      minRep = 1
     )) shouldEqual
       Some(InlinedPredicates(relationshipPredicates =
         Seq(
@@ -241,8 +238,7 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
       innerPredicates =
         Seq(propEquality("rel", "prop", 1), notEquals(prop("innerStart", "prop"), prop("innerEnd", "prop"))),
       direction = OUTGOING,
-      minRep = 1,
-      nodeToRelationshipRewriteOption = SkipRewriteOnZeroRepetitions
+      minRep = 1
     )) shouldEqual
       Some(InlinedPredicates(relationshipPredicates =
         Seq(
@@ -348,17 +344,6 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
   }
 
   test(
-    "Should not rewrite (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE innerStart.prop <> innerEnd.prop)*(outerEnd) if nodeToRelationshipRewriteOption is SkipRewriteOnZeroRepetitions"
-  ) {
-    rewrite(Input(
-      innerPredicates =
-        Seq(propEquality("rel", "prop", 1), notEquals(prop("innerStart", "prop"), prop("innerEnd", "prop"))),
-      direction = OUTGOING,
-      nodeToRelationshipRewriteOption = SkipRewriteOnZeroRepetitions
-    )) shouldBe None
-  }
-
-  test(
     "Rewrite (outerStart)((innerStart)-[rel{prop:1}]-(innerEnd) WHERE innerStart.prop <> innerEnd.prop)*(outerEnd)"
   ) {
     rewrite(Input(
@@ -379,7 +364,7 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
   }
 
   test(
-    "Should not rewrite (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE NOT exists((innerEnd)--(innerEnd)))+(outerEnd)"
+    "Should rewrite (outerStart)((innerStart)-[rel{prop:1}]->(innerEnd) WHERE NOT exists((innerEnd)--(innerEnd)))+(outerEnd)"
   ) {
     rewrite(Input(
       innerPredicates =
@@ -390,8 +375,7 @@ class convertToInlinedPredicatesTest extends CypherFunSuite with AstConstruction
           ).withComputedScopeDependencies(Set(innerEnd))))
         ),
       direction = OUTGOING,
-      minRep = 1,
-      nodeToRelationshipRewriteOption = SkipRewriteOnZeroRepetitions
+      minRep = 1
     )) shouldBe None
   }
 

@@ -63,7 +63,6 @@ object convertToInlinedPredicates {
    * @param pathDirection - the direction of the relationship in the pattern
    * @param predicatesOutsideRepetition - the predicates on outerStartNode and outerEndNode
    * @param anonymousVariableNameGenerator - a variable name generator for both node and relationship predicates
-   * @param nodeToRelationshipRewriteOption - option to control when predicates with innerStartNode and innerEndNode are rewritten to startNode(innerRelationship)/endNode(innerRelationship)
    * @return maybeInlinedPredicates - inlined node and relationship predicates on new anonymous variables. Returns None if the predicates are not inlinable.
    */
   def apply(
@@ -76,8 +75,7 @@ object convertToInlinedPredicates {
     pathRepetition: Repetition,
     pathDirection: SemanticDirection,
     predicatesOutsideRepetition: Seq[Expression],
-    anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
-    nodeToRelationshipRewriteOption: NodeToRelationshipRewriteOption = ApplyNodeToRelationshipRewriter
+    anonymousVariableNameGenerator: AnonymousVariableNameGenerator
   ): Option[InlinedPredicates] = {
     val anonymousNodeVariable = varFor(anonymousVariableNameGenerator.nextName)
     val anonymousRelationshipVariable = varFor(anonymousVariableNameGenerator.nextName)
@@ -196,12 +194,7 @@ object convertToInlinedPredicates {
             predicate
           )
         ) {
-          val maybeRewrittenPredicate = nodeToRelationshipRewriteOption match {
-            case ApplyNodeToRelationshipRewriter                        => rewriteToRelationshipPredicate(predicate)
-            case SkipRewriteOnZeroRepetitions if pathRepetition.min > 0 => rewriteToRelationshipPredicate(predicate)
-            case _                                                      => None
-          }
-          maybeRewrittenPredicate
+          rewriteToRelationshipPredicate(predicate)
             .flatMap(rewrittenPred =>
               Some(VariablePredicate(anonymousRelationshipVariable, rewrittenPred))
             )
@@ -219,10 +212,6 @@ object convertToInlinedPredicates {
     })
   }
 }
-
-sealed trait NodeToRelationshipRewriteOption
-object ApplyNodeToRelationshipRewriter extends NodeToRelationshipRewriteOption
-object SkipRewriteOnZeroRepetitions extends NodeToRelationshipRewriteOption
 
 case class InlinedPredicates(
   nodePredicates: Seq[VariablePredicate] = Seq.empty,
