@@ -23,12 +23,14 @@ import org.neo4j.configuration.Config
 import org.neo4j.configuration.GraphDatabaseInternalSettings
 import org.neo4j.configuration.GraphDatabaseSettings
 import org.neo4j.cypher.internal.MapValueOps.Ops
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException
 import org.neo4j.storageengine.api.StorageEngineFactory
 import org.neo4j.storageengine.api.StorageEngineFactory.allAvailableStorageEngines
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.NoValue
 import org.neo4j.values.storable.TextValue
+import org.neo4j.values.utils.PrettyPrinter
 import org.neo4j.values.virtual.MapValue
 
 import java.lang.Boolean.FALSE
@@ -65,7 +67,10 @@ trait StringOptionValidator extends OptionValidator[String] {
         validateContent(textValue.stringValue(), config)
         textValue.stringValue()
       case _ =>
-        throw new InvalidArgumentsException(s"Could not $operation with specified $KEY '$value', String expected.")
+        val pp = new PrettyPrinter
+        value.writeTo(pp)
+        val gql = getGql22N27(pp.value, KEY, java.util.List.of("STRING"))
+        throw new InvalidArgumentsException(gql, s"Could not $operation with specified $KEY '$value', String expected.")
     }
   }
 }

@@ -67,7 +67,7 @@ case class ShowSettingsCommand(
   }.toMap[String, AnyValue]
 
   override def originalNameRows(state: QueryState, baseRow: CypherRow): ClosingIterator[Map[String, AnyValue]] = {
-    val names = Command.extractNames(givenNames, state, baseRow)
+    val names = Command.extractNames(givenNames, state, baseRow, "SHOW SETTINGS")
     val config = state.query.getConfig
     val txContext = state.query.transactionalContext
     val accessMode = txContext.securityContext.mode()

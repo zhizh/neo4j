@@ -23,6 +23,8 @@ import Ordering.comparatorToOrdering
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.MapValueOps.Ops
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.graphdb.schema.IndexSetting
 import org.neo4j.graphdb.schema.IndexSettingImpl.FULLTEXT_ANALYZER
 import org.neo4j.graphdb.schema.IndexSettingImpl.FULLTEXT_EVENTUALLY_CONSISTENT
@@ -98,7 +100,15 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
     case indexProviderValue: TextValue =>
       context.validateIndexProvider(schemaType, indexProviderValue.stringValue(), indexType, version)
     case _ =>
+      val pp = new PrettyPrinter
+      indexProvider.writeTo(pp)
+      val gql = getGql22N27(
+        pp.value,
+        GqlParams.StringParam.cmd.process("indexProvider"),
+        java.util.List.of("STRING")
+      )
       throw new InvalidArgumentsException(
+        gql,
         s"Could not create $schemaType with specified index provider '$indexProvider'. Expected String value."
       )
   }
@@ -190,7 +200,13 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
       case _: MapValue => IndexConfig.empty
       case unknown =>
         unknown.writeTo(pp)
+        val gql = getGql22N27(
+          pp.value,
+          GqlParams.StringParam.cmd.process("indexConfig"),
+          java.util.List.of("MAP")
+        )
         throw new InvalidArgumentsException(
+          gql,
           s"Could not create $schemaType with specified index config '${pp.value()}'. Expected a map."
         )
     }

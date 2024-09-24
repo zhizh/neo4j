@@ -20,7 +20,10 @@ import org.neo4j.cypher.internal.expressions.Parameter
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.exceptions.ParameterWrongTypeException
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.values.storable.TextValue
+import org.neo4j.values.utils.PrettyPrinter
 import org.neo4j.values.virtual.MapValue
 
 import java.util
@@ -58,7 +61,11 @@ case class ParameterName(parameter: Parameter)(val position: InputPosition) exte
   def getNameParts(params: MapValue, defaultNamespace: String): (Option[String], String, String) = {
     val paramValue = params.get(parameter.name)
     if (!paramValue.isInstanceOf[TextValue]) {
+      val pp = new PrettyPrinter
+      paramValue.writeTo(pp)
+      val gql = getGql22N27(pp.value, GqlParams.StringParam.param.process(parameter.name), java.util.List.of("STRING"))
       throw new ParameterWrongTypeException(
+        gql,
         s"Expected parameter $$${parameter.name} to have type String but was $paramValue"
       )
     } else {

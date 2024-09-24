@@ -169,6 +169,10 @@ import org.neo4j.cypher.internal.util.StepSequencer
 import org.neo4j.cypher.internal.util.attribution.SequentialIdGen
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.PRIMARY_PROPERTY
 import org.neo4j.exceptions.InvalidSemanticsException
+import org.neo4j.gqlstatus.ErrorClassification
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 /**
  * This planner takes on queries that run at the DBMS level for multi-database administration.
@@ -1402,7 +1406,17 @@ case object UnsupportedSystemCommand extends Phase[PlannerContext, BaseState, Lo
 
   override def postConditions: Set[StepSequencer.Condition] = Set.empty
 
-  override def process(from: BaseState, context: PlannerContext): LogicalPlanState =
-    throw new InvalidSemanticsException(s"Not a recognised system command or procedure. " +
-      s"This Cypher command can only be executed in a user database: ${from.queryText}")
+  override def process(from: BaseState, context: PlannerContext): LogicalPlanState = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .withClassification(ErrorClassification.CLIENT_ERROR)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
+        .withClassification(ErrorClassification.CLIENT_ERROR)
+        .withParam(GqlParams.StringParam.input, from.queryText)
+        .build).build
+    throw new InvalidSemanticsException(
+      gql,
+      s"Not a recognised system command or procedure. " +
+        s"This Cypher command can only be executed in a user database: ${from.queryText}"
+    )
+  }
 }

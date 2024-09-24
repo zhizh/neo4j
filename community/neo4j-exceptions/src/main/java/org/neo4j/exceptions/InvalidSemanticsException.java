@@ -23,6 +23,7 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class InvalidSemanticsException extends Neo4jException {
+    @Deprecated
     public InvalidSemanticsException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -31,6 +32,7 @@ public class InvalidSemanticsException extends Neo4jException {
         super(gqlStatusObject, message, cause);
     }
 
+    @Deprecated
     public InvalidSemanticsException(String message) {
         super(message);
     }

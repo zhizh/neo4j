@@ -28,8 +28,10 @@ import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.exceptions.ParameterWrongTypeException
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.StringValue
+import org.neo4j.values.utils.PrettyPrinter
 import org.neo4j.values.virtual.ListValue
 
 import java.time.Instant
@@ -101,7 +103,8 @@ object Command {
   protected[showcommands] def extractNames(
     names: Either[List[String], Expression],
     state: QueryState,
-    baseRow: CypherRow
+    baseRow: CypherRow,
+    originOperation: String
   ): List[String] =
     names match {
       case Left(ls) => ls.toSet.toList
@@ -112,10 +115,25 @@ object Command {
             val list = l.iterator().asScala
             list.map {
               case s: StringValue => s.stringValue()
-              case x              => throw new ParameterWrongTypeException(s"Expected a string, but got: ${x.toString}")
+              case x =>
+                val pp = new PrettyPrinter
+                x.writeTo(pp)
+                val gql =
+                  getGql22N27(
+                    pp.value,
+                    originOperation,
+                    java.util.List.of("STRING")
+                  )
+                throw new ParameterWrongTypeException(gql, s"Expected a string, but got: ${x.toString}")
             }.toSet.toList
           case x =>
-            throw new ParameterWrongTypeException(s"Expected a string or a list of strings, but got: ${x.toString}")
+            val pp = new PrettyPrinter
+            x.writeTo(pp)
+            val gql = getGql22N27(pp.value, originOperation, java.util.List.of("STRING"))
+            throw new ParameterWrongTypeException(
+              gql,
+              s"Expected a string or a list of strings, but got: ${x.toString}"
+            )
         }
     }
 }

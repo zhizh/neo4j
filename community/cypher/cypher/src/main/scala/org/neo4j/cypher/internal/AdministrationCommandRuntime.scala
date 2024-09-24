@@ -66,6 +66,8 @@ import org.neo4j.exceptions.DatabaseAdministrationOnFollowerException
 import org.neo4j.exceptions.InvalidArgumentException
 import org.neo4j.exceptions.ParameterNotFoundException
 import org.neo4j.exceptions.ParameterWrongTypeException
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.graphdb.Direction
 import org.neo4j.graphdb.Transaction
 import org.neo4j.internal.helpers.collection.Iterators
@@ -212,7 +214,12 @@ object AdministrationCommandRuntime {
       case Values.NO_VALUE =>
         throw new ParameterNotFoundException(s"Expected parameter(s): $passwordParameter")
       case other =>
+        val pp = new PrettyPrinter
+        other.writeTo(pp)
+        val gql =
+          getGql22N27(pp.value, GqlParams.StringParam.param.process(passwordParameter), java.util.List.of("STRING"))
         throw new ParameterWrongTypeException(
+          gql,
           s"Expected password parameter $$$passwordParameter to have type String but was ${other.getTypeName}"
         )
     }
@@ -231,7 +238,14 @@ object AdministrationCommandRuntime {
   private[internal] def validateStringParameterType(param: Parameter): Unit = {
     param.parameterType match {
       case _: StringType =>
-      case _ => throw new ParameterWrongTypeException(
+      case _ =>
+        val gql = getGql22N27(
+          "type " + String.valueOf(param.parameterType),
+          "password",
+          java.util.List.of("STRING")
+        )
+        throw new ParameterWrongTypeException(
+          gql,
           s"Only $CTString values are accepted as password, got: " + param.parameterType
         )
     }
@@ -411,7 +425,15 @@ object AdministrationCommandRuntime {
         case Some(passwordExpression: PasswordExpression) =>
           Seq((param._2, passwordExpression.key, passwordExpression.value))
         case Some(nameFields: NameFields) => Seq((param._2, nameFields.nameKey, nameFields.nameValue))
-        case Some(p) => throw new InvalidArgumentException(
+        case Some(p)                      =>
+          // The $input (...getSimpleName) is a bit strange, but it's fine as this error should not happen as we only give the expected values in the loop
+          val gql = getGql22N27(
+            String.valueOf(p.getClass.getSimpleName),
+            GqlParams.StringParam.cmd.process("ALTER USER"),
+            java.util.List.of("BOOLEAN", "STRING")
+          )
+          throw new InvalidArgumentException(
+            gql,
             s"Invalid option type for ALTER USER, expected PasswordExpression, Boolean, String or Parameter but got: ${p.getClass.getSimpleName}"
           )
       }
@@ -804,7 +826,11 @@ object AdministrationCommandRuntime {
           value.writeTo(pp)
           (s"`$$$parameter`", s"`${pp.value()}`.")
         } else (s"$$$parameter", value.toString)
-        throw new ParameterWrongTypeException(s"Expected parameter $p to have type String but was $v")
+        val prettyParam = new PrettyPrinter()
+        value.writeTo(prettyParam)
+        val gql =
+          getGql22N27(prettyParam.value, GqlParams.StringParam.param.process(parameter), java.util.List.of("STRING"))
+        throw new ParameterWrongTypeException(gql, s"Expected parameter $p to have type String but was $v")
     }
   }
 
@@ -860,7 +886,11 @@ object AdministrationCommandRuntime {
       val paramValue = params.get(parameter)
       // Check the parameter is actually the expected type
       if (!paramValue.isInstanceOf[TextValue]) {
+        val pp = new PrettyPrinter
+        paramValue.writeTo(pp)
+        val gql = getGql22N27(pp.value, GqlParams.StringParam.param.process(parameter), java.util.List.of("STRING"))
         throw new ParameterWrongTypeException(
+          gql,
           s"Expected parameter $$$parameter to have type String but was $paramValue"
         )
       } else params.updatedWith(name, valueMapper(params.get(parameter).asInstanceOf[TextValue]))

@@ -23,6 +23,8 @@ import org.eclipse.collections.api.PrimitiveIterable
 import org.neo4j.configuration.Config
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.internal.schema.IndexConfig
 import org.neo4j.internal.schema.IndexConfigValidationRecords
 import org.neo4j.internal.schema.IndexConfigValidationRecords.IncorrectType
@@ -109,10 +111,19 @@ case class CreateVectorIndexOptionsConverter(context: IndexProviderContext, late
       }
     }
 
-    def exceptionWrongType(suppliedValue: AnyValue): InvalidArgumentsException =
+    def exceptionWrongType(suppliedValue: AnyValue): InvalidArgumentsException = {
+      val pp = new PrettyPrinter
+      suppliedValue.writeTo(pp)
+      val gql = getGql22N27(
+        pp.value,
+        GqlParams.StringParam.cmd.process("indexConfig"),
+        java.util.List.of("MAP<STRING, BOOLEAN | STRING | INTEGER>")
+      )
       new InvalidArgumentsException(
+        gql,
         s"${invalidConfigValueString(new PrettyPrinter(), suppliedValue, schemaType)}. Expected a map from String to Strings, Integers and Booleans."
       )
+    }
 
     def assertConfigSettingsCorrectTypes(validationRecords: IndexConfigValidationRecords, itemsMap: MapValue): Unit = {
       // note: in cypher 6 probably should refer to these as INTEGER and STRING respectively
@@ -122,13 +133,25 @@ case class CreateVectorIndexOptionsConverter(context: IndexProviderContext, late
           classOf[TextValue] -> "a String",
           classOf[BooleanValue] -> "a Boolean"
         )
+      val validCypherTypes: Map[Class[_], String] =
+        Map(
+          classOf[IntegralValue] -> "INTEGER",
+          classOf[TextValue] -> "STRING",
+          classOf[BooleanValue] -> "BOOLEAN"
+        )
 
       validationRecords.get(INCORRECT_TYPE).asScala.foreach {
         // valid type for vector index config, *but* invalid for that setting
         case incorrectType: IncorrectType if validTypes.exists { case (cls, _) =>
             cls.isAssignableFrom(incorrectType.providedType)
           } =>
+          val gql = getGql22N27(
+            "type " + incorrectType.providedType,
+            GqlParams.StringParam.cmd.process(incorrectType.settingName),
+            java.util.List.of(validCypherTypes(incorrectType.targetType()))
+          )
           throw new InvalidArgumentsException(
+            gql,
             s"${invalidConfigValueString(incorrectType.settingName, schemaType)}. Expected ${validTypes(incorrectType.targetType)}."
           )
         // invalid type for valid type for vector index config

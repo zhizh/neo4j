@@ -22,6 +22,8 @@ package org.neo4j.cypher.internal.optionsmap
 import org.neo4j.configuration.Config
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.internal.schema.IndexConfig
 import org.neo4j.internal.schema.IndexProviderDescriptor
 import org.neo4j.internal.schema.IndexType
@@ -57,7 +59,13 @@ case class CreateFulltextIndexOptionsConverter(context: IndexProviderContext)
     def exceptionWrongType(suppliedValue: AnyValue): InvalidArgumentsException = {
       val pp = new PrettyPrinter()
       suppliedValue.writeTo(pp)
+      val gql = getGql22N27(
+        pp.value,
+        GqlParams.StringParam.cmd.process("indexConfig"),
+        java.util.List.of("MAP<STRING, BOOLEAN | STRING>")
+      )
       new InvalidArgumentsException(
+        gql,
         s"Could not create $schemaType with specified index config '${pp.value()}'. Expected a map from String to Strings and Booleans."
       )
     }

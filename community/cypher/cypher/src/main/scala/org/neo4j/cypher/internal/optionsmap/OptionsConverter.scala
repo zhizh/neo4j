@@ -27,8 +27,11 @@ import org.neo4j.cypher.internal.ast.OptionsMap
 import org.neo4j.cypher.internal.ast.OptionsParam
 import org.neo4j.cypher.internal.evaluator.Evaluator.expressionEvaluator
 import org.neo4j.cypher.internal.expressions.Expression
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException
 import org.neo4j.values.AnyValue
+import org.neo4j.values.utils.PrettyPrinter
 import org.neo4j.values.virtual.MapValue
 import org.neo4j.values.virtual.MapValueBuilder
 import org.neo4j.values.virtual.VirtualValues
@@ -67,7 +70,13 @@ trait OptionsConverter[T] {
           mv.foreach((k, v) => builder.add(k.toLowerCase(Locale.ROOT), v))
           convert(builder.build(), config, version)
         case _ =>
-          throw new InvalidArgumentsException(s"Could not $operation with options '$opsMap'. Expected a map value.")
+          val pp = new PrettyPrinter
+          opsMap.writeTo(pp)
+          val gql = getGql22N27(pp.value, GqlParams.StringParam.cmd.process("OPTIONS"), java.util.List.of("MAP"))
+          throw new InvalidArgumentsException(
+            gql,
+            s"Could not $operation with options '$opsMap'. Expected a map value."
+          )
       }
   }
 

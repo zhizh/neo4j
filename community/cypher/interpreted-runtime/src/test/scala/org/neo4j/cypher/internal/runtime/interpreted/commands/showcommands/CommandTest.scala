@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.commands.showcommands
 
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.MutableMaps
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
@@ -28,6 +29,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Litera
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.ParameterFromSlot
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Variable
 import org.neo4j.exceptions.ParameterWrongTypeException
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.VirtualValues
 
@@ -38,7 +40,7 @@ class CommandTest extends ShowCommandTestBase {
     val names = List("foo", "bar", "baz", "bar", "foo")
 
     // When
-    val result = Command.extractNames(Left(names), queryState, initialCypherRow)
+    val result = Command.extractNames(Left(names), queryState, initialCypherRow, "")
 
     // Then
     result should have size 3
@@ -53,7 +55,7 @@ class CommandTest extends ShowCommandTestBase {
 
     // Then
     the[ParameterWrongTypeException] thrownBy {
-      Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow)
+      Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow, "")
     } should have message "Expected a string or a list of strings, but got: Boolean('true')"
   }
 
@@ -65,8 +67,27 @@ class CommandTest extends ShowCommandTestBase {
 
     // Then
     the[ParameterWrongTypeException] thrownBy {
-      Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow)
+      Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow, "")
     } should have message "Expected a string, but got: Boolean('true')"
+  }
+
+  test(
+    "Exception from `extractNames` on list of non string expression should get originOperation inserted into message"
+  ) {
+    // Given
+    val expression = ParameterFromSlot(0, "name")
+    val queryStateWithParams =
+      QueryStateHelper.emptyWith(query = ctx, params = Array(VirtualValues.list(Values.TRUE)))
+
+    // Then
+    val originOperation = "rxdtfcyvgbhnjkml,dfgh"
+    val thrown = the[ParameterWrongTypeException] thrownBy {
+      Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow, originOperation)
+    }
+
+    thrown.gqlStatusObject() match {
+      case gso: ErrorGqlStatusObjectImplementation => assertTrue(gso.statusDescription().contains(originOperation))
+    }
   }
 
   test("`extractNames` should return single string expression") {
@@ -76,7 +97,7 @@ class CommandTest extends ShowCommandTestBase {
       QueryStateHelper.emptyWith(query = ctx, params = Array(Values.stringValue("Hello!")))
 
     // When
-    val result = Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow)
+    val result = Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow, "")
 
     // Then
     result should have size 1
@@ -96,7 +117,7 @@ class CommandTest extends ShowCommandTestBase {
       QueryStateHelper.emptyWith(query = ctx, params = Array(paramValue))
 
     // When
-    val result = Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow)
+    val result = Command.extractNames(Right(expression), queryStateWithParams, initialCypherRow, "")
 
     // Then
     result should have size 3
@@ -117,7 +138,7 @@ class CommandTest extends ShowCommandTestBase {
     val listExpression = ListLiteral(paramExpression, variableExpression, stringConcatExpression)
 
     // When
-    val result = Command.extractNames(Right(listExpression), queryStateWithParams, expressionCypherRow)
+    val result = Command.extractNames(Right(listExpression), queryStateWithParams, expressionCypherRow, "")
 
     // Then
     result should have size 3

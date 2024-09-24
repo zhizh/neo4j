@@ -122,7 +122,7 @@ case class ShowTransactionsCommand(
       requestedColumnsNames.contains(currentQueryPageFaultsColumn)
 
   override def originalNameRows(state: QueryState, baseRow: CypherRow): ClosingIterator[Map[String, AnyValue]] = {
-    val ids = Command.extractNames(givenIds, state, baseRow)
+    val ids = Command.extractNames(givenIds, state, baseRow, "SHOW TRANSACTIONS")
     val ctx = state.query
     val securityContext = ctx.transactionalContext.securityContext
 

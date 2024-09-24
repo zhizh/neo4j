@@ -26,6 +26,7 @@ import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.Parameter
 import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlHelper.getGql22N27
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.internal.kernel.api.Procedures
@@ -38,6 +39,7 @@ import org.neo4j.values.storable.IntegralValue
 import org.neo4j.values.storable.StringValue
 import org.neo4j.values.storable.Value
 import org.neo4j.values.storable.Values
+import org.neo4j.values.utils.PrettyPrinter
 import org.neo4j.values.virtual.MapValue
 import org.neo4j.values.virtual.MapValueBuilder
 import org.neo4j.values.virtual.VirtualValues
@@ -72,10 +74,15 @@ class AliasMapSettingsEvaluator(procedures: Procedures) {
     driverSettings.map(settings =>
       evaluateMap(params).applyOrElse(
         settings.map(param => params.get(param.name)),
-        (param: ExpressionMapOrParamValue) =>
+        (param: ExpressionMapOrParamValue) => {
+          val pp = new PrettyPrinter
+          param.toOption.get.writeTo(pp)
+          val gql = getGql22N27(pp.value, GqlParams.StringParam.cmd.process("DRIVER"), java.util.List.of("MAP"))
           throw new InvalidArgumentsException(
+            gql,
             s"Failed to $operation: Invalid driver settings '${param.toOption.get}'. Expected a map value."
           )
+        }
       )
     ).map(AliasMapSettingsEvaluator.convert(_, operation))
   }
@@ -138,10 +145,21 @@ object AliasMapSettingsEvaluator {
         s"Failed to $operation: Invalid driver setting(s) provided: ${invalidKeys.mkString(", ")}. Valid driver settings are: ${validKeys.mkString(", ")}"
       )
     }
-    def throwExceptionWhenInvalidValue(key: String, expectedType: String) =
+    def throwExceptionWhenInvalidValue(
+      key: String,
+      expectedType: String,
+      expectedCypherType: String,
+      invalidValue: AnyValue
+    ) = {
+      val pp = new PrettyPrinter
+      invalidValue.writeTo(pp)
+
+      val gql = getGql22N27(pp.value, key, java.util.List.of(expectedCypherType))
       throw new InvalidArgumentsException(
+        gql,
         s"Failed to $operation: Invalid driver settings value for '$key'. Expected $expectedType value."
       )
+    }
 
     def getDurationSetting(key: String, allowNegative: Boolean = true): (String, Value) =
       settings.getOption(key).map {
@@ -153,7 +171,7 @@ object AliasMapSettingsEvaluator {
           } else {
             key -> duration
           }
-        case _ => throwExceptionWhenInvalidValue(key, "a duration")
+        case other => throwExceptionWhenInvalidValue(key, "a duration", "DURATION", other)
       }.getOrElse(key -> Values.NO_VALUE)
 
     def getLoggingLevel: (String, Value) =
@@ -171,7 +189,7 @@ object AliasMapSettingsEvaluator {
                 )
             }
           )
-        case _ => throwExceptionWhenInvalidValue(logging_level, "a string")
+        case other => throwExceptionWhenInvalidValue(logging_level, "a string", "STRING", other)
       }.getOrElse(logging_level -> Values.NO_VALUE)
 
     def getConnectionPoolMaxSize: (String, Value) =
@@ -181,13 +199,13 @@ object AliasMapSettingsEvaluator {
             s"Failed to $operation: Invalid driver settings value for '$connection_pool_max_size'. Zero is not allowed."
           )
         case poolMaxSize: IntegralValue => connection_pool_max_size -> poolMaxSize
-        case _                          => throwExceptionWhenInvalidValue(connection_pool_max_size, "an integer")
+        case other => throwExceptionWhenInvalidValue(connection_pool_max_size, "an integer", "INTEGER", other)
       }.getOrElse(connection_pool_max_size -> Values.NO_VALUE)
 
     Seq(
       settings.getOption(ssl_enforced).map {
         case sslEnabled: BooleanValue => ssl_enforced -> sslEnabled
-        case _                        => throwExceptionWhenInvalidValue(ssl_enforced, "a boolean")
+        case other                    => throwExceptionWhenInvalidValue(ssl_enforced, "a boolean", "BOOLEAN", other)
       }.getOrElse(ssl_enforced -> Values.NO_VALUE),
       getDurationSetting(connection_timeout, allowNegative = false),
       getDurationSetting(connection_max_lifetime),
