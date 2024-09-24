@@ -1363,6 +1363,7 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
                             "gds.arrow.write",
                             "gds.arrow.write.*",
                             "gds.session.dbms.protocol.version",
+                            "gds.arrow.cancel.job",
                             "internal.*",
                             "localdatetime.*",
                             "localtime.*",
