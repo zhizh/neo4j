@@ -64,8 +64,6 @@ import org.neo4j.cypher.internal.ast.DatabasePrivilegeQualifier
 import org.neo4j.cypher.internal.ast.DatabaseScope
 import org.neo4j.cypher.internal.ast.DbmsAction
 import org.neo4j.cypher.internal.ast.DbmsPrivilege
-import org.neo4j.cypher.internal.ast.DefaultDatabaseScope
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.DeleteElementAction
 import org.neo4j.cypher.internal.ast.DenyPrivilege
 import org.neo4j.cypher.internal.ast.DropAliasAction
@@ -247,11 +245,9 @@ trait DdlPrivilegeBuilder extends Cypher5ParserListener {
     ctx.ast = ctx.allPrivilegeTarget() match {
       case c: Cypher5Parser.DefaultTargetContext =>
         if (c.DATABASE() != null) {
-          val scope = if (c.DEFAULT() != null) DefaultDatabaseScope()(pos(ctx)) else HomeDatabaseScope()(pos(ctx))
-          allDbQualifier(DatabasePrivilege(AllDatabaseAction, scope)(pos(ctx)), None)
+          allDbQualifier(DatabasePrivilege(AllDatabaseAction, HomeDatabaseScope()(pos(ctx)))(pos(ctx)), None)
         } else {
-          val scope = if (c.DEFAULT() != null) DefaultGraphScope()(pos(ctx)) else HomeGraphScope()(pos(ctx))
-          allQualifier(GraphPrivilege(AllGraphAction, scope)(pos(ctx)), None)
+          allQualifier(GraphPrivilege(AllGraphAction, HomeGraphScope()(pos(ctx)))(pos(ctx)), None)
         }
       case c: Cypher5Parser.DatabaseVariableTargetContext =>
         val scope =
@@ -743,9 +739,7 @@ trait DdlPrivilegeBuilder extends Cypher5ParserListener {
   final override def exitDatabaseScope(
     ctx: Cypher5Parser.DatabaseScopeContext
   ): Unit = {
-    ctx.ast = if (ctx.DEFAULT() != null) {
-      DefaultDatabaseScope()(pos(ctx))
-    } else if (ctx.HOME() != null) {
+    ctx.ast = if (ctx.HOME() != null) {
       HomeDatabaseScope()(pos(ctx))
     } else if (ctx.TIMES() != null) {
       AllDatabasesScope()(pos(ctx))
@@ -757,9 +751,7 @@ trait DdlPrivilegeBuilder extends Cypher5ParserListener {
   final override def exitGraphScope(
     ctx: Cypher5Parser.GraphScopeContext
   ): Unit = {
-    ctx.ast = if (ctx.DEFAULT() != null) {
-      DefaultGraphScope()(pos(ctx))
-    } else if (ctx.HOME() != null) {
+    ctx.ast = if (ctx.HOME() != null) {
       HomeGraphScope()(pos(ctx))
     } else if (ctx.TIMES() != null) {
       AllGraphsScope()(pos(ctx))

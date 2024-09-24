@@ -986,7 +986,7 @@ public class LiteralInterpreter
     }
 
     @Override
-    public NULL databaseScope(NULL p, List<NULL> databaseNames, ScopeType scopeType) {
+    public NULL databasePrivilegeScope(NULL p, List<NULL> databaseNames, ScopeType scopeType) {
         throw new UnsupportedOperationException("databaseScope is not a literal");
     }
 

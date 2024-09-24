@@ -20,7 +20,6 @@ import org.neo4j.cypher.internal.ast.ActionResourceBase
 import org.neo4j.cypher.internal.ast.AllGraphsScope
 import org.neo4j.cypher.internal.ast.AllPropertyResource
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.ExistsExpression
 import org.neo4j.cypher.internal.ast.GraphAction
 import org.neo4j.cypher.internal.ast.GraphPrivilege
@@ -97,33 +96,6 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
         parseIn[Statements](_ =>
           _.toAst(statementToStatements(func(
             GraphPrivilege(action, HomeGraphScope()(pos))(pos),
-            PropertiesResource(propSeq)(pos),
-            List(PatternQualifier(
-              Seq(labelQualifierA),
-              Some(Variable("a")(_)),
-              Equals(
-                Property(Variable("a")(_), PropertyKeyName("prop2")(_))(_),
-                literal(1)
-              )(_)
-            )),
-            Seq(literalRole),
-            immutable
-          )(defaultPos)))
-        )
-    }
-  }
-
-  test("DEFAULT GRAPH") {
-    for {
-      Action(action, verb, preposition, func) <- actions
-      immutable <- Seq(true, false)
-    } yield {
-      val immutableString = immutableOrEmpty(immutable)
-
-      s"$verb$immutableString ${action.name} { prop } ON DEFAULT GRAPH FOR (a:A) WHERE a.prop2=1 $preposition role" should
-        parseIn[Statements](_ =>
-          _.toAst(statementToStatements(func(
-            GraphPrivilege(action, DefaultGraphScope()(pos))(pos),
             PropertiesResource(propSeq)(pos),
             List(PatternQualifier(
               Seq(labelQualifierA),

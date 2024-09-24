@@ -261,9 +261,7 @@ final class Cypher6SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
       val target = privilegeTarget match {
         case c: Cypher6Parser.DefaultTargetContext =>
           privilege match {
-            case Some("DBMS") =>
-              if (c.HOME() != null) ("HOME", c.HOME().getSymbol)
-              else ("DEFAULT", c.DEFAULT().getSymbol)
+            case Some("DBMS") => ("HOME", c.HOME().getSymbol)
             case _ =>
               if (c.GRAPH() != null) ("GRAPH", c.GRAPH().getSymbol)
               else ("DATABASE", c.DATABASE().getSymbol)

@@ -1365,7 +1365,7 @@ public class NullAstFactory
     }
 
     @Override
-    public NULL databaseScope(NULL p, List<NULL> databaseNames, ScopeType scopeType) {
+    public NULL databasePrivilegeScope(NULL p, List<NULL> databaseNames, ScopeType scopeType) {
         return null;
     }
 

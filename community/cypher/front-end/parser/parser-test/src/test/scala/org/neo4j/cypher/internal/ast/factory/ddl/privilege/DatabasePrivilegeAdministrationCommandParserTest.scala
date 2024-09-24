@@ -29,7 +29,6 @@ import org.neo4j.cypher.internal.ast.CreateNodeLabelAction
 import org.neo4j.cypher.internal.ast.CreatePropertyKeyAction
 import org.neo4j.cypher.internal.ast.CreateRelationshipTypeAction
 import org.neo4j.cypher.internal.ast.DatabaseAction
-import org.neo4j.cypher.internal.ast.DefaultDatabaseScope
 import org.neo4j.cypher.internal.ast.DropConstraintAction
 import org.neo4j.cypher.internal.ast.DropIndexAction
 import org.neo4j.cypher.internal.ast.HomeDatabaseScope
@@ -44,6 +43,7 @@ import org.neo4j.cypher.internal.ast.TerminateTransactionAction
 import org.neo4j.cypher.internal.ast.UserAllQualifier
 import org.neo4j.cypher.internal.ast.UserQualifier
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class DatabasePrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -186,18 +186,13 @@ class DatabasePrivilegeAdministrationCommandParserTest extends AdministrationAnd
               }
 
               test(s"$verb$immutableString $privilege ON DEFAULT DATABASE $preposition role") {
-                parsesTo[Statements](
-                  privilegeFunc(action, DefaultDatabaseScope() _, Seq(literalRole), immutable)(pos)
-                )
-              }
-
-              test(s"$verb$immutableString $privilege ON DEFAULT DATABASE $preposition $$role1, role2") {
-                parsesTo[Statements](privilegeFunc(
-                  action,
-                  DefaultDatabaseScope() _,
-                  Seq(paramRole1, literalRole2),
-                  immutable
-                )(pos))
+                failsParsing[Statements].in {
+                  case Cypher5JavaCc =>
+                    _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+                  case Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected 'DATABASE',")
+                }
               }
 
               test(s"$verb$immutableString $privilege ON GRAPH * $preposition role") {
@@ -295,29 +290,32 @@ class DatabasePrivilegeAdministrationCommandParserTest extends AdministrationAnd
                 // 'databases' instead of 'database'
                 failsParsing[Statements].in {
                   case Cypher5JavaCc => _.withMessageStart("""Invalid input 'DATABASES': expected "DATABASE"""")
-                  case _ => _.withSyntaxErrorContaining(
+                  case Cypher5 => _.withSyntaxErrorContaining(
                       """Invalid input 'DATABASES': expected 'DATABASE'""".stripMargin
                     )
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected 'DATABASE',")
                 }
               }
 
               test(s"$verb$immutableString $privilege ON DEFAULT DATABASE foo $preposition role") {
                 // both default and database name
                 failsParsing[Statements].in {
-                  case Cypher5JavaCc => _.withMessageStart(s"""Invalid input 'foo': expected "$preposition"""")
-                  case _ => _.withSyntaxErrorContaining(
-                      s"""Invalid input 'foo': expected '$preposition'""".stripMargin
-                    )
+                  case Cypher5JavaCc =>
+                    _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+                  case Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected 'DATABASE',")
                 }
               }
 
               test(s"$verb$immutableString $privilege ON DEFAULT DATABASE * $preposition role") {
                 // both default and *
                 failsParsing[Statements].in {
-                  case Cypher5JavaCc => _.withMessageStart(s"""Invalid input '*': expected "$preposition"""")
-                  case _ => _.withSyntaxErrorContaining(
-                      s"""Invalid input '*': expected '$preposition'""".stripMargin
-                    )
+                  case Cypher5JavaCc =>
+                    _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+                  case Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected 'DATABASE',")
                 }
               }
           }
@@ -414,23 +412,15 @@ class DatabasePrivilegeAdministrationCommandParserTest extends AdministrationAnd
           }
 
           test(s"$verb$immutableString SHOW TRANSACTION (user) ON DEFAULT DATABASE $preposition role") {
-            parsesTo[Statements](privilegeFunc(
-              ShowTransactionAction,
-              DefaultDatabaseScope() _,
-              List(UserQualifier(literalUser) _),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString SHOW TRANSACTION ($$user) ON DEFAULT DATABASE $preposition role") {
-            parsesTo[Statements](privilegeFunc(
-              ShowTransactionAction,
-              DefaultDatabaseScope() _,
-              List(UserQualifier(paramUser) _),
-              Seq(literalRole),
-              immutable
-            )(pos))
+            failsParsing[Statements].in {
+              case Cypher5JavaCc =>
+                _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+              case Cypher5 =>
+                _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+              case _ => _.withSyntaxErrorContaining(
+                  "Invalid input 'DEFAULT': expected 'DATABASE', 'HOME DATABASE' or 'DATABASES'"
+                )
+            }
           }
 
           test(s"$verb$immutableString SHOW TRANSACTIONS (user1,user2) ON DATABASES * $preposition role1, role2") {
@@ -514,13 +504,13 @@ class DatabasePrivilegeAdministrationCommandParserTest extends AdministrationAnd
           }
 
           test(s"$verb$immutableString TERMINATE TRANSACTION (user) ON DEFAULT DATABASE $preposition role") {
-            parsesTo[Statements](privilegeFunc(
-              TerminateTransactionAction,
-              DefaultDatabaseScope() _,
-              List(UserQualifier(literalUser) _),
-              Seq(literalRole),
-              immutable
-            )(pos))
+            failsParsing[Statements].in {
+              case Cypher5JavaCc =>
+                _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+              case Cypher5 =>
+                _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected 'DATABASE',")
+            }
           }
 
           test(s"$verb$immutableString TERMINATE TRANSACTIONS (user1,user2) ON DATABASES * $preposition role1, role2") {
@@ -646,23 +636,15 @@ class DatabasePrivilegeAdministrationCommandParserTest extends AdministrationAnd
           }
 
           test(s"$verb$immutableString TRANSACTION MANAGEMENT ON DEFAULT DATABASE $preposition role") {
-            parsesTo[Statements](privilegeFunc(
-              AllTransactionActions,
-              DefaultDatabaseScope() _,
-              List(UserAllQualifier() _),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString TRANSACTION MANAGEMENT (*) ON DATABASE * $preposition role") {
-            parsesTo[Statements](privilegeFunc(
-              AllTransactionActions,
-              AllDatabasesScope() _,
-              List(UserAllQualifier() _),
-              Seq(literalRole),
-              immutable
-            )(pos))
+            failsParsing[Statements].in {
+              case Cypher5JavaCc =>
+                _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+              case Cypher5 =>
+                _.withMessageStart("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.")
+              case _ => _.withSyntaxErrorContaining(
+                  "Invalid input 'DEFAULT': expected 'DATABASE', 'HOME DATABASE' or 'DATABASES'"
+                )
+            }
           }
 
           test(s"$verb$immutableString TRANSACTION MANAGEMENT (user) ON DATABASES * $preposition role") {

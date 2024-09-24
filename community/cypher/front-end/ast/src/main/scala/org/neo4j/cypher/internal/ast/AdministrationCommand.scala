@@ -960,10 +960,6 @@ sealed abstract class PrivilegeCommand(
     (privilege match {
       case DbmsPrivilege(u: UnassignableAction) =>
         error(s"`GRANT`, `DENY` and `REVOKE` are not supported for `${u.name}`", position)
-      case GraphPrivilege(_, _: DefaultGraphScope) =>
-        error("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.", position)
-      case DatabasePrivilege(_, _: DefaultDatabaseScope) =>
-        error("`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.", position)
       case _: LoadPrivilege =>
         qualifier match {
           case LoadUrlQualifier(_) :: _ =>

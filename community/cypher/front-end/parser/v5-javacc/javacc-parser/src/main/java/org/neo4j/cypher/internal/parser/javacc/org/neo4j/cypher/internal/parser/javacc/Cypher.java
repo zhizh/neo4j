@@ -30172,6 +30172,8 @@ immutable = true;
     String type = null;
     Token t = null;
     ScopeType scopeType = ScopeType.NAMED;
+    ActionType actionType = null;
+    boolean usingDefault = false;
     jj_consume_token(ALL);
     switch (jj_ntk == -1 ? jj_ntk_f() : jj_ntk) {
     case DATABASE:
@@ -30220,17 +30222,16 @@ type = "DATABASE";
     switch (jj_ntk == -1 ? jj_ntk_f() : jj_ntk) {
     case DEFAULT_TOKEN:{
       t = jj_consume_token(DEFAULT_TOKEN);
+usingDefault = true;
       switch (jj_ntk == -1 ? jj_ntk_f() : jj_ntk) {
       case GRAPH:{
         jj_consume_token(GRAPH);
-assertValidType( t, type, "GRAPH" );
-                 {if ("" != null) return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( ActionType.GRAPH_ALL ), astFactory.graphScope( pos( t ), null, ScopeType.DEFAULT ), null, astFactory.allQualifier(), immutable );}
+actionType = ActionType.GRAPH_ALL;
         break;
         }
       case DATABASE:{
         jj_consume_token(DATABASE);
-assertValidType( t, type, "DATABASE" );
-                {if ("" != null) return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( ActionType.DATABASE_ALL ), astFactory.databaseScope( pos( t ), null, ScopeType.DEFAULT ), astFactory.allDatabasesQualifier(), immutable );}
+actionType = ActionType.DATABASE_ALL;
         break;
         }
       default:
@@ -30242,17 +30243,16 @@ assertValidType( t, type, "DATABASE" );
       }
     case HOME:{
       t = jj_consume_token(HOME);
+scopeType = ScopeType.HOME;
       switch (jj_ntk == -1 ? jj_ntk_f() : jj_ntk) {
       case GRAPH:{
         jj_consume_token(GRAPH);
-assertValidType( t, type, "GRAPH" );
-                {if ("" != null) return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( ActionType.GRAPH_ALL ), astFactory.graphScope( pos( t ), null, ScopeType.HOME ), null, astFactory.allQualifier(), immutable );}
+actionType = ActionType.GRAPH_ALL;
         break;
         }
       case DATABASE:{
         jj_consume_token(DATABASE);
-assertValidType( t, type, "DATABASE" );
-                {if ("" != null) return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( ActionType.DATABASE_ALL ), astFactory.databaseScope( pos( t ), null, ScopeType.HOME ), astFactory.allDatabasesQualifier(), immutable );}
+actionType = ActionType.DATABASE_ALL;
         break;
         }
       default:
@@ -30264,8 +30264,7 @@ assertValidType( t, type, "DATABASE" );
       }
     case DBMS:{
       t = jj_consume_token(DBMS);
-assertValidType( t, type, "DBMS" );
-            {if ("" != null) return astFactory.dbmsPrivilege( pos(start), astFactory.privilegeAction( ActionType.DBMS_ALL ), astFactory.allQualifier(), immutable );}
+actionType = ActionType.DBMS_ALL;
       break;
       }
     case GRAPH:
@@ -30566,8 +30565,7 @@ scopeType = ScopeType.ALL;
         jj_consume_token(-1);
         throw new ParseException();
       }
-assertValidType( t, type, "GRAPH" );
-            {if ("" != null) return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( ActionType.GRAPH_ALL ), astFactory.graphScope( pos( t ), names, scopeType ), null, astFactory.allQualifier(), immutable );}
+actionType = ActionType.GRAPH_ALL;
       break;
       }
     case DATABASE:
@@ -30868,8 +30866,7 @@ scopeType = ScopeType.ALL;
         jj_consume_token(-1);
         throw new ParseException();
       }
-assertValidType( t, type, "DATABASE" );
-            {if ("" != null) return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( ActionType.DATABASE_ALL ), astFactory.databaseScope( pos( t ), names, scopeType ), astFactory.allDatabasesQualifier(), immutable );}
+actionType = ActionType.DATABASE_ALL;
       break;
       }
     default:
@@ -30877,6 +30874,22 @@ assertValidType( t, type, "DATABASE" );
       jj_consume_token(-1);
       throw new ParseException();
     }
+if ( actionType == ActionType.DATABASE_ALL ) {
+            assertValidType( t, type, "DATABASE" );
+            if ( usingDefault ) {
+                throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("DATABASE")), start.beginOffset, start.beginLine, start.beginColumn );
+            }
+            {if ("" != null) return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( actionType ), astFactory.databasePrivilegeScope( pos( t ), names, scopeType ), astFactory.allDatabasesQualifier(), immutable );}
+        } else if ( actionType == ActionType.GRAPH_ALL ) {
+            assertValidType( t, type, "GRAPH" );
+            if ( usingDefault ) {
+                throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("GRAPH")), start.beginOffset, start.beginLine, start.beginColumn );
+            }
+            {if ("" != null) return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( actionType ), astFactory.graphScope( pos( t ), names, scopeType ), null, astFactory.allQualifier(), immutable );}
+        } else {
+            assertValidType( t, type, "DBMS" );
+            {if ("" != null) return astFactory.dbmsPrivilege( pos(start), astFactory.privilegeAction( actionType ), astFactory.allQualifier(), immutable );}
+        }
     throw new IllegalStateException ("Missing return statement in function");
 }
 
@@ -36397,6 +36410,7 @@ scope = astFactory.databaseScope( pos( scopeStart ), name == null ? null : name.
   final public DATABASE_SCOPE DatabaseScope() throws ParseException, Exception {Token start = null;
     List<DATABASE_NAME> names = null;
     ScopeType type = ScopeType.NAMED;
+    boolean usingDefault = false;
     switch (jj_ntk == -1 ? jj_ntk_f() : jj_ntk) {
     case DATABASE:
     case DATABASES:{
@@ -36701,7 +36715,7 @@ type = ScopeType.ALL;
     case DEFAULT_TOKEN:{
       start = jj_consume_token(DEFAULT_TOKEN);
       jj_consume_token(DATABASE);
-type = ScopeType.DEFAULT;
+usingDefault = true;
       break;
       }
     case HOME:{
@@ -36715,13 +36729,17 @@ type = ScopeType.HOME;
       jj_consume_token(-1);
       throw new ParseException();
     }
-{if ("" != null) return astFactory.databaseScope( pos( start ), names, type );}
+if ( usingDefault ) {
+        throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("DATABASE")), start.beginOffset, start.beginLine, start.beginColumn );
+    }
+    {if ("" != null) return astFactory.databasePrivilegeScope( pos( start ), names, type );}
     throw new IllegalStateException ("Missing return statement in function");
 }
 
   final public GRAPH_SCOPE GraphScope() throws ParseException, Exception {Token start = null;
     List<DATABASE_NAME> names = null;
     ScopeType type = ScopeType.NAMED;
+    boolean usingDefault = false;
     switch (jj_ntk == -1 ? jj_ntk_f() : jj_ntk) {
     case GRAPH:
     case GRAPHS:{
@@ -37026,7 +37044,7 @@ type = ScopeType.ALL;
     case DEFAULT_TOKEN:{
       start = jj_consume_token(DEFAULT_TOKEN);
       jj_consume_token(GRAPH);
-type = ScopeType.DEFAULT;
+usingDefault = true;
       break;
       }
     case HOME:{
@@ -37040,7 +37058,10 @@ type = ScopeType.HOME;
       jj_consume_token(-1);
       throw new ParseException();
     }
-{if ("" != null) return astFactory.graphScope( pos( start ), names, type );}
+if ( usingDefault ) {
+            throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("GRAPH")), start.beginOffset, start.beginLine, start.beginColumn );
+        }
+        {if ("" != null) return astFactory.graphScope( pos( start ), names, type );}
     throw new IllegalStateException ("Missing return statement in function");
 }
 
@@ -46338,6 +46359,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3_177()
+ {
+    if (jj_scan_token(RPAREN)) return true;
+    return false;
+  }
+
   private boolean jj_3R_691()
  {
     if (jj_3R_163()) return true;
@@ -46370,9 +46397,9 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3_177()
+  private boolean jj_3_178()
  {
-    if (jj_scan_token(RPAREN)) return true;
+    if (jj_scan_token(WHERE)) return true;
     return false;
   }
 
@@ -46383,12 +46410,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     if (jj_scan_token(LPAREN)) return true;
     if (jj_3R_96()) return true;
     if (jj_scan_token(RPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3_178()
- {
-    if (jj_scan_token(WHERE)) return true;
     return false;
   }
 
@@ -46426,6 +46447,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_315()
+ {
+    if (jj_scan_token(DATABASE)) return true;
+    return false;
+  }
+
   private boolean jj_3R_938()
  {
     if (jj_3R_110()) return true;
@@ -46445,12 +46472,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
   private boolean jj_3R_693()
  {
     if (jj_3R_163()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_315()
- {
-    if (jj_scan_token(DATABASE)) return true;
     return false;
   }
 
@@ -47042,6 +47063,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_792()
+ {
+    if (jj_scan_token(START)) return true;
+    return false;
+  }
+
   private boolean jj_3R_483()
  {
     if (jj_3R_106()) return true;
@@ -47056,12 +47083,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     if (jj_3R_113()) return true;
     xsp = jj_scanpos;
     if (jj_3R_567()) jj_scanpos = xsp;
-    return false;
-  }
-
-  private boolean jj_3R_792()
- {
-    if (jj_scan_token(START)) return true;
     return false;
   }
 
@@ -47090,6 +47111,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_793()
+ {
+    if (jj_scan_token(STOP)) return true;
+    return false;
+  }
+
   private boolean jj_3R_516()
  {
     Token xsp;
@@ -47100,12 +47127,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     }
     xsp = jj_scanpos;
     if (jj_3R_625()) jj_scanpos = xsp;
-    return false;
-  }
-
-  private boolean jj_3R_793()
- {
-    if (jj_scan_token(STOP)) return true;
     return false;
   }
 
@@ -47386,6 +47407,18 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3_179()
+ {
+    if (jj_3R_173()) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_174()) {
+    jj_scanpos = xsp;
+    if (jj_3R_175()) return true;
+    }
+    return false;
+  }
+
   private boolean jj_3R_588()
  {
     Token xsp;
@@ -47417,19 +47450,13 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3_179()
+  private boolean jj_3R_161()
  {
-    if (jj_3R_173()) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_174()) {
-    jj_scanpos = xsp;
-    if (jj_3R_175()) return true;
-    }
+    if (jj_3R_162()) return true;
     return false;
   }
 
-  private boolean jj_3R_161()
+  private boolean jj_3_180()
  {
     if (jj_3R_162()) return true;
     return false;
@@ -47438,6 +47465,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
   private boolean jj_3_143()
  {
     if (jj_3R_164()) return true;
+    return false;
+  }
+
+  private boolean jj_3_181()
+ {
+    if (jj_3R_163()) return true;
     return false;
   }
 
@@ -47456,21 +47489,9 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3_180()
- {
-    if (jj_3R_162()) return true;
-    return false;
-  }
-
   private boolean jj_3R_679()
  {
     if (jj_3R_159()) return true;
-    return false;
-  }
-
-  private boolean jj_3_181()
- {
-    if (jj_3R_163()) return true;
     return false;
   }
 
@@ -47582,13 +47603,13 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_165()
+  private boolean jj_3R_174()
  {
     if (jj_3R_163()) return true;
     return false;
   }
 
-  private boolean jj_3R_174()
+  private boolean jj_3R_165()
  {
     if (jj_3R_163()) return true;
     return false;
@@ -47673,6 +47694,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_175()
+ {
+    if (jj_3R_162()) return true;
+    return false;
+  }
+
   private boolean jj_3R_748()
  {
     if (jj_3R_159()) return true;
@@ -47718,18 +47745,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
   private boolean jj_3R_166()
  {
     if (jj_3R_162()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_175()
- {
-    if (jj_3R_162()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_318()
- {
-    if (jj_scan_token(ALIAS)) return true;
     return false;
   }
 
@@ -47821,6 +47836,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     Token xsp;
     xsp = jj_scanpos;
     if (jj_3R_800()) jj_scanpos = xsp;
+    return false;
+  }
+
+  private boolean jj_3R_318()
+ {
+    if (jj_scan_token(ALIAS)) return true;
     return false;
   }
 
@@ -48601,13 +48622,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3_182()
- {
-    if (jj_3R_173()) return true;
-    if (jj_scan_token(FOR)) return true;
-    return false;
-  }
-
   private boolean jj_3R_106()
  {
     Token xsp;
@@ -48622,6 +48636,13 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
   private boolean jj_3R_316()
  {
     if (jj_scan_token(CONSTRAINT)) return true;
+    return false;
+  }
+
+  private boolean jj_3_182()
+ {
+    if (jj_3R_173()) return true;
+    if (jj_scan_token(FOR)) return true;
     return false;
   }
 
@@ -48691,6 +48712,19 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_346()
+ {
+    if (jj_3R_456()) return true;
+    return false;
+  }
+
+  private boolean jj_3_157()
+ {
+    if (jj_scan_token(ON)) return true;
+    if (jj_scan_token(LPAREN)) return true;
+    return false;
+  }
+
   private boolean jj_3R_173()
  {
     Token xsp;
@@ -48708,25 +48742,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_346()
- {
-    if (jj_3R_456()) return true;
-    return false;
-  }
-
-  private boolean jj_3_157()
- {
-    if (jj_scan_token(ON)) return true;
-    if (jj_scan_token(LPAREN)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_303()
- {
-    if (jj_3R_325()) return true;
-    return false;
-  }
-
   private boolean jj_3_158()
  {
     if (jj_scan_token(FOR)) return true;
@@ -48741,14 +48756,9 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_321()
+  private boolean jj_3R_303()
  {
-    if (jj_3R_97()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_517()) { jj_scanpos = xsp; break; }
-    }
+    if (jj_3R_325()) return true;
     return false;
   }
 
@@ -48775,10 +48785,28 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_321()
+ {
+    if (jj_3R_97()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_517()) { jj_scanpos = xsp; break; }
+    }
+    return false;
+  }
+
   private boolean jj_3_160()
  {
     if (jj_scan_token(ASSERT)) return true;
     if (jj_scan_token(EXISTS)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_120()
+ {
+    if (jj_scan_token(COLON)) return true;
+    if (jj_3R_124()) return true;
     return false;
   }
 
@@ -48789,9 +48817,8 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_120()
+  private boolean jj_3R_121()
  {
-    if (jj_scan_token(COLON)) return true;
     if (jj_3R_124()) return true;
     return false;
   }
@@ -48804,12 +48831,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
       xsp = jj_scanpos;
       if (jj_3R_409()) { jj_scanpos = xsp; break; }
     }
-    return false;
-  }
-
-  private boolean jj_3R_121()
- {
-    if (jj_3R_124()) return true;
     return false;
   }
 
@@ -48831,6 +48852,18 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3_75()
+ {
+    if (jj_scan_token(BAR)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_122()) {
+    jj_scanpos = xsp;
+    if (jj_3R_123()) return true;
+    }
+    return false;
+  }
+
   private boolean jj_3R_170()
  {
     Token xsp;
@@ -48848,28 +48881,16 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3_75()
+  private boolean jj_3R_122()
  {
-    if (jj_scan_token(BAR)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_122()) {
-    jj_scanpos = xsp;
-    if (jj_3R_123()) return true;
-    }
+    if (jj_scan_token(COLON)) return true;
+    if (jj_3R_125()) return true;
     return false;
   }
 
   private boolean jj_3R_281()
  {
     if (jj_3R_325()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_122()
- {
-    if (jj_scan_token(COLON)) return true;
-    if (jj_3R_125()) return true;
     return false;
   }
 
@@ -48913,6 +48934,13 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_640()
+ {
+    if (jj_scan_token(COLON)) return true;
+    if (jj_3R_124()) return true;
+    return false;
+  }
+
   private boolean jj_3_183()
  {
     if (jj_3R_176()) return true;
@@ -48922,13 +48950,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     jj_scanpos = xsp;
     if (jj_3R_177()) return true;
     }
-    return false;
-  }
-
-  private boolean jj_3R_640()
- {
-    if (jj_scan_token(COLON)) return true;
-    if (jj_3R_124()) return true;
     return false;
   }
 
@@ -48979,6 +49000,19 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_642()
+ {
+    if (jj_scan_token(COLON)) return true;
+    if (jj_3R_125()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_643()
+ {
+    if (jj_3R_125()) return true;
+    return false;
+  }
+
   private boolean jj_3_185()
  {
     if (jj_3R_178()) return true;
@@ -49011,16 +49045,14 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_642()
+  private boolean jj_3R_124()
  {
-    if (jj_scan_token(COLON)) return true;
-    if (jj_3R_125()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_643()
- {
-    if (jj_3R_125()) return true;
+    if (jj_3R_130()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3_78()) { jj_scanpos = xsp; break; }
+    }
     return false;
   }
 
@@ -49031,13 +49063,13 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_124()
+  private boolean jj_3_78()
  {
-    if (jj_3R_130()) return true;
     Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3_78()) { jj_scanpos = xsp; break; }
+    xsp = jj_scanpos;
+    if (jj_3R_126()) {
+    jj_scanpos = xsp;
+    if (jj_3R_127()) return true;
     }
     return false;
   }
@@ -49075,20 +49107,16 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3_78()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_126()) {
-    jj_scanpos = xsp;
-    if (jj_3R_127()) return true;
-    }
-    return false;
-  }
-
   private boolean jj_3R_309()
  {
     if (jj_3R_333()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_126()
+ {
+    if (jj_scan_token(AMPERSAND)) return true;
+    if (jj_3R_130()) return true;
     return false;
   }
 
@@ -49108,6 +49136,13 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3R_127()
+ {
+    if (jj_scan_token(COLON)) return true;
+    if (jj_3R_130()) return true;
+    return false;
+  }
+
   private boolean jj_3R_179()
  {
     if (jj_scan_token(ON)) return true;
@@ -49123,40 +49158,15 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_126()
- {
-    if (jj_scan_token(AMPERSAND)) return true;
-    if (jj_3R_130()) return true;
-    return false;
-  }
-
   private boolean jj_3R_169()
  {
     if (jj_3R_279()) return true;
     return false;
   }
 
-  private boolean jj_3R_127()
- {
-    if (jj_scan_token(COLON)) return true;
-    if (jj_3R_130()) return true;
-    return false;
-  }
-
   private boolean jj_3R_157()
  {
     if (jj_3R_172()) return true;
-    return false;
-  }
-
-  private boolean jj_3R_373()
- {
-    if (jj_3R_169()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_495()) { jj_scanpos = xsp; break; }
-    }
     return false;
   }
 
@@ -49171,10 +49181,14 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_495()
+  private boolean jj_3R_373()
  {
-    if (jj_scan_token(COMMA)) return true;
     if (jj_3R_169()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_495()) { jj_scanpos = xsp; break; }
+    }
     return false;
   }
 
@@ -49189,14 +49203,10 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_279()
+  private boolean jj_3R_495()
  {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_scan_token(52)) {
-    jj_scanpos = xsp;
-    if (jj_scan_token(64)) return true;
-    }
+    if (jj_scan_token(COMMA)) return true;
+    if (jj_3R_169()) return true;
     return false;
   }
 
@@ -49211,6 +49221,17 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
  {
     if (jj_scan_token(COLON)) return true;
     if (jj_3R_131()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_279()
+ {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_scan_token(52)) {
+    jj_scanpos = xsp;
+    if (jj_scan_token(64)) return true;
+    }
     return false;
   }
 
@@ -49338,21 +49359,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_180()
- {
-    if (jj_scan_token(ON)) return true;
-    if (jj_scan_token(DBMS)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_scan_token(332)) {
-    jj_scanpos = xsp;
-    if (jj_scan_token(172)) return true;
-    }
-    if (jj_3R_304()) return true;
-    if (jj_scan_token(0)) return true;
-    return false;
-  }
-
   private boolean jj_3_81()
  {
     if (jj_scan_token(EXCLAMATION_MARK)) return true;
@@ -49369,6 +49375,21 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
   private boolean jj_3R_282()
  {
     if (jj_scan_token(NOTHING)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_180()
+ {
+    if (jj_scan_token(ON)) return true;
+    if (jj_scan_token(DBMS)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_scan_token(332)) {
+    jj_scanpos = xsp;
+    if (jj_scan_token(172)) return true;
+    }
+    if (jj_3R_304()) return true;
+    if (jj_scan_token(0)) return true;
     return false;
   }
 
@@ -49661,17 +49682,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_97()
- {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_222()) {
-    jj_scanpos = xsp;
-    if (jj_3R_223()) return true;
-    }
-    return false;
-  }
-
   private boolean jj_3R_300()
  {
     if (jj_scan_token(PROPERTY)) return true;
@@ -49742,9 +49752,14 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_222()
+  private boolean jj_3R_97()
  {
-    if (jj_3R_176()) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_222()) {
+    jj_scanpos = xsp;
+    if (jj_3R_223()) return true;
+    }
     return false;
   }
 
@@ -49791,12 +49806,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_223()
- {
-    if (jj_3R_333()) return true;
-    return false;
-  }
-
   private boolean jj_3R_897()
  {
     if (jj_scan_token(MAP)) return true;
@@ -49831,6 +49840,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     if (jj_scan_token(LT)) return true;
     if (jj_3R_172()) return true;
     if (jj_scan_token(GT)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_222()
+ {
+    if (jj_3R_176()) return true;
     return false;
   }
 
@@ -49880,9 +49895,9 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_176()
+  private boolean jj_3R_223()
  {
-    if (jj_scan_token(ESCAPED_SYMBOLIC_NAME)) return true;
+    if (jj_3R_333()) return true;
     return false;
   }
 
@@ -49897,6 +49912,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
  {
     if (jj_scan_token(TIME)) return true;
     if (jj_scan_token(ZONE)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_176()
+ {
+    if (jj_scan_token(ESCAPED_SYMBOLIC_NAME)) return true;
     return false;
   }
 
@@ -49955,12 +49976,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_445()
- {
-    if (jj_3R_473()) return true;
-    return false;
-  }
-
   private boolean jj_3R_645()
  {
     if (jj_scan_token(ANY)) return true;
@@ -49982,6 +49997,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
   private boolean jj_3R_239()
  {
     if (jj_scan_token(IS)) return true;
+    return false;
+  }
+
+  private boolean jj_3R_445()
+ {
+    if (jj_3R_473()) return true;
     return false;
   }
 
@@ -50009,6 +50030,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
+  private boolean jj_3_163()
+ {
+    if (jj_scan_token(EXISTS)) return true;
+    return false;
+  }
+
   private boolean jj_3R_251()
  {
     Token xsp;
@@ -50017,18 +50044,6 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     jj_scanpos = xsp;
     if (jj_3R_354()) return true;
     }
-    return false;
-  }
-
-  private boolean jj_3_163()
- {
-    if (jj_scan_token(EXISTS)) return true;
-    return false;
-  }
-
-  private boolean jj_3R_353()
- {
-    if (jj_3R_176()) return true;
     return false;
   }
 
@@ -50043,9 +50058,9 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_354()
+  private boolean jj_3R_353()
  {
-    if (jj_3R_473()) return true;
+    if (jj_3R_176()) return true;
     return false;
   }
 
@@ -50053,6 +50068,12 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
  {
     if (jj_scan_token(AMPERSAND)) return true;
     if (jj_3R_244()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_354()
+ {
+    if (jj_3R_473()) return true;
     return false;
   }
 

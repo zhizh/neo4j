@@ -18,7 +18,6 @@ package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 
 import org.neo4j.cypher.internal.ast.AllGraphsScope
 import org.neo4j.cypher.internal.ast.AllPropertyResource
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.ElementsAllQualifier
 import org.neo4j.cypher.internal.ast.GraphPrivilege
 import org.neo4j.cypher.internal.ast.HomeGraphScope
@@ -28,6 +27,7 @@ import org.neo4j.cypher.internal.ast.RelationshipAllQualifier
 import org.neo4j.cypher.internal.ast.SetPropertyAction
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class PropertyPrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -100,38 +100,6 @@ class PropertyPrivilegeAdministrationCommandParserTest extends AdministrationAnd
           test(s"$verb$immutableString SET PROPERTY { prop } ON HOME GRAPH NODES A,B $preposition role") {
             parsesTo[Statements](func(
               GraphPrivilege(SetPropertyAction, HomeGraphScope()(_))(_),
-              PropertiesResource(propSeq)(_),
-              List(labelQualifierA, labelQualifierB),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          // Default graph should be allowed
-
-          test(s"$verb$immutableString SET PROPERTY { * } ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(SetPropertyAction, DefaultGraphScope()(_))(_),
-              AllPropertyResource()(_),
-              List(ElementsAllQualifier()(_)),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString SET PROPERTY { prop } ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(SetPropertyAction, DefaultGraphScope()(_))(_),
-              PropertiesResource(propSeq)(_),
-              List(ElementsAllQualifier()(_)),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString SET PROPERTY { prop } ON DEFAULT GRAPH NODES A,B $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(SetPropertyAction, DefaultGraphScope()(_))(_),
               PropertiesResource(propSeq)(_),
               List(labelQualifierA, labelQualifierB),
               Seq(literalRole),
@@ -287,6 +255,32 @@ class PropertyPrivilegeAdministrationCommandParserTest extends AdministrationAnd
             }
           }
 
+          // Default graph should not be allowed
+
+          test(s"$verb$immutableString SET PROPERTY { * } ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString SET PROPERTY { prop } ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString SET PROPERTY { prop } ON DEFAULT GRAPH NODES A,B $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
           // Database instead of graph keyword
 
           test(s"$verb$immutableString SET PROPERTY { prop } ON DATABASES * $preposition role") {
@@ -295,8 +289,11 @@ class PropertyPrivilegeAdministrationCommandParserTest extends AdministrationAnd
               case Cypher5JavaCc => _.withMessage(
                   s"""Invalid input 'DATABASES': expected "DEFAULT", "GRAPH", "GRAPHS" or "HOME" (line 1, column ${offset + 1} (offset: $offset))"""
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'DATABASES': expected 'GRAPH', 'DEFAULT GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
+                )
+              case _ => _.withSyntaxErrorContaining(
+                  s"""Invalid input 'DATABASES': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
                 )
             }
           }
@@ -307,8 +304,11 @@ class PropertyPrivilegeAdministrationCommandParserTest extends AdministrationAnd
               case Cypher5JavaCc => _.withMessage(
                   s"""Invalid input 'DATABASE': expected "DEFAULT", "GRAPH", "GRAPHS" or "HOME" (line 1, column ${offset + 1} (offset: $offset))"""
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'DATABASE': expected 'GRAPH', 'DEFAULT GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
+                )
+              case _ => _.withSyntaxErrorContaining(
+                  s"""Invalid input 'DATABASE': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
                 )
             }
           }

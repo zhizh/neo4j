@@ -17,7 +17,6 @@
 package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 
 import org.neo4j.cypher.internal.ast.AllGraphsScope
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.ElementsAllQualifier
 import org.neo4j.cypher.internal.ast.GraphPrivilege
 import org.neo4j.cypher.internal.ast.HomeGraphScope
@@ -25,6 +24,7 @@ import org.neo4j.cypher.internal.ast.NamedGraphsScope
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.WriteAction
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class WritePrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -96,20 +96,11 @@ class WritePrivilegeAdministrationCommandParserTest extends AdministrationAndSch
             )(pos))
           }
 
-          // Default and home graph should parse
+          // Home graph should parse
 
           test(s"$verb$immutableString WRITE ON HOME GRAPH $preposition role") {
             parsesTo[Statements](func(
               GraphPrivilege(WriteAction, HomeGraphScope()(_))(pos),
-              List(ElementsAllQualifier() _),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString WRITE ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(WriteAction, DefaultGraphScope()(_))(pos),
               List(ElementsAllQualifier() _),
               Seq(literalRole),
               immutable
@@ -237,12 +228,16 @@ class WritePrivilegeAdministrationCommandParserTest extends AdministrationAndSch
 
           test(s"$verb$immutableString WRITE ON DEFAULT GRAPHS $preposition role") {
             val offset = verb.length + immutableString.length + 18
+            val antlr6Offset = verb.length + immutableString.length + 10
             failsParsing[Statements].in {
               case Cypher5JavaCc => _.withMessage(
                   s"""Invalid input 'GRAPHS': expected "GRAPH" (line 1, column ${offset + 1} (offset: $offset))"""
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'GRAPHS': expected 'GRAPH' (line 1, column ${offset + 1} (offset: $offset))"""
+                )
+              case _ => _.withSyntaxErrorContaining(
+                  s"""Invalid input 'DEFAULT': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${antlr6Offset + 1} (offset: $antlr6Offset))"""
                 )
             }
           }
@@ -267,6 +262,16 @@ class WritePrivilegeAdministrationCommandParserTest extends AdministrationAndSch
             failsParsing[Statements]
           }
 
+          // Default graph should not be allowed
+
+          test(s"$verb$immutableString WRITE ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
           // Database instead of graph keyword
 
           test(s"$verb$immutableString WRITE ON DATABASES * $preposition role") {
@@ -275,8 +280,11 @@ class WritePrivilegeAdministrationCommandParserTest extends AdministrationAndSch
               case Cypher5JavaCc => _.withMessage(
                   s"""Invalid input 'DATABASES': expected "DEFAULT", "GRAPH", "GRAPHS" or "HOME" (line 1, column ${offset + 1} (offset: $offset))"""
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'DATABASES': expected 'GRAPH', 'DEFAULT GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
+                )
+              case _ => _.withSyntaxErrorContaining(
+                  s"""Invalid input 'DATABASES': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
                 )
             }
           }
@@ -287,8 +295,11 @@ class WritePrivilegeAdministrationCommandParserTest extends AdministrationAndSch
               case Cypher5JavaCc => _.withMessage(
                   s"""Invalid input 'DATABASE': expected "DEFAULT", "GRAPH", "GRAPHS" or "HOME" (line 1, column ${offset + 1} (offset: $offset))"""
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'DATABASE': expected 'GRAPH', 'DEFAULT GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
+                )
+              case _ => _.withSyntaxErrorContaining(
+                  s"""Invalid input 'DATABASE': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
                 )
             }
           }

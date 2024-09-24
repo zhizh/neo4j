@@ -18,7 +18,6 @@ package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 
 import org.neo4j.cypher.internal.ast.AllGraphsScope
 import org.neo4j.cypher.internal.ast.AllLabelResource
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.GraphPrivilege
 import org.neo4j.cypher.internal.ast.HomeGraphScope
 import org.neo4j.cypher.internal.ast.LabelAllQualifier
@@ -27,6 +26,7 @@ import org.neo4j.cypher.internal.ast.RemoveLabelAction
 import org.neo4j.cypher.internal.ast.SetLabelAction
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class LabelPrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -124,28 +124,6 @@ class LabelPrivilegeAdministrationCommandParserTest extends AdministrationAndSch
                 )(pos))
               }
 
-              // Default graph should be allowed
-
-              test(s"$verb$immutableString $setOrRemove LABEL label ON DEFAULT GRAPH $preposition role") {
-                parsesTo[Statements](func(
-                  GraphPrivilege(action, DefaultGraphScope()(_))(_),
-                  labelResource,
-                  List(LabelAllQualifier()(_)),
-                  Seq(literalRole),
-                  immutable
-                )(pos))
-              }
-
-              test(s"$verb$immutableString $setOrRemove LABEL * ON DEFAULT GRAPH $preposition role") {
-                parsesTo[Statements](func(
-                  GraphPrivilege(action, DefaultGraphScope()(_))(_),
-                  AllLabelResource()(_),
-                  List(LabelAllQualifier()(_)),
-                  Seq(literalRole),
-                  immutable
-                )(pos))
-              }
-
               // Multiple roles should be allowed
 
               test(s"$verb$immutableString $setOrRemove LABEL label ON GRAPHS foo $preposition role1, role2") {
@@ -189,6 +167,24 @@ class LabelPrivilegeAdministrationCommandParserTest extends AdministrationAndSch
 
               test(s"$verb$immutableString $setOrRemove LABELS label ON GRAPH * $preposition role") {
                 failsParsing[Statements].withMessageStart("""Invalid input 'LABELS': expected""")
+              }
+
+              // Default graph should not be allowed
+
+              test(s"$verb$immutableString $setOrRemove LABEL label ON DEFAULT GRAPH $preposition role") {
+                failsParsing[Statements].in {
+                  case Cypher5JavaCc | Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+                }
+              }
+
+              test(s"$verb$immutableString $setOrRemove LABEL * ON DEFAULT GRAPH $preposition role") {
+                failsParsing[Statements].in {
+                  case Cypher5JavaCc | Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+                }
               }
 
               // Database instead of graph keyword

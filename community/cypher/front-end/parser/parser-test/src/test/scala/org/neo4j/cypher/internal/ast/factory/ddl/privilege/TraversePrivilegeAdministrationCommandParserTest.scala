@@ -23,6 +23,7 @@ import org.neo4j.cypher.internal.ast.HomeGraphScope
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.TraverseAction
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class TraversePrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -68,42 +69,6 @@ class TraversePrivilegeAdministrationCommandParserTest extends AdministrationAnd
           test(s"$verb$immutableString TRAVERSE ON HOME GRAPH ELEMENT A $preposition role") {
             parsesTo[Statements](func(
               GraphPrivilege(TraverseAction, HomeGraphScope()(_))(pos),
-              List(elemQualifierA),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(TraverseAction, ast.DefaultGraphScope()(_))(pos),
-              List(ElementsAllQualifier() _),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH NODE A $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(TraverseAction, ast.DefaultGraphScope()(_))(pos),
-              List(labelQualifierA),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH RELATIONSHIP * $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(TraverseAction, ast.DefaultGraphScope()(_))(pos),
-              List(ast.RelationshipAllQualifier() _),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH ELEMENT A $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(TraverseAction, ast.DefaultGraphScope()(_))(pos),
               List(elemQualifierA),
               Seq(literalRole),
               immutable
@@ -693,6 +658,40 @@ class TraversePrivilegeAdministrationCommandParserTest extends AdministrationAnd
               }
           }
 
+          // Default graph should not be allowed
+
+          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH NODE A $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH RELATIONSHIP * $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH ELEMENT A $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
           // Mix of specific graph and *
 
           test(s"$verb$immutableString TRAVERSE ON GRAPH foo, * $preposition role") {
@@ -711,8 +710,11 @@ class TraversePrivilegeAdministrationCommandParserTest extends AdministrationAnd
               case Cypher5JavaCc => _.withMessage(
                   s"""Invalid input 'DATABASES': expected "DEFAULT", "GRAPH", "GRAPHS" or "HOME" (line 1, column ${offset + 1} (offset: $offset))""".stripMargin
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'DATABASES': expected 'GRAPH', 'DEFAULT GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
+                )
+              case _ => _.withSyntaxErrorContaining(
+                  s"""Invalid input 'DATABASES': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
                 )
             }
           }
@@ -723,8 +725,11 @@ class TraversePrivilegeAdministrationCommandParserTest extends AdministrationAnd
               case Cypher5JavaCc => _.withMessage(
                   s"""Invalid input 'DATABASE': expected "DEFAULT", "GRAPH", "GRAPHS" or "HOME" (line 1, column ${offset + 1} (offset: $offset))""".stripMargin
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'DATABASE': expected 'GRAPH', 'DEFAULT GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
+                )
+              case _ => _.withSyntaxErrorContaining(
+                  s"""Invalid input 'DATABASE': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
                 )
             }
           }

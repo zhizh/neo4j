@@ -2622,8 +2622,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action TRAVERSE ON GRAPH * ELEMENTS A $preposition role",
           s"$action traverse on home graph elements A (*) $preposition role" ->
             s"$action TRAVERSE ON HOME GRAPH ELEMENTS A $preposition role",
-          s"$action traverse on default graph elements A (*) $preposition role" ->
-            s"$action TRAVERSE ON DEFAULT GRAPH ELEMENTS A $preposition role",
           s"$action read {*} on graph * $preposition role" ->
             s"$action READ {*} ON GRAPH * ELEMENTS * $preposition role",
           s"$action read {*} on graph * nodes * $preposition role" ->
@@ -2704,8 +2702,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action READ {*} ON GRAPH * ELEMENTS A $preposition role",
           s"$action read {*} on home graph elements A (*) $preposition role" ->
             s"$action READ {*} ON HOME GRAPH ELEMENTS A $preposition role",
-          s"$action read {*} on default graph elements A (*) $preposition role" ->
-            s"$action READ {*} ON DEFAULT GRAPH ELEMENTS A $preposition role",
           s"$action match {*} on graph * $preposition role" ->
             s"$action MATCH {*} ON GRAPH * ELEMENTS * $preposition role",
           s"$action match {*} on graph * node * $preposition role" ->
@@ -2780,8 +2776,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action MATCH {*} ON GRAPH * ELEMENTS A $preposition role",
           s"$action match {*} on home graph nodes * (*) $preposition role" ->
             s"$action MATCH {*} ON HOME GRAPH NODES * $preposition role",
-          s"$action match {*} on default graph nodes * (*) $preposition role" ->
-            s"$action MATCH {*} ON DEFAULT GRAPH NODES * $preposition role",
           s"$action write on graph * $preposition role" ->
             s"$action WRITE ON GRAPH * $preposition role",
           s"$action write on graph foo $preposition role" ->
@@ -2806,8 +2800,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action CREATE ON GRAPHS foo, $$bar RELATIONSHIPS * $preposition role",
           s"$action create on home graph relationship * $preposition role" ->
             s"$action CREATE ON HOME GRAPH RELATIONSHIPS * $preposition role",
-          s"$action create on default graph relationship * $preposition role" ->
-            s"$action CREATE ON DEFAULT GRAPH RELATIONSHIPS * $preposition role",
           s"$action delete on graph * $preposition role" ->
             s"$action DELETE ON GRAPH * ELEMENTS * $preposition role",
           s"$action delete on graph * elements * $preposition role" ->
@@ -2826,8 +2818,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action DELETE ON GRAPHS foo, $$bar RELATIONSHIPS * $preposition role",
           s"$action delete on home graph relationship * $preposition role" ->
             s"$action DELETE ON HOME GRAPH RELATIONSHIPS * $preposition role",
-          s"$action delete on default graph relationship * $preposition role" ->
-            s"$action DELETE ON DEFAULT GRAPH RELATIONSHIPS * $preposition role",
           s"$action set label label on graph * $preposition role" ->
             s"$action SET LABEL label ON GRAPH * $preposition role",
           s"$action set label label1, label2 on graph * $preposition role" ->
@@ -2840,8 +2830,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action SET LABEL label ON GRAPHS foo, $$bar $preposition role",
           s"$action set label label on home graph $preposition role" ->
             s"$action SET LABEL label ON HOME GRAPH $preposition role",
-          s"$action set label label on default graph $preposition role" ->
-            s"$action SET LABEL label ON DEFAULT GRAPH $preposition role",
           s"$action remove label label on graph * $preposition role" ->
             s"$action REMOVE LABEL label ON GRAPH * $preposition role",
           s"$action remove label label1, label2 on graph * $preposition role" ->
@@ -2854,8 +2842,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action REMOVE LABEL label ON GRAPHS foo, $$bar $preposition role",
           s"$action remove label label on home graph $preposition role1, role2, role3" ->
             s"$action REMOVE LABEL label ON HOME GRAPH $preposition role1, role2, role3",
-          s"$action remove label label on default graph $preposition role1, role2, role3" ->
-            s"$action REMOVE LABEL label ON DEFAULT GRAPH $preposition role1, role2, role3",
           s"$action set property {*} on graph * $preposition role" ->
             s"$action SET PROPERTY {*} ON GRAPH * ELEMENTS * $preposition role",
           s"$action set property {foo} on graph * NODES bar $preposition role" ->
@@ -2868,8 +2854,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action SET PROPERTY {*} ON GRAPHS foo, $$bar ELEMENTS * $preposition role1, role2, role3",
           s"$action set property {Foo, BAR} on home graph $preposition role" ->
             s"$action SET PROPERTY {Foo, BAR} ON HOME GRAPH ELEMENTS * $preposition role",
-          s"$action set property {Foo, BAR} on default graph $preposition role" ->
-            s"$action SET PROPERTY {Foo, BAR} ON DEFAULT GRAPH ELEMENTS * $preposition role",
           s"$action all on graph * $preposition role" ->
             s"$action ALL GRAPH PRIVILEGES ON GRAPH * $preposition role",
           s"$action all privileges on graph foo $preposition role" ->
@@ -2878,8 +2862,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action ALL GRAPH PRIVILEGES ON GRAPHS foo, $$bar $preposition role1, role2, role3",
           s"$action all privileges on home graph $preposition role" ->
             s"$action ALL GRAPH PRIVILEGES ON HOME GRAPH $preposition role",
-          s"$action all privileges on default graph $preposition role" ->
-            s"$action ALL GRAPH PRIVILEGES ON DEFAULT GRAPH $preposition role",
           s"$action merge {*} on graph * $preposition role" ->
             s"$action MERGE {*} ON GRAPH * ELEMENTS * $preposition role",
           s"$action merge {foo} on graph * NODES bar $preposition role" ->
@@ -2891,9 +2873,7 @@ class PrettifierIT extends CypherFunSuite {
           s"$action merge {*} on graph foo, $$bar $preposition role1, role2, role3" ->
             s"$action MERGE {*} ON GRAPHS foo, $$bar ELEMENTS * $preposition role1, role2, role3",
           s"$action merge {Foo, BAR} on home graph $preposition role" ->
-            s"$action MERGE {Foo, BAR} ON HOME GRAPH ELEMENTS * $preposition role",
-          s"$action merge {Foo, BAR} on default graph $preposition role" ->
-            s"$action MERGE {Foo, BAR} ON DEFAULT GRAPH ELEMENTS * $preposition role"
+            s"$action MERGE {Foo, BAR} ON HOME GRAPH ELEMENTS * $preposition role"
         ) ++ Seq(
           ("access", "ACCESS"),
           ("start", "START"),
@@ -2951,9 +2931,7 @@ class PrettifierIT extends CypherFunSuite {
               s"$action $databaseAction on databases F.o.O $preposition role" ->
                 s"$action $prettifiedDatabaseAction ON DATABASE F.`o.O` $preposition role",
               s"$action $databaseAction on home database $preposition role" ->
-                s"$action $prettifiedDatabaseAction ON HOME DATABASE $preposition role",
-              s"$action $databaseAction on default database $preposition role" ->
-                s"$action $prettifiedDatabaseAction ON DEFAULT DATABASE $preposition role"
+                s"$action $prettifiedDatabaseAction ON HOME DATABASE $preposition role"
             )
         } ++ Seq[Test](
           s"$action show transaction (*) on database * $preposition role" ->
@@ -2964,8 +2942,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action SHOW TRANSACTION (*) ON DATABASE $$foo $preposition role",
           s"$action show transaction (foo,$$bar) on home database $preposition $$role" ->
             s"$action SHOW TRANSACTION (foo, $$bar) ON HOME DATABASE $preposition $$role",
-          s"$action show transaction (foo,$$bar) on default database $preposition $$role" ->
-            s"$action SHOW TRANSACTION (foo, $$bar) ON DEFAULT DATABASE $preposition $$role",
           s"$action terminate transaction (*) on database * $preposition role" ->
             s"$action TERMINATE TRANSACTION (*) ON DATABASE * $preposition role",
           s"$action terminate transactions (*) on database foo $preposition role" ->
@@ -2974,8 +2950,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action TERMINATE TRANSACTION (*) ON DATABASE $$foo $preposition $$role",
           s"$action terminate transaction (foo,$$bar) on home database $preposition role" ->
             s"$action TERMINATE TRANSACTION (foo, $$bar) ON HOME DATABASE $preposition role",
-          s"$action terminate transaction (foo,$$bar) on default database $preposition role" ->
-            s"$action TERMINATE TRANSACTION (foo, $$bar) ON DEFAULT DATABASE $preposition role",
           s"$action terminate transaction (`\u0885`) on database `\u0885` $preposition `\u0885`" ->
             s"$action TERMINATE TRANSACTION (`\u0885`) ON DATABASE `\u0885` $preposition `\u0885`",
           s"$action transaction on database * $preposition role" ->
@@ -2992,8 +2966,6 @@ class PrettifierIT extends CypherFunSuite {
             s"$action TRANSACTION MANAGEMENT (user1, $$user2) ON DATABASE foo $preposition role",
           s"$action transaction management on home database $preposition role1,$$role2" ->
             s"$action TRANSACTION MANAGEMENT (*) ON HOME DATABASE $preposition role1, $$role2",
-          s"$action transaction management on default database $preposition role1,$$role2" ->
-            s"$action TRANSACTION MANAGEMENT (*) ON DEFAULT DATABASE $preposition role1, $$role2",
           s"$action role management on dbms $preposition $$role" ->
             s"$action ROLE MANAGEMENT ON DBMS $preposition $$role",
           s"$action create role on dbms $preposition role" ->

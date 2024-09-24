@@ -1293,7 +1293,7 @@ allPrivilegeType
    ;
 
 allPrivilegeTarget
-   : (DEFAULT | HOME) (DATABASE | GRAPH)                    # DefaultTarget
+   : HOME (DATABASE | GRAPH)                                # DefaultTarget
    | (DATABASE | DATABASES) (TIMES | symbolicAliasNameList) # DatabaseVariableTarget
    | (GRAPH | GRAPHS) (TIMES | symbolicAliasNameList)       # GraphVariableTarget
    | DBMS                                                   # DBMSTarget
@@ -1525,12 +1525,12 @@ nodeToken
    ;
 
 databaseScope
-   : (DEFAULT | HOME) DATABASE
+   : HOME DATABASE
    | (DATABASE | DATABASES) (TIMES | symbolicAliasNameList)
    ;
 
 graphScope
-   : (DEFAULT | HOME) GRAPH
+   : HOME GRAPH
    | (GRAPH | GRAPHS) (TIMES | symbolicAliasNameList)
    ;
 

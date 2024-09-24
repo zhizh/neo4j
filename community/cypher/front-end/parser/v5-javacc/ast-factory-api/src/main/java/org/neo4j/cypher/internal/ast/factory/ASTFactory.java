@@ -642,7 +642,7 @@ public interface ASTFactory<
 
     GRAPH_SCOPE graphScope(POS p, List<DATABASE_NAME> graphNames, ScopeType scopeType);
 
-    DATABASE_SCOPE databaseScope(POS p, List<DATABASE_NAME> databaseNames, ScopeType scopeType);
+    DATABASE_SCOPE databasePrivilegeScope(POS p, List<DATABASE_NAME> databaseNames, ScopeType scopeType);
 
     // Server Administration Commands
 

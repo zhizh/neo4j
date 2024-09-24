@@ -56,6 +56,7 @@ import org.neo4j.cypher.internal.ast.ShowServerAction
 import org.neo4j.cypher.internal.ast.ShowUserAction
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class DbmsPrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -296,8 +297,11 @@ class DbmsPrivilegeAdministrationCommandParserTest extends AdministrationAndSche
                    |  "GRAPHS"
                    |  "HOME" (line 1, column ${offset + 24} (offset: ${offset + 23}))""".stripMargin
               )
-            case _ => _.withSyntaxErrorContaining(
+            case Cypher5 => _.withSyntaxErrorContaining(
                 s"""Invalid input '$preposition': expected 'DATABASE', 'DATABASES', 'DBMS', 'DEFAULT', 'GRAPH', 'GRAPHS' or 'HOME' (line 1, column ${offset + 24} (offset: ${offset + 23}))"""
+              )
+            case _ => _.withSyntaxErrorContaining(
+                s"""Invalid input '$preposition': expected 'DATABASE', 'DATABASES', 'DBMS', 'GRAPH', 'GRAPHS' or 'HOME' (line 1, column ${offset + 24} (offset: ${offset + 23}))"""
               )
           }
         }

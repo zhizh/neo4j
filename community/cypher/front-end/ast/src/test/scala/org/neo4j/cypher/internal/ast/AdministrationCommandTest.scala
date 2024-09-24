@@ -122,32 +122,6 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     }
   }
 
-  test("it should not be possible to administer privileges on the default graph") {
-    val privilege = new GrantPrivilege(
-      GraphPrivilege(AllGraphAction, DefaultGraphScope()(p))(p),
-      false,
-      Some(DatabaseResource()(p)),
-      List(AllQualifier()(p)),
-      Seq(literalString("role1"))
-    )(p)
-
-    privilege.semanticCheck.run(initialState, SemanticCheckContext.default) shouldBe SemanticCheckResult
-      .error(initialState, "`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.", p)
-  }
-
-  test("it should not be possible to administer privileges on the default database") {
-    val privilege = new GrantPrivilege(
-      DatabasePrivilege(AllConstraintActions, DefaultDatabaseScope()(p))(p),
-      false,
-      Some(DatabaseResource()(p)),
-      List(AllQualifier()(p)),
-      Seq(literalString("role1"))
-    )(p)
-
-    privilege.semanticCheck.run(initialState, SemanticCheckContext.default) shouldBe SemanticCheckResult
-      .error(initialState, "`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.", p)
-  }
-
   // Property Rules
 
   type QualifierFn = (Option[Variable], Expression) => List[PrivilegeQualifier]

@@ -92,6 +92,8 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
       case Cypher5Parser.RULE_typePart                         => checkTypePart(cast(ctx))
       case Cypher5Parser.RULE_hint                             => checkHint(cast(ctx))
       case Cypher5Parser.RULE_symbolicAliasNameOrParameter     => checkSymbolicAliasNameOrParameter(cast(ctx))
+      case Cypher5Parser.RULE_databaseScope                    => checkDatabaseScope(cast(ctx))
+      case Cypher5Parser.RULE_graphScope                       => checkGraphScope(cast(ctx))
       case _                                                   =>
     }
   }
@@ -259,6 +261,24 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
     errorOnDuplicateRule(ctx.homeDatabase(), "SET HOME DATABASE")
   }
 
+  private def checkGraphScope(ctx: Cypher5Parser.GraphScopeContext): Unit = {
+    if (ctx.DEFAULT() != null) {
+      _errors :+= exceptionFactory.syntaxException(
+        "`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.",
+        inputPosition(ctx.DEFAULT().getSymbol)
+      )
+    }
+  }
+
+  private def checkDatabaseScope(ctx: Cypher5Parser.DatabaseScopeContext): Unit = {
+    if (ctx.DEFAULT() != null) {
+      _errors :+= exceptionFactory.syntaxException(
+        "`ON DEFAULT DATABASE` is not supported. Use `ON HOME DATABASE` instead.",
+        inputPosition(ctx.DEFAULT().getSymbol)
+      )
+    }
+  }
+
   private def checkAllPrivilege(ctx: Cypher5Parser.AllPrivilegeContext): Unit = {
     val privilegeType = ctx.allPrivilegeType()
     val privilegeTarget = ctx.allPrivilegeTarget()
@@ -301,6 +321,16 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
           }
         case _ =>
       }
+    }
+    privilegeTarget match {
+      case c: Cypher5Parser.DefaultTargetContext if c.DEFAULT() != null =>
+        val target =
+          if (c.GRAPH() != null) "GRAPH" else "DATABASE"
+        _errors :+= exceptionFactory.syntaxException(
+          s"`ON DEFAULT $target` is not supported. Use `ON HOME $target` instead.",
+          inputPosition(privilegeTarget.start)
+        )
+      case _ =>
     }
   }
 

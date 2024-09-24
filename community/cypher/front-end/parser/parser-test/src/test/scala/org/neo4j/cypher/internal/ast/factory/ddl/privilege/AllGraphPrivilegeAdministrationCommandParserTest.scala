@@ -19,11 +19,11 @@ package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 import org.neo4j.cypher.internal.ast.AllGraphAction
 import org.neo4j.cypher.internal.ast.AllGraphsScope
 import org.neo4j.cypher.internal.ast.AllQualifier
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.GraphPrivilege
 import org.neo4j.cypher.internal.ast.HomeGraphScope
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class AllGraphPrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -91,35 +91,6 @@ class AllGraphPrivilegeAdministrationCommandParserTest extends AdministrationAnd
           test(s"$verb$immutableString ALL GRAPH PRIVILEGES ON HOME GRAPH $preposition role") {
             parsesTo[Statements](func(
               GraphPrivilege(AllGraphAction, HomeGraphScope()(_))(_),
-              List(AllQualifier()(_)),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          // Default graph should be allowed
-
-          test(s"$verb$immutableString ALL ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(AllGraphAction, DefaultGraphScope()(_))(_),
-              List(AllQualifier()(_)),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString ALL PRIVILEGES ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(AllGraphAction, DefaultGraphScope()(_))(_),
-              List(AllQualifier()(_)),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString ALL GRAPH PRIVILEGES ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(AllGraphAction, DefaultGraphScope()(_))(_),
               List(AllQualifier()(_)),
               Seq(literalRole),
               immutable
@@ -218,6 +189,32 @@ class AllGraphPrivilegeAdministrationCommandParserTest extends AdministrationAnd
             }
           }
 
+          // Default graph should not be allowed
+
+          test(s"$verb$immutableString ALL ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString ALL PRIVILEGES ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString ALL GRAPH PRIVILEGES ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
           // Database/dbms instead of graph keyword
 
           test(s"$verb$immutableString ALL GRAPH PRIVILEGES ON DATABASES * $preposition role") {
@@ -264,9 +261,10 @@ class AllGraphPrivilegeAdministrationCommandParserTest extends AdministrationAnd
               case Cypher5JavaCc => _.withMessageStart(
                   s"""Invalid input 'DEFAULT': expected "GRAPH" (line 1, column ${offset + 1} (offset: $offset))"""
                 )
-              case _ => _.withSyntaxErrorContaining(
+              case Cypher5 => _.withSyntaxErrorContaining(
                   s"""Invalid input 'DATABASE': expected "GRAPH" (line 1, column ${antlrOffset + 1} (offset: $antlrOffset))"""
                 )
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
             }
           }
 

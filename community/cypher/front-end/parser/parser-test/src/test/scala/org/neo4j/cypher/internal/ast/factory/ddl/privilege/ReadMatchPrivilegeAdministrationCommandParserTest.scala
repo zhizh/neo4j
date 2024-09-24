@@ -19,7 +19,6 @@ package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 import org.neo4j.cypher.internal.ast.ActionResourceBase
 import org.neo4j.cypher.internal.ast.AllGraphsScope
 import org.neo4j.cypher.internal.ast.AllPropertyResource
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.ElementQualifier
 import org.neo4j.cypher.internal.ast.ElementsAllQualifier
 import org.neo4j.cypher.internal.ast.GraphAction
@@ -36,6 +35,8 @@ import org.neo4j.cypher.internal.ast.RelationshipAllQualifier
 import org.neo4j.cypher.internal.ast.RelationshipQualifier
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class ReadMatchPrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
   // Granting/denying/revoking read and match to/from role
@@ -69,26 +70,6 @@ class ReadMatchPrivilegeAdministrationCommandParserTest extends AdministrationAn
           test(s"$verb$immutableString ${action.name} { prop } ON HOME GRAPH NODE A $preposition role") {
             parsesTo[Statements](func(
               GraphPrivilege(action, HomeGraphScope()(pos))(pos),
-              PropertiesResource(propSeq)(pos),
-              List(labelQualifierA),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString ${action.name} { prop } ON DEFAULT GRAPH $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(action, DefaultGraphScope()(pos))(pos),
-              PropertiesResource(propSeq)(pos),
-              List(ElementsAllQualifier() _),
-              Seq(literalRole),
-              immutable
-            )(pos))
-          }
-
-          test(s"$verb$immutableString ${action.name} { prop } ON DEFAULT GRAPH NODE A $preposition role") {
-            parsesTo[Statements](func(
-              GraphPrivilege(action, DefaultGraphScope()(pos))(pos),
               PropertiesResource(propSeq)(pos),
               List(labelQualifierA),
               Seq(literalRole),
@@ -999,6 +980,24 @@ class ReadMatchPrivilegeAdministrationCommandParserTest extends AdministrationAn
                     )(pos))
                   }
               }
+          }
+
+          // Default graph should not be allowed
+
+          test(s"$verb$immutableString ${action.name} { prop } ON DEFAULT GRAPH $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
+          }
+
+          test(s"$verb$immutableString ${action.name} { prop } ON DEFAULT GRAPH NODE A $preposition role") {
+            failsParsing[Statements].in {
+              case Cypher5JavaCc | Cypher5 =>
+                _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+              case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+            }
           }
 
           // Database instead of graph keyword

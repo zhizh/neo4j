@@ -54,7 +54,6 @@ import org.neo4j.cypher.internal.ast.DatabaseScope
 import org.neo4j.cypher.internal.ast.DbmsPrivilege
 import org.neo4j.cypher.internal.ast.DeallocateServers
 import org.neo4j.cypher.internal.ast.DefaultDatabaseScope
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.Delete
 import org.neo4j.cypher.internal.ast.DenyPrivilege
 import org.neo4j.cypher.internal.ast.DescSortItem
@@ -1347,9 +1346,9 @@ object Prettifier {
     preposition: String,
     roleNames: Seq[Expression]
   ): String = {
-    val (dbName, default, multiple) = Prettifier.extractDbScope(dbScope)
+    val (dbName, home, multiple) = Prettifier.extractDbScope(dbScope)
     val db =
-      if (default) {
+      if (home) {
         s"$dbName DATABASE"
       } else if (multiple) {
         s"DATABASES $dbName"
@@ -1528,7 +1527,6 @@ object Prettifier {
     graphScope match {
       case SingleNamedGraphScope(name)  => s"GRAPH ${escapeName(name)}"
       case AllGraphsScope()             => "GRAPH *"
-      case DefaultGraphScope()          => "DEFAULT GRAPH"
       case HomeGraphScope()             => "HOME GRAPH"
       case NamedGraphsScope(Seq(graph)) => s"GRAPH ${escapeName(graph)}"
       case NamedGraphsScope(graphs)     => s"GRAPHS ${escapeNames(graphs)}"

@@ -44,8 +44,6 @@ final case class SingleNamedGraphScope(graph: DatabaseName)(val position: InputP
 
 final case class AllGraphsScope()(val position: InputPosition) extends GraphScope
 
-final case class DefaultGraphScope()(val position: InputPosition) extends GraphScope
-
 final case class HomeGraphScope()(val position: InputPosition) extends GraphScope
 
 // Database scopes

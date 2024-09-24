@@ -17,7 +17,6 @@
 package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 
 import org.neo4j.cypher.internal.ast.AllGraphsScope
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.ExistsExpression
 import org.neo4j.cypher.internal.ast.GraphPrivilege
 import org.neo4j.cypher.internal.ast.HomeGraphScope
@@ -86,32 +85,6 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
           Seq(literalRole),
           immutable
         )(pos))
-    }
-  }
-
-  test("DEFAULT GRAPH") {
-    for {
-      Action(verb, preposition, func) <- actions
-      immutable <- Seq(true, false)
-    } yield {
-      val immutableString = immutableOrEmpty(immutable)
-
-      s"$verb$immutableString TRAVERSE ON DEFAULT GRAPH FOR (a:A) WHERE a.prop2=1 $preposition role" should
-        parseTo[Statements](
-          func(
-            GraphPrivilege(TraverseAction, DefaultGraphScope()(pos))(pos),
-            List(PatternQualifier(
-              Seq(labelQualifierA),
-              Some(Variable("a")(_)),
-              Equals(
-                Property(Variable("a")(_), PropertyKeyName("prop2")(_))(_),
-                literal(1)
-              )(_)
-            )),
-            Seq(literalRole),
-            immutable
-          )(pos)
-        )
     }
   }
 

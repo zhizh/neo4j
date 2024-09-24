@@ -17,7 +17,6 @@
 package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 
 import org.neo4j.cypher.internal.ast.CreateElementAction
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.DeleteElementAction
 import org.neo4j.cypher.internal.ast.ElementsAllQualifier
 import org.neo4j.cypher.internal.ast.GraphPrivilege
@@ -25,6 +24,7 @@ import org.neo4j.cypher.internal.ast.HomeGraphScope
 import org.neo4j.cypher.internal.ast.RelationshipAllQualifier
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 
 class CreateDeletePrivilegeAdministrationCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
@@ -124,42 +124,38 @@ class CreateDeletePrivilegeAdministrationCommandParserTest extends Administratio
                 failsParsing[Statements]
               }
 
-              // Default graph
+              // Default graph should not be allowed
 
               test(s"$verb$immutableString $createOrDelete ON DEFAULT GRAPH $preposition role") {
-                parsesTo[Statements](func(
-                  GraphPrivilege(action, DefaultGraphScope()(_))(_),
-                  List(ElementsAllQualifier()(_)),
-                  Seq(literalRole),
-                  immutable
-                )(pos))
+                failsParsing[Statements].in {
+                  case Cypher5JavaCc | Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+                }
               }
 
               test(s"$verb$immutableString $createOrDelete ON DEFAULT GRAPH $preposition role1, role2") {
-                parsesTo[Statements](func(
-                  GraphPrivilege(action, DefaultGraphScope()(_))(_),
-                  List(ElementsAllQualifier()(_)),
-                  Seq(literalRole1, literalRole2),
-                  immutable
-                )(pos))
+                failsParsing[Statements].in {
+                  case Cypher5JavaCc | Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+                }
               }
 
               test(s"$verb$immutableString $createOrDelete ON DEFAULT GRAPH $preposition $$role1, role2") {
-                parsesTo[Statements](func(
-                  GraphPrivilege(action, DefaultGraphScope()(_))(_),
-                  List(ElementsAllQualifier()(_)),
-                  Seq(paramRole1, literalRole2),
-                  immutable
-                )(pos))
+                failsParsing[Statements].in {
+                  case Cypher5JavaCc | Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+                }
               }
 
               test(s"$verb$immutableString $createOrDelete ON DEFAULT GRAPH RELATIONSHIPS * $preposition role") {
-                parsesTo[Statements](func(
-                  GraphPrivilege(action, DefaultGraphScope()(_))(_),
-                  List(RelationshipAllQualifier()(_)),
-                  Seq(literalRole),
-                  immutable
-                )(pos))
+                failsParsing[Statements].in {
+                  case Cypher5JavaCc | Cypher5 =>
+                    _.withMessageStart("`ON DEFAULT GRAPH` is not supported. Use `ON HOME GRAPH` instead.")
+                  case _ => _.withSyntaxErrorContaining("Invalid input 'DEFAULT': expected ")
+                }
               }
 
               // Both Default and * should not parse
@@ -174,8 +170,11 @@ class CreateDeletePrivilegeAdministrationCommandParserTest extends Administratio
                   case Cypher5JavaCc => _.withMessageStart(
                       s"""Invalid input 'DATABASE': expected "DEFAULT", "GRAPH", "GRAPHS" or "HOME" (line 1, column ${offset + 1} (offset: $offset))"""
                     )
-                  case _ => _.withSyntaxErrorContaining(
+                  case Cypher5 => _.withSyntaxErrorContaining(
                       s"""Invalid input 'DATABASE': expected 'GRAPH', 'DEFAULT GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
+                    )
+                  case _ => _.withSyntaxErrorContaining(
+                      s"""Invalid input 'DATABASE': expected 'GRAPH', 'HOME GRAPH' or 'GRAPHS' (line 1, column ${offset + 1} (offset: $offset))"""
                     )
                 }
               }

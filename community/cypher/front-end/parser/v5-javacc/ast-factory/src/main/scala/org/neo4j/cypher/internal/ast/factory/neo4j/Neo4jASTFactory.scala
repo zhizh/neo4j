@@ -97,7 +97,6 @@ import org.neo4j.cypher.internal.ast.DbmsAction
 import org.neo4j.cypher.internal.ast.DbmsPrivilege
 import org.neo4j.cypher.internal.ast.DeallocateServers
 import org.neo4j.cypher.internal.ast.DefaultDatabaseScope
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.Delete
 import org.neo4j.cypher.internal.ast.DeleteElementAction
 import org.neo4j.cypher.internal.ast.DenyPrivilege
@@ -2801,23 +2800,21 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     scopeType: ScopeType
   ): GraphScope = {
     scopeType match {
-      case ScopeType.ALL     => AllGraphsScope()(p)
-      case ScopeType.HOME    => HomeGraphScope()(p)
-      case ScopeType.DEFAULT => DefaultGraphScope()(p)
-      case ScopeType.NAMED   => NamedGraphsScope(graphNames.asScala.toSeq)(p)
+      case ScopeType.ALL   => AllGraphsScope()(p)
+      case ScopeType.HOME  => HomeGraphScope()(p)
+      case ScopeType.NAMED => NamedGraphsScope(graphNames.asScala.toSeq)(p)
     }
   }
 
-  override def databaseScope(
+  override def databasePrivilegeScope(
     p: InputPosition,
     databaseNames: util.List[DatabaseName],
     scopeType: ScopeType
   ): DatabaseScope = {
     scopeType match {
-      case ScopeType.ALL     => AllDatabasesScope()(p)
-      case ScopeType.HOME    => HomeDatabaseScope()(p)
-      case ScopeType.DEFAULT => DefaultDatabaseScope()(p)
-      case ScopeType.NAMED   => NamedDatabasesScope(databaseNames.asScala.toSeq)(p)
+      case ScopeType.ALL   => AllDatabasesScope()(p)
+      case ScopeType.HOME  => HomeDatabaseScope()(p)
+      case ScopeType.NAMED => NamedDatabasesScope(databaseNames.asScala.toSeq)(p)
     }
   }
 

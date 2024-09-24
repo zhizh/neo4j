@@ -6515,42 +6515,39 @@ PRIVILEGE_TYPE allPrivilege(Token start, boolean immutable) throws Exception:
     String type = null;
     Token t = null;
     ScopeType scopeType = ScopeType.NAMED;
+    ActionType actionType = null;
+    boolean usingDefault = false;
 }
 {
     <ALL> ((<DBMS> { type = "DBMS"; } | <GRAPH> { type = "GRAPH"; } | <DATABASE> { type = "DATABASE"; } )? <PRIVILEGES>)? <ON> (
-        t=<DEFAULT_TOKEN> (
-             <GRAPH> {
-                 assertValidType( t, type, "GRAPH" );
-                 return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( ActionType.GRAPH_ALL ), astFactory.graphScope( pos( t ), null, ScopeType.DEFAULT ), null, astFactory.allQualifier(), immutable );
-             }
-             | <DATABASE> {
-                assertValidType( t, type, "DATABASE" );
-                return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( ActionType.DATABASE_ALL ), astFactory.databaseScope( pos( t ), null, ScopeType.DEFAULT ), astFactory.allDatabasesQualifier(), immutable );
-             }
+        t=<DEFAULT_TOKEN> { usingDefault = true; } (
+             <GRAPH> { actionType = ActionType.GRAPH_ALL; } | <DATABASE> { actionType = ActionType.DATABASE_ALL; }
         )
-        | t=<HOME> (
-            <GRAPH> {
-                assertValidType( t, type, "GRAPH" );
-                return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( ActionType.GRAPH_ALL ), astFactory.graphScope( pos( t ), null, ScopeType.HOME ), null, astFactory.allQualifier(), immutable );
-            }
-            | <DATABASE> {
-                assertValidType( t, type, "DATABASE" );
-                return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( ActionType.DATABASE_ALL ), astFactory.databaseScope( pos( t ), null, ScopeType.HOME ), astFactory.allDatabasesQualifier(), immutable );
-            }
+        | t=<HOME> { scopeType = ScopeType.HOME; } (
+            <GRAPH> { actionType = ActionType.GRAPH_ALL; } | <DATABASE> { actionType = ActionType.DATABASE_ALL; }
         )
-        | t=<DBMS> {
-            assertValidType( t, type, "DBMS" );
-            return astFactory.dbmsPrivilege( pos(start), astFactory.privilegeAction( ActionType.DBMS_ALL ), astFactory.allQualifier(), immutable );
-        }
-        | (t=<GRAPH> | t=<GRAPHS>) (<TIMES> { scopeType = ScopeType.ALL; } | names=SymbolicAliasNameList()) {
-            assertValidType( t, type, "GRAPH" );
-            return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( ActionType.GRAPH_ALL ), astFactory.graphScope( pos( t ), names, scopeType ), null, astFactory.allQualifier(), immutable );
-        }
-        | (t=<DATABASE> | t=<DATABASES>) (<TIMES> { scopeType = ScopeType.ALL; } | names=SymbolicAliasNameList() ) {
-            assertValidType( t, type, "DATABASE" );
-            return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( ActionType.DATABASE_ALL ), astFactory.databaseScope( pos( t ), names, scopeType ), astFactory.allDatabasesQualifier(), immutable );
-        }
+        | t=<DBMS> { actionType = ActionType.DBMS_ALL; }
+        | (t=<GRAPH> | t=<GRAPHS>) (<TIMES> { scopeType = ScopeType.ALL; } | names=SymbolicAliasNameList()) { actionType = ActionType.GRAPH_ALL; }
+        | (t=<DATABASE> | t=<DATABASES>) (<TIMES> { scopeType = ScopeType.ALL; } | names=SymbolicAliasNameList() ) { actionType = ActionType.DATABASE_ALL; }
     )
+    {
+        if ( actionType == ActionType.DATABASE_ALL ) {
+            assertValidType( t, type, "DATABASE" );
+            if ( usingDefault ) {
+                throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("DATABASE")), start.beginOffset, start.beginLine, start.beginColumn );
+            }
+            return astFactory.databasePrivilege( pos(start), astFactory.privilegeAction( actionType ), astFactory.databasePrivilegeScope( pos( t ), names, scopeType ), astFactory.allDatabasesQualifier(), immutable );
+        } else if ( actionType == ActionType.GRAPH_ALL ) {
+            assertValidType( t, type, "GRAPH" );
+            if ( usingDefault ) {
+                throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("GRAPH")), start.beginOffset, start.beginLine, start.beginColumn );
+            }
+            return astFactory.graphPrivilege( pos(start), astFactory.privilegeAction( actionType ), astFactory.graphScope( pos( t ), names, scopeType ), null, astFactory.allQualifier(), immutable );
+        } else {
+            assertValidType( t, type, "DBMS" );
+            return astFactory.dbmsPrivilege( pos(start), astFactory.privilegeAction( actionType ), astFactory.allQualifier(), immutable );
+        }
+    }
 }
 
 PRIVILEGE_TYPE createPrivilege(Token start, boolean immutable) throws Exception:
@@ -7189,15 +7186,19 @@ DATABASE_SCOPE DatabaseScope() throws Exception:
     Token start = null;
     List<DATABASE_NAME> names = null;
     ScopeType type = ScopeType.NAMED;
+    boolean usingDefault = false;
 }
 {
     (
         (start=<DATABASE> | start=<DATABASES>) (<TIMES> { type = ScopeType.ALL; } | names=SymbolicAliasNameList())
-        | start=<DEFAULT_TOKEN> <DATABASE> { type = ScopeType.DEFAULT; }
+        | start=<DEFAULT_TOKEN> <DATABASE> { usingDefault = true; }
         | start=<HOME> <DATABASE> { type = ScopeType.HOME; }
     )
   {
-    return astFactory.databaseScope( pos( start ), names, type );
+    if ( usingDefault ) {
+        throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("DATABASE")), start.beginOffset, start.beginLine, start.beginColumn );
+    }
+    return astFactory.databasePrivilegeScope( pos( start ), names, type );
   }
 }
 
@@ -7206,14 +7207,18 @@ GRAPH_SCOPE GraphScope() throws Exception:
     Token start = null;
     List<DATABASE_NAME> names = null;
     ScopeType type = ScopeType.NAMED;
+    boolean usingDefault = false;
 }
 {
     (
         (start=<GRAPH> | start=<GRAPHS>) (<TIMES> { type = ScopeType.ALL; } | names=SymbolicAliasNameList() )
-        | start=<DEFAULT_TOKEN> <GRAPH> { type = ScopeType.DEFAULT; }
+        | start=<DEFAULT_TOKEN> <GRAPH> { usingDefault = true; }
         | start=<HOME> <GRAPH> { type = ScopeType.HOME; }
     )
     {
+        if ( usingDefault ) {
+            throw exceptionFactory.syntaxException( new ParseException(ASTExceptionFactory.invalidDefaultScope("GRAPH")), start.beginOffset, start.beginLine, start.beginColumn );
+        }
         return astFactory.graphScope( pos( start ), names, type );
     }
 }

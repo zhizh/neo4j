@@ -93,7 +93,6 @@ import org.neo4j.cypher.internal.ast.DatabasePrivilegeQualifier
 import org.neo4j.cypher.internal.ast.DbmsAction
 import org.neo4j.cypher.internal.ast.DeallocateServers
 import org.neo4j.cypher.internal.ast.DefaultDatabaseScope
-import org.neo4j.cypher.internal.ast.DefaultGraphScope
 import org.neo4j.cypher.internal.ast.Delete
 import org.neo4j.cypher.internal.ast.DeleteElementAction
 import org.neo4j.cypher.internal.ast.DenyPrivilege
@@ -2850,7 +2849,6 @@ class AstGenerator(
     databaseScope <- oneOf(
       NamedDatabasesScope(dbNames)(pos),
       AllDatabasesScope()(pos),
-      DefaultDatabaseScope()(pos),
       HomeDatabaseScope()(pos)
     )
     databaseQualifier <- _databaseQualifier(databaseAction.isInstanceOf[TransactionManagementAction])
@@ -2877,7 +2875,7 @@ class AstGenerator(
     graphAction <- _graphAction
     graphNames <- oneOrMore(_databaseName)
     graphScope <-
-      oneOf(NamedGraphsScope(graphNames)(pos), AllGraphsScope()(pos), DefaultGraphScope()(pos), HomeGraphScope()(pos))
+      oneOf(NamedGraphsScope(graphNames)(pos), AllGraphsScope()(pos), HomeGraphScope()(pos))
     (qualifier, maybeResource) <- _graphQualifierAndResource(graphAction)
     roleNames <- _listOfStringLiteralOrParam
     revokeType <- _revokeType

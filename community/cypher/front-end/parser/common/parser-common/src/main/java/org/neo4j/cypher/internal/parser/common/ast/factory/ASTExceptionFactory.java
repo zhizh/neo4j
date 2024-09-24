@@ -162,6 +162,10 @@ please omit `BRIEF` and use `YIELD *` instead of `VERBOSE`.""",
                 "Invalid input `%s` for database name. Expected name to contain at most one component.", name);
     }
 
+    static String invalidDefaultScope(String target) {
+        return String.format("`ON DEFAULT %s` is not supported. Use `ON HOME %s` instead.", target, target);
+    }
+
     String periodicCommitNotSupported =
             "The PERIODIC COMMIT query hint is no longer supported. Please use CALL { ... } IN TRANSACTIONS instead.";
 
