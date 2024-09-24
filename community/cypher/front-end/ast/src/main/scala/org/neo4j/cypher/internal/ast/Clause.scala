@@ -1878,13 +1878,6 @@ sealed trait SubqueryCall extends HorizonClause with SemanticAnalysisTooling {
       SemanticCheckResult(s.importValuesFromScope(previousScope), Vector())
   }
 
-  final protected def declareOutputVariablesInOuterScope(rootScope: Scope): SemanticCheck = {
-    when(innerQuery.isReturning) {
-      val scopeForDeclaringVariables = innerQuery.finalScope(rootScope)
-      declareVariables(scopeForDeclaringVariables.symbolTable.values)
-    }
-  }
-
   private def checkNoNestedCallInTransactions: SemanticCheck = {
     val nestedCallInTransactions = SubqueryCall.findTransactionalSubquery(innerQuery)
     nestedCallInTransactions.foldSemanticCheck { nestedCallInTransactions =>
@@ -1937,6 +1930,12 @@ case class ImportingWithSubqueryCall(
     }
   }
 
+  def declareOutputVariablesInOuterScope(rootScope: Scope): SemanticCheck = {
+    when(innerQuery.isReturning) {
+      val scopeForDeclaringVariables = innerQuery.finalScope(rootScope)
+      declareVariables(scopeForDeclaringVariables.symbolTable.values)
+    }
+  }
 }
 
 case class ScopeClauseSubqueryCall(
@@ -1955,8 +1954,6 @@ case class ScopeClauseSubqueryCall(
     for {
       // Get current state
       current <- SemanticCheck.getState
-      // Check for conflicts with return variables and outer state
-      returnsChecked <- innerQuery.returnVariableCheck(current.state)
       // Checks for errors in imported variables
       stateWithImports <- SemanticExpressionCheck.check(Expression.SemanticContext.Simple, importedVariables)
       // Create empty scope under root
@@ -1966,11 +1963,11 @@ case class ScopeClauseSubqueryCall(
       // Check inner query
       innerChecked <- innerQuery.semanticCheckInSubqueryContext(innerWithImports.state, current.state)
       // Return to outer scope
-      _ <- returnToOuterScope(current.state.currentScope)
+      returned <- returnToOuterScope(current.state.currentScope)
       // Declare output variables from inner query in outer scope
-      merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
+      merged <- declareOutputVariablesInOuterScope(returned.state, innerChecked.state)
     } yield {
-      val importingScopeErrors = (returnsChecked.errors ++ stateWithImports.errors ++ innerChecked.errors).distinct
+      val importingScopeErrors = (stateWithImports.errors ++ innerChecked.errors).distinct
 
       // Avoid double errors if inner has errors
       val allErrors = if (importingScopeErrors.nonEmpty) importingScopeErrors else merged.errors
@@ -1978,6 +1975,30 @@ case class ScopeClauseSubqueryCall(
       // Keep errors from inner check and from variable declarations
       SemanticCheckResult(merged.state, allErrors)
     }
+  }
+
+  def declareOutputVariablesInOuterScope(
+    returned: SemanticState,
+    inner: SemanticState
+  ): SemanticCheck = {
+    when(innerQuery.isReturning) {
+      val outerScopeSymbolNames = returned.currentScope.scope.symbolNames
+      val outputSymbolNames = innerQuery.finalScope(inner.currentScope.scope).symbolNames
+      val intersect = outputSymbolNames.intersect(outerScopeSymbolNames)
+
+      innerQuery.getReturns.flatMap(v => intersect.map((v, _))).foldSemanticCheck { case (ret, name) =>
+        val position = ret.returnItems.items.find(_.name == name) match {
+          case _ @Some(AliasedReturnItem(_, variable)) => variable.position
+          case _                                       => ret.position
+        }
+
+        SemanticError(s"Variable `$name` already declared in outer scope", position)
+      }
+    } ifOkChain
+      when(innerQuery.isReturning) {
+        val scopeForDeclaringVariables = innerQuery.finalScope(inner.currentScope.scope)
+        declareVariables(scopeForDeclaringVariables.symbolTable.values)
+      }
   }
 
   def declareVariables(previousState: SemanticState): SemanticCheck =

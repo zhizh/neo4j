@@ -80,6 +80,8 @@ sealed trait Query extends Statement with SemanticCheckable with SemanticAnalysi
    */
   def isReturning: Boolean
 
+  def getReturns: Seq[Return]
+
   /**
    * True iff this query part ends with a finish clause.
    */
@@ -117,6 +119,13 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
     }
 
   override def returnVariables: ReturnVariables = clauses.last.returnVariables
+
+  override def getReturns: Seq[Return] = {
+    clauses.last match {
+      case r: Return => Seq(r)
+      case _         => Seq.empty
+    }
+  }
 
   /**
    * The query is correlated if it imports variables from a parent query, this can happen if:
@@ -677,6 +686,10 @@ sealed trait Union extends Query {
     lhs.returnVariables.includeExisting || rhs.returnVariables.includeExisting,
     unionMappings.map(_.unionVariable)
   )
+
+  override def getReturns: Seq[Return] = {
+    lhs.getReturns ++ rhs.getReturns
+  }
 
   override def importColumns: Seq[String] = lhs.importColumns ++ rhs.importColumns
 
