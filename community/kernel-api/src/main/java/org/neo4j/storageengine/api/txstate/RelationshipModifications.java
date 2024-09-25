@@ -19,7 +19,9 @@
  */
 package org.neo4j.storageengine.api.txstate;
 
-import java.util.Collections;
+import static java.util.Collections.emptyList;
+import static org.neo4j.token.api.TokenConstants.NO_TOKEN;
+
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -27,6 +29,7 @@ import org.apache.commons.lang3.mutable.MutableLong;
 import org.eclipse.collections.api.iterator.LongIterator;
 import org.eclipse.collections.api.set.primitive.LongSet;
 import org.eclipse.collections.impl.factory.primitive.IntLists;
+import org.neo4j.storageengine.api.LongReference;
 import org.neo4j.storageengine.api.RelationshipDirection;
 import org.neo4j.storageengine.api.RelationshipVisitor;
 import org.neo4j.storageengine.api.RelationshipVisitorWithProperties;
@@ -61,7 +64,7 @@ public interface RelationshipModifications {
         }
 
         @Override
-        public void forEach(RelationshipVisitorWithProperties relationship) {}
+        public <T extends Exception> void forEach(RelationshipVisitorWithProperties<T> relationship) {}
     };
 
     static IdDataDecorator noAdditionalDataDecorator() {
@@ -69,7 +72,13 @@ public interface RelationshipModifications {
             @Override
             public <E extends Exception> void accept(long id, RelationshipVisitorWithProperties<E> visitor) throws E {
                 visitor.visit(
-                        id, -1, -1, -1, Collections.emptyList(), Collections.emptyList(), IntLists.immutable.empty());
+                        id,
+                        NO_TOKEN,
+                        LongReference.NULL,
+                        LongReference.NULL,
+                        emptyList(),
+                        emptyList(),
+                        IntLists.immutable.empty());
             }
         };
     }
@@ -325,9 +334,9 @@ public interface RelationshipModifications {
          */
         default long first() {
             Preconditions.checkState(!isEmpty(), "No ids");
-            MutableLong first = new MutableLong(-1);
+            MutableLong first = new MutableLong(LongReference.NULL);
             forEach((rId, type, start, end, addedProps, changedProps, removedProps) -> {
-                if (first.longValue() == -1) {
+                if (first.longValue() == LongReference.NULL) {
                     first.setValue(rId);
                 }
             });
