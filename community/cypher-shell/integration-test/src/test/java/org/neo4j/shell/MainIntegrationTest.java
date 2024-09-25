@@ -1203,7 +1203,7 @@ class MainIntegrationTest extends TestHarness {
 
     @Test
     void illegalParameters() throws Exception {
-
+        assumeAtLeastVersion("5.6.0");
         buildTest()
                 .addArgs("-u", USER, "-p", PASSWORD, "--format", "plain")
                 .userInputLines(
