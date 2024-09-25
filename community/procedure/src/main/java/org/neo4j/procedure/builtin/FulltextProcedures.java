@@ -274,12 +274,16 @@ public class FulltextProcedures {
         // held by the index populator. Also, if the index was created in this transaction, then we will never see it
         // come online in this transaction anyway.
         // Indexes don't come online until the transaction that creates them has committed.
+        // It's expensive to check if an index is online on an SPD(since we need to check if it's online for all
+        // shards),
+        // we will therefor do that when we query the index on each shard instead.
         TxStateHolder txStateHolder = (TxStateHolder) this.tx;
-        if (!txStateHolder.hasTxStateWithChanges()
-                || !txStateHolder
-                        .txState()
-                        .indexDiffSetsBySchema(index.schema())
-                        .isAdded(index)) {
+        if ((!txStateHolder.hasTxStateWithChanges()
+                        || !txStateHolder
+                                .txState()
+                                .indexDiffSetsBySchema(index.schema())
+                                .isAdded(index))
+                && !tx.isSPDTransaction()) {
             // If the index was not created in this transaction, then wait for it to come online before querying.
             Schema schema = transaction.schema();
             schema.awaitIndexOnline(index.getName(), INDEX_ONLINE_QUERY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
