@@ -19,7 +19,8 @@
  */
 package org.neo4j.kernel.impl.newapi;
 
-import java.util.Arrays;
+import static org.neo4j.collection.PrimitiveArrays.contains;
+
 import java.util.Iterator;
 import org.neo4j.function.ThrowingConsumer;
 import org.neo4j.internal.schema.SchemaDescriptor;
@@ -73,9 +74,5 @@ public class SchemaMatcher {
             }
         }
         return true;
-    }
-
-    private static boolean contains(int[] existingPropertyIds, int indexPropertyId) {
-        return Arrays.binarySearch(existingPropertyIds, indexPropertyId) >= 0;
     }
 }

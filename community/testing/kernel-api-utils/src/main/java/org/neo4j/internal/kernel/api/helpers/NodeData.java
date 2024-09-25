@@ -20,6 +20,7 @@
 package org.neo4j.internal.kernel.api.helpers;
 
 import java.util.Map;
+import org.neo4j.collection.PrimitiveArrays;
 import org.neo4j.internal.kernel.api.TokenSet;
 import org.neo4j.values.storable.Value;
 
@@ -48,12 +49,7 @@ class NodeData {
 
             @Override
             public boolean contains(int token) {
-                for (int label : labels) {
-                    if (label == token) {
-                        return true;
-                    }
-                }
-                return false;
+                return PrimitiveArrays.contains(labels, token);
             }
 
             @Override

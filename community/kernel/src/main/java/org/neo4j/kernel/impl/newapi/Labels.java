@@ -23,6 +23,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.eclipse.collections.api.set.primitive.IntSet;
 import org.eclipse.collections.api.set.primitive.LongSet;
+import org.neo4j.collection.PrimitiveArrays;
 import org.neo4j.internal.kernel.api.TokenSet;
 
 public class Labels implements TokenSet {
@@ -59,15 +60,7 @@ public class Labels implements TokenSet {
 
     @Override
     public boolean contains(int token) {
-        // It may look tempting to use binary search
-        // however doing a linear search is actually faster for reasonable
-        // label sizes (≤100 labels)
-        for (int label : labelIds) {
-            if (label == token) {
-                return true;
-            }
-        }
-        return false;
+        return PrimitiveArrays.contains(labelIds, token);
     }
 
     @Override
