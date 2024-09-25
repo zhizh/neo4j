@@ -24,7 +24,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 class LengthsTest extends CypherFunSuite {
 
   test("set & get") {
-    val lengths = new Lengths
+    val lengths = Lengths.relationshipUniquenessTrackingLengths()
 
     Lengths.Type.values().foreach { lengthType =>
       lengths.set(1, lengthType)
@@ -33,7 +33,7 @@ class LengthsTest extends CypherFunSuite {
   }
 
   test("clear") {
-    val lengths = new Lengths
+    val lengths = Lengths.relationshipUniquenessTrackingLengths()
 
     Lengths.Type.values().foreach { lengthType =>
       lengths.set(1, lengthType)
@@ -43,7 +43,7 @@ class LengthsTest extends CypherFunSuite {
   }
 
   test("next") {
-    val lengths = new Lengths
+    val lengths = Lengths.relationshipUniquenessTrackingLengths()
 
     Lengths.Type.values().foreach { lengthType =>
       lengths.next(0, lengthType) shouldBe Lengths.NONE
@@ -57,7 +57,7 @@ class LengthsTest extends CypherFunSuite {
   }
 
   test("min") {
-    val lengths = new Lengths
+    val lengths = Lengths.relationshipUniquenessTrackingLengths()
 
     Lengths.Type.values().foreach { lengthType =>
       lengths.set(1, lengthType)
@@ -68,7 +68,7 @@ class LengthsTest extends CypherFunSuite {
   }
 
   test("isEmpty") {
-    val lengths = new Lengths
+    val lengths = Lengths.relationshipUniquenessTrackingLengths()
 
     Lengths.Type.values().foreach { lengthType =>
       lengths.isEmpty(lengthType) shouldBe true

@@ -35,6 +35,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.Predica
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Pipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.PipeWithSource
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.StatefulShortestPathPipe.relationshipUnqiuenessTracker
 import org.neo4j.cypher.internal.runtime.slotted.SlottedRow
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
@@ -82,7 +83,9 @@ case class StatefulShortestPathSlottedPipe(
     state.query.resources.trace(traversalCursor)
 
     val hooks = PPBFSHooks.getInstance()
-    val pathTracer = new PathTracer[CypherRow](memoryTracker, hooks)
+    val tracker = relationshipUnqiuenessTracker(matchMode, memoryTracker)
+    val pathTracer =
+      new PathTracer[CypherRow](memoryTracker, tracker, hooks)
     val pathPredicate =
       preFilters.fold[java.util.function.Predicate[CypherRow]](_ => true)(pred => pred.isTrue(_, state))
 
@@ -108,7 +111,8 @@ case class StatefulShortestPathSlottedPipe(
         commandNFA.states.size,
         memoryTracker,
         hooks,
-        state.query.transactionalContext.assertTransactionOpen _
+        state.query.transactionalContext.assertTransactionOpen _,
+        tracker
       ).asSelfClosingIterator
 
     }.closing(nodeCursor).closing(traversalCursor)

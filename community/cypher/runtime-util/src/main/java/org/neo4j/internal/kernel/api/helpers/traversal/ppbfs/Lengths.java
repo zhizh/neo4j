@@ -23,23 +23,12 @@ import java.util.BitSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.neo4j.memory.HeapEstimator;
+import org.neo4j.memory.Measurable;
 
-/**
- * Represents the presence or absence of different types of length:
- * - Length from source
- * - Confirmed length from source (no duplicate relationships)
- * <p>
- * Implemented by interleaving multiple indexes into a single bitset, in order to conserve memory (we create many of these).
- */
-public class Lengths extends BitSet {
-    private static final int FACTOR = Type.values().length;
+public interface Lengths extends Measurable {
+    int NONE = -1;
 
-    public static final int NONE = -1;
-
-    public static final long SHALLOW_SIZE =
-            HeapEstimator.shallowSizeOfInstance(Lengths.class) + HeapEstimator.sizeOfLongArray(1);
-
-    public enum Type {
+    enum Type {
         Source(0),
         ConfirmedSource(1);
 
@@ -50,50 +39,160 @@ public class Lengths extends BitSet {
         }
     }
 
-    public boolean get(int index, Type type) {
-        return get(index * FACTOR + type.offset);
+    boolean get(int index, RelTrackingLengths.Type type);
+
+    void set(int index, RelTrackingLengths.Type type);
+
+    void clear(int index, RelTrackingLengths.Type type);
+
+    int max(RelTrackingLengths.Type type);
+
+    int next(int start, RelTrackingLengths.Type type);
+
+    int min(RelTrackingLengths.Type type);
+
+    boolean isEmpty(RelTrackingLengths.Type type);
+
+    boolean isEmpty();
+
+    String renderSourceLengths();
+
+    static Lengths relationshipUniquenessTrackingLengths() {
+        return new RelTrackingLengths();
     }
 
-    public void set(int index, Type type) {
-        set(index * FACTOR + type.offset);
+    static Lengths nonRelationshipUniquenessTrackingLengths() {
+        return new NonTrackingLengths();
     }
 
-    public void clear(int index, Type type) {
-        clear(index * FACTOR + type.offset);
-    }
+    /**
+     * Represents the presence or absence of different types of length:
+     * - Length from source
+     * - Confirmed length from source (no duplicate relationships)
+     * <p>
+     * Implemented by interleaving multiple indexes into a single bitset, in order to conserve memory (we create many of these).
+     */
+    class RelTrackingLengths extends BitSet implements Lengths {
+        private static final int FACTOR = Type.values().length;
 
-    public int max(Type type) {
-        return stream(type).max().orElse(NONE);
-    }
+        private static final long SHALLOW_SIZE =
+                HeapEstimator.shallowSizeOfInstance(RelTrackingLengths.class) + HeapEstimator.sizeOfLongArray(1);
 
-    public int next(int start, Type type) {
-        for (int i = nextSetBit(start * FACTOR + type.offset); i != -1; i = nextSetBit(i + 1)) {
-            if (i % FACTOR == type.offset) {
-                return i / FACTOR;
+        @Override
+        public boolean get(int index, Type type) {
+            return get(index * FACTOR + type.offset);
+        }
+
+        @Override
+        public void set(int index, Type type) {
+            set(index * FACTOR + type.offset);
+        }
+
+        @Override
+        public void clear(int index, Type type) {
+            clear(index * FACTOR + type.offset);
+        }
+
+        @Override
+        public int max(Type type) {
+            return stream(type).max().orElse(NONE);
+        }
+
+        @Override
+        public int next(int start, Type type) {
+            for (int i = nextSetBit(start * FACTOR + type.offset); i != -1; i = nextSetBit(i + 1)) {
+                if (i % FACTOR == type.offset) {
+                    return i / FACTOR;
+                }
             }
-        }
-        return NONE;
-    }
-
-    public int min(Type type) {
-        return next(0, type);
-    }
-
-    public boolean isEmpty(Type type) {
-        if (isEmpty()) {
-            return true;
+            return NONE;
         }
 
-        return min(type) == NONE;
+        @Override
+        public int min(Type type) {
+            return next(0, type);
+        }
+
+        @Override
+        public boolean isEmpty(Type type) {
+            if (isEmpty()) {
+                return true;
+            }
+
+            return min(type) == NONE;
+        }
+
+        @Override
+        public String renderSourceLengths() {
+            return stream(Lengths.Type.Source)
+                    .mapToObj(i -> i + (get(i, Lengths.Type.ConfirmedSource) ? "✓" : "?"))
+                    .collect(Collectors.joining(",", "{", "}"));
+        }
+
+        @Override
+        public long estimatedHeapUsage() {
+            return SHALLOW_SIZE;
+        }
+
+        private IntStream stream(Type type) {
+            return stream().filter(i -> i % FACTOR == type.offset).map(i -> i / FACTOR);
+        }
     }
 
-    private IntStream stream(Type type) {
-        return stream().filter(i -> i % FACTOR == type.offset).map(i -> i / FACTOR);
-    }
+    class NonTrackingLengths extends BitSet implements Lengths {
 
-    public String renderSourceLengths() {
-        return stream(Lengths.Type.Source)
-                .mapToObj(i -> i + (get(i, Lengths.Type.ConfirmedSource) ? "✓" : "?"))
-                .collect(Collectors.joining(",", "{", "}"));
+        private static final long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(NonTrackingLengths.class);
+
+        @Override
+        public boolean get(int index, Type type) {
+            return get(index);
+        }
+
+        @Override
+        public void set(int index, Type type) {
+            if (type == Type.ConfirmedSource) {
+                return;
+            }
+            set(index);
+        }
+
+        @Override
+        public void clear(int index, Type type) {
+            if (type == Type.ConfirmedSource) {
+                assert false : "Should not clear ConfirmedSource for NonTrackingLengths";
+                return;
+            }
+            clear(index);
+        }
+
+        @Override
+        public int max(Type type) {
+            return stream().max().orElse(NONE);
+        }
+
+        @Override
+        public int next(int start, Type type) {
+            return nextSetBit(start);
+        }
+
+        @Override
+        public int min(Type type) {
+            return next(0, type);
+        }
+
+        @Override
+        public boolean isEmpty(Type type) {
+            return isEmpty();
+        }
+
+        @Override
+        public String renderSourceLengths() {
+            return toString();
+        }
+
+        @Override
+        public long estimatedHeapUsage() {
+            return SHALLOW_SIZE;
+        }
     }
 }

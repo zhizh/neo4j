@@ -20,6 +20,7 @@
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Objects;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName;
@@ -48,15 +49,17 @@ public abstract sealed class TwoWaySignpost implements Measurable {
 
     // targetSignpost
     protected int minTargetDistance = NO_TARGET_DISTANCE;
+    public final BitSet cycleLengths;
 
-    protected TwoWaySignpost(NodeState prevNode, NodeState forwardNode) {
+    protected TwoWaySignpost(NodeState prevNode, NodeState forwardNode, Lengths lengths) {
         this.prevNode = prevNode;
         this.forwardNode = forwardNode;
-        this.lengths = new Lengths();
+        this.lengths = lengths;
+        this.cycleLengths = new BitSet();
     }
 
-    protected TwoWaySignpost(NodeState prevNode, NodeState forwardNode, int sourceLength) {
-        this(prevNode, forwardNode);
+    protected TwoWaySignpost(NodeState prevNode, NodeState forwardNode, int sourceLength, Lengths lengths) {
+        this(prevNode, forwardNode, lengths);
         this.lengths.set(sourceLength, Lengths.Type.Source);
     }
 
@@ -66,8 +69,10 @@ public abstract sealed class TwoWaySignpost implements Measurable {
             long relId,
             NodeState forwardNode,
             RelationshipExpansion relationshipExpansion,
-            int sourceLength) {
-        return allocate(mt, new RelSignpost(prevNode, relId, forwardNode, relationshipExpansion, sourceLength));
+            int sourceLength,
+            Lengths lengths) {
+        return allocate(
+                mt, new RelSignpost(prevNode, relId, forwardNode, relationshipExpansion, sourceLength, lengths));
     }
 
     public static RelSignpost fromRelExpansion(
@@ -75,27 +80,19 @@ public abstract sealed class TwoWaySignpost implements Measurable {
             NodeState prevNode,
             long relId,
             NodeState forwardNode,
-            RelationshipExpansion relationshipExpansion) {
-        return allocate(mt, new RelSignpost(prevNode, relId, forwardNode, relationshipExpansion));
+            RelationshipExpansion relationshipExpansion,
+            Lengths lengths) {
+        return allocate(mt, new RelSignpost(prevNode, relId, forwardNode, relationshipExpansion, lengths));
     }
 
     public static NodeSignpost fromNodeJuxtaposition(
-            MemoryTracker mt, NodeState prevNode, NodeState forwardNode, int sourceLength) {
-        return allocate(mt, new NodeSignpost(prevNode, forwardNode, sourceLength));
+            MemoryTracker mt, NodeState prevNode, NodeState forwardNode, int sourceLength, Lengths lengths) {
+        return allocate(mt, new NodeSignpost(prevNode, forwardNode, sourceLength, lengths));
     }
 
-    public static NodeSignpost fromNodeJuxtaposition(MemoryTracker mt, NodeState prevNode, NodeState forwardNode) {
-        return allocate(mt, new NodeSignpost(prevNode, forwardNode));
-    }
-
-    public static MultiRelSignpost fromMultiRel(
-            MemoryTracker mt,
-            NodeState prevNode,
-            long[] rels,
-            long[] nodes,
-            MultiRelationshipExpansion expansion,
-            NodeState forwardNode) {
-        return allocate(mt, new MultiRelSignpost(prevNode, rels, nodes, forwardNode, expansion));
+    public static NodeSignpost fromNodeJuxtaposition(
+            MemoryTracker mt, NodeState prevNode, NodeState forwardNode, Lengths lengths) {
+        return allocate(mt, new NodeSignpost(prevNode, forwardNode, lengths));
     }
 
     public static MultiRelSignpost fromMultiRel(
@@ -105,8 +102,20 @@ public abstract sealed class TwoWaySignpost implements Measurable {
             long[] nodes,
             MultiRelationshipExpansion expansion,
             NodeState forwardNode,
-            int sourceLength) {
-        return allocate(mt, new MultiRelSignpost(prevNode, rels, nodes, forwardNode, expansion, sourceLength));
+            Lengths lengths) {
+        return allocate(mt, new MultiRelSignpost(prevNode, rels, nodes, forwardNode, expansion, lengths));
+    }
+
+    public static MultiRelSignpost fromMultiRel(
+            MemoryTracker mt,
+            NodeState prevNode,
+            long[] rels,
+            long[] nodes,
+            MultiRelationshipExpansion expansion,
+            NodeState forwardNode,
+            int sourceLength,
+            Lengths lengths) {
+        return allocate(mt, new MultiRelSignpost(prevNode, rels, nodes, forwardNode, expansion, sourceLength, lengths));
     }
 
     private static <T extends TwoWaySignpost> T allocate(MemoryTracker mt, T signpost) {
@@ -188,15 +197,20 @@ public abstract sealed class TwoWaySignpost implements Measurable {
                 long relId,
                 NodeState forwardNode,
                 RelationshipExpansion relationshipExpansion,
-                int lengthFromSource) {
-            super(prevNode, forwardNode, lengthFromSource);
+                int lengthFromSource,
+                Lengths lengths) {
+            super(prevNode, forwardNode, lengthFromSource, lengths);
             this.relId = relId;
             this.relationshipExpansion = relationshipExpansion;
         }
 
         private RelSignpost(
-                NodeState prevNode, long relId, NodeState forwardNode, RelationshipExpansion relationshipExpansion) {
-            super(prevNode, forwardNode);
+                NodeState prevNode,
+                long relId,
+                NodeState forwardNode,
+                RelationshipExpansion relationshipExpansion,
+                Lengths lengths) {
+            super(prevNode, forwardNode, lengths);
             this.relId = relId;
             this.relationshipExpansion = relationshipExpansion;
         }
@@ -243,7 +257,7 @@ public abstract sealed class TwoWaySignpost implements Measurable {
 
         @Override
         public long estimatedHeapUsage() {
-            return SHALLOW_SIZE + Lengths.SHALLOW_SIZE;
+            return SHALLOW_SIZE + lengths.estimatedHeapUsage();
         }
 
         @Override
@@ -263,8 +277,8 @@ public abstract sealed class TwoWaySignpost implements Measurable {
     /** A signpost that points across a node juxtaposition */
     public static final class NodeSignpost extends TwoWaySignpost {
 
-        private NodeSignpost(NodeState prevNode, NodeState forwardNode, int lengthFromSource) {
-            super(prevNode, forwardNode, lengthFromSource);
+        private NodeSignpost(NodeState prevNode, NodeState forwardNode, int lengthFromSource, Lengths lengths) {
+            super(prevNode, forwardNode, lengthFromSource, lengths);
             assert prevNode != forwardNode : "A state cannot have a node juxtaposition to itself";
         }
 
@@ -278,8 +292,8 @@ public abstract sealed class TwoWaySignpost implements Measurable {
             return 1; // prevNode
         }
 
-        private NodeSignpost(NodeState prevNode, NodeState forwardNode) {
-            super(prevNode, forwardNode);
+        private NodeSignpost(NodeState prevNode, NodeState forwardNode, Lengths lengths) {
+            super(prevNode, forwardNode, lengths);
             assert prevNode != forwardNode : "A state cannot have a node juxtaposition to itself";
         }
 
@@ -308,7 +322,7 @@ public abstract sealed class TwoWaySignpost implements Measurable {
 
         @Override
         public long estimatedHeapUsage() {
-            return SHALLOW_SIZE + Lengths.SHALLOW_SIZE;
+            return SHALLOW_SIZE + lengths.estimatedHeapUsage();
         }
 
         @Override
@@ -337,8 +351,9 @@ public abstract sealed class TwoWaySignpost implements Measurable {
                 long[] nodes,
                 NodeState forwardNode,
                 MultiRelationshipExpansion transition,
-                int lengthFromSource) {
-            super(prevNode, forwardNode, lengthFromSource);
+                int lengthFromSource,
+                Lengths lengths) {
+            super(prevNode, forwardNode, lengthFromSource, lengths);
             this.rels = rels;
             this.nodes = nodes;
             this.transition = transition;
@@ -372,8 +387,9 @@ public abstract sealed class TwoWaySignpost implements Measurable {
                 long[] rels,
                 long[] nodes,
                 NodeState forwardNode,
-                MultiRelationshipExpansion transition) {
-            super(prevNode, forwardNode);
+                MultiRelationshipExpansion transition,
+                Lengths lengths) {
+            super(prevNode, forwardNode, lengths);
             this.rels = rels;
             this.nodes = nodes;
             this.transition = transition;
@@ -384,7 +400,10 @@ public abstract sealed class TwoWaySignpost implements Measurable {
 
         @Override
         public long estimatedHeapUsage() {
-            return SHALLOW_SIZE + Lengths.SHALLOW_SIZE + HeapEstimator.sizeOf(rels) + HeapEstimator.sizeOf(nodes);
+            return SHALLOW_SIZE
+                    + lengths.estimatedHeapUsage()
+                    + HeapEstimator.sizeOf(rels)
+                    + HeapEstimator.sizeOf(nodes);
         }
 
         private static long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(MultiRelSignpost.class);

@@ -38,6 +38,7 @@ import scala.collection.compat.immutable.ArraySeq
 class TwoWaySignpostTest extends CypherFunSuite {
   private val meter = MemoryMeter.builder.build
   private def deduplicatedSize(o: AnyRef*) = meter.measureDeep(o) - meter.measureDeep(ArraySeq.fill(o.size)(null))
+  private val ls = Lengths.relationshipUniquenessTrackingLengths()
 
   test("memory allocation on construction of node signpost") {
     val mt = new LocalMemoryTracker()
@@ -46,10 +47,10 @@ class TwoWaySignpostTest extends CypherFunSuite {
     val s1 = new State(1, SlotOrName.none, Predicates.ALWAYS_TRUE_LONG, false, false)
     val s2 = new State(2, SlotOrName.none, Predicates.ALWAYS_TRUE_LONG, false, false)
 
-    val prevNode = new NodeState(gs, 1, s1, 3)
-    val forwardNode = new NodeState(gs, 1, s2, 3)
+    val prevNode = new NodeState(gs, 1, s1, 3, ls)
+    val forwardNode = new NodeState(gs, 1, s2, 3, ls)
 
-    val signpost = TwoWaySignpost.fromNodeJuxtaposition(mt, prevNode, forwardNode, 0)
+    val signpost = TwoWaySignpost.fromNodeJuxtaposition(mt, prevNode, forwardNode, 0, ls)
 
     val actual = meter.measureDeep(signpost) - deduplicatedSize(prevNode, forwardNode)
 
@@ -63,12 +64,12 @@ class TwoWaySignpostTest extends CypherFunSuite {
     val s1 = new State(1, SlotOrName.none, Predicates.ALWAYS_TRUE_LONG, false, false)
     val s2 = new State(2, SlotOrName.none, Predicates.ALWAYS_TRUE_LONG, false, false)
 
-    val prevNode = new NodeState(gs, 1, s1, 3)
-    val forwardNode = new NodeState(gs, 2, s2, 3)
+    val prevNode = new NodeState(gs, 1, s1, 3, ls)
+    val forwardNode = new NodeState(gs, 2, s2, 3, ls)
 
     val re = new RelationshipExpansion(s1, Predicates.alwaysTrue(), null, Direction.BOTH, SlotOrName.none, s2)
 
-    val signpost = TwoWaySignpost.fromRelExpansion(mt, prevNode, 1, forwardNode, re, 0)
+    val signpost = TwoWaySignpost.fromRelExpansion(mt, prevNode, 1, forwardNode, re, 0, ls)
 
     val actual = meter.measureDeep(signpost) - deduplicatedSize(prevNode, forwardNode, re)
 
@@ -82,8 +83,8 @@ class TwoWaySignpostTest extends CypherFunSuite {
     val s1 = new State(1, SlotOrName.none, Predicates.ALWAYS_TRUE_LONG, false, false)
     val s2 = new State(2, SlotOrName.none, Predicates.ALWAYS_TRUE_LONG, false, false)
 
-    val prevNode = new NodeState(gs, 1, s1, 3)
-    val forwardNode = new NodeState(gs, 2, s2, 3)
+    val prevNode = new NodeState(gs, 1, s1, 3, ls)
+    val forwardNode = new NodeState(gs, 2, s2, 3, ls)
 
     val mre = {
       val builder = MultiRelationshipBuilder.empty
@@ -94,7 +95,7 @@ class TwoWaySignpostTest extends CypherFunSuite {
       new MultiRelationshipExpansion(s1, builder.rels.toArray, builder.nodes.toArray, CompoundPredicate.ALWAYS_TRUE, s2)
     }
 
-    val signpost = TwoWaySignpost.fromMultiRel(mt, prevNode, Array(1L, 2L), Array(3L), mre, forwardNode, 0)
+    val signpost = TwoWaySignpost.fromMultiRel(mt, prevNode, Array(1L, 2L), Array(3L), mre, forwardNode, 0, ls)
 
     val actual = meter.measureDeep(signpost) - deduplicatedSize(prevNode, forwardNode, mre)
 

@@ -60,7 +60,9 @@ public class GlobalState {
     }
 
     public void schedule(NodeState nodeState, int lengthFromSource, int lengthToTarget, ScheduleSource source) {
-        propagator.schedule(nodeState, lengthFromSource, lengthToTarget, source);
+        if (lengthFromSource + lengthToTarget >= depth) {
+            propagator.schedule(nodeState, lengthFromSource, lengthToTarget, source);
+        }
     }
 
     public void incrementUnsaturatedTargets() {

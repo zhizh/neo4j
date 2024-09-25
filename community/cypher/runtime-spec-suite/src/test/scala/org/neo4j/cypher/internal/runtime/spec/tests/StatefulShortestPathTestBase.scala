@@ -35,9 +35,6 @@ import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
 import org.neo4j.cypher.internal.runtime.spec.RowCount
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
 import org.neo4j.graphdb.Label
-import org.neo4j.graphdb.RelationshipType
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.LoggingPPBFSHooks
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.graphdb.Node
 import org.neo4j.graphdb.Path
 import org.neo4j.graphdb.Relationship
@@ -48,6 +45,8 @@ import org.neo4j.values.virtual.PathReference
 import org.neo4j.values.virtual.VirtualPathValue
 import org.neo4j.values.virtual.VirtualValues.pathReference
 
+import scala.jdk.CollectionConverters.IterableHasAsScala
+
 abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
   runtime: CypherRuntime[CONTEXT],
@@ -56,6 +55,8 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 ) extends RuntimeTestSuite[CONTEXT](edition, runtime) {
 
   private val ENABLE_LOGS = false
+
+  protected def filterOutDuplicateRelsIfApplicable(seq: Seq[Array[Object]]): Seq[Array[Object]]
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -2571,7 +2572,12 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    // then
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x, x, y, x, y, x, x)
+    ))
+
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop pattern - negative, duplicate relationships, loop graph AS MRE") {
@@ -2670,7 +2676,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x, x, y, x, y, x, x)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop pattern - negative, duplicate relationships, loop graph - ExpandInto as MRE") {
@@ -2718,7 +2727,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x, x, y, x, y, x, x)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop pattern - negative, duplicate relationships, one hop graph") {
@@ -2765,7 +2777,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x1, x1, y, x2, y, x1, x1)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop pattern - negative, duplicate relationships, one hop graph as MRE") {
@@ -2783,7 +2798,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     // (s) (n1)-[r1]->(n2)<-[r2]-(n3) (t)
     val nfa = new TestNFABuilder(0, "s")
       .addTransition(0, 1, "(s) (n1_inner)")
-      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)<-[r2_inner]-(n3_inner)")
       .addTransition(2, 3, "(n3_inner) (t_inner)")
       .setFinalState(3)
       .build()
@@ -2863,7 +2878,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x1, x1, y, x2, y, x1, x1)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop pattern - negative, duplicate relationships, one hop graph - ExpandInto as MRE") {
@@ -2881,7 +2899,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     // (s) (n1)-[r1]->(n2)<-[r2]-(n3) (t)
     val nfa = new TestNFABuilder(0, "s")
       .addTransition(0, 1, "(s) (n1_inner)")
-      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)<-[r2_inner]-(n3_inner)")
       .addTransition(2, 3, "(n3_inner) (t)")
       .setFinalState(3)
       .build()
@@ -2911,7 +2929,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x1, x1, y, x2, y, x1, x1)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop undirected pattern - negative, duplicate relationships, one hop graph") {
@@ -2957,8 +2978,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       .build()
 
     val runtimeResult = execute(logicalQuery, runtime)
-
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x1, x1, y, x2, y, x1, x1),
+      Array[Object](x2, x2, y, x1, y, x2, x2)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop undirected pattern - negative, duplicate relationships, one hop graph as MRE") {
@@ -2976,7 +3000,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     // (s) (n1)-[r1]-(n2)-[r2]-(n3) (t)
     val nfa = new TestNFABuilder(0, "s")
       .addTransition(0, 1, "(s) (n1_inner)")
-      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]-(n2_inner)-[r2_inner]-(n3_inner)")
       .addTransition(2, 3, "(n3_inner) (t_inner)")
       .setFinalState(3)
       .build()
@@ -3004,7 +3028,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x1, x1, y, x2, y, x1, x1),
+      Array[Object](x2, x2, y, x1, y, x2, x2)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("cached node properties on NFA predicate expression variables") {
@@ -3237,7 +3265,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x1, x1, y, x2, y, x1, x1),
+      Array[Object](x2, x2, y, x1, y, x2, x2)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("two hop undirected pattern - negative, duplicate relationships, one hop graph - ExpandInto as MRE") {
@@ -3255,7 +3287,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     // (s) (n1)-[r1]-(n2)-[r2]-(n3) (t)
     val nfa = new TestNFABuilder(0, "s")
       .addTransition(0, 1, "(s) (n1_inner)")
-      .addTransition(1, 2, "(n1_inner)-[r1_inner]->(n2_inner)-[r2_inner]->(n3_inner)")
+      .addTransition(1, 2, "(n1_inner)-[r1_inner]-(n2_inner)-[r2_inner]-(n3_inner)")
       .addTransition(2, 3, "(n3_inner) (t)")
       .setFinalState(3)
       .build()
@@ -3285,7 +3317,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     val runtimeResult = execute(logicalQuery, runtime)
 
-    runtimeResult should beColumns(vars: _*).withNoRows()
+    val expected = filterOutDuplicateRelsIfApplicable(Seq(
+      Array[Object](x1, x1, y, x2, y, x1, x1),
+      Array[Object](x2, x2, y, x1, y, x2, x2)
+    ))
+    runtimeResult should beColumns(vars: _*).withRows(expected)
   }
 
   test("* quantified path pattern") {
@@ -3346,306 +3382,6 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         x1,
         pathReference(Array(x1.getId), Array[Long]())
       ),
-
-      //  this:   //\s+Seq
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
-    )
-
-    runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
-  }
-
-  test("* quantified path pattern as MRE") {
-
-    val (x1, y1, x2, y2, x3) = givenGraph {
-      // GRAPH:
-      // (x1)-[y1:R]->(x2)-[y2:R]->(x3)
-
-      val Seq(x1, x2, x3) = nodeGraph(3)
-      val y1 = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
-      val y2 = x2.createRelationshipTo(x3, RelationshipType.withName("R"))
-      (x1, y1, x2, y2, x3)
-    }
-
-    // pattern:
-    // (s) ((n1)-[r]->(n2))* (t)
-    val nfa = new TestNFABuilder(0, "s")
-      .addTransition(0, 3, "(s) (t_inner)")
-      .addTransition(0, 1, "(s) (n1_inner)")
-      .addMultiRelationshipTransition(1, 2, "(n1_inner)-[r_inner]->(n2_inner)")
-      .addTransition(2, 1, "(n2_inner) (n1_inner)")
-      .addTransition(2, 3, "(n2_inner) (t_inner)")
-      .setFinalState(3)
-      .build()
-
-    val vars = Seq("s", "n1", "r", "n2", "t")
-    val retVars = vars :+ "p"
-
-    val logicalQuery = new LogicalQueryBuilder(this)
-      .produceResults(retVars: _*)
-      .projection(Map("p" -> qppPath(varFor("s"), Seq(varFor("n1"), varFor("r")), varFor("t"))))
-      .statefulShortestPath(
-        "s",
-        "t",
-        "(s) ((n1)-[r]->(n2))* (t)",
-        None,
-        Set("n1_inner" -> "n1", "n2_inner" -> "n2"),
-        Set("r_inner" -> "r"),
-        Set("t_inner" -> "t"),
-        Set.empty,
-        Selector.Shortest(Int.MaxValue),
-        nfa,
-        ExpandAll,
-        matchMode = traversalMatchMode
-      )
-      .allNodeScan("s")
-      .build()
-
-    val runtimeResult = execute(logicalQuery, runtime)
-
-    // then
-    val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-
-      //  this:   //\s+Seq
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
-    )
-
-    runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
-  }
-
-  test("* quantified path pattern - ExpandInto") {
-
-    val (x1, y1, x2, y2, x3) = givenGraph {
-      // GRAPH:
-      // (x1)-[y1:R]->(x2)-[y2:R]->(x3)
-
-      val Seq(x1, x2, x3) = nodeGraph(3)
-      val y1 = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
-      val y2 = x2.createRelationshipTo(x3, RelationshipType.withName("R"))
-      (x1, y1, x2, y2, x3)
-    }
-
-    // pattern:
-    // (s) ((n1)-[r]->(n2))* (t)
-    val nfa = new TestNFABuilder(0, "s")
-      .addTransition(0, 3, "(s) (t)")
-      .addTransition(0, 1, "(s) (n1_inner)")
-      .addTransition(1, 2, "(n1_inner)-[r_inner]->(n2_inner)")
-      .addTransition(2, 1, "(n2_inner) (n1_inner)")
-      .addTransition(2, 3, "(n2_inner) (t)")
-      .setFinalState(3)
-      .build()
-
-    val vars = Seq("s", "n1", "r", "n2", "t")
-    val retVars = vars :+ "p"
-
-    val logicalQuery = new LogicalQueryBuilder(this)
-      .produceResults(retVars: _*)
-      .projection(Map("p" -> qppPath(varFor("s"), Seq(varFor("n1"), varFor("r")), varFor("t"))))
-      .statefulShortestPath(
-        "s",
-        "t",
-        "(s) ((n1)-[r]->(n2))* (t)",
-        None,
-        Set("n1_inner" -> "n1", "n2_inner" -> "n2"),
-        Set("r_inner" -> "r"),
-        Set.empty,
-        Set.empty,
-        Selector.Shortest(Int.MaxValue),
-        nfa,
-        ExpandInto,
-        matchMode = traversalMatchMode
-      )
-      .cartesianProduct()
-      .|.allNodeScan("t")
-      .allNodeScan("s")
-      .build()
-
-    val runtimeResult = execute(logicalQuery, runtime)
-
-    // then
-    val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-
-      //  this:   //\s+Seq
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
-    )
-
-    runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
-  }
-
-  test("* quantified path pattern - ExpandInto as MRE") {
-
-    val (x1, y1, x2, y2, x3) = givenGraph {
-      // GRAPH:
-      // (x1)-[y1:R]->(x2)-[y2:R]->(x3)
-
-      val Seq(x1, x2, x3) = nodeGraph(3)
-      val y1 = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
-      val y2 = x2.createRelationshipTo(x3, RelationshipType.withName("R"))
-      (x1, y1, x2, y2, x3)
-    }
-
-    // pattern:
-    // (s) ((n1)-[r]->(n2))* (t)
-    val nfa = new TestNFABuilder(0, "s")
-      .addTransition(0, 3, "(s) (t)")
-      .addTransition(0, 1, "(s) (n1_inner)")
-      .addMultiRelationshipTransition(1, 2, "(n1_inner)-[r_inner]->(n2_inner)")
-      .addTransition(2, 1, "(n2_inner) (n1_inner)")
-      .addTransition(2, 3, "(n2_inner) (t)")
-      .setFinalState(3)
-      .build()
-
-    val vars = Seq("s", "n1", "r", "n2", "t")
-    val retVars = vars :+ "p"
-
-    val logicalQuery = new LogicalQueryBuilder(this)
-      .produceResults(retVars: _*)
-      .projection(Map("p" -> qppPath(varFor("s"), Seq(varFor("n1"), varFor("r")), varFor("t"))))
-      .statefulShortestPath(
-        "s",
-        "t",
-        "(s) ((n1)-[r]->(n2))* (t)",
-        None,
-        Set("n1_inner" -> "n1", "n2_inner" -> "n2"),
-        Set("r_inner" -> "r"),
-        Set.empty,
-        Set.empty,
-        Selector.Shortest(Int.MaxValue),
-        nfa,
-        ExpandInto,
-        matchMode = traversalMatchMode
-      )
-      .cartesianProduct()
-      .|.allNodeScan("t")
-      .allNodeScan("s")
-      .build()
-
-    val runtimeResult = execute(logicalQuery, runtime)
-
-    // then
-    val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-
-      //  this:   //\s+Seq
       Array[Object](
         x2,
         RepeatTrailTestBase.listOf(),
@@ -3995,7 +3731,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       (x1, y1, x2, y2, x3)
     }
 
-    // For walk mode we will never finsh if we don't limit k
+    // For walk mode we will never finish if we don't limit k
     val k = traversalMatchMode match {
       case TraversalMatchMode.Walk  => 3
       case TraversalMatchMode.Trail => Int.MaxValue
@@ -4452,518 +4188,6 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     )
 
     runtimeResult should beColumns("u").withRows(expected, listInAnyOrder = true)
-  }
-
-  test("undirected * quantified path pattern") {
-
-    val (x1, y1, x2, y2, x3) = givenGraph {
-      // GRAPH:
-      // (x1)-[y1:R]->(x2)-[y2:R]->(x3)
-
-      val Seq(x1, x2, x3) = nodeGraph(3)
-      val y1 = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
-      val y2 = x2.createRelationshipTo(x3, RelationshipType.withName("R"))
-      (x1, y1, x2, y2, x3)
-    }
-
-    // pattern:
-    // (s) ((n1)-[r]-(n2))* (t)
-    val nfa = new TestNFABuilder(0, "s")
-      .addTransition(0, 3, "(s) (t_inner)")
-      .addTransition(0, 1, "(s) (n1_inner)")
-      .addTransition(1, 2, "(n1_inner)-[r_inner]-(n2_inner)")
-      .addTransition(2, 1, "(n2_inner) (n1_inner)")
-      .addTransition(2, 3, "(n2_inner) (t_inner)")
-      .setFinalState(3)
-      .build()
-
-    val vars = Seq("s", "n1", "r", "n2", "t")
-    val retVars = vars :+ "p"
-
-    val logicalQuery = new LogicalQueryBuilder(this)
-      .produceResults(retVars: _*)
-      .projection(Map("p" -> qppPath(varFor("s"), Seq(varFor("n1"), varFor("r")), varFor("t"))))
-      .statefulShortestPath(
-        "s",
-        "t",
-        "(s) ((n1)-[r]-(n2))* (t)",
-        None,
-        Set("n1_inner" -> "n1", "n2_inner" -> "n2"),
-        Set("r_inner" -> "r"),
-        Set("t_inner" -> "t"),
-        Set.empty,
-        Selector.Shortest(Int.MaxValue),
-        nfa,
-        ExpandAll,
-        matchMode = traversalMatchMode
-      )
-      .allNodeScan("s")
-      .build()
-
-    val runtimeResult = execute(logicalQuery, runtime)
-
-    // then
-    val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x1),
-        x1,
-        pathReference(Array(x2.getId, x1.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x3.getId, x2.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1, x2),
-        RepeatTrailTestBase.listOf(y1, y2),
-        RepeatTrailTestBase.listOf(x2, x3),
-        x3,
-        pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3, x2),
-        RepeatTrailTestBase.listOf(y2, y1),
-        RepeatTrailTestBase.listOf(x2, x1),
-        x1,
-        pathReference(Array(x3.getId, x2.getId, x1.getId), Array(y2.getId, y1.getId))
-      )
-    )
-
-    runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
-  }
-
-  test("undirected * quantified path pattern as MRE") {
-
-    val (x1, y1, x2, y2, x3) = givenGraph {
-      // GRAPH:
-      // (x1)-[y1:R]->(x2)-[y2:R]->(x3)
-
-      val Seq(x1, x2, x3) = nodeGraph(3)
-      val y1 = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
-      val y2 = x2.createRelationshipTo(x3, RelationshipType.withName("R"))
-      (x1, y1, x2, y2, x3)
-    }
-
-    // pattern:
-    // (s) ((n1)-[r]-(n2))* (t)
-    val nfa = new TestNFABuilder(0, "s")
-      .addTransition(0, 3, "(s) (t_inner)")
-      .addTransition(0, 1, "(s) (n1_inner)")
-      .addMultiRelationshipTransition(1, 2, "(n1_inner)-[r_inner]-(n2_inner)")
-      .addTransition(2, 1, "(n2_inner) (n1_inner)")
-      .addTransition(2, 3, "(n2_inner) (t_inner)")
-      .setFinalState(3)
-      .build()
-
-    val vars = Seq("s", "n1", "r", "n2", "t")
-    val retVars = vars :+ "p"
-
-    val logicalQuery = new LogicalQueryBuilder(this)
-      .produceResults(retVars: _*)
-      .projection(Map("p" -> qppPath(varFor("s"), Seq(varFor("n1"), varFor("r")), varFor("t"))))
-      .statefulShortestPath(
-        "s",
-        "t",
-        "(s) ((n1)-[r]-(n2))* (t)",
-        None,
-        Set("n1_inner" -> "n1", "n2_inner" -> "n2"),
-        Set("r_inner" -> "r"),
-        Set("t_inner" -> "t"),
-        Set.empty,
-        Selector.Shortest(Int.MaxValue),
-        nfa,
-        ExpandAll,
-        matchMode = traversalMatchMode
-      )
-      .allNodeScan("s")
-      .build()
-
-    val runtimeResult = execute(logicalQuery, runtime)
-
-    // then
-    val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x1),
-        x1,
-        pathReference(Array(x2.getId, x1.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x3.getId, x2.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1, x2),
-        RepeatTrailTestBase.listOf(y1, y2),
-        RepeatTrailTestBase.listOf(x2, x3),
-        x3,
-        pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3, x2),
-        RepeatTrailTestBase.listOf(y2, y1),
-        RepeatTrailTestBase.listOf(x2, x1),
-        x1,
-        pathReference(Array(x3.getId, x2.getId, x1.getId), Array(y2.getId, y1.getId))
-      )
-    )
-
-    runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
-  }
-
-  test("undirected * quantified path pattern - ExpandInto") {
-
-    val (x1, y1, x2, y2, x3) = givenGraph {
-      // GRAPH:
-      // (x1)-[y1:R]->(x2)-[y2:R]->(x3)
-
-      val Seq(x1, x2, x3) = nodeGraph(3)
-      val y1 = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
-      val y2 = x2.createRelationshipTo(x3, RelationshipType.withName("R"))
-      (x1, y1, x2, y2, x3)
-    }
-
-    // pattern:
-    // (s) ((n1)-[r]-(n2))* (t)
-    val nfa = new TestNFABuilder(0, "s_inner")
-      .addTransition(0, 3, "(s_inner) (t_inner)")
-      .addTransition(0, 1, "(s_inner) (n1_inner)")
-      .addTransition(1, 2, "(n1_inner)-[r_inner]-(n2_inner)")
-      .addTransition(2, 1, "(n2_inner) (n1_inner)")
-      .addTransition(2, 3, "(n2_inner) (t_inner)")
-      .setFinalState(3)
-      .build()
-
-    val vars = Seq("s", "n1", "r", "n2", "t")
-    val retVars = vars :+ "p"
-
-    val logicalQuery = new LogicalQueryBuilder(this)
-      .produceResults(retVars: _*)
-      .projection(Map("p" -> qppPath(varFor("s"), Seq(varFor("n1"), varFor("r")), varFor("t"))))
-      .statefulShortestPath(
-        "s",
-        "t",
-        "(s) ((n1)-[r]-(n2))* (t)",
-        None,
-        Set("n1_inner" -> "n1", "n2_inner" -> "n2"),
-        Set("r_inner" -> "r"),
-        Set.empty,
-        Set.empty,
-        Selector.Shortest(Int.MaxValue),
-        nfa,
-        ExpandInto,
-        matchMode = traversalMatchMode
-      )
-      .cartesianProduct()
-      .|.allNodeScan("t")
-      .allNodeScan("s")
-      .build()
-
-    val runtimeResult = execute(logicalQuery, runtime)
-
-    // then
-    val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x1),
-        x1,
-        pathReference(Array(x2.getId, x1.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x3.getId, x2.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1, x2),
-        RepeatTrailTestBase.listOf(y1, y2),
-        RepeatTrailTestBase.listOf(x2, x3),
-        x3,
-        pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3, x2),
-        RepeatTrailTestBase.listOf(y2, y1),
-        RepeatTrailTestBase.listOf(x2, x1),
-        x1,
-        pathReference(Array(x3.getId, x2.getId, x1.getId), Array(y2.getId, y1.getId))
-      )
-    )
-
-    runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
-  }
-
-  test("undirected * quantified path pattern - ExpandInto as MRE") {
-
-    val (x1, y1, x2, y2, x3) = givenGraph {
-      // GRAPH:
-      // (x1)-[y1:R]->(x2)-[y2:R]->(x3)
-
-      val Seq(x1, x2, x3) = nodeGraph(3)
-      val y1 = x1.createRelationshipTo(x2, RelationshipType.withName("R"))
-      val y2 = x2.createRelationshipTo(x3, RelationshipType.withName("R"))
-      (x1, y1, x2, y2, x3)
-    }
-
-    // pattern:
-    // (s) ((n1)-[r]-(n2))* (t)
-    val nfa = new TestNFABuilder(0, "s_inner")
-      .addTransition(0, 3, "(s_inner) (t_inner)")
-      .addTransition(0, 1, "(s_inner) (n1_inner)")
-      .addMultiRelationshipTransition(1, 2, "(n1_inner)-[r_inner]-(n2_inner)")
-      .addTransition(2, 1, "(n2_inner) (n1_inner)")
-      .addTransition(2, 3, "(n2_inner) (t_inner)")
-      .setFinalState(3)
-      .build()
-
-    val vars = Seq("s", "n1", "r", "n2", "t")
-    val retVars = vars :+ "p"
-
-    val logicalQuery = new LogicalQueryBuilder(this)
-      .produceResults(retVars: _*)
-      .projection(Map("p" -> qppPath(varFor("s"), Seq(varFor("n1"), varFor("r")), varFor("t"))))
-      .statefulShortestPath(
-        "s",
-        "t",
-        "(s) ((n1)-[r]-(n2))* (t)",
-        None,
-        Set("n1_inner" -> "n1", "n2_inner" -> "n2"),
-        Set("r_inner" -> "r"),
-        Set.empty,
-        Set.empty,
-        Selector.Shortest(Int.MaxValue),
-        nfa,
-        ExpandInto,
-        matchMode = traversalMatchMode
-      )
-      .cartesianProduct()
-      .|.allNodeScan("t")
-      .allNodeScan("s")
-      .build()
-
-    val runtimeResult = execute(logicalQuery, runtime)
-
-    // then
-    val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x1),
-        x1,
-        pathReference(Array(x2.getId, x1.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x3.getId, x2.getId), Array(y2.getId))
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1, x2),
-        RepeatTrailTestBase.listOf(y1, y2),
-        RepeatTrailTestBase.listOf(x2, x3),
-        x3,
-        pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(x3, x2),
-        RepeatTrailTestBase.listOf(y2, y1),
-        RepeatTrailTestBase.listOf(x2, x1),
-        x1,
-        pathReference(Array(x3.getId, x2.getId, x1.getId), Array(y2.getId, y1.getId))
-      )
-    )
-
-    runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
   }
 
   test("{2, 3} quantified path pattern") {
@@ -6164,7 +5388,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // For walk mode we will get too many results if we don't limit k
     val k = traversalMatchMode match {
-      case TraversalMatchMode.Walk => 1
+      case TraversalMatchMode.Walk  => 1
       case TraversalMatchMode.Trail => Int.MaxValue
     }
 
@@ -6644,7 +5868,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     )
     traversalMatchMode match {
       case TraversalMatchMode.Walk =>
-        //TODO ....
+        // TODO ....
         runtimeResult should beColumns(retVars: _*).withRows(rowCount(1093))
       case TraversalMatchMode.Trail =>
         val expected = Seq(Array[Object](
@@ -6664,9 +5888,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       gridGraph(dim, dim)
     }
 
-    //We must restrict lengths in WALK mode
+    // We must restrict lengths in WALK mode
     val (minLength, maxLength) = traversalMatchMode match {
-      case TraversalMatchMode.Walk => (8, Some(8))
+      case TraversalMatchMode.Walk  => (8, Some(8))
       case TraversalMatchMode.Trail => (0, None)
     }
     // pattern:
@@ -6748,8 +5972,6 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     runtimeResult should beColumns(retVars: _*).withRows(rowCount(expectedRowCount))
   }
 
-
-
   test("grid graph - start anywhere, post filter for hamiltonian paths as MRE") {
     val dim = 3
 
@@ -6757,9 +5979,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       gridGraph(dim, dim)
     }
 
-    //We must restrict lengths in WALK mode
+    // We must restrict lengths in WALK mode
     val (minLength, maxLength) = traversalMatchMode match {
-      case TraversalMatchMode.Walk => (8, Some(8))
+      case TraversalMatchMode.Walk  => (8, Some(8))
       case TraversalMatchMode.Trail => (0, None)
     }
 
@@ -6849,9 +6071,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       gridGraph(dim, dim)
     }
 
-    //We must restrict lengths in WALK mode
+    // We must restrict lengths in WALK mode
     val (minLength, maxLength) = traversalMatchMode match {
-      case TraversalMatchMode.Walk => (8, Some(8))
+      case TraversalMatchMode.Walk  => (8, Some(8))
       case TraversalMatchMode.Trail => (0, None)
     }
 
@@ -6942,9 +6164,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     givenGraph {
       gridGraph(dim, dim)
     }
-    //We must restrict lengths in WALK mode
+    // We must restrict lengths in WALK mode
     val (minLength, maxLength) = traversalMatchMode match {
-      case TraversalMatchMode.Walk => (8, Some(8))
+      case TraversalMatchMode.Walk  => (8, Some(8))
       case TraversalMatchMode.Trail => (0, None)
     }
 
@@ -7387,20 +6609,20 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         // sequences there are 2 * 112 = 224 in total.
         224
       case TraversalMatchMode.Walk =>
-        //For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
-        //5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
-        //will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
-        //(9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
+        // For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
+        // 5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
+        // will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
+        // (9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
         // (and fifth) DOWN, otherwise we'll leave the grid.
         //
-        //If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
-        //combinations. Now we need to remove those that have an UP before the first DOWN and those that have
-        //the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
-        //comes  before ALL DOWN.
+        // If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
+        // combinations. Now we need to remove those that have an UP before the first DOWN and those that have
+        // the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
+        // comes  before ALL DOWN.
         //
         // ..., UP, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ...
         //
-        //Now we need to count all the ways we can add the remaining 4 RIGHT.
+        // Now we need to count all the ways we can add the remaining 4 RIGHT.
         // - If we put each RIGHT in an individual slot we can do that in (7 choose 4) = 35 ways
         // - Two separate RIGHT in (7 choose 2) ways, then the remaining RIGHT-RIGHT can be put in 5 slots,
         //   i.e. 21 * 5 ways
@@ -7409,14 +6631,14 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         //   be put in any of the remaining 6 slots)
         // - Finally we can put all four RIGHT in 7 different slots.
         //
-        //Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
-        //symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
-        //1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
-        //solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
+        // Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
+        // symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
+        // 1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
+        // solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
         1680
     }
 
-    val expected =  nPathsInFirstGroup + nPathsInSecondGroup
+    val expected = nPathsInFirstGroup + nPathsInSecondGroup
 
     runtimeResult should beColumns(retVars: _*).withRows(RowCount(expected))
   }
@@ -7514,20 +6736,20 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         // sequences there are 2 * 112 = 224 in total.
         224
       case TraversalMatchMode.Walk =>
-        //For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
-        //5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
-        //will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
-        //(9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
+        // For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
+        // 5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
+        // will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
+        // (9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
         // (and fifth) DOWN, otherwise we'll leave the grid.
         //
-        //If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
-        //combinations. Now we need to remove those that have an UP before the first DOWN and those that have
-        //the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
-        //comes  before ALL DOWN.
+        // If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
+        // combinations. Now we need to remove those that have an UP before the first DOWN and those that have
+        // the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
+        // comes  before ALL DOWN.
         //
         // ..., UP, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ...
         //
-        //Now we need to count all the ways we can add the remaining 4 RIGHT.
+        // Now we need to count all the ways we can add the remaining 4 RIGHT.
         // - If we put each RIGHT in an individual slot we can do that in (7 choose 4) = 35 ways
         // - Two separate RIGHT in (7 choose 2) ways, then the remaining RIGHT-RIGHT can be put in 5 slots,
         //   i.e. 21 * 5 ways
@@ -7536,10 +6758,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         //   be put in any of the remaining 6 slots)
         // - Finally we can put all four RIGHT in 7 different slots.
         //
-        //Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
-        //symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
-        //1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
-        //solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
+        // Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
+        // symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
+        // 1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
+        // solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
         1680
     }
 
@@ -7643,20 +6865,20 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         // sequences there are 2 * 112 = 224 in total.
         224
       case TraversalMatchMode.Walk =>
-        //For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
-        //5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
-        //will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
-        //(9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
+        // For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
+        // 5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
+        // will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
+        // (9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
         // (and fifth) DOWN, otherwise we'll leave the grid.
         //
-        //If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
-        //combinations. Now we need to remove those that have an UP before the first DOWN and those that have
-        //the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
-        //comes  before ALL DOWN.
+        // If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
+        // combinations. Now we need to remove those that have an UP before the first DOWN and those that have
+        // the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
+        // comes  before ALL DOWN.
         //
         // ..., UP, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ...
         //
-        //Now we need to count all the ways we can add the remaining 4 RIGHT.
+        // Now we need to count all the ways we can add the remaining 4 RIGHT.
         // - If we put each RIGHT in an individual slot we can do that in (7 choose 4) = 35 ways
         // - Two separate RIGHT in (7 choose 2) ways, then the remaining RIGHT-RIGHT can be put in 5 slots,
         //   i.e. 21 * 5 ways
@@ -7665,10 +6887,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         //   be put in any of the remaining 6 slots)
         // - Finally we can put all four RIGHT in 7 different slots.
         //
-        //Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
-        //symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
-        //1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
-        //solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
+        // Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
+        // symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
+        // 1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
+        // solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
         1680
     }
 
@@ -7772,20 +6994,20 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         // sequences there are 2 * 112 = 224 in total.
         224
       case TraversalMatchMode.Walk =>
-        //For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
-        //5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
-        //will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
-        //(9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
+        // For WALK mode we will have the same 70 paths of length 8 but for length 10 we will get all paths that have
+        // 5 DOWN and 4 RIGHT or 4 DOWN and 5 RIGHT (with the restriction that we cannot leave the grid). The solution
+        // will be symmetric in DOWN vs RIGHT so let's just consider 5 DOWN and 4 RIGHT. We can arrange this in
+        // (9 choose 5) = 126 ways and for each of these we need to put in an UP after the first DOWN but before the last
         // (and fifth) DOWN, otherwise we'll leave the grid.
         //
-        //If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
-        //combinations. Now we need to remove those that have an UP before the first DOWN and those that have
-        //the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
-        //comes  before ALL DOWN.
+        // If we ignore that for now and just put an UP anywhere this can be done in 10 ways, giving in total 1260
+        // combinations. Now we need to remove those that have an UP before the first DOWN and those that have
+        // the UP after the five DOWN. As above (but with just UP rather than RIGHT, UP, RIGHT) we can assume the UP
+        // comes  before ALL DOWN.
         //
         // ..., UP, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ..., DOWN, ...
         //
-        //Now we need to count all the ways we can add the remaining 4 RIGHT.
+        // Now we need to count all the ways we can add the remaining 4 RIGHT.
         // - If we put each RIGHT in an individual slot we can do that in (7 choose 4) = 35 ways
         // - Two separate RIGHT in (7 choose 2) ways, then the remaining RIGHT-RIGHT can be put in 5 slots,
         //   i.e. 21 * 5 ways
@@ -7794,10 +7016,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         //   be put in any of the remaining 6 slots)
         // - Finally we can put all four RIGHT in 7 different slots.
         //
-        //Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
-        //symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
-        //1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
-        //solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
+        // Adding that up gives us 35 + 21 * 5 + 21 + 6 * 7 + 7 = 210 permutations where UP comes before the first DOWN, by
+        // symmetry we also have 210 permutations with the UP after the last DOWN. In total that means we have
+        // 1260 - 2 * 210 = 840 valid paths with 5 DOWN and 4 RIGHT. By symmetry we can apply the same reasoning for
+        // solutions with 4 DOWN and 5 RIGHT, so in total we have 1680 different paths of lenght 10.
         1680
     }
 
@@ -7886,7 +7108,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
          (0, 0->1)-[1]-(4, 2->3)-[11]-(5, 4->5)-[5]-(6, 6->5)-[6]-(7, 6->5)-[7]-(8, 6->5)-[8]-(9, 6->7)
          (0, 0->1)-[0]-(1, 2->1)-[3]-(2, 2->1)-[4]-(3, 2->3)-[9]-(8, 4->5)-[7]-(7, 6->5)-[6]-(6, 6->5)-[5]-(5, 6->5)-[2]-(0, 6->5)-[1]-(4, 6->7)
          (0, 0->1)-[2]-(5, 2->1)-[5]-(6, 2->1)-[6]-(7, 2->1)-[7]-(8, 2->3)-[9]-(3, 4->5)-[4]-(2, 6->5)-[3]-(1, 6->5)-[0]-(0, 6->5)-[1]-(4, 6->7)
-        */
+         */
         5
       case TraversalMatchMode.Walk =>
         126
@@ -7976,7 +7198,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
          (0, 0->1)-[1]-(4, 2->3)-[11]-(5, 4->5)-[5]-(6, 6->5)-[6]-(7, 6->5)-[7]-(8, 6->5)-[8]-(9, 6->7)
          (0, 0->1)-[0]-(1, 2->1)-[3]-(2, 2->1)-[4]-(3, 2->3)-[9]-(8, 4->5)-[7]-(7, 6->5)-[6]-(6, 6->5)-[5]-(5, 6->5)-[2]-(0, 6->5)-[1]-(4, 6->7)
          (0, 0->1)-[2]-(5, 2->1)-[5]-(6, 2->1)-[6]-(7, 2->1)-[7]-(8, 2->3)-[9]-(3, 4->5)-[4]-(2, 6->5)-[3]-(1, 6->5)-[0]-(0, 6->5)-[1]-(4, 6->7)
-        */
+         */
         5
       case TraversalMatchMode.Walk =>
         126
@@ -8097,7 +7319,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
          (0, 0->1)-[1]-(4, 2->3)-[11]-(5, 4->5)-[5]-(6, 6->5)-[6]-(7, 6->5)-[7]-(8, 6->5)-[8]-(9, 6->7)
          (0, 0->1)-[0]-(1, 2->1)-[3]-(2, 2->1)-[4]-(3, 2->3)-[9]-(8, 4->5)-[7]-(7, 6->5)-[6]-(6, 6->5)-[5]-(5, 6->5)-[2]-(0, 6->5)-[1]-(4, 6->7)
          (0, 0->1)-[2]-(5, 2->1)-[5]-(6, 2->1)-[6]-(7, 2->1)-[7]-(8, 2->3)-[9]-(3, 4->5)-[4]-(2, 6->5)-[3]-(1, 6->5)-[0]-(0, 6->5)-[1]-(4, 6->7)
-        */
+         */
         5
       case TraversalMatchMode.Walk =>
         126
@@ -8218,7 +7440,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
          (0, 0->1)-[1]-(4, 2->3)-[11]-(5, 4->5)-[5]-(6, 6->5)-[6]-(7, 6->5)-[7]-(8, 6->5)-[8]-(9, 6->7)
          (0, 0->1)-[0]-(1, 2->1)-[3]-(2, 2->1)-[4]-(3, 2->3)-[9]-(8, 4->5)-[7]-(7, 6->5)-[6]-(6, 6->5)-[5]-(5, 6->5)-[2]-(0, 6->5)-[1]-(4, 6->7)
          (0, 0->1)-[2]-(5, 2->1)-[5]-(6, 2->1)-[6]-(7, 2->1)-[7]-(8, 2->3)-[9]-(3, 4->5)-[4]-(2, 6->5)-[3]-(1, 6->5)-[0]-(0, 6->5)-[1]-(4, 6->7)
-        */
+         */
         5
       case TraversalMatchMode.Walk =>
         126
@@ -8666,9 +7888,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       .build()
 
     val retVars = Seq("l")
-    //We must restrict lengths in WALK mode
+    // We must restrict lengths in WALK mode
     val (minLength, maxLength) = traversalMatchMode match {
-      case TraversalMatchMode.Walk => (15, Some(15))
+      case TraversalMatchMode.Walk  => (15, Some(15))
       case TraversalMatchMode.Trail => (0, None)
     }
 
@@ -8746,7 +7968,6 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       )
     }
 
-
     // pattern:
     // (s) ((n1)-[r]->(n2))* (t)
     val nfa = new TestNFABuilder(0, "s")
@@ -8759,9 +7980,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       .build()
 
     val retVars = Seq("l")
-    //We must restrict lengths in WALK mode
+    // We must restrict lengths in WALK mode
     val (minLength, maxLength) = traversalMatchMode match {
-      case TraversalMatchMode.Walk => (15, Some(15))
+      case TraversalMatchMode.Walk  => (15, Some(15))
       case TraversalMatchMode.Trail => (0, None)
     }
 
@@ -10006,10 +9227,33 @@ abstract class StatefulShortestPathTrailModeTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
   runtime: CypherRuntime[CONTEXT],
   sizeHint: Int
-) extends StatefulShortestPathTestBase[CONTEXT](edition, runtime, sizeHint, TraversalMatchMode.Trail)
+) extends StatefulShortestPathTestBase[CONTEXT](edition, runtime, sizeHint, TraversalMatchMode.Trail) {
+
+  override protected def filterOutDuplicateRelsIfApplicable(seq: Seq[Array[Object]]): Seq[Array[Object]] = {
+    val relFilter: Array[Object] => Boolean = (row: Array[Object]) => {
+      val allRels = row.collect {
+        case r: Relationship => r
+      }
+      allRels.length == allRels.toSet.size
+    }
+    val pathFilter: Array[Object] => Boolean = (row: Array[Object]) => {
+      row.forall {
+        case p: Path =>
+          p.relationships().asScala.toSet.size == p.length()
+        case p: VirtualPathValue =>
+          p.relationshipIds().toSet.size == p.size()
+        case _ => true
+      }
+    }
+
+    seq.filter(relFilter).filter(pathFilter)
+  }
+}
 
 abstract class StatefulShortestPathWalkModeTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
   runtime: CypherRuntime[CONTEXT],
   sizeHint: Int
-) extends StatefulShortestPathTestBase[CONTEXT](edition, runtime, sizeHint, TraversalMatchMode.Trail)
+) extends StatefulShortestPathTestBase[CONTEXT](edition, runtime, sizeHint, TraversalMatchMode.Walk) {
+  override protected def filterOutDuplicateRelsIfApplicable(seq: Seq[Array[Object]]): Seq[Array[Object]] = seq
+}

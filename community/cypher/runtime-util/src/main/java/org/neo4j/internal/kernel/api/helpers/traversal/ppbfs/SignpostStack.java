@@ -23,7 +23,6 @@ package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs;
 import java.util.BitSet;
 import org.neo4j.collection.trackable.HeapTrackingArrayList;
 import org.neo4j.collection.trackable.HeapTrackingIntArrayList;
-import org.neo4j.collection.trackable.HeapTrackingLongObjectHashMap;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
 import org.neo4j.memory.MemoryTracker;
 
@@ -41,27 +40,29 @@ public class SignpostStack {
      */
     private final HeapTrackingArrayList<TwoWaySignpost> activeSignposts;
 
-    private int entityCount = 0;
-
     /**
      * The index of each signpost in activeSignposts, relative to its NodeState parent
      */
     private final HeapTrackingIntArrayList nodeSourceSignpostIndices;
 
+    //TODO: this bit set is only needed for Trail, we should hide this.
+    //      it could go in ExpansionTracker
     private final BitSet targetTrails;
 
     private final PPBFSHooks hooks;
 
     private NodeState targetNode = null;
+    /** The length of the currently traced path when projected back to the data graph */
     private int dgLength = -1;
+
     private int dgLengthToTarget = -1;
 
-    public final HeapTrackingLongObjectHashMap<BitSet> relationshipPresenceAtDepth;
+    private final ExpansionTracker expansionTracker;
 
-    SignpostStack(MemoryTracker memoryTracker, PPBFSHooks hooks) {
+    SignpostStack(MemoryTracker memoryTracker, ExpansionTracker relationshipTracker, PPBFSHooks hooks) {
         this.activeSignposts = HeapTrackingArrayList.newArrayList(memoryTracker);
         this.nodeSourceSignpostIndices = HeapTrackingIntArrayList.newIntArrayList(memoryTracker);
-        this.relationshipPresenceAtDepth = HeapTrackingLongObjectHashMap.createLongObjectHashMap(memoryTracker);
+        this.expansionTracker = relationshipTracker;
         this.targetTrails = new BitSet();
         this.targetTrails.set(0);
         this.hooks = hooks;
@@ -79,9 +80,8 @@ public class SignpostStack {
     public void reset() {
         this.targetNode = null;
 
-        this.relationshipPresenceAtDepth.clear();
+        this.expansionTracker.clear();
         this.activeSignposts.clear();
-        this.entityCount = 0;
 
         this.nodeSourceSignpostIndices.clear();
         this.dgLength = -1;
@@ -171,83 +171,30 @@ public class SignpostStack {
         }
         var signpost = current.getSourceSignpost(nextIndex);
         activeSignposts.add(signpost);
-        entityCount += signpost.entityCount();
 
+        //TODO: For non-Trail targetTrails will always be set since we set 0 and then
+        //      distanceToDuplicate() always returns 0
         targetTrails.set(size(), targetTrails.get(size() - 1) && distanceToDuplicate() == 0);
 
         dgLengthToTarget += signpost.dataGraphLength();
         nodeSourceSignpostIndices.set(nodeSourceSignpostIndices.size() - 1, nextIndex);
         nodeSourceSignpostIndices.add(-1);
-
-        if (signpost instanceof TwoWaySignpost.RelSignpost rel) {
-            var depths = this.relationshipPresenceAtDepth.get(rel.relId);
-            if (depths == null) {
-                depths = new BitSet();
-                this.relationshipPresenceAtDepth.put(rel.relId, depths);
-            }
-            depths.set(size() - 1);
-        } else if (signpost instanceof TwoWaySignpost.MultiRelSignpost multiRel) {
-            for (long relId : multiRel.rels) {
-                var depths = this.relationshipPresenceAtDepth.get(relId);
-                if (depths == null) {
-                    depths = new BitSet();
-                    this.relationshipPresenceAtDepth.put(relId, depths);
-                }
-                // here we take advantage of the fact that multi rel signposts already have relationship uniqueness,
-                // so we can compress them into a single bit of the depth bitset per rel
-                depths.set(size() - 1);
-            }
-        }
-
+        //TODO: if we move targetTrails to the tracker, I think we can hide it all behind this call
+        //      we will have to juggle with size and size - 1
+        expansionTracker.set(signpost, size() - 1, dgLengthToTarget);
         hooks.activateSignpost(lengthFromSource(), signpost);
 
         return true;
     }
 
+    //TODO implicitly assumes Trail, will always be 0 otherwise. Clean up.
     public int distanceToDuplicate() {
-        if (headSignpost() instanceof TwoWaySignpost.RelSignpost rel) {
-            var stack = relationshipPresenceAtDepth.get(rel.relId);
-            if (stack == null) {
-                return 0;
-            }
-            int last = stack.length();
-            if (last == 0) {
-                return 0;
-            }
+        return expansionTracker.distanceToDuplicate(headSignpost());
+    }
 
-            int next = stack.previousSetBit(last - 2);
-            if (next == -1) {
-                return 0;
-            }
-            return last - 1 - next;
-        } else if (headSignpost() instanceof TwoWaySignpost.MultiRelSignpost rels) {
-            var min = 0;
-            for (var relId : rels.rels) {
-                var stack = relationshipPresenceAtDepth.get(relId);
-                if (stack == null) {
-                    continue;
-                }
-                int last = stack.length();
-                if (last == 0) {
-                    continue;
-                }
-
-                int next = stack.previousSetBit(last - 2);
-                if (next == -1) {
-                    continue;
-                }
-
-                int value = last - 1 - next;
-
-                if (min == 0) {
-                    min = value;
-                } else {
-                    min = Math.min(min, value);
-                }
-            }
-            return min;
-        }
-        return 0;
+    //TODO should be called something like validateExpansion?
+    public boolean validateTrail() {
+        return expansionTracker.validateTrail(this, dgLength, hooks);
     }
 
     /**
@@ -261,28 +208,14 @@ public class SignpostStack {
         }
 
         var signpost = activeSignposts.removeLast();
-        entityCount -= signpost.entityCount();
         dgLengthToTarget -= signpost.dataGraphLength();
-        if (signpost instanceof TwoWaySignpost.RelSignpost rel) {
-            var depths = relationshipPresenceAtDepth.get(rel.relId);
-            depths.clear(size());
-            if (depths.isEmpty()) {
-                relationshipPresenceAtDepth.remove(rel.relId);
-            }
-        } else if (signpost instanceof TwoWaySignpost.MultiRelSignpost relsSignpost) {
-            for (long relId : relsSignpost.rels) {
-                var depths = relationshipPresenceAtDepth.get(relId);
-                depths.clear(size());
-                if (depths.isEmpty()) {
-                    relationshipPresenceAtDepth.remove(relId);
-                }
-            }
-        }
+        expansionTracker.popSignpostAtDepth(signpost, size());
 
         hooks.deactivateSignpost(lengthFromSource(), signpost);
         return signpost;
     }
 
+    //TODO: Assumes trail, hide somewhere
     public boolean isTargetTrail() {
         return this.targetTrails.get(this.size());
     }

@@ -52,7 +52,7 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
     private final PathTracer<Row> pathTracer;
     private final Function<SignpostStack, Row> toRow;
     private final Predicate<Row> nonInlinedPredicate;
-    private final Boolean isGroupSelector;
+    private final boolean isGroupSelector;
     private final int maxDepth;
     private final MemoryTracker memoryTracker;
     private final PPBFSHooks hooks;
@@ -86,13 +86,14 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
             PathTracer<Row> pathTracer,
             Function<SignpostStack, Row> toRow,
             Predicate<Row> nonInlinedPredicate,
-            Boolean isGroupSelector,
+            boolean isGroupSelector,
             int maxDepth,
             int initialCountForTargetNodes,
             int nfaStateCount,
             MemoryTracker mt,
             PPBFSHooks hooks,
-            AssertOpen assertOpen) {
+            AssertOpen assertOpen,
+            ExpansionTracker tracker) {
         Preconditions.checkArgument(
                 intoTarget != NO_SUCH_ENTITY || searchMode == SearchMode.Unidirectional,
                 "Bidirectional search can only be performed with a target node");
@@ -113,9 +114,10 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
         this.globalState =
                 new GlobalState(propagator, targets, searchMode, this.memoryTracker, hooks, initialCountForTargetNodes);
         var cursor = new ProductGraphTraversalCursor(graphCursor, this.memoryTracker);
-        this.bfsExpander = new BFSExpander(foundNodes, globalState, cursor, graphCursor, intoTarget, nfaStateCount);
+        this.bfsExpander =
+                new BFSExpander(foundNodes, globalState, cursor, graphCursor, intoTarget, nfaStateCount, tracker);
 
-        this.sourceNodeState = new NodeState(globalState, source, startState, intoTarget);
+        this.sourceNodeState = new NodeState(globalState, source, startState, intoTarget, tracker.createLengths());
 
         pathTracer.reset();
 
@@ -133,13 +135,14 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
             PathTracer<Row> pathTracer,
             Function<SignpostStack, Row> toRow,
             Predicate<Row> nonInlinedPredicate,
-            Boolean isGroupSelector,
+            boolean isGroupSelector,
             int maxDepth,
             int initialCountForTargetNodes,
             int numberOfNfaStates,
             MemoryTracker mt,
             PPBFSHooks hooks,
-            AssertOpen assertOpen) {
+            AssertOpen assertOpen,
+            ExpansionTracker tracker) {
         return new PGPathPropagatingBFS<>(
                 source,
                 startState,
@@ -156,7 +159,8 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
                 numberOfNfaStates,
                 mt,
                 hooks,
-                assertOpen);
+                assertOpen,
+                tracker);
     }
 
     @Override
@@ -179,6 +183,7 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
 
                         if (intoTarget != NO_SUCH_ENTITY && pathTracer.isSaturated()) {
                             targetSaturated = true;
+                            hooks.finished();
                         }
                         return row;
                     }
@@ -191,6 +196,7 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
 
                 if (intoTarget != NO_SUCH_ENTITY && pathTracer.isSaturated()) {
                     targetSaturated = true;
+                    hooks.finished();
                     return null;
                 }
             }

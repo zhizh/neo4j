@@ -29,12 +29,13 @@ import org.neo4j.internal.kernel.api.NodeCursor
 import org.neo4j.internal.kernel.api.RelationshipDataReader
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.OrderedResults
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`()-->()<--(a)-->(b)<--(c)-->(d)<--(e)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)-->(b)-->(c)`
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)-->(n3)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)-->(b)<--(c)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)-->(b)`
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)<--(b)-->(a)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)<--(b)-->(c)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b))+ (t)`
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b))* (t)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b)--(c))* (t) [single transition]`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b)--(c))* (t)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)-->(b))* (t)`
@@ -143,33 +144,33 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
   test(
     "two nodes and their relationship are yielded when there is an unconditional relationship expansion between start and final state"
   ) {
-    val graph = `(a)-->(b)`
+    val graph = `(n1)-->(n2)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
+      .from(graph.n1)
       .withNfa { sb =>
         sb.newState(isStartState = true).addRelationshipExpansion(sb.newState(isFinalState = true))
       }
       .paths()
 
-    paths shouldBe Seq(Seq(graph.a, graph.ab, graph.b))
+    paths shouldBe Seq(Seq(graph.n1, graph.r1_2, graph.n2))
   }
 
   test(
     "relationship expansions can traverse a relationship in the inverse direction"
   ) {
-    val graph = `(a)-->(b)`
+    val graph = `(n1)-->(n2)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.b)
+      .from(graph.n2)
       .withNfa { sb =>
         sb.newState(isStartState = true).addRelationshipExpansion(sb.newState(isFinalState = true))
       }
       .paths()
 
-    paths shouldBe Seq(Seq(graph.b, graph.ab, graph.a))
+    paths shouldBe Seq(Seq(graph.n2, graph.r1_2, graph.n1))
   }
 
   test("relationship expansions can traverse a loop") {
@@ -284,33 +285,33 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
   }
 
   test("relationship expansions may be filtered on INCOMING direction") {
-    val graph = `(a)-->(b)-->(c)`
+    val graph = `(n1)-->(n2)-->(n3)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.b)
+      .from(graph.n2)
       .withNfa { sb =>
         val e = sb.newState(isFinalState = true)
         sb.newState(isStartState = true).addRelationshipExpansion(e, direction = Direction.INCOMING)
       }
       .paths()
 
-    paths shouldBe Seq(Seq(graph.b, graph.ab, graph.a))
+    paths shouldBe Seq(Seq(graph.n2, graph.r1_2, graph.n1))
   }
 
   test("relationship expansions may be filtered on OUTGOING direction") {
-    val graph = `(a)-->(b)-->(c)`
+    val graph = `(n1)-->(n2)-->(n3)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.b)
+      .from(graph.n2)
       .withNfa { sb =>
         val e = sb.newState(isFinalState = true)
         sb.newState(isStartState = true).addRelationshipExpansion(e, direction = Direction.OUTGOING)
       }
       .paths()
 
-    paths shouldBe Seq(Seq(graph.b, graph.bc, graph.c))
+    paths shouldBe Seq(Seq(graph.n2, graph.r2_3, graph.n3))
   }
 
   test("relationship expansions may be filtered on the source node of the relationship") {
@@ -344,11 +345,11 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
   }
 
   test("two-hop path") {
-    val graph = `(a)-->(b)-->(c)`
+    val graph = `(n1)-->(n2)-->(n3)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
+      .from(graph.n1)
       .withNfa { sb =>
         val s = sb.newState()
         sb.newState(isStartState = true).addRelationshipExpansion(s)
@@ -356,7 +357,7 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
       }
       .paths()
 
-    paths shouldBe Seq(Seq(graph.a, graph.ab, graph.b, graph.bc, graph.c))
+    paths shouldBe Seq(Seq(graph.n1, graph.r1_2, graph.n2, graph.r2_3, graph.n3))
   }
 
   /********************************
@@ -408,16 +409,16 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
   }
 
   test("relationships are not traversed again in the opposite direction") {
-    val graph = `(a)-->(b)`
+    val graph = `(n1)-->(n2)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
+      .from(graph.n1)
       .withNfa(`(s) ((a)--(b))+ (t)`)
       .paths()
 
     paths shouldBe Seq(
-      Seq(graph.a, graph.a, graph.ab, graph.b, graph.b)
+      Seq(graph.n1, graph.n1, graph.r1_2, graph.n2, graph.n2)
     )
   }
 
@@ -710,25 +711,25 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
   }
 
   test("non-inlined prefilter applies before K limit") {
-    val graph = `(a)-->(b)-->(c)`
+    val graph = `(n1)-->(n2)-->(n3)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
+      .from(graph.n1)
       .withNfa(anyDirectedPath)
       .filter(p => p.length > 1)
       .withK(1)
       .paths()
 
-    paths shouldBe Seq(Seq(graph.a, graph.ab, graph.b, graph.bc, graph.c))
+    paths shouldBe Seq(Seq(graph.n1, graph.r1_2, graph.n2, graph.r2_3, graph.n3))
   }
 
   test("non-inlined prefilter applies after projection") {
-    val graph = `(a)-->(b)-->(c)`
+    val graph = `(n1)-->(n2)-->(n3)`
 
     val lengths = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
+      .from(graph.n1)
       .withNfa(anyDirectedPath)
       .project(TracedPath.fromSignpostStack(_).length)
       .filter(_ > 0)
@@ -873,12 +874,12 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
   }
 
   test("intoTarget stops searching the graph after the target is saturated") {
-    val graph = `(a)-->(b)-->(c)`
+    val graph = `(n1)-->(n2)-->(n3)`
 
     val events = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
-      .into(graph.b)
+      .from(graph.n1)
+      .into(graph.n2)
       .withK(1)
       .withNfa(anyDirectedPath)
       .events()
@@ -963,22 +964,168 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     events should contain(ExpandNode(graph.c, TraversalDirection.BACKWARD))
   }
 
+  /**
+  Walk mode
+   */
+
+  test("walk into k=5") {
+    val graph = `(n1)-->(n2)`
+    val nfa = `(s) ((a)--(b))+ (t)`
+
+    val paths: Seq[Seq[Long]] = fixture()
+      .withGraph(graph.graph)
+      .withNfa(nfa)
+      .withK(5)
+      .from(graph.n1)
+      .into(graph.n2)
+      .withMatchMode(TraversalMatchMode.Walk)
+      .withMode(SearchMode.Unidirectional)
+      // .logged()
+      .paths()
+
+    paths shouldBe Seq(
+      // (a)-->(b)
+      Seq(graph.n1, graph.n1, graph.r1_2, graph.n2, graph.n2),
+      // (a)-->(b)-->(a)-->(b)
+      Seq(graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2),
+      // (a)-->(b)-->(a)-->(b)-->(a)-->(b)
+      Seq(
+        graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2
+      ),
+      // (a)-->(b)-->(a)-->(b)-->(a)-->(b)-->(a)-->(b)
+      Seq(
+        graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2
+      ),
+      // (a)-->(b)-->(a)-->(b)-->(a)-->(b)-->(a)-->(b)
+      Seq(
+        graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2
+      )
+    )
+  }
+
+
+  test("walk k=5") {
+    val graph = `(n1)-->(n2)`
+    val nfa = `(s) ((a)--(b))+ (t)`
+
+    val paths: Seq[Seq[Long]] = fixture()
+      .withGraph(graph.graph)
+      .withNfa(nfa)
+      .withK(2)
+      .from(graph.n1)
+      //.into(graph.b)
+      .withMatchMode(TraversalMatchMode.Walk)
+      .withMode(SearchMode.Unidirectional)
+      // .logged()
+      .paths()
+
+    paths shouldBe Seq(
+      // (a)-->(b)
+      Seq(graph.n1, graph.n1, graph.r1_2, graph.n2, graph.n2),
+      // (a)-->(b)-->(a)
+      Seq(graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1),
+      // (a)-->(b)-->(a)-->(b)
+      Seq(graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2),
+      // (a)-->(b)-->(a)-->(b)-->(a)
+      Seq(graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1, graph.r1_2, graph.n2,
+        graph.n2, graph.r1_2, graph.n1,
+        graph.n1),
+      // (a)-->(b)-->(a)-->(b)-->(a)
+//      Seq(graph.a,
+//        graph.a, graph.ab, graph.b,
+//        graph.b, graph.ab, graph.a,
+//        graph.a, graph.ab, graph.b,
+//        graph.b, graph.ab, graph.a,
+//        graph.a, graph.ab, graph.b,
+//        graph.b),
+    )
+  }
+
+  test("walk spec replication") {
+    val graph = `(n1)-->(n2)-->(n3)`
+    val nfa = `(s) ((a)--(b))* (t)`
+
+    val f = fixture()
+      .withGraph(graph.graph)
+      .withNfa(nfa)
+//      .into(graph.n1)
+      .withK(3)
+      .withMatchMode(TraversalMatchMode.Walk)
+      .withMode(SearchMode.Unidirectional)
+
+
+    val paths = f.from(graph.n1).viz().toList// ++ f.from(graph.b).toList ++ f.from(graph.c).toList
+
+    val out = paths.groupBy(_.length)
+      .toSeq
+      .sortBy(_._1)
+      .map { case (len, paths) =>
+        s"Length $len\n" + paths.mkString("\n")
+      }
+      .mkString("\n")
+
+    println(out)
+  }
+
   /*******************
    * Memory tracking *
    *******************/
 
   test("memory tracking") {
-    val graph = `(a)-->(b)`
+    val graph = `(n1)-->(n2)`
 
     val mt = new LocalMemoryTracker()
 
+    // TODO tests with NO_TRACKING
     // ignore the memory tracker for path tracer for the purposes of this test
     def createPathTracer(_mt: MemoryTracker, hooks: PPBFSHooks): PathTracer[TracedPath] =
-      new PathTracer(EmptyMemoryTracker.INSTANCE, hooks)
+      new PathTracer(
+        EmptyMemoryTracker.INSTANCE,
+        ExpansionTracker.createTracker(EmptyMemoryTracker.INSTANCE),
+        hooks
+      )
 
     val iter = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
+      .from(graph.n1)
       .withNfa(anyDirectedPath)
       .withMemoryTracker(mt)
       .build(createPathTracer)
@@ -1006,11 +1153,11 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
    ****************/
 
   test("can be interrupted by AssertOpen check") {
-    val graph = `(a)-->(b)`
+    val graph = `(n1)-->(n2)`
 
     val iter = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
+      .from(graph.n1)
       .withNfa(anyDirectedPath)
       .onAssertOpen {
         throw new Exception("boom")
@@ -1265,7 +1412,12 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
       )
     def filter(predicate: A => Boolean): FixtureBuilder[A] = copy(predicate = predicate)
 
-    def build(createPathTracer: (MemoryTracker, PPBFSHooks) => PathTracer[A] = new PathTracer(_, _)) =
+    def tracker(memoryTracker: MemoryTracker) =
+      if (matchMode == TraversalMatchMode.Walk) ExpansionTracker.NO_TRACKING
+      else ExpansionTracker.createTracker(EmptyMemoryTracker.INSTANCE)
+
+    def build(createPathTracer: (MemoryTracker, PPBFSHooks) => PathTracer[A] =
+      (memoryTracker, hooks) => new PathTracer(memoryTracker, tracker(memoryTracker), hooks)) =
       new PGPathPropagatingBFS[A](
         source,
         nfa.getStart.state,
@@ -1282,7 +1434,8 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
         nfa.stateCount,
         mt,
         hooks,
-        assertOpen
+        assertOpen,
+        tracker(EmptyMemoryTracker.INSTANCE)
       )
 
     def toList: Seq[A] = build().asScala.toList
@@ -1490,11 +1643,11 @@ object PGPathPropagatingBFSTest {
   }
 
   // noinspection TypeAnnotation
-  private object `(a)-->(b)` {
+  private object `(n1)-->(n2)` {
     private val g = TestGraph.builder
-    val a = g.node()
-    val b = g.node()
-    val ab = g.rel(a, b)
+    val n1 = g.node()
+    val n2 = g.node()
+    val r1_2 = g.rel(n1, n2)
     val graph = g.build()
   }
 
@@ -1510,13 +1663,13 @@ object PGPathPropagatingBFSTest {
   }
 
   // noinspection TypeAnnotation
-  private object `(a)-->(b)-->(c)` {
+  private object `(n1)-->(n2)-->(n3)` {
     private val g = TestGraph.builder
-    val a = g.node()
-    val b = g.node()
-    val c = g.node()
-    val ab = g.rel(a, b)
-    val bc = g.rel(b, c)
+    val n1 = g.node()
+    val n2 = g.node()
+    val n3 = g.node()
+    val r1_2 = g.rel(n1, n2)
+    val r2_3 = g.rel(n2, n3)
     val graph = g.build()
   }
 
@@ -1603,6 +1756,19 @@ object PGPathPropagatingBFSTest {
     a.addRelationshipExpansion(b, direction = Direction.BOTH)
     b.addNodeJuxtaposition(a)
     b.addNodeJuxtaposition(t)
+  }
+
+  private val `(s) ((a)--(b))* (t)` : Nfa = nfa("(s) ((a)--(b))* (t)") { sb =>
+    val s = sb.newState("s", isStartState = true)
+    val a = sb.newState("a")
+    val b = sb.newState("b")
+    val t = sb.newState("t", isFinalState = true)
+
+    s.addNodeJuxtaposition(a)
+    a.addRelationshipExpansion(b, direction = Direction.BOTH)
+    b.addNodeJuxtaposition(a)
+    b.addNodeJuxtaposition(t)
+    s.addNodeJuxtaposition(t)
   }
 
   private val `(s) ((a)--(b)--(c))* (t)` : Nfa = nfa("(s) ((a)--(b)--(c))* (t)") { sb =>

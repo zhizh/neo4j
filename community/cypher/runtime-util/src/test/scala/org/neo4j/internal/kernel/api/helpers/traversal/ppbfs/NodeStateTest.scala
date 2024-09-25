@@ -21,6 +21,7 @@ package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs
 
 import org.github.jamm.MemoryMeter
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.Lengths.relationshipUniquenessTrackingLengths
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder
 import org.neo4j.kernel.api.StatementConstants.NO_SUCH_NODE
@@ -37,7 +38,7 @@ class NodeStateTest extends CypherFunSuite {
   test("isTarget() returns true for a final state if there is no intoTarget") {
     val stateBuilder = new PGStateBuilder
     val state = stateBuilder.newState(isFinalState = true)
-    val nodeData = new NodeState(globalState(), 1, state.state, NO_SUCH_NODE)
+    val nodeData = new NodeState(globalState(), 1, state.state, NO_SUCH_NODE, relationshipUniquenessTrackingLengths())
 
     nodeData.isTarget shouldBe true
   }
@@ -45,7 +46,7 @@ class NodeStateTest extends CypherFunSuite {
   test("isTarget() returns false if intoTarget does not match the node") {
     val stateBuilder = new PGStateBuilder
     val state = stateBuilder.newState(isFinalState = true)
-    val nodeData = new NodeState(globalState(), 1, state.state, 2)
+    val nodeData = new NodeState(globalState(), 1, state.state, 2, relationshipUniquenessTrackingLengths())
 
     nodeData.isTarget shouldBe false
   }
@@ -53,7 +54,7 @@ class NodeStateTest extends CypherFunSuite {
   test("isTarget() returns true if intoTarget matches the node") {
     val stateBuilder = new PGStateBuilder
     val state = stateBuilder.newState(isFinalState = true)
-    val nodeData = new NodeState(globalState(), 1, state.state, 1)
+    val nodeData = new NodeState(globalState(), 1, state.state, 1, relationshipUniquenessTrackingLengths())
 
     nodeData.isTarget shouldBe true
   }
@@ -62,7 +63,7 @@ class NodeStateTest extends CypherFunSuite {
     val mt = new LocalMemoryTracker()
     val state = new PGStateBuilder().newState().state
     val gs = globalState(mt)
-    val ns = new NodeState(gs, 0, state, -1)
+    val ns = new NodeState(gs, 0, state, -1, relationshipUniquenessTrackingLengths())
 
     val actual = meter.measureDeep(ns) - deduplicatedSize(gs, state)
 

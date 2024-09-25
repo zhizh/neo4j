@@ -53,6 +53,7 @@ public final class NodeState implements AutoCloseable, Measurable {
     private final Lengths lengths;
 
     // The length of the shortest path in the data graph from the source node to this node which is accepted by the NFA.
+    //TODO update comment NodeState shouldn't have any assumption to TraversalMatchMode
     // This is not necessarily a trail length, the corresponding path may have repeated relationships.
     private int sourceDistance = NO_SOURCE_DISTANCE;
 
@@ -66,12 +67,12 @@ public final class NodeState implements AutoCloseable, Measurable {
     private boolean discoveredForward = false;
     private boolean discoveredBackward = false;
 
-    public NodeState(GlobalState globalState, long nodeId, State state, long intoTarget) {
+    public NodeState(GlobalState globalState, long nodeId, State state, long intoTarget, Lengths lengths) {
         this.sourceSignposts = HeapTrackingArrayList.newArrayList(SIGNPOSTS_INIT_SIZE, globalState.mt);
         this.nodeId = nodeId;
         this.state = state;
         this.globalState = globalState;
-        this.lengths = new Lengths();
+        this.lengths = lengths;
 
         if (state().isFinalState() && (intoTarget == NO_SUCH_ENTITY || intoTarget == nodeId)) {
             this.remainingTargetCount = (int) globalState.initialCountForTargetNodes;
@@ -207,6 +208,7 @@ public final class NodeState implements AutoCloseable, Measurable {
             firstTrace = true;
         }
 
+        //Trail logic? Should be moved
         assert !firstTrace || targetLength >= minTargetDistance()
                 : "The first time a node is traced should be with the shortest trail to a target";
 
@@ -256,7 +258,7 @@ public final class NodeState implements AutoCloseable, Measurable {
         }
     }
 
-    public void validateSourceLength(int lengthFromSource, int tracedLengthToTarget) {
+    public void setValidatedAtLength(int lengthFromSource, int tracedLengthToTarget) {
         globalState.hooks.validateSourceLength(this, lengthFromSource, tracedLengthToTarget);
 
         Preconditions.checkState(
@@ -373,7 +375,7 @@ public final class NodeState implements AutoCloseable, Measurable {
 
     @Override
     public long estimatedHeapUsage() {
-        return SHALLOW_SIZE + Lengths.SHALLOW_SIZE;
+        return SHALLOW_SIZE + lengths.estimatedHeapUsage();
     }
 
     public <T extends TwoWaySignpost> T upsertSourceSignpost(T signpost) {

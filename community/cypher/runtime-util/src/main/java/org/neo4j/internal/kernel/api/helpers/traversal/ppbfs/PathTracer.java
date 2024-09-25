@@ -36,11 +36,10 @@ import org.neo4j.util.Preconditions;
 public final class PathTracer<Row> extends PrefetchingIterator<Row> {
     private final PPBFSHooks hooks;
     private final SignpostStack stack;
+    private final ExpansionTracker tracker;
     private NodeState sourceNode;
 
-    /** The length of the currently traced path when projected back to the data graph */
-    private int dgLength;
-
+    // TODO: this is also only used for Trail
     private final BitSet protectFromPruning;
     private Function<SignpostStack, Row> toRow;
 
@@ -61,10 +60,11 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
      */
     private boolean ready = false;
 
-    public PathTracer(MemoryTracker memoryTracker, PPBFSHooks hooks) {
+    public PathTracer(MemoryTracker memoryTracker, ExpansionTracker tracker, PPBFSHooks hooks) {
         this.protectFromPruning = new BitSet();
         this.hooks = hooks;
-        this.stack = new SignpostStack(memoryTracker, hooks);
+        this.stack = new SignpostStack(memoryTracker, tracker, hooks);
+        this.tracker = tracker;
     }
 
     /**
@@ -92,8 +92,6 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
         this.sourceNode = sourceNode;
 
         this.stack.initialize(targetNode, dgLength);
-
-        this.dgLength = dgLength;
         this.shouldReturnSingleNodePath = targetNode == sourceNode && dgLength == 0;
     }
 
@@ -145,7 +143,7 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
                     hooks.skippingDuplicateRelationship(stack);
                     stack.pop();
                     // the order of these predicates is important since validateTrail has side effects:
-                } else if (sourceSignpost.prevNode == sourceNode && validateTrail() && !isSaturated()) {
+                } else if (sourceSignpost.prevNode == sourceNode && stack.validateTrail() && !isSaturated()) {
                     Preconditions.checkState(
                             stack.lengthFromSource() == 0,
                             "Attempting to return a path that does not reach the source");
@@ -157,6 +155,8 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
         return null;
     }
 
+    // TODO: This method sort of assumes we are looking for a Trail, see if we can hide it better
+    //      Reason this "works" is that dup is always 0 for Walk, I am not crazy about that either
     /** this function allows us to abandon a trace branch early. if we have detected a duplicate relationship then
      * the set of paths we're currently tracing are all invalid and so we should be able to abort tracing them, except
      * tracing also performs verification/validation.
@@ -183,39 +183,6 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
         }
 
         this.protectFromPruning.set(stack.size() - 1 - dup, stack.size() - 1, true);
-        return true;
-    }
-
-    private boolean validateTrail() {
-        int sourceLength = 0;
-        for (int i = stack.size() - 1; i >= 0; i--) {
-            TwoWaySignpost signpost = stack.signpost(i);
-            sourceLength += signpost.dataGraphLength();
-            if (signpost instanceof TwoWaySignpost.RelSignpost rel) {
-                var bitset = stack.relationshipPresenceAtDepth.get(rel.relId);
-                assert bitset.get(i);
-                if (bitset.length() > i + 1) {
-                    hooks.invalidTrail(stack);
-                    return false;
-                }
-            } else if (signpost instanceof TwoWaySignpost.MultiRelSignpost rels) {
-                for (int j = 0; j < rels.rels.length; j++) {
-                    long relId = rels.rels[j];
-                    var bitset = stack.relationshipPresenceAtDepth.get(relId);
-                    assert bitset.get(i);
-                    if (bitset.length() > i + 1) {
-                        hooks.invalidTrail(stack);
-                        return false;
-                    }
-                }
-            }
-            if (!signpost.isVerifiedAtLength(sourceLength)) {
-                signpost.setVerified(sourceLength);
-                if (!signpost.forwardNode.validatedAtLength(sourceLength)) {
-                    signpost.forwardNode.validateSourceLength(sourceLength, dgLength - sourceLength);
-                }
-            }
-        }
         return true;
     }
 

@@ -76,10 +76,10 @@ class VisualizingPPBSHooks extends PPBFSHooks {
           .append("</font>>")
       }
 
-      if (rel.minTargetDistance != -1L) {
+      if (rel.minTargetDistance != -1) {
         sb
           .append(" taillabel=<<font color=\"purple\">")
-          .append(rel.minTargetDistance)
+          .append(rel.cycleLengths)
           .append("</font>>")
       }
 
