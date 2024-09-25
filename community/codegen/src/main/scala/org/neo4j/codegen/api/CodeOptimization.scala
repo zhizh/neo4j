@@ -118,8 +118,8 @@ object CodeOptimization {
   object CoerceToBooleanFcn {
 
     def unapply(arg: IntermediateRepresentation): Option[IntermediateRepresentation] = arg match {
-      case InvokeStatic(Method(owner, returnType, "coerceToBoolean", Seq(inType)), Seq(in))
-        if owner == VALUE_BOOLEAN_LOGIC_TYPE && returnType == VALUE_TYPE && inType == ANY_VALUE_TYPE =>
+      case InvokeStatic(Method(owner, returnType, "coerceToBoolean", Seq(inType)), Seq(in, state))
+        if returnType == VALUE_TYPE && inType == ANY_VALUE_TYPE =>
         Some(in)
       case _ => None
     }

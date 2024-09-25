@@ -26,7 +26,6 @@ import static org.neo4j.values.virtual.VirtualValues.asList;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.neo4j.exceptions.CypherTypeException;
 import org.neo4j.exceptions.InvalidSemanticsException;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.util.CalledFromGeneratedCode;
@@ -34,33 +33,17 @@ import org.neo4j.values.AnyValue;
 import org.neo4j.values.AnyValues;
 import org.neo4j.values.Comparison;
 import org.neo4j.values.Equality;
-import org.neo4j.values.SequenceValue;
-import org.neo4j.values.ValueMapper;
 import org.neo4j.values.storable.BooleanValue;
-import org.neo4j.values.storable.DateTimeValue;
-import org.neo4j.values.storable.DateValue;
-import org.neo4j.values.storable.DurationValue;
-import org.neo4j.values.storable.LocalDateTimeValue;
-import org.neo4j.values.storable.LocalTimeValue;
-import org.neo4j.values.storable.NumberValue;
-import org.neo4j.values.storable.PointValue;
 import org.neo4j.values.storable.TextValue;
-import org.neo4j.values.storable.TimeValue;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 import org.neo4j.values.virtual.ListValue;
-import org.neo4j.values.virtual.MapValue;
-import org.neo4j.values.virtual.VirtualNodeValue;
-import org.neo4j.values.virtual.VirtualPathValue;
-import org.neo4j.values.virtual.VirtualRelationshipValue;
 
 /**
  * This class contains static helper boolean methods for performing boolean logic on values
  */
 @SuppressWarnings({"ReferenceEquality"})
 public final class ValueBooleanLogic {
-    private static final BooleanMapper BOOLEAN_MAPPER = new BooleanMapper();
-
     private ValueBooleanLogic() {
         throw new UnsupportedOperationException("Do not instantiate");
     }
@@ -184,11 +167,6 @@ public final class ValueBooleanLogic {
     }
 
     @CalledFromGeneratedCode
-    public static Value coerceToBoolean(AnyValue value) {
-        return value.map(BOOLEAN_MAPPER);
-    }
-
-    @CalledFromGeneratedCode
     public static Value in(AnyValue findMe, AnyValue lookIn) {
         if (lookIn == NO_VALUE) {
             return NO_VALUE;
@@ -214,87 +192,5 @@ public final class ValueBooleanLogic {
         }
 
         return cache.check(findMe, asList(lookIn), memoryTracker);
-    }
-
-    private static final class BooleanMapper implements ValueMapper<Value> {
-        @Override
-        public Value mapPath(VirtualPathValue value) {
-            return value.size() > 0 ? TRUE : FALSE;
-        }
-
-        @Override
-        public Value mapNode(VirtualNodeValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapRelationship(VirtualRelationshipValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapMap(MapValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapNoValue() {
-            return NO_VALUE;
-        }
-
-        @Override
-        public Value mapSequence(SequenceValue value) {
-            return value.intSize() > 0 ? TRUE : FALSE;
-        }
-
-        @Override
-        public Value mapText(TextValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapBoolean(BooleanValue value) {
-            return value;
-        }
-
-        @Override
-        public Value mapNumber(NumberValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapDateTime(DateTimeValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapLocalDateTime(LocalDateTimeValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapDate(DateValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapTime(TimeValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapLocalTime(LocalTimeValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapDuration(DurationValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
-
-        @Override
-        public Value mapPoint(PointValue value) {
-            throw new CypherTypeException("Don't know how to treat that as a boolean: " + value);
-        }
     }
 }

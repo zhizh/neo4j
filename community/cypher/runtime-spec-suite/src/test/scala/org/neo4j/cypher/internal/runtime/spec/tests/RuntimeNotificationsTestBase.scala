@@ -21,11 +21,16 @@ package org.neo4j.cypher.internal.runtime.spec.tests
 
 import org.neo4j.cypher.internal.CypherRuntime
 import org.neo4j.cypher.internal.RuntimeContext
+import org.neo4j.cypher.internal.expressions.NilPathStep
+import org.neo4j.cypher.internal.expressions.NodePathStep
+import org.neo4j.cypher.internal.expressions.PathExpression
 import org.neo4j.cypher.internal.runtime.spec.Edition
 import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
 import org.neo4j.cypher.internal.runtime.spec.RecordingRuntimeResult
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
 import org.neo4j.cypher.internal.util.AggregationSkippedNull
+import org.neo4j.cypher.internal.util.DeprecatedBooleanCoercion
+import org.neo4j.cypher.internal.util.InputPosition
 
 abstract class RuntimeNotificationsTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
@@ -135,4 +140,46 @@ abstract class RuntimeNotificationsTestBase[CONTEXT <: RuntimeContext](
           .withNoNotifications()
       }
   }
+
+  test("Warn when coercing list to boolean") {
+    // given empty db
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("i")
+      .filter("[]")
+      .unwind("[1, 2, 3, 4, 5] AS i")
+      .argument()
+      .build()
+
+    val runtimeResult: RecordingRuntimeResult = execute(logicalQuery, runtime)
+
+    // then
+    runtimeResult should beColumns("i")
+      .withNoRows()
+      .withNotifications(DeprecatedBooleanCoercion)
+  }
+
+  test("Warn when coercing path to boolean") {
+    // given
+    givenGraph(
+      nodeGraph(1)
+    )
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("p")
+      .filter("p")
+      .projection(Map("p" -> PathExpression(NodePathStep(varFor("n"), NilPathStep()(pos))(pos))(InputPosition.NONE)))
+      .allNodeScan("n")
+      .build()
+
+    val runtimeResult: RecordingRuntimeResult = execute(logicalQuery, runtime)
+
+    // then
+    runtimeResult should beColumns("p")
+      .withNoRows()
+      .withNotifications(DeprecatedBooleanCoercion)
+  }
+
 }

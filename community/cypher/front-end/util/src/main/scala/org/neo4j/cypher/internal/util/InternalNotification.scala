@@ -177,4 +177,8 @@ case class IndexOrConstraintAlreadyExistsNotification(command: String, conflicti
 case class IndexOrConstraintDoesNotExistNotification(command: String, name: String) extends InternalNotification
 case object AggregationSkippedNull extends InternalNotification
 
+case object DeprecatedBooleanCoercion extends InternalNotification {
+  def instance: DeprecatedBooleanCoercion.type = this
+}
+
 case class DeprecatedOptionInOptionMap(oldOption: String, newOption: String) extends InternalNotification

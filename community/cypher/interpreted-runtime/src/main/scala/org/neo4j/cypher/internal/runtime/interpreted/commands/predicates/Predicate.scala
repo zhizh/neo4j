@@ -36,6 +36,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Litera
 import org.neo4j.cypher.internal.runtime.interpreted.commands.values.KeyToken
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.LazyLabel
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.cypher.internal.util.DeprecatedBooleanCoercion
 import org.neo4j.cypher.internal.util.NonEmptyList
 import org.neo4j.cypher.internal.util.symbols.CypherType
 import org.neo4j.cypher.operations.CypherFunctions
@@ -728,8 +729,10 @@ case class CoercedPredicate(inner: Expression) extends Predicate {
   override def isMatch(ctx: ReadableRow, state: QueryState): IsMatchResult = inner(ctx, state) match {
     case x: BooleanValue => IsMatchResult(x.booleanValue())
     case IsNoValue()     => IsUnknown
-    case IsList(coll)    => IsMatchResult(coll.nonEmpty)
-    case x               => throw new CypherTypeException(s"Don't know how to treat that as a predicate: $x")
+    case IsList(coll) =>
+      state.newRuntimeNotification(DeprecatedBooleanCoercion)
+      IsMatchResult(coll.nonEmpty)
+    case x => throw new CypherTypeException(s"Don't know how to treat that as a predicate: $x")
   }
 
   override def rewrite(f: Expression => Expression): Expression = f(CoercedPredicate(inner.rewrite(f)))

@@ -318,6 +318,10 @@ public enum NotificationCodeWithDescription {
             Status.Statement.AggregationSkippedNull,
             GqlStatusInfoCodes.STATUS_01G11,
             "null value eliminated in set function."),
+    DEPRECATED_BOOLEAN_COERCION(
+            Status.Statement.DeprecatedBooleanCoercion,
+            GqlStatusInfoCodes.STATUS_01N02,
+            "The query converted a list or path to a boolean value."),
 
     DEPRECATED_OPTION_IN_OPTION_MAP(
             Status.Statement.FeatureDeprecationWarning,
@@ -705,6 +709,11 @@ public enum NotificationCodeWithDescription {
 
     public static NotificationImplementation aggregationSkippedNull() {
         return AGGREGATION_SKIPPED_NULL.notification(InputPosition.empty);
+    }
+
+    public static NotificationImplementation deprecatedBooleanCoercion() {
+        return DEPRECATED_BOOLEAN_COERCION.notificationWithParameters(
+                InputPosition.empty, new String[] {}, new String[] {"Converting a list or a path to a boolean"});
     }
 
     public static NotificationImplementation indexOrConstraintAlreadyExists(

@@ -28,6 +28,7 @@ import org.neo4j.cypher.internal.util.AssignPrivilegeCommandHasNoEffectNotificat
 import org.neo4j.cypher.internal.util.AuthProviderNotDefined
 import org.neo4j.cypher.internal.util.CartesianProductNotification
 import org.neo4j.cypher.internal.util.CordonedServersExistedDuringAllocation
+import org.neo4j.cypher.internal.util.DeprecatedBooleanCoercion
 import org.neo4j.cypher.internal.util.DeprecatedConnectComponentsPlannerPreParserOption
 import org.neo4j.cypher.internal.util.DeprecatedDatabaseNameNotification
 import org.neo4j.cypher.internal.util.DeprecatedFunctionNotification
@@ -426,7 +427,8 @@ object NotificationWrapping {
         graphdb.InputPosition.empty
       )
 
-    case AggregationSkippedNull => NotificationCodeWithDescription.aggregationSkippedNull()
+    case AggregationSkippedNull    => NotificationCodeWithDescription.aggregationSkippedNull()
+    case DeprecatedBooleanCoercion => NotificationCodeWithDescription.deprecatedBooleanCoercion()
 
     case _ => throw new IllegalStateException("Missing mapping for notification detail.")
   }

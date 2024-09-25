@@ -33,6 +33,7 @@ import static org.neo4j.notifications.NotificationCodeWithDescription.commandHas
 import static org.neo4j.notifications.NotificationCodeWithDescription.commandHasNoEffectRevokePrivilege;
 import static org.neo4j.notifications.NotificationCodeWithDescription.commandHasNoEffectRevokeRole;
 import static org.neo4j.notifications.NotificationCodeWithDescription.cordonedServersExist;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedBooleanCoercion;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedConnectComponentsPlannerPreParserOption;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedDatabaseName;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedFormat;
@@ -1657,6 +1658,30 @@ class NotificationCodeWithDescriptionTest {
     }
 
     @Test
+    void shouldConstructNotificationsFor_DEPRECATED_BOOLEAN_COERCION() {
+        NotificationImplementation notification = deprecatedBooleanCoercion();
+
+        verifyNotification(
+                notification,
+                "The query converted a list or path to a boolean value, this behavior is deprecated and will be removed in the future.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.DeprecatedBooleanCoercion",
+                "The query converted a list or path to a boolean value.",
+                NotificationCategory.UNRECOGNIZED,
+                NotificationClassification.UNRECOGNIZED,
+                "01N02",
+                new DiagnosticRecord(
+                                warning,
+                                NotificationClassification.UNRECOGNIZED,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of("feat", "Converting a list or a path to a boolean"))
+                        .asMap(),
+                "warn: feature deprecated without replacement. Converting a list or a path to a boolean is deprecated and will be removed without a replacement.");
+    }
+
+    @Test
     void shouldConstructNotificationsFor_DEPRECATED_OPTION_IN_OPTION_MAP() {
         NotificationImplementation notification = deprecatedOptionInOptionMap("oldName", "newName");
 
@@ -1800,8 +1825,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            4, 100, -18, -97, 106, -89, 41, 35, 116, -65, 46, -50, 121, -5, -41, 78, 122, -38, 76, -14, -82, 80, 75,
-            -25, 75, -7, 48, 2, 51, 120, 55, 20
+            -18, -110, 53, -66, 98, 121, -22, 55, 101, -10, -25, -44, -106, 17, -12, -87, -58, 108, -110, 102, 64, -120,
+            125, 11, 97, 123, 48, -29, 122, 40, -23, 12
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {
