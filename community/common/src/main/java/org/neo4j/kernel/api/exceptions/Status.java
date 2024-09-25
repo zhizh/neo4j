@@ -382,11 +382,6 @@ public interface Status {
                 ClientNotification,
                 "The query contains an aggregation function that skips null values.",
                 SeverityLevel.WARNING,
-                NotificationCategory.UNRECOGNIZED),
-        DeprecatedBooleanCoercion(
-                ClientNotification,
-                "The query converted a list or path to a boolean value, this behavior is deprecated and will be removed in the future.",
-                SeverityLevel.WARNING,
                 NotificationCategory.UNRECOGNIZED);
 
         private final Code code;

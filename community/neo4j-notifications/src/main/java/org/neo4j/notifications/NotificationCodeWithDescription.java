@@ -319,7 +319,7 @@ public enum NotificationCodeWithDescription {
             GqlStatusInfoCodes.STATUS_01G11,
             "null value eliminated in set function."),
     DEPRECATED_BOOLEAN_COERCION(
-            Status.Statement.DeprecatedBooleanCoercion,
+            Status.Statement.FeatureDeprecationWarning,
             GqlStatusInfoCodes.STATUS_01N02,
             "The query converted a list or path to a boolean value."),
 

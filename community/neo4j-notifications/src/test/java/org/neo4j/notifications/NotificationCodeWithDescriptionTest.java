@@ -1663,16 +1663,16 @@ class NotificationCodeWithDescriptionTest {
 
         verifyNotification(
                 notification,
-                "The query converted a list or path to a boolean value, this behavior is deprecated and will be removed in the future.",
+                "This feature is deprecated and will be removed in future versions.",
                 SeverityLevel.WARNING,
-                "Neo.ClientNotification.Statement.DeprecatedBooleanCoercion",
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
                 "The query converted a list or path to a boolean value.",
-                NotificationCategory.UNRECOGNIZED,
-                NotificationClassification.UNRECOGNIZED,
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
                 "01N02",
                 new DiagnosticRecord(
                                 warning,
-                                NotificationClassification.UNRECOGNIZED,
+                                NotificationClassification.DEPRECATION,
                                 -1,
                                 -1,
                                 -1,
