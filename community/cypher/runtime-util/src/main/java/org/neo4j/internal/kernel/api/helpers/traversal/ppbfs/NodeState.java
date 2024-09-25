@@ -53,7 +53,7 @@ public final class NodeState implements AutoCloseable, Measurable {
     private final Lengths lengths;
 
     // The length of the shortest path in the data graph from the source node to this node which is accepted by the NFA.
-    //TODO update comment NodeState shouldn't have any assumption to TraversalMatchMode
+    // TODO update comment NodeState shouldn't have any assumption to TraversalMatchMode
     // This is not necessarily a trail length, the corresponding path may have repeated relationships.
     private int sourceDistance = NO_SOURCE_DISTANCE;
 
@@ -188,6 +188,16 @@ public final class NodeState implements AutoCloseable, Measurable {
             if (hasMinDistToTarget(targetLength)) {
                 globalState.schedule(this, sourceLength, targetLength, GlobalState.ScheduleSource.Propagated);
             }
+            if (lengths instanceof Lengths.NonTrackingLengths) {
+                if (targetSignposts != null) {
+                    for (var tsp : targetSignposts) {
+                        if (tsp.minTargetDistance > targetLength) {
+                            globalState.schedule(
+                                    this, sourceLength, tsp.minTargetDistance, GlobalState.ScheduleSource.Propagated);
+                        }
+                    }
+                }
+            }
 
             if (isTarget()) {
                 globalState.addTarget(this);
@@ -208,7 +218,7 @@ public final class NodeState implements AutoCloseable, Measurable {
             firstTrace = true;
         }
 
-        //Trail logic? Should be moved
+        // Trail logic? Should be moved
         assert !firstTrace || targetLength >= minTargetDistance()
                 : "The first time a node is traced should be with the shortest trail to a target";
 
@@ -252,8 +262,9 @@ public final class NodeState implements AutoCloseable, Measurable {
         }
 
         for (TwoWaySignpost tsp : targetSignposts) {
-            if (tsp.minTargetDistance() == lengthToTarget) {
-                tsp.propagate(lengthFromSource, lengthToTarget);
+            if (tsp.minTargetDistance() == lengthToTarget
+                    || (lengths instanceof Lengths.NonTrackingLengths && tsp.minTargetDistance() >= lengthToTarget)) {
+                tsp.propagate(lengthFromSource, tsp.minTargetDistance());
             }
         }
     }

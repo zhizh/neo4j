@@ -45,7 +45,7 @@ public class SignpostStack {
      */
     private final HeapTrackingIntArrayList nodeSourceSignpostIndices;
 
-    //TODO: this bit set is only needed for Trail, we should hide this.
+    // TODO: this bit set is only needed for Trail, we should hide this.
     //      it could go in ExpansionTracker
     private final BitSet targetTrails;
 
@@ -172,14 +172,14 @@ public class SignpostStack {
         var signpost = current.getSourceSignpost(nextIndex);
         activeSignposts.add(signpost);
 
-        //TODO: For non-Trail targetTrails will always be set since we set 0 and then
+        // TODO: For non-Trail targetTrails will always be set since we set 0 and then
         //      distanceToDuplicate() always returns 0
         targetTrails.set(size(), targetTrails.get(size() - 1) && distanceToDuplicate() == 0);
 
         dgLengthToTarget += signpost.dataGraphLength();
         nodeSourceSignpostIndices.set(nodeSourceSignpostIndices.size() - 1, nextIndex);
         nodeSourceSignpostIndices.add(-1);
-        //TODO: if we move targetTrails to the tracker, I think we can hide it all behind this call
+        // TODO: if we move targetTrails to the tracker, I think we can hide it all behind this call
         //      we will have to juggle with size and size - 1
         expansionTracker.set(signpost, size() - 1, dgLengthToTarget);
         hooks.activateSignpost(lengthFromSource(), signpost);
@@ -187,12 +187,12 @@ public class SignpostStack {
         return true;
     }
 
-    //TODO implicitly assumes Trail, will always be 0 otherwise. Clean up.
+    // TODO implicitly assumes Trail, will always be 0 otherwise. Clean up.
     public int distanceToDuplicate() {
         return expansionTracker.distanceToDuplicate(headSignpost());
     }
 
-    //TODO should be called something like validateExpansion?
+    // TODO should be called something like validateExpansion?
     public boolean validateTrail() {
         return expansionTracker.validateTrail(this, dgLength, hooks);
     }
@@ -208,14 +208,14 @@ public class SignpostStack {
         }
 
         var signpost = activeSignposts.removeLast();
+        expansionTracker.popSignpostAtDepth(signpost, size(), dgLengthToTarget);
         dgLengthToTarget -= signpost.dataGraphLength();
-        expansionTracker.popSignpostAtDepth(signpost, size());
 
         hooks.deactivateSignpost(lengthFromSource(), signpost);
         return signpost;
     }
 
-    //TODO: Assumes trail, hide somewhere
+    // TODO: Assumes trail, hide somewhere
     public boolean isTargetTrail() {
         return this.targetTrails.get(this.size());
     }

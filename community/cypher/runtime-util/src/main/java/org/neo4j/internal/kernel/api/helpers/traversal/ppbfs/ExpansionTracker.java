@@ -20,30 +20,25 @@
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs;
 
 import java.util.BitSet;
-import java.util.HashMap;
-
-import org.neo4j.collection.trackable.HeapTrackingCollections;
 import org.neo4j.collection.trackable.HeapTrackingLongObjectHashMap;
-import org.neo4j.collection.trackable.HeapTrackingUnifiedMap;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
-import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.memory.MemoryTracker;
 
-//TODO These method names are very Trail specific, clean up and hide further would be nice
+// TODO These method names are very Trail specific, clean up and hide further would be nice
 //     Maybe rename to something like TraversalMatchModeTracking and then have it look like
 //         Lengths createLengths();
 //         SignpostTracker createSignpostTracker();
 public interface ExpansionTracker {
     void set(TwoWaySignpost signpost, int depth, int dgLengthToTarget);
 
-    //TODO rename to maybe just validate
+    // TODO rename to maybe just validate
     boolean validateTrail(SignpostStack stack, int dgLength, PPBFSHooks hooks);
 
-    //TODO 0 means we don't care about duplicates which is a bit weird
+    // TODO 0 means we don't care about duplicates which is a bit weird
     //     clean up
     int distanceToDuplicate(TwoWaySignpost signpost);
 
-    void popSignpostAtDepth(TwoWaySignpost signpost, int depth);
+    void popSignpostAtDepth(TwoWaySignpost signpost, int depth, int dgLengthToTarget);
 
     void clear();
 
@@ -53,64 +48,9 @@ public interface ExpansionTracker {
         return new RelationshipTracker(memoryTracker);
     }
 
-    class CycleTracker extends ExpansionTracker {
-        HeapTrackingUnifiedMap<NodeState, BitSet> depths = HeapTrackingCollections.newMap(EmptyMemoryTracker.INSTANCE);
-
-        @Override
-        public void set(TwoWaySignpost signpost, int depth, int dgLengthToTarget) {
-            // TODO consider if there is an edge case where target node is part of cycle
-            var bitset = depths.getIfAbsentPut(signpost.prevNode, new BitSet());
-
-            if (!bitset.isEmpty()) {
-                // we have already traversed this signpost during this trace, so we have a cycle
-                for (int i = bitset.nextSetBit(0); i >= 0; i = bitset.nextSetBit(i + 1)) {
-                    signpost.addCycle(dgLengthToTarget - i);
-                }
-            }
-
-            bitset.set(dgLengthToTarget);
-        }
-
-        @Override
-        public void popSignpostAtDepth(TwoWaySignpost signpost, int depth) {
-            var bitset = depths.get(signpost);
-            bitset.clear(depth);
-            if (bitset.isEmpty()) {
-                depths.remove(signpost);
-            }
-        }
-
-        @Override
-        public boolean validateTrail(SignpostStack stack, int dgLength, PPBFSHooks hooks) {
-            return true;
-        }
-
-        @Override
-        public int distanceToDuplicate(TwoWaySignpost signpost) {
-            return 0;
-        }
-
-
-        @Override
-        public void clear() {
-            // do nothing
-        }
-
-        @Override
-        public Lengths createLengths() {
-            return Lengths.nonRelationshipUniquenessTrackingLengths();
-        }
-
-        @Override
-        public boolean requireUniqueRelationships() {
-            return false;
-        }
-
-    }
-
     ExpansionTracker NO_TRACKING = new ExpansionTracker() {
         @Override
-        public void set(TwoWaySignpost signpost, int depth) {
+        public void set(TwoWaySignpost signpost, int depth, int dgLengthToTarget) {
             // do nothing
         }
 
@@ -143,7 +83,6 @@ public interface ExpansionTracker {
         public boolean requireUniqueRelationships() {
             return false;
         }
-
     };
 
     boolean requireUniqueRelationships();
@@ -207,7 +146,7 @@ public interface ExpansionTracker {
                     }
                 }
 
-                //TODO: is this a problem?
+                // TODO: is this a problem?
                 //      it was but handled
                 if (!signpost.isVerifiedAtLength(sourceLength)) {
                     signpost.setVerified(sourceLength);
@@ -267,7 +206,7 @@ public interface ExpansionTracker {
         }
 
         @Override
-        public void popSignpostAtDepth(TwoWaySignpost signpost, int depth) {
+        public void popSignpostAtDepth(TwoWaySignpost signpost, int depth, int dgLengthToTarget) {
             if (signpost instanceof TwoWaySignpost.RelSignpost rel) {
                 var depths = relationshipPresenceAtDepth.get(rel.relId);
                 depths.clear(depth);

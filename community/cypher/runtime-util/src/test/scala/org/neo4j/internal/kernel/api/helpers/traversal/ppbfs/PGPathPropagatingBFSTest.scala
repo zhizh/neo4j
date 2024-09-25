@@ -21,6 +21,7 @@ package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs
 
 import org.neo4j.common.EntityType
 import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode.Trail
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
@@ -29,13 +30,12 @@ import org.neo4j.internal.kernel.api.NodeCursor
 import org.neo4j.internal.kernel.api.RelationshipDataReader
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.OrderedResults
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`()-->()<--(a)-->(b)<--(c)-->(d)<--(e)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)-->(n3)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)-->(b)<--(c)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)<--(b)-->(a)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)<--(b)-->(c)`
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)-->(n3)`
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b))+ (t)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b))* (t)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b)--(c))* (t) [single transition]`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b)--(c))* (t)`
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)-->(b))* (t)`
@@ -967,8 +967,7 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
   /**
   Walk mode
    */
-
-  test("walk into k=5") {
+  test("support walk into") {
     val graph = `(n1)-->(n2)`
     val nfa = `(s) ((a)--(b))+ (t)`
 
@@ -980,129 +979,322 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
       .into(graph.n2)
       .withMatchMode(TraversalMatchMode.Walk)
       .withMode(SearchMode.Unidirectional)
-      // .logged()
       .paths()
 
     paths shouldBe Seq(
-      // (a)-->(b)
+      // (n1)-->(n2)
       Seq(graph.n1, graph.n1, graph.r1_2, graph.n2, graph.n2),
-      // (a)-->(b)-->(a)-->(b)
-      Seq(graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2),
-      // (a)-->(b)-->(a)-->(b)-->(a)-->(b)
+      // (n1)-->(n2)-->(n1)-->(n2)
       Seq(
         graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
         graph.n2
       ),
-      // (a)-->(b)-->(a)-->(b)-->(a)-->(b)-->(a)-->(b)
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)
       Seq(
         graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
         graph.n2
       ),
-      // (a)-->(b)-->(a)-->(b)-->(a)-->(b)-->(a)-->(b)
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)
       Seq(
         graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2
+      ),
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
         graph.n2
       )
     )
   }
 
-
-  test("walk k=5") {
+  test("support walk") {
     val graph = `(n1)-->(n2)`
     val nfa = `(s) ((a)--(b))+ (t)`
 
     val paths: Seq[Seq[Long]] = fixture()
       .withGraph(graph.graph)
       .withNfa(nfa)
-      .withK(2)
+      .withK(5)
       .from(graph.n1)
-      //.into(graph.b)
       .withMatchMode(TraversalMatchMode.Walk)
       .withMode(SearchMode.Unidirectional)
-      // .logged()
       .paths()
 
     paths shouldBe Seq(
-      // (a)-->(b)
+      // (n1)-->(n2)
       Seq(graph.n1, graph.n1, graph.r1_2, graph.n2, graph.n2),
-      // (a)-->(b)-->(a)
-      Seq(graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1),
-      // (a)-->(b)-->(a)-->(b)
-      Seq(graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2),
-      // (a)-->(b)-->(a)-->(b)-->(a)
-      Seq(graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1, graph.r1_2, graph.n2,
-        graph.n2, graph.r1_2, graph.n1,
-        graph.n1),
-      // (a)-->(b)-->(a)-->(b)-->(a)
-//      Seq(graph.a,
-//        graph.a, graph.ab, graph.b,
-//        graph.b, graph.ab, graph.a,
-//        graph.a, graph.ab, graph.b,
-//        graph.b, graph.ab, graph.a,
-//        graph.a, graph.ab, graph.b,
-//        graph.b),
+      // (n1)-->(n2)-->(n1)
+      Seq(graph.n1, graph.n1, graph.r1_2, graph.n2, graph.n2, graph.r1_2, graph.n1, graph.n1),
+      // (n1)-->(n2)-->(n1)-->(n2)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2
+      ),
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1
+      ),
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2
+      ),
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1
+      ),
+
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2
+      ),
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1
+      ),
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2
+      ),
+      // (n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)-->(n2)-->(n1)
+      Seq(
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1,
+        graph.r1_2,
+        graph.n2,
+        graph.n2,
+        graph.r1_2,
+        graph.n1,
+        graph.n1
+      )
     )
-  }
-
-  test("walk spec replication") {
-    val graph = `(n1)-->(n2)-->(n3)`
-    val nfa = `(s) ((a)--(b))* (t)`
-
-    val f = fixture()
-      .withGraph(graph.graph)
-      .withNfa(nfa)
-//      .into(graph.n1)
-      .withK(3)
-      .withMatchMode(TraversalMatchMode.Walk)
-      .withMode(SearchMode.Unidirectional)
-
-
-    val paths = f.from(graph.n1).viz().toList// ++ f.from(graph.b).toList ++ f.from(graph.c).toList
-
-    val out = paths.groupBy(_.length)
-      .toSeq
-      .sortBy(_._1)
-      .map { case (len, paths) =>
-        s"Length $len\n" + paths.mkString("\n")
-      }
-      .mkString("\n")
-
-    println(out)
   }
 
   /*******************
@@ -1182,15 +1374,21 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     graph <- testGraphs
     into <- Seq(true, false)
     grouped <- Seq(true, false)
-    k <- Seq(Int.MaxValue, 1, 2)
+    matchMode <- Seq(TraversalMatchMode.Trail, TraversalMatchMode.Walk)
+    k <- if (matchMode == Trail) Seq(Int.MaxValue, 1, 2) else Seq(1, 2, 5)
   } {
     test(
-      s"running the algorithm gives the same results as naive search. into=$into grouped=$grouped k=$k nfa=$nfa graph=${graph.render}"
+      s"running the algorithm gives the same results as naive search. into=$into matchMode=$matchMode grouped=$grouped k=$k nfa=$nfa graph=${graph.render}"
     ) {
       var f = fixture()
         .withGraph(graph.graph)
         .from(graph.source)
         .withNfa(nfa)
+        .withMatchMode(matchMode)
+
+      if (matchMode == TraversalMatchMode.Walk) {
+        f = f.withMaxDepth(3)
+      }
 
       if (into) {
         f = f.into(graph.target)
@@ -1495,7 +1693,8 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
         node: Long,
         rels: List[MultiRelationshipExpansion.Rel],
         nodes: List[MultiRelationshipExpansion.Node],
-        targetState: State
+        targetState: State,
+        totalDepth: Int
       ): Seq[TracedPath] = {
         (rels, nodes) match {
           case (r :: rels, n :: nodes) =>
@@ -1510,13 +1709,13 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
               if dir.matches(r.direction) &&
                 r.predicate.test(rel) &&
                 n.predicate.test(nextNode) &&
-                !stack.exists(e => e.id == rel.id)
+                (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
 
               newStack = new PathEntity(n.slotOrName, nextNode, EntityType.NODE) ::
                 new PathEntity(r.slotOrName, rel.id, EntityType.RELATIONSHIP) ::
                 stack
 
-              path <- recurseMultiRelExpansion(newStack, nextNode, rels, nodes, targetState)
+              path <- recurseMultiRelExpansion(newStack, nextNode, rels, nodes, targetState, totalDepth)
             } yield path
 
           case (r :: Nil, Nil) =>
@@ -1531,58 +1730,71 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
               if dir.matches(r.direction) &&
                 r.predicate.test(rel) &&
                 targetState.test(nextNode) &&
-                !stack.exists(e => e.id == rel.id)
+                (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
 
               newStack = new PathEntity(targetState.slotOrName, nextNode, EntityType.NODE) ::
                 new PathEntity(r.slotOrName, rel.id, EntityType.RELATIONSHIP) ::
                 stack
 
-              path <- recurse(newStack, nextNode, targetState)
+              path <- recurse(newStack, nextNode, targetState, totalDepth)
             } yield path
 
           case _ => fail("badly formatted multi rel expansion")
         }
       }
 
-      def recurse(stack: List[PathEntity], node: Long, state: State): Seq[TracedPath] = {
-        val nodeJuxtapositions = state.getNodeJuxtapositions
-          .filter(nj => nj.targetState().test(node))
-          .flatMap(nj => recurse(PathEntity.fromNode(nj.targetState(), node) :: stack, node, nj.targetState()))
+      def recurse(stack: List[PathEntity], node: Long, state: State, totalDepth: Int): Seq[TracedPath] = {
+        if (maxDepth != -1 && totalDepth > maxDepth) {
+          Seq.empty
+        } else {
+          val nodeJuxtapositions = state.getNodeJuxtapositions
+            .filter(nj => nj.targetState().test(node))
+            .flatMap(nj =>
+              recurse(PathEntity.fromNode(nj.targetState(), node) :: stack, node, nj.targetState(), totalDepth)
+            )
 
-        val relExpansions = for {
-          re <- state.getRelationshipExpansions
-          (rel, dir) <- graph.rels(node)
-          nextNode = dir match {
-            case RelationshipDirection.OUTGOING => rel.target
-            case RelationshipDirection.INCOMING => rel.source
-            case RelationshipDirection.LOOP     => node
-            case _                              => fail("inexhaustive match")
-          }
-          if dir.matches(re.direction) &&
-            re.testRelationship(rel) &&
-            re.targetState().test(nextNode) &&
-            !stack.exists(e => e.id == rel.id)
+          val relExpansions = for {
+            re <- state.getRelationshipExpansions
+            (rel, dir) <- graph.rels(node)
+            nextNode = dir match {
+              case RelationshipDirection.OUTGOING => rel.target
+              case RelationshipDirection.INCOMING => rel.source
+              case RelationshipDirection.LOOP     => node
+              case _                              => fail("inexhaustive match")
+            }
+            if dir.matches(re.direction) &&
+              re.testRelationship(rel) &&
+              re.targetState().test(nextNode) &&
+              (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
 
-          newStack = PathEntity.fromNode(re.targetState(), nextNode) ::
-            PathEntity.fromRel(re, rel.id) ::
-            stack
+            newStack = PathEntity.fromNode(re.targetState(), nextNode) ::
+              PathEntity.fromRel(re, rel.id) ::
+              stack
 
-          path <- recurse(newStack, nextNode, re.targetState())
-        } yield path
+            path <- recurse(newStack, nextNode, re.targetState(), totalDepth + 1)
+          } yield path
 
-        val multRelExpansions = for {
-          mre <- state.getMultiRelationshipExpansions
-          path <- recurseMultiRelExpansion(stack, node, mre.rels.toList, mre.nodes.toList, mre.targetState)
-        } yield path
+          val multRelExpansions = for {
+            mre <- state.getMultiRelationshipExpansions
+            path <- recurseMultiRelExpansion(
+              stack,
+              node,
+              mre.rels.toList,
+              mre.nodes.toList,
+              mre.targetState,
+              totalDepth + mre.length()
+            )
+          } yield path
 
-        val wholePath = Option.when(state.isFinalState && (intoTarget == -1L || intoTarget == node))(new TracedPath(
-          stack.reverse
-        ))
+          val wholePath = Option.when(state.isFinalState && (intoTarget == -1L || intoTarget == node))(new TracedPath(
+            stack.reverse
+          )).toSeq
 
-        nodeJuxtapositions ++ relExpansions ++ multRelExpansions ++ wholePath
+          wholePath ++ nodeJuxtapositions ++ relExpansions ++ multRelExpansions
+        }
       }
 
-      recurse(List(PathEntity.fromNode(nfa.getStart.state, source)), source, nfa.getStart.state)
+      recurse(List(PathEntity.fromNode(nfa.getStart.state, source)), source, nfa.getStart.state, 0)
         .filter(path => this.predicate(ev.flip(path)))
     }
   }
@@ -1628,6 +1840,22 @@ object PGPathPropagatingBFSTest {
         .mapValues(_.take(k))
         .toMap
     )
+
+    override def toString: String = {
+      val sb = new StringBuilder()
+      sb.append("\nOrdered results:\n")
+      byTargetThenLength.toSeq.sortBy(_._1).foreach { case (target, pathGroups) =>
+        sb.append(s"- Target $target:\n")
+        pathGroups.foreach { group =>
+          val len = group.head.length
+          sb.append(s"  - Length $len (${group.size} paths)\n")
+          group.foreach { path =>
+            sb.append(s"    - $path\n")
+          }
+        }
+      }
+      sb.toString()
+    }
   }
 
   object OrderedResults {
@@ -1756,19 +1984,6 @@ object PGPathPropagatingBFSTest {
     a.addRelationshipExpansion(b, direction = Direction.BOTH)
     b.addNodeJuxtaposition(a)
     b.addNodeJuxtaposition(t)
-  }
-
-  private val `(s) ((a)--(b))* (t)` : Nfa = nfa("(s) ((a)--(b))* (t)") { sb =>
-    val s = sb.newState("s", isStartState = true)
-    val a = sb.newState("a")
-    val b = sb.newState("b")
-    val t = sb.newState("t", isFinalState = true)
-
-    s.addNodeJuxtaposition(a)
-    a.addRelationshipExpansion(b, direction = Direction.BOTH)
-    b.addNodeJuxtaposition(a)
-    b.addNodeJuxtaposition(t)
-    s.addNodeJuxtaposition(t)
   }
 
   private val `(s) ((a)--(b)--(c))* (t)` : Nfa = nfa("(s) ((a)--(b)--(c))* (t)") { sb =>
