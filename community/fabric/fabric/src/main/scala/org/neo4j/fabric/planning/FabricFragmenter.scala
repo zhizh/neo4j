@@ -83,7 +83,11 @@ class FabricFragmenter(
                 .leadingGraphSelection
                 .map(Use.Declared)
                 .getOrElse(init.use)
-            Init(use, previous.argumentColumns, init.importColumns ++ sq.importColumns)
+            Init(
+              use,
+              previous.argumentColumns,
+              if (init.importColumns.nonEmpty) init.importColumns else sq.importColumns
+            )
 
           case other => other
         }
