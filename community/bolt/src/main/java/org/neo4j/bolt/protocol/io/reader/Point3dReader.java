@@ -74,8 +74,13 @@ public final class Point3dReader<CTX> implements StructReader<CTX, PointValue> {
         try {
             return Values.pointValue(crs, x, y, z);
         } catch (InvalidArgumentException ex) {
-            throw new IllegalStructArgumentException(
-                    "coords", format("Illegal CRS/coords combination (crs=%s, x=%s, y=%s, z=%s)", crs, x, y, z), ex);
+            // DRI-009
+            throw IllegalStructArgumentException.invalidCoordinateArguments(
+                    "coords",
+                    "point",
+                    new double[] {x, y, z},
+                    format("Illegal CRS/coords combination (crs=%s, x=%s, y=%s, z=%s)", crs, x, y, z),
+                    ex);
         }
     }
 }

@@ -20,9 +20,13 @@
 package org.neo4j.bolt.fsm.error;
 
 import org.neo4j.bolt.fsm.state.StateReference;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
 import org.neo4j.gqlstatus.GqlHelper;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.exceptions.Status.General;
 import org.neo4j.kernel.api.exceptions.Status.HasStatus;
@@ -36,6 +40,7 @@ public class NoSuchStateException extends StateMachineException
     private final ErrorGqlStatusObject gqlStatusObject;
     private final String oldMessage;
 
+    @Deprecated
     public NoSuchStateException(StateReference target, Throwable cause) {
         super("No such state: " + target.name(), cause);
         this.target = target;
@@ -52,12 +57,26 @@ public class NoSuchStateException extends StateMachineException
         this.target = target;
     }
 
+    @Deprecated
     public NoSuchStateException(StateReference target) {
         this(target, null);
     }
 
-    public NoSuchStateException(ErrorGqlStatusObject gqlStatusObject, StateReference target) {
+    private NoSuchStateException(ErrorGqlStatusObject gqlStatusObject, StateReference target) {
         this(gqlStatusObject, target, null);
+    }
+
+    public static NoSuchStateException invalidServerStateTransition(
+            String msgTitle, String invalidState, StateReference target) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withParam(GqlParams.StringParam.msgTitle, msgTitle)
+                .withParam(GqlParams.StringParam.msg, invalidState)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N09)
+                        .withParam(GqlParams.StringParam.boltServerState, invalidState)
+                        .build())
+                .build();
+        return new NoSuchStateException(gql, target);
     }
 
     public StateReference getTarget() {

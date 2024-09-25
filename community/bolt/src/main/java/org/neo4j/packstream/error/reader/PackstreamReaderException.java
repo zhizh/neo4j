@@ -19,21 +19,68 @@
  */
 package org.neo4j.packstream.error.reader;
 
+import java.util.Set;
+import org.neo4j.gqlstatus.ErrorClassification;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.packstream.error.PackstreamException;
 
 public class PackstreamReaderException extends PackstreamException {
 
     public PackstreamReaderException() {}
 
+    public PackstreamReaderException(ErrorGqlStatusObject gqlStatusObject) {
+        super(gqlStatusObject);
+    }
+
     public PackstreamReaderException(String message) {
         super(message);
+    }
+
+    public PackstreamReaderException(ErrorGqlStatusObject gqlStatusObject, String message) {
+        super(gqlStatusObject, message);
+    }
+
+    public static PackstreamReaderException duplicateMapKey(String key) {
+        // DRI-003 (When it gets wrapped in an IllegalStructArgumentException
+        // it will get the GQL code 08N06 with this (22N54) as a cause)
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N54)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.mapKey, key)
+                .build();
+        return new PackstreamReaderException(gql, "Duplicate map key: \"" + key + "\"");
+    }
+
+    public static PackstreamReaderException unknownDriverInterfaceType(long type, Set<Long> expectedType) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N01)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.value, "driver interface type")
+                        .withParam(
+                                GqlParams.ListParam.valueTypeList,
+                                expectedType.stream().toList())
+                        .withParam(GqlParams.StringParam.valueType, String.valueOf(type))
+                        .build())
+                .build();
+        return new PackstreamReaderException(gql, "Unknown driver interface type " + type);
     }
 
     public PackstreamReaderException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    public PackstreamReaderException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+        super(gqlStatusObject, message, cause);
+    }
+
     public PackstreamReaderException(Throwable cause) {
         super(cause);
+    }
+
+    public PackstreamReaderException(ErrorGqlStatusObject gqlStatusObject, Throwable cause) {
+        super(gqlStatusObject, cause);
     }
 }

@@ -55,17 +55,17 @@ public class DefaultRunMessageDecoder extends AbstractTransactionInitiatingMessa
         try {
             statement = buffer.readString();
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("statement", ex);
+            throw IllegalStructArgumentException.protocolError("statement", ex);
         }
         try {
             params = valueReader.readMap();
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("params", ex);
+            throw IllegalStructArgumentException.protocolError("params", ex);
         }
         try {
             metadata = valueReader.readMap();
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("metadata", ex);
+            throw IllegalStructArgumentException.protocolError("metadata", ex);
         }
 
         try {
@@ -87,7 +87,7 @@ public class DefaultRunMessageDecoder extends AbstractTransactionInitiatingMessa
                     impersonatedUser,
                     notificationsConfig);
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("metadata", ex);
+            throw IllegalStructArgumentException.protocolError("metadata", ex);
         }
     }
 }

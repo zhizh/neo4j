@@ -67,7 +67,8 @@ public final class LegacyDateTimeZoneIdReader<CTX> implements StructReader<CTX, 
         var zoneName = buffer.readString();
 
         if (nanos > Integer.MAX_VALUE || nanos < Integer.MIN_VALUE) {
-            throw new IllegalStructArgumentException("nanoseconds", "Value exceeds bounds");
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "nanoseconds", "INTEGER", Integer.MIN_VALUE, Integer.MAX_VALUE, nanos, "Value exceeds bounds");
         }
 
         Instant instant;
@@ -80,8 +81,8 @@ public final class LegacyDateTimeZoneIdReader<CTX> implements StructReader<CTX, 
         } catch (ZoneRulesException ex) {
             throw new IllegalStructArgumentException("tz_id", format("Illegal zone identifier: \"%s\"", zoneName), ex);
         } catch (DateTimeException | ArithmeticException ex) {
-            throw new IllegalStructArgumentException(
-                    "seconds", format("Illegal epoch adjustment epoch seconds: %d+%d", epochSecond, nanos), ex);
+            // DRI-011
+            throw IllegalStructArgumentException.invalidTemporalComponent("seconds", epochSecond, nanos, ex);
         }
 
         return DateTimeValue.datetime(ZonedDateTime.of(localDateTime, zoneId));

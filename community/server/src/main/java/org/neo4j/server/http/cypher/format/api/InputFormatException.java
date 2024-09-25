@@ -19,17 +19,120 @@
  */
 package org.neo4j.server.http.cypher.format.api;
 
+import org.neo4j.gqlstatus.ErrorClassification;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
+
 /**
  * An exception that should be thrown when input cannot be deserialized.
  * <p>
  * This exception serves for format problems. {@link ConnectionException} should be used for networking problems.
  */
-public class InputFormatException extends RuntimeException {
+public class InputFormatException extends RuntimeException implements ErrorGqlStatusObject {
+    private final ErrorGqlStatusObject gqlStatusObject;
+    private final String oldMessage;
+
     public InputFormatException(String message, Throwable cause) {
         super(message, cause);
+
+        this.gqlStatusObject = null;
+        this.oldMessage = message;
     }
 
-    public InputFormatException(String message) {
+    public InputFormatException(ErrorGqlStatusObject errorGqlStatusObject, String message, Throwable cause) {
+        super(message, cause);
+
+        this.gqlStatusObject = errorGqlStatusObject;
+        this.oldMessage = message;
+    }
+
+    public static InputFormatException jsonParingException(String message, Throwable cause) {
+        return new InputFormatException(
+                ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N95)
+                                .withClassification(ErrorClassification.CLIENT_ERROR)
+                                .build())
+                        .build(),
+                message,
+                cause);
+    }
+
+    public static InputFormatException jsonMappingException(String message, Throwable cause) {
+        return new InputFormatException(
+                ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N96)
+                                .withClassification(ErrorClassification.CLIENT_ERROR)
+                                .build())
+                        .build(),
+                message,
+                cause);
+    }
+
+    @Deprecated
+    private InputFormatException(String message) {
         super(message);
+
+        this.gqlStatusObject = null;
+        this.oldMessage = message;
+    }
+
+    public InputFormatException(ErrorGqlStatusObject errorGqlStatusObject, String message) {
+        super(message);
+
+        this.gqlStatusObject = errorGqlStatusObject;
+        this.oldMessage = message;
+    }
+
+    public static InputFormatException emptyInputString(String requiredOption, String message) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N06)
+                        .withParam(GqlParams.StringParam.option, requiredOption)
+                        .build())
+                .build();
+        throw new InputFormatException(gql, message);
+    }
+
+    public static InputFormatException wrongFirstFieldDuringDeserialization(String expectedField, String actualValue) {
+        return new InputFormatException(
+                ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N98)
+                                .withClassification(ErrorClassification.CLIENT_ERROR)
+                                .withParam(GqlParams.StringParam.field, expectedField)
+                                .withParam(GqlParams.StringParam.value, actualValue)
+                                .build())
+                        .build(),
+                String.format(
+                        "Unable to deserialize request. " + "Expected first field to be '%s', but was '%s'.",
+                        expectedField, actualValue));
+    }
+
+    public static InputFormatException wrongTokenDuringDeserialization(String expectedTokens, String foundTokens) {
+        return new InputFormatException(
+                ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N99)
+                                .withClassification(ErrorClassification.CLIENT_ERROR)
+                                .withParam(GqlParams.StringParam.token, expectedTokens)
+                                .withParam(GqlParams.StringParam.value, foundTokens)
+                                .build())
+                        .build(),
+                String.format(
+                        "Unable to deserialize request. " + "Expected %s, found %s.", expectedTokens, foundTokens));
+    }
+
+    @Override
+    public String legacyMessage() {
+        return oldMessage;
+    }
+
+    @Override
+    public ErrorGqlStatusObject gqlStatusObject() {
+        return gqlStatusObject;
     }
 }

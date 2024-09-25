@@ -106,8 +106,13 @@ public class DefaultHelloMessageDecoder implements MessageDecoder<HelloMessage> 
         var routingStringMap = convertToStringMap(property, FIELD_ROUTING);
         if (routingStringMap != null) return new RoutingContext(true, Map.copyOf(routingStringMap));
 
-        throw new IllegalStructArgumentException(
-                FIELD_ROUTING, "Expected map but got " + property.getClass().getSimpleName());
+        // DRI-012
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                FIELD_ROUTING,
+                property.toString(),
+                List.of("MAP"),
+                property.getClass().getSimpleName(),
+                "Expected map but got " + property.getClass().getSimpleName());
     }
 
     protected Map<String, Object> readAuthToken(Map<String, Object> meta) {
@@ -124,8 +129,13 @@ public class DefaultHelloMessageDecoder implements MessageDecoder<HelloMessage> 
         var boltAgent = meta.get(FIELD_BOLT_AGENT);
         var map = convertToStringMap(boltAgent, FIELD_BOLT_AGENT);
         if (map == null) {
-            throw new IllegalStructArgumentException(
-                    FIELD_BOLT_AGENT, "Must be a map with string keys and string values.");
+            // DRI-014
+            throw IllegalStructArgumentException.wrongTypeForFieldName(
+                    FIELD_BOLT_AGENT,
+                    String.valueOf(boltAgent),
+                    List.of("MAP<STRING, STRING>"),
+                    boltAgent == null ? "null" : boltAgent.getClass().getSimpleName(),
+                    "Must be a map with string keys and string values.");
         }
         if (!map.containsKey("product")) {
             throw new IllegalStructArgumentException(FIELD_BOLT_AGENT, "Expected map to contain key: 'product'.");
@@ -142,7 +152,13 @@ public class DefaultHelloMessageDecoder implements MessageDecoder<HelloMessage> 
         var validatedMap = new HashMap<String, String>();
         for (var entry : propertyMap.entrySet()) {
             if (!(entry.getKey() instanceof String key && entry.getValue() instanceof String value)) {
-                throw new IllegalStructArgumentException(field, "Must be a map with string keys and string values.");
+                // DRI-014
+                throw IllegalStructArgumentException.wrongTypeForFieldName(
+                        field,
+                        String.valueOf(entry),
+                        List.of("MAP<STRING, STRING>"),
+                        entry.getClass().toString(),
+                        "Must be a map with string keys and string values.");
             }
             validatedMap.put(key, value);
         }

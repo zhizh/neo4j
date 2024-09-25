@@ -56,7 +56,13 @@ public final class NotificationsConfigMetadataReader {
             if (meta.get(MINIMUM_SEVERITY_KEY) instanceof StringValue stringValue) {
                 minimumSeverity = stringValue.stringValue();
             } else {
-                throw new IllegalStructArgumentException(MINIMUM_SEVERITY_KEY, "Required to be a String");
+                // DRI-019
+                throw IllegalStructArgumentException.wrongTypeForFieldName(
+                        MINIMUM_SEVERITY_KEY,
+                        String.valueOf(meta.get(MINIMUM_SEVERITY_KEY)),
+                        List.of("String"),
+                        meta.get(MINIMUM_SEVERITY_KEY).getTypeName(),
+                        "Required to be a String");
             }
         }
 
@@ -67,12 +73,21 @@ public final class NotificationsConfigMetadataReader {
                     if (x instanceof StringValue stringValue) {
                         categoriesToIgnore.add(stringValue.stringValue());
                     } else {
-                        throw new IllegalStructArgumentException(
-                                disabledClassificationKey, "Required to be a List::String");
+                        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                                disabledClassificationKey,
+                                String.valueOf(meta.get(disabledClassificationKey)),
+                                List.of("LIST<STRING>"),
+                                meta.get(disabledClassificationKey).getTypeName(),
+                                "Required to be a List::String");
                     }
                 }
             } else {
-                throw new IllegalStructArgumentException(disabledClassificationKey, "Required to be a List::String");
+                throw IllegalStructArgumentException.wrongTypeForFieldName(
+                        disabledClassificationKey,
+                        String.valueOf(meta.get(disabledClassificationKey)),
+                        List.of("LIST<STRING>"),
+                        meta.get(disabledClassificationKey).getTypeName(),
+                        "Required to be a List::String");
             }
         }
 
@@ -98,7 +113,13 @@ public final class NotificationsConfigMetadataReader {
             if (meta.get(MINIMUM_SEVERITY_KEY) instanceof String stringValue) {
                 minimumSeverity = stringValue;
             } else {
-                throw new IllegalStructArgumentException(MINIMUM_SEVERITY_KEY, "Required to be a String");
+                // DRI-019
+                throw IllegalStructArgumentException.wrongTypeForFieldName(
+                        MINIMUM_SEVERITY_KEY,
+                        String.valueOf(meta.get(MINIMUM_SEVERITY_KEY)),
+                        List.of("String"),
+                        meta.get(MINIMUM_SEVERITY_KEY).getClass().getSimpleName(),
+                        "Required to be a String");
             }
         }
 
@@ -109,12 +130,21 @@ public final class NotificationsConfigMetadataReader {
                     if (x instanceof String stringValue) {
                         categoriesToIgnore.add(stringValue);
                     } else {
-                        throw new IllegalStructArgumentException(
-                                disabledClassificationKey, "Required to be a List::String");
+                        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                                disabledClassificationKey,
+                                String.valueOf(meta.get(disabledClassificationKey)),
+                                List.of("LIST<STRING>"),
+                                meta.get(disabledClassificationKey).getClass().getSimpleName(),
+                                "Required to be a List::String");
                     }
                 }
             } else {
-                throw new IllegalStructArgumentException(disabledClassificationKey, "Required to be a List::String");
+                throw IllegalStructArgumentException.wrongTypeForFieldName(
+                        disabledClassificationKey,
+                        String.valueOf(meta.get(disabledClassificationKey)),
+                        List.of("LIST<STRING>"),
+                        meta.get(disabledClassificationKey).getClass().getSimpleName(),
+                        "Required to be a List::String");
             }
         }
 

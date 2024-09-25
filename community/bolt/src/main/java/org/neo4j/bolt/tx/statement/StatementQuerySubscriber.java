@@ -89,7 +89,9 @@ public class StatementQuerySubscriber implements QuerySubscriber {
                 throw new QueryExecutionKernelException((Throwable & Status.HasStatus) hasStatus);
             } else {
                 throw new QueryExecutionKernelException(
-                        new CypherExecutionException(this.pendingException.getMessage(), this.pendingException));
+                        // DRI-059
+                        CypherExecutionException.internalError(
+                                "CypherExecution", this.pendingException.getMessage(), this.pendingException));
             }
         }
     }

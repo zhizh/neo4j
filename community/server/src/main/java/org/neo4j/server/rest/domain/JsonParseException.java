@@ -19,9 +19,13 @@
  */
 package org.neo4j.server.rest.domain;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
 import org.neo4j.gqlstatus.GqlException;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 @SuppressWarnings("serial")
@@ -35,12 +39,45 @@ public class JsonParseException extends GqlException implements Status.HasStatus
         super(gqlStatusObject, message, cause);
     }
 
+    public static JsonParseException jsonParsingException(int line, int column, String message, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N95)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .atPosition(line, column, -1)
+                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA8)
+                                .withClassification(ErrorClassification.CLIENT_ERROR)
+                                .withParam(
+                                        GqlParams.StringParam.value,
+                                        String.format("%s [line: %d, column: %d]", message, line, column))
+                                .build())
+                        .build())
+                .build();
+        return new JsonParseException(gql, message, cause);
+    }
+
     public JsonParseException(Throwable cause) {
         super(ErrorMessageHolder.getOldCauseMessage(cause), cause);
     }
 
     public JsonParseException(ErrorGqlStatusObject gqlStatusObject, Throwable cause) {
         super(gqlStatusObject, ErrorMessageHolder.getOldCauseMessage(cause), cause);
+    }
+
+    public static JsonParseException jsonParsingException(Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N95)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA8)
+                                .withClassification(ErrorClassification.CLIENT_ERROR)
+                                .withParam(
+                                        GqlParams.StringParam.value,
+                                        String.format(ErrorMessageHolder.getOldCauseMessage(cause)))
+                                .build())
+                        .build())
+                .build();
+        return new JsonParseException(gql, cause);
     }
 
     @Override

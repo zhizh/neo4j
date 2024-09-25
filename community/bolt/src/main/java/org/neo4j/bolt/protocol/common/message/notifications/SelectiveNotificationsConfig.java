@@ -19,6 +19,7 @@
  */
 package org.neo4j.bolt.protocol.common.message.notifications;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -56,7 +57,17 @@ public final class SelectiveNotificationsConfig implements NotificationsConfig {
         try {
             return Enum.valueOf(NotificationConfiguration.Severity.class, minimumSeverity.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException err) {
-            throw new IllegalStructArgumentException("Could not parse a NotificationConfig's minimum severity.", err);
+            // DRI-006
+            List<String> severityLevels = new ArrayList<>();
+            for (var severityValue : NotificationConfiguration.Severity.values()) {
+                severityLevels.add(severityValue.name());
+            }
+            throw IllegalStructArgumentException.invalidInput(
+                    "Could not parse a NotificationConfig's minimum severity.",
+                    minimumSeverity,
+                    "NotificationConfig minimumSeverity",
+                    severityLevels,
+                    err);
         }
     }
 
@@ -65,12 +76,22 @@ public final class SelectiveNotificationsConfig implements NotificationsConfig {
         if (cats == null) return null;
 
         var set = new HashSet<NotificationConfiguration.Category>();
-        try {
-            for (var x : cats) {
+        for (var x : cats) {
+            try {
                 set.add(Enum.valueOf(NotificationConfiguration.Category.class, x.toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException err) {
+                // DRI-005
+                List<String> categoryLevels = new ArrayList<>();
+                for (var categoryValue : NotificationConfiguration.Category.values()) {
+                    categoryLevels.add(categoryValue.name());
+                }
+                throw IllegalStructArgumentException.invalidInput(
+                        "Could not parse a NotificationConfig category to ignore.",
+                        x,
+                        "NotificationConfig category",
+                        categoryLevels,
+                        err);
             }
-        } catch (IllegalArgumentException err) {
-            throw new IllegalStructArgumentException("Could not parse a NotificationConfig category to ignore.", err);
         }
 
         return set;

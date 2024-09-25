@@ -19,6 +19,11 @@
  */
 package org.neo4j.packstream.error.reader;
 
+import org.neo4j.gqlstatus.ErrorClassification;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.packstream.struct.StructHeader;
 
 public class UnexpectedStructException extends PackstreamReaderException {
@@ -31,8 +36,29 @@ public class UnexpectedStructException extends PackstreamReaderException {
         this.length = length;
     }
 
+    public UnexpectedStructException(ErrorGqlStatusObject gqlStatusObject, short tag, long length) {
+        super(gqlStatusObject, String.format("Unexpected struct tag: 0x%02X", tag));
+        this.tag = tag;
+        this.length = length;
+    }
+
     public UnexpectedStructException(StructHeader header) {
         this(header.tag(), header.length());
+    }
+
+    public UnexpectedStructException(ErrorGqlStatusObject gqlStatusObject, StructHeader header) {
+        this(gqlStatusObject, header.tag(), header.length());
+    }
+
+    public static UnexpectedStructException unexpectedStruct(StructHeader header) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N97)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.value, String.format("0x%02X", header.tag()))
+                        .build())
+                .build();
+        return new UnexpectedStructException(gql, header);
     }
 
     public short getTag() {

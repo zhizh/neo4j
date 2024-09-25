@@ -106,7 +106,7 @@ public class ChunkFrameDecoder extends ByteToMessageDecoder {
                     log.debug(
                             "Client %s has exceeded message size limit of %d bytes",
                             ctx.channel().remoteAddress(), this.limit);
-                    throw new LimitExceededException(this.limit, totalLength);
+                    throw LimitExceededException.protocolMessageLengthLimitOverflow(this.limit, totalLength);
                 }
 
                 // revert to the initial buffer position and await further data if the current chunk has yet

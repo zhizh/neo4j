@@ -19,7 +19,6 @@
  */
 package org.neo4j.bolt.protocol.io.reader.legacy;
 
-import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
 
 import java.time.DateTimeException;
@@ -66,10 +65,19 @@ public final class LegacyDateTimeReader<CTX> implements StructReader<CTX, DateTi
         var offsetSeconds = buffer.readInt();
 
         if (nanos > Integer.MAX_VALUE || nanos < Integer.MIN_VALUE) {
-            throw new IllegalStructArgumentException("nanoseconds", "Value is out of bounds");
+            // DRI-022
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "nanoseconds", "INTEGER", Integer.MIN_VALUE, Integer.MAX_VALUE, nanos, "Value is out of bounds");
         }
         if (offsetSeconds > Integer.MAX_VALUE || offsetSeconds < Integer.MIN_VALUE) {
-            throw new IllegalStructArgumentException("tz_offset_seconds", "Value is out of bounds");
+            // DRI-022
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "tz_offset_seconds",
+                    "INTEGER",
+                    Integer.MIN_VALUE,
+                    Integer.MAX_VALUE,
+                    offsetSeconds,
+                    "Value is out of bounds");
         }
 
         ZoneOffset offset;
@@ -81,8 +89,8 @@ public final class LegacyDateTimeReader<CTX> implements StructReader<CTX, DateTi
             instant = Instant.ofEpochSecond(epochSecond, nanos);
             localDateTime = LocalDateTime.ofInstant(instant, UTC);
         } catch (DateTimeException | ArithmeticException ex) {
-            throw new IllegalStructArgumentException(
-                    "seconds", format("Illegal epoch adjustment epoch seconds: %d+%d", epochSecond, nanos), ex);
+            // DRI-011
+            throw IllegalStructArgumentException.invalidTemporalComponent("seconds", epochSecond, nanos, ex);
         }
 
         return DateTimeValue.datetime(OffsetDateTime.of(localDateTime, offset));

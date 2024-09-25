@@ -19,35 +19,43 @@
  */
 package org.neo4j.packstream.error.reader;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class LimitExceededException extends PackstreamReaderException
         implements Status.HasStatus, ErrorGqlStatusObject {
     private final long limit;
     private final long actual;
-    private final ErrorGqlStatusObject gqlStatusObject;
-    private final String oldMessage;
 
-    public LimitExceededException(long limit, long actual) {
+    @Deprecated
+    protected LimitExceededException(long limit, long actual) {
         super("Value of size " + actual + " exceeded limit of " + limit);
 
         this.limit = limit;
         this.actual = actual;
-
-        this.gqlStatusObject = null;
-        this.oldMessage = "Value of size " + actual + " exceeded limit of " + limit;
     }
 
-    public LimitExceededException(ErrorGqlStatusObject gqlStatusObject, long limit, long actual) {
-        super(ErrorMessageHolder.getMessage(
-                gqlStatusObject, "Value of size " + actual + " exceeded limit of " + limit));
-        this.gqlStatusObject = gqlStatusObject;
+    protected LimitExceededException(ErrorGqlStatusObject gqlStatusObject, long limit, long actual) {
+        super(
+                gqlStatusObject,
+                ErrorMessageHolder.getMessage(
+                        gqlStatusObject, "Value of size " + actual + " exceeded limit of " + limit));
 
         this.limit = limit;
         this.actual = actual;
-        this.oldMessage = "Value of size " + actual + " exceeded limit of " + limit;
+    }
+
+    public static LimitExceededException protocolMessageLengthLimitOverflow(long limit, long actual) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N56)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.NumberParam.boltMsgLenLimit, limit)
+                .build();
+        return new LimitExceededException(gql, limit, actual);
     }
 
     public long getLimit() {
@@ -59,17 +67,7 @@ public class LimitExceededException extends PackstreamReaderException
     }
 
     @Override
-    public String legacyMessage() {
-        return oldMessage;
-    }
-
-    @Override
     public Status status() {
         return Status.Request.Invalid;
-    }
-
-    @Override
-    public ErrorGqlStatusObject gqlStatusObject() {
-        return gqlStatusObject;
     }
 }

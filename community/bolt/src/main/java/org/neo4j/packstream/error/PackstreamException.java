@@ -20,20 +20,66 @@
 package org.neo4j.packstream.error;
 
 import java.io.IOException;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.GqlHelper;
 
-public abstract class PackstreamException extends IOException {
+public abstract class PackstreamException extends IOException implements ErrorGqlStatusObject {
+    private final ErrorGqlStatusObject innerGqlStatusObject;
+    private final String oldMessage;
 
-    public PackstreamException() {}
+    public PackstreamException() {
+        this.innerGqlStatusObject = null;
+        this.oldMessage = null;
+    }
+
+    public PackstreamException(ErrorGqlStatusObject gqlStatusObject) {
+        this.innerGqlStatusObject = gqlStatusObject;
+        this.oldMessage = null;
+    }
 
     public PackstreamException(String message) {
         super(message);
+        this.innerGqlStatusObject = null;
+        this.oldMessage = message;
+    }
+
+    public PackstreamException(ErrorGqlStatusObject gqlStatusObject, String message) {
+        super(message);
+        this.innerGqlStatusObject = gqlStatusObject;
+        this.oldMessage = message;
     }
 
     public PackstreamException(String message, Throwable cause) {
         super(message, cause);
+        this.innerGqlStatusObject = null;
+        this.oldMessage = message;
+    }
+
+    public PackstreamException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+        super(message, cause);
+        this.innerGqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, cause);
+        this.oldMessage = message;
     }
 
     public PackstreamException(Throwable cause) {
         super(cause);
+        this.innerGqlStatusObject = null;
+        this.oldMessage = null;
+    }
+
+    public PackstreamException(ErrorGqlStatusObject gqlStatusObject, Throwable cause) {
+        super(cause);
+        this.innerGqlStatusObject = gqlStatusObject;
+        this.oldMessage = null;
+    }
+
+    @Override
+    public String legacyMessage() {
+        return oldMessage;
+    }
+
+    @Override
+    public ErrorGqlStatusObject gqlStatusObject() {
+        return innerGqlStatusObject;
     }
 }

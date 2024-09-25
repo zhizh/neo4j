@@ -58,9 +58,15 @@ public abstract class AbstractTransactionInitiatingMessageDecoder<M extends Abst
             return AccessMode.WRITE;
         }
 
-        return AccessMode.byFlag(accessMode)
-                .orElseThrow(() -> new IllegalStructArgumentException(
-                        FIELD_ACCESS_MODE, "Expecting access mode value to be 'r' or 'w'"));
+        return AccessMode.byFlag(accessMode).orElseThrow(() -> {
+            // DRI-017
+            return IllegalStructArgumentException.invalidInput(
+                    FIELD_ACCESS_MODE,
+                    accessMode,
+                    "access mode value",
+                    List.of("r", "w"),
+                    "Expecting access mode value to be 'r' or 'w'");
+        });
     }
 
     protected List<String> readBookmarks(MapValue meta) throws PackstreamReaderException {
@@ -89,7 +95,13 @@ public abstract class AbstractTransactionInitiatingMessageDecoder<M extends Abst
             return bookmarkString.stringValue();
         }
 
-        throw new IllegalStructArgumentException(FIELD_BOOKMARKS, "Expected list of strings");
+        // DRI-018
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                FIELD_BOOKMARKS,
+                "",
+                List.of("LIST<STRING>"),
+                bookmark == null ? "null" : bookmark.getTypeName(),
+                "Expected list of strings");
     }
 
     protected NotificationsConfig readNotificationsConfig(MapValue metadata) throws IllegalStructArgumentException {

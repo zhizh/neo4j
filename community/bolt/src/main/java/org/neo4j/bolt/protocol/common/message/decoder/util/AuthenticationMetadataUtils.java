@@ -62,7 +62,7 @@ public final class AuthenticationMetadataUtils {
         try {
             metadataMapValue = reader.readPrimitiveMap(limit);
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("extra", ex);
+            throw IllegalStructArgumentException.protocolError("extra", ex);
         }
 
         var writer = new AuthTokenValueWriter();

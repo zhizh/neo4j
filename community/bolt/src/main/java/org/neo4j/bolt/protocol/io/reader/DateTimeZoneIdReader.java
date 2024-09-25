@@ -61,7 +61,8 @@ public final class DateTimeZoneIdReader<CTX> implements StructReader<CTX, DateTi
         var zoneName = buffer.readString();
 
         if (nanos > Integer.MAX_VALUE || nanos < Integer.MIN_VALUE) {
-            throw new IllegalStructArgumentException("nanoseconds", "Value exceeds bounds");
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "nanoseconds", "INTEGER", Integer.MIN_VALUE, Integer.MAX_VALUE, nanos, "Value exceeds bounds");
         }
 
         Instant instant;

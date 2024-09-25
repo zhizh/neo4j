@@ -22,6 +22,7 @@ package org.neo4j.exceptions;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -34,6 +35,18 @@ public class CypherExecutionException extends Neo4jException {
 
     public CypherExecutionException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
+    }
+
+    public static CypherExecutionException internalError(String msgTitle, String msg, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withParam(GqlParams.StringParam.msgTitle, msgTitle)
+                .withParam(GqlParams.StringParam.msg, msg)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
+                        .withClassification(ErrorClassification.DATABASE_ERROR)
+                        .build())
+                .build();
+        return new CypherExecutionException(gql, msg, cause);
     }
 
     @Deprecated

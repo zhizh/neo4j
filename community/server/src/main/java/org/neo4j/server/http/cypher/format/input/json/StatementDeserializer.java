@@ -108,7 +108,8 @@ class StatementDeserializer {
                     }
 
                     if (statement == null) {
-                        throw new InputFormatException("No statement provided.");
+                        // DRI-040
+                        throw InputFormatException.emptyInputString("statement", "No statement provided.");
                     }
                     return new InputStatement(
                             statement,
@@ -116,9 +117,11 @@ class StatementDeserializer {
                             includeStats,
                             ResultDataContent.fromNames(resultsDataContents));
                 } catch (JsonParseException e) {
-                    throw new InputFormatException("Could not parse the incoming JSON", e);
+                    // DRI-036
+                    throw InputFormatException.jsonParingException("Could not parse the incoming JSON", e);
                 } catch (JsonMappingException e) {
-                    throw new InputFormatException("Could not map the incoming JSON", e);
+                    // DRI-037
+                    throw InputFormatException.jsonMappingException("Could not map the incoming JSON", e);
                 } catch (IOException e) {
                     throw new ConnectionException("An error encountered while reading the inbound entity", e);
                 }
@@ -159,15 +162,15 @@ class StatementDeserializer {
                     return false;
                 }
                 if (token == FIELD_NAME && !expectedField.equals(parser.getText())) {
-                    throw new InputFormatException(String.format(
-                            "Unable to deserialize request. " + "Expected first field to be '%s', but was '%s'.",
-                            expectedField, parser.getText()));
+                    // DRI-038
+                    throw InputFormatException.wrongFirstFieldDuringDeserialization(expectedField, parser.getText());
                 }
                 foundTokens.add(token);
             }
             if (!expectedTokens.equals(foundTokens)) {
-                throw new InputFormatException(String.format(
-                        "Unable to deserialize request. " + "Expected %s, found %s.", expectedTokens, foundTokens));
+                // DRI-039
+                throw InputFormatException.wrongTokenDuringDeserialization(
+                        expectedTokens.toString(), foundTokens.toString());
             }
         } catch (JsonParseException e) {
             throw new InputFormatException("Could not parse the incoming JSON", e);

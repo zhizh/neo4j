@@ -931,7 +931,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             """
                     Expected the value { %s } to be of type { %s }, but was of type { %s }.""",
             new GqlParams.GqlParam[] {
-                GqlParams.NumberParam.value, GqlParams.ListParam.valueTypeList, GqlParams.StringParam.valueType
+                GqlParams.StringParam.value, GqlParams.ListParam.valueTypeList, GqlParams.StringParam.valueType
             },
             Map.of(GqlParams.ListParam.valueTypeList, GqlParams.JoinStyle.ORED),
             Condition.DATA_EXCEPTION,
@@ -1690,6 +1690,46 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "invalid YIELD *"),
+    STATUS_22N95(
+            new GqlStatus("22N95"),
+            """
+                    Invalid JSON input. Please check the format.""",
+            new GqlParams.GqlParam[] {},
+            emptyMap(),
+            Condition.DATA_EXCEPTION,
+            "parsing JSON exception"),
+    STATUS_22N96(
+            new GqlStatus("22N96"),
+            """
+                    Unable to map the JSON input. Please verify the structure.""",
+            new GqlParams.GqlParam[] {},
+            emptyMap(),
+            Condition.DATA_EXCEPTION,
+            "mapping JSON exception"),
+    STATUS_22N97(
+            new GqlStatus("22N97"),
+            """
+                    Unexpected struct tag: { %s }.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.value},
+            emptyMap(),
+            Condition.DATA_EXCEPTION,
+            "unexpected struct tag"),
+    STATUS_22N98(
+            new GqlStatus("22N98"),
+            """
+                    Unable to deserialize request. Expected first field to be { %s }, but was '{ %s }'.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.field, GqlParams.StringParam.value},
+            emptyMap(),
+            Condition.DATA_EXCEPTION,
+            "wrong first field during deserialization"),
+    STATUS_22N99(
+            new GqlStatus("22N99"),
+            """
+                    Unable to deserialize request. Expected { %s }, found { %s }.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.token, GqlParams.StringParam.value},
+            emptyMap(),
+            Condition.DATA_EXCEPTION,
+            "wrong token during deserialization"),
     STATUS_22NA0(
             new GqlStatus("22NA0"),
             """
@@ -1754,6 +1794,14 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "invalid property based access control rule involving nontrivial predicates"),
+    STATUS_22NA8(
+            new GqlStatus("22NA8"),
+            """
+                    Underlying error: { %s }""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.value},
+            emptyMap(),
+            Condition.DATA_EXCEPTION,
+            "parsing JSON exception"),
     STATUS_22NFF(
             new GqlStatus("22NFF"),
             """

@@ -49,7 +49,7 @@ public abstract sealed class AbstractStreamingMessageDecoder<M extends AbstractS
         try {
             meta = valueReader.readMap();
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("meta", ex);
+            throw IllegalStructArgumentException.protocolError("meta", ex);
         }
 
         try {
@@ -58,7 +58,7 @@ public abstract sealed class AbstractStreamingMessageDecoder<M extends AbstractS
 
             return this.createMessageInstance(n, statementId);
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("meta", ex);
+            throw IllegalStructArgumentException.protocolError("meta", ex);
         }
     }
 
@@ -68,8 +68,14 @@ public abstract sealed class AbstractStreamingMessageDecoder<M extends AbstractS
         var size = PackstreamConversions.asLongValue(FIELD_STREAM_LIMIT, meta.get(FIELD_STREAM_LIMIT));
 
         if (size != STREAM_LIMIT_UNLIMITED && size < STREAM_LIMIT_MINIMAL) {
-            throw new IllegalStructArgumentException(
-                    "n", String.format("Expecting size to be at least %s, but got: %s", STREAM_LIMIT_MINIMAL, size));
+            // DRI-016
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "n",
+                    "INTEGER",
+                    STREAM_LIMIT_MINIMAL,
+                    Integer.MAX_VALUE,
+                    size,
+                    String.format("Expecting size to be at least %s, but got: %s", STREAM_LIMIT_MINIMAL, size));
         }
 
         return size;

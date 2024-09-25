@@ -60,10 +60,18 @@ public final class DateTimeReader<CTX> implements StructReader<CTX, DateTimeValu
         var offsetSeconds = buffer.readInt();
 
         if (nanos > Integer.MAX_VALUE || nanos < Integer.MIN_VALUE) {
-            throw new IllegalStructArgumentException("nanoseconds", "Value is out of bounds");
+            // DRI-022
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "nanoseconds", "INTEGER", Integer.MIN_VALUE, Integer.MAX_VALUE, nanos, "Value is out of bounds");
         }
         if (offsetSeconds > Integer.MAX_VALUE || offsetSeconds < Integer.MIN_VALUE) {
-            throw new IllegalStructArgumentException("tz_offset_seconds", "Value is out of bounds");
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "tz_offset_seconds",
+                    "INTEGER",
+                    Integer.MIN_VALUE,
+                    Integer.MAX_VALUE,
+                    offsetSeconds,
+                    "Value is out of bounds");
         }
 
         ZoneOffset offset;

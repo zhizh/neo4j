@@ -60,7 +60,7 @@ public record TelemetryMessage(DriverInterfaceType interfaceType) implements Req
         public static DriverInterfaceType fromLong(long type) throws PackstreamReaderException {
             DriverInterfaceType interfaceType = DRIVER_INTERFACE_MAP.get(type);
             if (interfaceType == null) {
-                throw new PackstreamReaderException("Unknown driver interface type " + type);
+                throw PackstreamReaderException.unknownDriverInterfaceType(type, DRIVER_INTERFACE_MAP.keySet());
             }
 
             return interfaceType;

@@ -19,6 +19,7 @@
  */
 package org.neo4j.packstream.util;
 
+import java.util.List;
 import java.util.OptionalLong;
 import org.neo4j.packstream.error.struct.IllegalStructArgumentException;
 import org.neo4j.values.AnyValue;
@@ -49,7 +50,9 @@ public final class PackstreamConversions {
             return listValue;
         }
 
-        throw new IllegalStructArgumentException(fieldName, "Expected list");
+        // DRI-024
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                fieldName, String.valueOf(fieldValue), List.of("list"), fieldValue.getTypeName(), "Expected list");
     }
 
     /**
@@ -83,7 +86,13 @@ public final class PackstreamConversions {
             return null;
         }
 
-        throw new IllegalStructArgumentException(fieldName, "Expected long");
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                // DRI-026
+                fieldName,
+                String.valueOf(fieldValue),
+                List.of("LONG"),
+                fieldValue.getClass().getSimpleName(),
+                "Expected long");
     }
 
     /**
@@ -100,7 +109,13 @@ public final class PackstreamConversions {
         }
 
         return asNullableLongValue(fieldName, fieldValue)
-                .orElseThrow(() -> new IllegalStructArgumentException(fieldName, "Expected long"));
+                .orElseThrow(() -> IllegalStructArgumentException.wrongTypeForFieldName(
+                        // DRI-026
+                        fieldName,
+                        String.valueOf(fieldValue),
+                        List.of("LONG"),
+                        fieldValue.getTypeName(),
+                        "Expected long"));
     }
 
     /**
@@ -121,7 +136,9 @@ public final class PackstreamConversions {
             return OptionalLong.empty();
         }
 
-        throw new IllegalStructArgumentException(fieldName, "Expected long");
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                // DRI-026
+                fieldName, String.valueOf(fieldValue), List.of("LONG"), fieldValue.getTypeName(), "Expected long");
     }
 
     /**
@@ -142,7 +159,9 @@ public final class PackstreamConversions {
             return null;
         }
 
-        throw new IllegalStructArgumentException(fieldName, "Expected dictionary");
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                // DRI-027
+                fieldName, String.valueOf(fieldValue), List.of("MAP"), fieldValue.getTypeName(), "Expected dictionary");
     }
 
     /**
@@ -176,7 +195,13 @@ public final class PackstreamConversions {
             return null;
         }
 
-        throw new IllegalStructArgumentException(fieldName, "Expected string");
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                // DRI-028
+                fieldName,
+                String.valueOf(fieldValue),
+                List.of("STRING"),
+                fieldValue.getClass().getSimpleName(),
+                "Expected string");
     }
 
     /**
@@ -197,6 +222,8 @@ public final class PackstreamConversions {
             return null;
         }
 
-        throw new IllegalStructArgumentException(fieldName, "Expected string");
+        throw IllegalStructArgumentException.wrongTypeForFieldName(
+                // DRI-028
+                fieldName, String.valueOf(fieldValue), List.of("STRING"), fieldValue.getTypeName(), "Expected string");
     }
 }

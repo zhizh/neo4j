@@ -73,8 +73,13 @@ public final class Point2dReader<CTX> implements StructReader<CTX, PointValue> {
         try {
             return Values.pointValue(crs, x, y);
         } catch (InvalidSpatialArgumentException ex) {
-            throw new IllegalStructArgumentException(
-                    "coords", format("Illegal CRS/coords combination (crs=%s, x=%s, y=%s)", crs, x, y), ex);
+            // DRI-008
+            throw IllegalStructArgumentException.invalidCoordinateArguments(
+                    "coords",
+                    "point",
+                    new double[] {x, y},
+                    format("Illegal CRS/coords combination (crs=%s, x=%s, y=%s)", crs, x, y),
+                    ex);
         }
     }
 }

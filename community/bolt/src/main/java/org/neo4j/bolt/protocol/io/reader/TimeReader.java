@@ -55,7 +55,13 @@ public final class TimeReader<CTX> implements StructReader<CTX, TimeValue> {
         var offsetSeconds = buffer.readInt();
 
         if (offsetSeconds > Integer.MAX_VALUE || offsetSeconds < Integer.MIN_VALUE) {
-            throw new IllegalStructArgumentException("tz_offset_seconds", "Value is out of bounds");
+            throw IllegalStructArgumentException.wrongTypeForFieldNameOrOutOfRange(
+                    "tz_offset_seconds",
+                    "INTEGER",
+                    Integer.MIN_VALUE,
+                    Integer.MAX_VALUE,
+                    offsetSeconds,
+                    "Value is out of bounds");
         }
 
         return TimeValue.time(

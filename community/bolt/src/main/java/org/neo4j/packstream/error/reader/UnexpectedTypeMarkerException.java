@@ -19,25 +19,46 @@
  */
 package org.neo4j.packstream.error.reader;
 
+import java.util.List;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.packstream.io.TypeMarker;
 
 public class UnexpectedTypeMarkerException extends UnexpectedTypeException {
     private final TypeMarker expectedMarker;
     private final TypeMarker actualMarker;
 
-    public UnexpectedTypeMarkerException(TypeMarker expected, TypeMarker actual) {
+    @Deprecated
+    private UnexpectedTypeMarkerException(TypeMarker expected, TypeMarker actual) {
         super("Expected " + expected + " but got " + actual, expected.getType(), actual.getType());
 
         this.expectedMarker = expected;
         this.actualMarker = actual;
     }
 
-    public UnexpectedTypeMarkerException(ErrorGqlStatusObject gqlStatusObject, TypeMarker expected, TypeMarker actual) {
+    private UnexpectedTypeMarkerException(
+            ErrorGqlStatusObject gqlStatusObject, TypeMarker expected, TypeMarker actual) {
         super(gqlStatusObject, "Expected " + expected + " but got " + actual, expected.getType(), actual.getType());
 
         this.expectedMarker = expected;
         this.actualMarker = actual;
+    }
+
+    public static UnexpectedTypeMarkerException wrongType(String value, TypeMarker expected, TypeMarker actual) {
+        // DRI-031
+        return new UnexpectedTypeMarkerException(
+                // Code 22N01. It might get wrapped in IllegalStructArgumentException with code 08N06
+                ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N01)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.value, value)
+                        .withParam(GqlParams.ListParam.valueTypeList, List.of(String.valueOf(expected)))
+                        .withParam(GqlParams.StringParam.valueType, String.valueOf(actual))
+                        .build(),
+                expected,
+                actual);
     }
 
     public TypeMarker getExpectedMarker() {

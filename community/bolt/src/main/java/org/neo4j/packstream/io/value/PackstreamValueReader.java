@@ -21,6 +21,7 @@ package org.neo4j.packstream.io.value;
 
 import static org.neo4j.values.storable.NoValue.NO_VALUE;
 
+import java.util.List;
 import org.neo4j.packstream.error.reader.PackstreamReaderException;
 import org.neo4j.packstream.error.reader.UnexpectedTypeException;
 import org.neo4j.packstream.error.reader.UnexpectedTypeMarkerException;
@@ -95,7 +96,11 @@ public class PackstreamValueReader<CTX> {
             case LIST -> this.readPrimitiveList(limit);
             case MAP -> this.readPrimitiveMap(limit);
             case STRING -> this.readText(limit);
-            default -> throw new UnexpectedTypeException(type);
+            default -> throw UnexpectedTypeException.wrongType(
+                    // DRI-030
+                    String.valueOf(limit),
+                    List.of("NONE", "BYTES", "BOOLEAN", "FLOAT", "INT", "LIST", "MAP", "STRING"),
+                    type);
         };
     }
 

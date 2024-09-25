@@ -57,7 +57,8 @@ final class ImmutableStateMachineConfiguration implements StateMachineConfigurat
     public State lookup(StateReference reference) throws NoSuchStateException {
         var state = this.stateMap.get(reference);
         if (state == null) {
-            throw new NoSuchStateException(reference);
+            // DRI-056
+            throw NoSuchStateException.invalidServerStateTransition("No such state", reference.name(), reference);
         }
 
         return state;

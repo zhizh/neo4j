@@ -57,7 +57,7 @@ public class DefaultBeginMessageDecoder extends AbstractTransactionInitiatingMes
         try {
             metadata = valueReader.readMap();
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("metadata", ex);
+            throw IllegalStructArgumentException.protocolError("metadata", ex);
         }
 
         var bookmarks = this.readBookmarks(metadata);
@@ -80,7 +80,7 @@ public class DefaultBeginMessageDecoder extends AbstractTransactionInitiatingMes
                     type,
                     notificationsConfig);
         } catch (PackstreamReaderException ex) {
-            throw new IllegalStructArgumentException("metadata", ex);
+            throw IllegalStructArgumentException.protocolError("metadata", ex);
         }
     }
 

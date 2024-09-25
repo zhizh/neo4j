@@ -63,11 +63,11 @@ public final class JsonHelper {
         } catch (com.fasterxml.jackson.core.JsonParseException e) {
             String message = e.getMessage().split("\\r?\\n")[0];
             JsonLocation location = e.getLocation();
-            throw new JsonParseException(
-                    String.format("%s [line: %d, column: %d]", message, location.getLineNr(), location.getColumnNr()),
-                    e);
+            // DRI-043
+            throw JsonParseException.jsonParsingException(location.getLineNr(), location.getColumnNr(), message, e);
         } catch (IOException e) {
-            throw new JsonParseException(e);
+            // DRI-042
+            throw JsonParseException.jsonParsingException(e);
         }
     }
 

@@ -247,7 +247,8 @@ public final class PackstreamBuf implements ReferenceCounted {
         var actual = TypeMarker.byEncoded(mb);
 
         if (actual != expected) {
-            throw new UnexpectedTypeMarkerException(expected, actual);
+            // DRI-031
+            throw UnexpectedTypeMarkerException.wrongType(String.valueOf(mb), expected, actual);
         }
 
         if (expected.getLengthPrefix() == LengthPrefix.NIBBLE) {
@@ -262,7 +263,7 @@ public final class PackstreamBuf implements ReferenceCounted {
         var marker = TypeMarker.byEncoded(mb);
 
         if (marker.getType() != type) {
-            throw new UnexpectedTypeException(type, marker);
+            throw UnexpectedTypeException.invalidType(type, marker);
         }
 
         long length;
@@ -273,7 +274,7 @@ public final class PackstreamBuf implements ReferenceCounted {
         }
 
         if (limit > 0 && length > limit) {
-            throw new LimitExceededException(limit, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(limit, length);
         }
 
         return length;
@@ -501,7 +502,7 @@ public final class PackstreamBuf implements ReferenceCounted {
         var marker = this.readMarker();
 
         if (marker.getType() != BOOLEAN) {
-            throw new UnexpectedTypeException(BOOLEAN, marker);
+            throw UnexpectedTypeException.invalidType(BOOLEAN, marker);
         }
 
         return marker == TRUE;
@@ -516,7 +517,7 @@ public final class PackstreamBuf implements ReferenceCounted {
         var marker = this.readMarker();
 
         if (marker.getType() != BOOLEAN) {
-            throw new UnexpectedTypeException(BOOLEAN, marker);
+            throw UnexpectedTypeException.invalidType(BOOLEAN, marker);
         }
 
         return this;
@@ -547,7 +548,7 @@ public final class PackstreamBuf implements ReferenceCounted {
         var marker = TypeMarker.byEncoded(m);
 
         if (marker.getType() != INT) {
-            throw new UnexpectedTypeException(INT, marker);
+            throw UnexpectedTypeException.invalidType(INT, marker);
         }
 
         switch (marker) {
@@ -574,7 +575,7 @@ public final class PackstreamBuf implements ReferenceCounted {
         var marker = TypeMarker.byEncoded(m);
 
         if (marker.getType() != INT) {
-            throw new UnexpectedTypeException(INT, marker);
+            throw UnexpectedTypeException.invalidType(INT, marker);
         }
 
         switch (marker) {
@@ -779,12 +780,12 @@ public final class PackstreamBuf implements ReferenceCounted {
     public ByteBuf readBytes(long limit) throws PackstreamReaderException {
         var marker = this.readMarker();
         if (marker.getType() != Type.BYTES) {
-            throw new UnexpectedTypeException(Type.BYTES, marker);
+            throw UnexpectedTypeException.invalidType(Type.BYTES, marker);
         }
 
         var length = marker.getLengthPrefix().readFrom(this.delegate);
         if (limit > 0 && length > limit) {
-            throw new LimitExceededException(limit, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(limit, length);
         }
 
         return this.readBytesValue(length);
@@ -800,12 +801,12 @@ public final class PackstreamBuf implements ReferenceCounted {
     public PackstreamBuf skipBytes(long limit) throws PackstreamReaderException {
         var marker = this.readMarker();
         if (marker.getType() != Type.BYTES) {
-            throw new UnexpectedTypeException(Type.BYTES, marker);
+            throw UnexpectedTypeException.invalidType(Type.BYTES, marker);
         }
 
         var length = marker.getLengthPrefix().readFrom(this.delegate);
         if (limit > 0 && length > limit) {
-            throw new LimitExceededException(limit, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(limit, length);
         }
 
         while (length > 0) {
@@ -856,7 +857,7 @@ public final class PackstreamBuf implements ReferenceCounted {
     private ByteBuf readBytesValue(long length) throws LimitExceededException {
         // JVM does not support arrays beyond 2^31-1 elements
         if (length > Integer.MAX_VALUE) {
-            throw new LimitExceededException(Integer.MAX_VALUE, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(Integer.MAX_VALUE, length);
         }
 
         return this.delegate.readSlice((int) length);
@@ -1190,7 +1191,7 @@ public final class PackstreamBuf implements ReferenceCounted {
     private <O> List<O> readListValue(long length, Reader<O> reader) throws PackstreamReaderException {
         // Collection API does not permit more than 2^31-1 items in a given list
         if (length > Integer.MAX_VALUE) {
-            throw new LimitExceededException(Integer.MAX_VALUE, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(Integer.MAX_VALUE, length);
         }
 
         var elements = new ArrayList<O>();
@@ -1375,14 +1376,14 @@ public final class PackstreamBuf implements ReferenceCounted {
     private <O> Map<String, O> readMapValue(long length, Reader<O> reader) throws PackstreamReaderException {
         // Collection API does not permit more than 2^31-1 items in a given map
         if (length > Integer.MAX_VALUE) {
-            throw new LimitExceededException(Integer.MAX_VALUE, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(Integer.MAX_VALUE, length);
         }
 
         var elements = new HashMap<String, O>();
         for (var i = 0; i < length; ++i) {
             var key = this.readString();
             if (elements.containsKey(key)) {
-                throw new PackstreamReaderException("Duplicate map key: \"" + key + "\"");
+                throw PackstreamReaderException.duplicateMapKey(key);
             }
 
             var value = reader.read(this);
@@ -1442,7 +1443,7 @@ public final class PackstreamBuf implements ReferenceCounted {
     public <O> Map<String, O> readMap(long limit, Reader<O> reader) throws PackstreamReaderException {
         var length = this.readLengthPrefixMarker(MAP, limit);
         if (limit > 0 && length > limit) {
-            throw new LimitExceededException(limit, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(limit, length);
         }
 
         return this.readMapValue(length, reader);
@@ -1451,7 +1452,7 @@ public final class PackstreamBuf implements ReferenceCounted {
     public PackstreamBuf skipMap(long limit) throws PackstreamReaderException {
         var length = this.readLengthPrefixMarker(MAP, limit);
         if (limit > 0 && length > limit) {
-            throw new LimitExceededException(limit, length);
+            throw LimitExceededException.protocolMessageLengthLimitOverflow(limit, length);
         }
 
         for (var i = 0; i < length; ++i) {
@@ -1621,7 +1622,10 @@ public final class PackstreamBuf implements ReferenceCounted {
         var header = this.readStructHeader();
 
         return registry.getReader(header)
-                .orElseThrow(() -> new UnexpectedStructException(header))
+                .orElseThrow(() -> {
+                    // DRI-002
+                    return UnexpectedStructException.unexpectedStruct(header);
+                })
                 .read(ctx, this, header);
     }
 
