@@ -19,8 +19,8 @@ package org.neo4j.cypher.internal.ast.factory.expression
 import org.neo4j.cypher.internal.ast.ExistsExpression
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher25
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
-import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher6
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.expressions.AllIterablePredicate
 import org.neo4j.cypher.internal.expressions.Equals
@@ -161,7 +161,7 @@ class ExistsExpressionParserTest extends AstParsingTestBase {
     )
 
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           singleQuery(
             match_(
               nodePat(name = Some("m")),

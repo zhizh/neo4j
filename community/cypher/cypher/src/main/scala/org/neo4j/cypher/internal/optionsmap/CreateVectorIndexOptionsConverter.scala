@@ -126,7 +126,7 @@ case class CreateVectorIndexOptionsConverter(context: IndexProviderContext, late
     }
 
     def assertConfigSettingsCorrectTypes(validationRecords: IndexConfigValidationRecords, itemsMap: MapValue): Unit = {
-      // note: in cypher 6 probably should refer to these as INTEGER and STRING respectively
+      // note: in cypher 25 probably should refer to these as INTEGER and STRING respectively
       val validTypes: Map[Class[_], String] =
         Map(
           classOf[IntegralValue] -> "an Integer",

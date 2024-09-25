@@ -31,11 +31,11 @@ case object AllConstraints extends ShowConstraintType {
 sealed trait UniqueConstraints extends ShowConstraintType
 
 object UniqueConstraints {
-  def cypher6: UniqueConstraints = UniqueConstraintsCypher6
+  def cypher25: UniqueConstraints = UniqueConstraintsCypher25
   def cypher5: UniqueConstraints = UniqueConstraintsCypher5
 }
 
-private case object UniqueConstraintsCypher6 extends UniqueConstraints {
+private case object UniqueConstraintsCypher25 extends UniqueConstraints {
   override val output: String = "PROPERTY_UNIQUENESS"
   override val prettyPrint: String = "PROPERTY UNIQUENESS"
   override val description: String = "propertyUniquenessConstraints"
@@ -50,11 +50,11 @@ private case object UniqueConstraintsCypher5 extends UniqueConstraints {
 sealed trait NodeUniqueConstraints extends ShowConstraintType
 
 object NodeUniqueConstraints {
-  def cypher6: NodeUniqueConstraints = NodeUniqueConstraintsCypher6
+  def cypher25: NodeUniqueConstraints = NodeUniqueConstraintsCypher25
   def cypher5: NodeUniqueConstraints = NodeUniqueConstraintsCypher5
 }
 
-private case object NodeUniqueConstraintsCypher6 extends NodeUniqueConstraints {
+private case object NodeUniqueConstraintsCypher25 extends NodeUniqueConstraints {
   override val output: String = "NODE_PROPERTY_UNIQUENESS"
   override val prettyPrint: String = "NODE PROPERTY UNIQUENESS"
   override val description: String = "nodePropertyUniquenessConstraints"
@@ -69,11 +69,11 @@ private case object NodeUniqueConstraintsCypher5 extends NodeUniqueConstraints {
 sealed trait RelUniqueConstraints extends ShowConstraintType
 
 object RelUniqueConstraints {
-  def cypher6: RelUniqueConstraints = RelUniqueConstraintsCypher6
+  def cypher25: RelUniqueConstraints = RelUniqueConstraintsCypher25
   def cypher5: RelUniqueConstraints = RelUniqueConstraintsCypher5
 }
 
-private case object RelUniqueConstraintsCypher6 extends RelUniqueConstraints {
+private case object RelUniqueConstraintsCypher25 extends RelUniqueConstraints {
   override val output: String = "RELATIONSHIP_PROPERTY_UNIQUENESS"
   override val prettyPrint: String = "RELATIONSHIP PROPERTY UNIQUENESS"
   override val description: String = "relationshipPropertyUniquenessConstraints"
@@ -91,11 +91,11 @@ sealed trait ExistsConstraints extends ShowConstraintType {
 }
 
 object ExistsConstraints {
-  def cypher6: ExistsConstraints = ExistsConstraintsCypher6
+  def cypher25: ExistsConstraints = ExistsConstraintsCypher25
   def cypher5: ExistsConstraints = ExistsConstraintsCypher5
 }
 
-private case object ExistsConstraintsCypher6 extends ExistsConstraints {
+private case object ExistsConstraintsCypher25 extends ExistsConstraints {
   override val description: String = "propertyExistenceConstraints"
 }
 
@@ -109,11 +109,11 @@ sealed trait NodeExistsConstraints extends ShowConstraintType {
 }
 
 object NodeExistsConstraints {
-  def cypher6: NodeExistsConstraints = NodeExistsConstraintsCypher6
+  def cypher25: NodeExistsConstraints = NodeExistsConstraintsCypher25
   def cypher5: NodeExistsConstraints = NodeExistsConstraintsCypher5
 }
 
-private case object NodeExistsConstraintsCypher6 extends NodeExistsConstraints {
+private case object NodeExistsConstraintsCypher25 extends NodeExistsConstraints {
   override val description: String = "nodePropertyExistenceConstraints"
 }
 
@@ -127,11 +127,11 @@ sealed trait RelExistsConstraints extends ShowConstraintType {
 }
 
 object RelExistsConstraints {
-  def cypher6: RelExistsConstraints = RelExistsConstraintsCypher6
+  def cypher25: RelExistsConstraints = RelExistsConstraintsCypher25
   def cypher5: RelExistsConstraints = RelExistsConstraintsCypher5
 }
 
-private case object RelExistsConstraintsCypher6 extends RelExistsConstraints {
+private case object RelExistsConstraintsCypher25 extends RelExistsConstraints {
   override val description: String = "relationshipPropertyExistenceConstraints"
 }
 

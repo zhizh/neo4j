@@ -1054,7 +1054,7 @@ class SubqueryCallSemanticAnalysisTest
            |""".stripMargin
 
       withClue(query) {
-        val result = runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher6), query)
+        val result = runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), query)
         result.errors should be(empty)
 
         val statement = result.state.statement().asInstanceOf[SingleQuery]
@@ -1134,7 +1134,7 @@ class SubqueryCallSemanticAnalysisTest
            |RETURN $finalReturn
            |""".stripMargin
       withClue(query) {
-        val result = runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher6), query)
+        val result = runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), query)
         result.errors should be(empty)
 
         val statement = result.state.statement().asInstanceOf[SingleQuery]

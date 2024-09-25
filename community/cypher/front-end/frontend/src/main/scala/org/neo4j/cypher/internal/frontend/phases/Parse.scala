@@ -50,8 +50,8 @@ case class Parse(useAntlr: Boolean, version: CypherVersion) extends Phase[BaseCo
       version match {
         case CypherVersion.Cypher5 =>
           JavaCCParser.parse(query, exceptionFactory, notificationLogger)
-        case CypherVersion.Cypher6 =>
-          throw new IllegalArgumentException(s"internal.cypher.parser.antlr_enabled=false is not allowed in Cypher 6")
+        case CypherVersion.Cypher25 =>
+          throw new IllegalArgumentException(s"internal.cypher.parser.antlr_enabled=false is not allowed in Cypher 25")
       }
     }
   }

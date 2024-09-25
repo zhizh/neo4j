@@ -17,9 +17,9 @@
 package org.neo4j.cypher.internal.ast.factory.expression
 
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher25
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
-import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher6
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.expressions
 import org.neo4j.cypher.internal.expressions.Variable
@@ -101,7 +101,7 @@ class VariableParserTest extends AstParsingTestBase
                |"${curr}var"
                | ^""".stripMargin
           )
-        case Cypher6 if curr == "$" || curr == "¢" || curr == "£" =>
+        case Cypher25 if curr == "$" || curr == "¢" || curr == "£" =>
           _.withSyntaxError(
             s"""Invalid input '$curr': expected an identifier (line 1, column 1 (offset: 0))
                |"${curr}var"

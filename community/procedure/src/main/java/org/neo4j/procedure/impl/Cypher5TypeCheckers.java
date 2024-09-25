@@ -84,7 +84,7 @@ import org.neo4j.values.virtual.ListValue;
 import org.neo4j.values.virtual.MapValue;
 
 // Type checkers only supports cypher 5 for now.
-// Will probably also need cypher 6 support at some point in the future when new types are introduced in 6 only.
+// Will probably also need cypher 25 support at some point in the future when new types are introduced in 25 only.
 public class Cypher5TypeCheckers {
     private static final ExpressionEvaluator CYPHER_5_EVALUATOR = Evaluator.expressionEvaluator(CypherVersion.Cypher5);
 

@@ -133,8 +133,8 @@ final class SchemaNames {
      * This is a literal copy of {@code javax.lang.model.SourceVersion#isIdentifier(CharSequence)} included here to
      * be not dependent on the compiler module.
      *
-     * This defaults to Cypher6 as it is safer to quote deprecated unicodes in Cypher5 already.
-     * E.g \u0085 is deprecated in Cypher5, and removed in Cypher6, this function will therefore return false if
+     * This defaults to Cypher25 as it is safer to quote deprecated unicodes in Cypher5 already.
+     * E.g \u0085 is deprecated in Cypher5, and removed in Cypher25, this function will therefore return false if
      * an identifier contains that character, resulting in the identifier being quoted in all versions.
      *
      * @param name A possible Java identifier
@@ -144,12 +144,12 @@ final class SchemaNames {
 
         String id = name.toString();
         int cp = id.codePointAt(0);
-        if (!UnicodeHelper.isIdentifierStart(cp, CypherVersion.Cypher6)) {
+        if (!UnicodeHelper.isIdentifierStart(cp, CypherVersion.Cypher25)) {
             return false;
         }
         for (int i = Character.charCount(cp); i < id.length(); i += Character.charCount(cp)) {
             cp = id.codePointAt(i);
-            if (!UnicodeHelper.isIdentifierPart(cp, CypherVersion.Cypher6)) {
+            if (!UnicodeHelper.isIdentifierPart(cp, CypherVersion.Cypher25)) {
                 return false;
             }
         }

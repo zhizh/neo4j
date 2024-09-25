@@ -440,7 +440,7 @@ class CountExpressionSemanticAnalysisTest
          |} > 5
          |RETURN person.name
      """.stripMargin) {
-    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher6), testName).errors.toSet shouldEqual Set(
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
       SemanticError(
         "All sub queries in an UNION must have the same return column names",
         InputPosition(67, 5, 5)

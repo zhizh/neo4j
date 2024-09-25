@@ -270,15 +270,15 @@ object ShowConstraintsCommand {
   ): ShowConstraintType = {
     (internalConstraintType, entityType) match {
       case (schema.ConstraintType.UNIQUE, EntityType.NODE) =>
-        if (returnCypher5Values) NodeUniqueConstraints.cypher5 else NodeUniqueConstraints.cypher6
+        if (returnCypher5Values) NodeUniqueConstraints.cypher5 else NodeUniqueConstraints.cypher25
       case (schema.ConstraintType.UNIQUE, EntityType.RELATIONSHIP) =>
-        if (returnCypher5Values) RelUniqueConstraints.cypher5 else RelUniqueConstraints.cypher6
+        if (returnCypher5Values) RelUniqueConstraints.cypher5 else RelUniqueConstraints.cypher25
       case (schema.ConstraintType.UNIQUE_EXISTS, EntityType.NODE)         => NodeKeyConstraints
       case (schema.ConstraintType.UNIQUE_EXISTS, EntityType.RELATIONSHIP) => RelKeyConstraints
       case (schema.ConstraintType.EXISTS, EntityType.NODE) =>
-        if (returnCypher5Values) NodeExistsConstraints.cypher5 else NodeExistsConstraints.cypher6
+        if (returnCypher5Values) NodeExistsConstraints.cypher5 else NodeExistsConstraints.cypher25
       case (schema.ConstraintType.EXISTS, EntityType.RELATIONSHIP) =>
-        if (returnCypher5Values) RelExistsConstraints.cypher5 else RelExistsConstraints.cypher6
+        if (returnCypher5Values) RelExistsConstraints.cypher5 else RelExistsConstraints.cypher25
       case (schema.ConstraintType.PROPERTY_TYPE, EntityType.NODE)         => NodePropTypeConstraints
       case (schema.ConstraintType.PROPERTY_TYPE, EntityType.RELATIONSHIP) => RelPropTypeConstraints
       case (schema.ConstraintType.ENDPOINT, EntityType.RELATIONSHIP)      => RelationshipEndpointConstraints

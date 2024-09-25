@@ -709,10 +709,10 @@ object ExpressionStringifier {
     else {
       val isJavaIdentifier =
         Strings.codePoints(txt).limit(1).allMatch(p =>
-          UnicodeHelper.isIdentifierStart(p, CypherVersion.Cypher6) || orGlobbedCharacter(p)
+          UnicodeHelper.isIdentifierStart(p, CypherVersion.Cypher25) || orGlobbedCharacter(p)
         ) &&
           Strings.codePoints(txt).skip(1).allMatch(p =>
-            UnicodeHelper.isIdentifierPart(p, CypherVersion.Cypher6) || orGlobbedCharacter(p)
+            UnicodeHelper.isIdentifierPart(p, CypherVersion.Cypher25) || orGlobbedCharacter(p)
           )
       if (!isJavaIdentifier)
         s"`$escaped`"

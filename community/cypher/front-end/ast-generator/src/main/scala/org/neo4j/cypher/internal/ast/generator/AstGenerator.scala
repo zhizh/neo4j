@@ -1619,12 +1619,12 @@ class AstGenerator(
     returnCypher5Values <- const(whenAstDifferUseCypherVersion.equals(CypherVersion.Cypher5))
     constraintType <- oneOf(
       AllConstraints,
-      if (returnCypher5Values) UniqueConstraints.cypher5 else UniqueConstraints.cypher6,
-      if (returnCypher5Values) NodeUniqueConstraints.cypher5 else NodeUniqueConstraints.cypher6,
-      if (returnCypher5Values) RelUniqueConstraints.cypher5 else RelUniqueConstraints.cypher6,
-      if (returnCypher5Values) ExistsConstraints.cypher5 else ExistsConstraints.cypher6,
-      if (returnCypher5Values) NodeExistsConstraints.cypher5 else NodeExistsConstraints.cypher6,
-      if (returnCypher5Values) RelExistsConstraints.cypher5 else RelExistsConstraints.cypher6,
+      if (returnCypher5Values) UniqueConstraints.cypher5 else UniqueConstraints.cypher25,
+      if (returnCypher5Values) NodeUniqueConstraints.cypher5 else NodeUniqueConstraints.cypher25,
+      if (returnCypher5Values) RelUniqueConstraints.cypher5 else RelUniqueConstraints.cypher25,
+      if (returnCypher5Values) ExistsConstraints.cypher5 else ExistsConstraints.cypher25,
+      if (returnCypher5Values) NodeExistsConstraints.cypher5 else NodeExistsConstraints.cypher25,
+      if (returnCypher5Values) RelExistsConstraints.cypher5 else RelExistsConstraints.cypher25,
       KeyConstraints,
       NodeKeyConstraints,
       RelKeyConstraints,

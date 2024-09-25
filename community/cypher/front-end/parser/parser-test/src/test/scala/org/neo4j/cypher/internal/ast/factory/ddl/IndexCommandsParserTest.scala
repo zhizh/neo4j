@@ -709,7 +709,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
       }
   }
 
-  // btree loop (fails with nice error in Cypher 5 and just fails to parse in Cypher 6)
+  // btree loop (fails with nice error in Cypher 5 and just fails to parse in Cypher 25)
   Seq(
     "(n1:Person)",
     "()-[n1:R]-()",

@@ -86,8 +86,8 @@ object QueryLanguage {
   val All: Set[QueryLanguage] = Set(Cypher5, Cypher25)
 
   def from(version: CypherVersion): QueryLanguage = version match {
-    case CypherVersion.Cypher5 => QueryLanguage.Cypher5
-    case CypherVersion.Cypher6 => QueryLanguage.Cypher25
+    case CypherVersion.Cypher5  => QueryLanguage.Cypher5
+    case CypherVersion.Cypher25 => QueryLanguage.Cypher25
   }
 
   def toKernelScope(scope: QueryLanguage): org.neo4j.kernel.api.QueryLanguage = scope match {

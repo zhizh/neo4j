@@ -36,8 +36,8 @@ import org.neo4j.cypher.internal.frontend.phases.Monitors
 import org.neo4j.cypher.internal.frontend.phases.ScopedProcedureSignatureResolver
 import org.neo4j.cypher.internal.macros.AssertMacros
 import org.neo4j.cypher.internal.options.CypherVersion
+import org.neo4j.cypher.internal.parser.v25.Cypher25ParserUtil
 import org.neo4j.cypher.internal.parser.v5.Cypher5ParserUtil
-import org.neo4j.cypher.internal.parser.v6.Cypher6ParserUtil
 import org.neo4j.cypher.internal.planner.spi.IDPPlannerName
 import org.neo4j.cypher.internal.planner.spi.PlannerNameFor
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
@@ -105,7 +105,7 @@ class CypherParsing(
    */
   def clearDFACaches(): Unit = {
     Cypher5ParserUtil.clearDFACache()
-    Cypher6ParserUtil.clearDFACache()
+    Cypher25ParserUtil.clearDFACache()
   }
 }
 

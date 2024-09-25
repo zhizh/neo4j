@@ -189,7 +189,7 @@ class OptionReaderTest extends CypherFunSuite {
     org.neo4j.cypher.internal.CypherVersion.values().foreach {
       case experimentalVersion if experimentalVersion.experimental =>
         intercept[InvalidCypherOption](defaultOptions("cypher version" -> experimentalVersion.versionName)) should
-          have message "6 is not a valid option for cypher version. Valid options are: 5"
+          have message s"$experimentalVersion is not a valid option for cypher version. Valid options are: 5"
       case version =>
         defaultOptions("cypher version" -> version.versionName).cypherVersion.actualVersion shouldBe version
     }

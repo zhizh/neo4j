@@ -235,7 +235,7 @@ class SemanticTypeCheckTest extends CypherFunSuite with LoneElement {
 
   test("property references across patterns should not be allowed in INSERT ") {
     runReferenceAcrossPatternsTests("INSERT", CypherVersion.Cypher5)
-    runReferenceAcrossPatternsTests("INSERT", CypherVersion.Cypher6)
+    runReferenceAcrossPatternsTests("INSERT", CypherVersion.Cypher25)
   }
 
   test("property references across patterns should be allowed in CREATE, CYPHER 5") {
@@ -247,8 +247,8 @@ class SemanticTypeCheckTest extends CypherFunSuite with LoneElement {
     }
   }
 
-  test("property references across patterns should not be allowed in CREATE, CYPHER 6") {
-    runReferenceAcrossPatternsTests("CREATE", CypherVersion.Cypher6)
+  test("property references across patterns should not be allowed in CREATE, CYPHER 25") {
+    runReferenceAcrossPatternsTests("CREATE", CypherVersion.Cypher25)
   }
 
   private case class SelfReferenceWithinPatternTestQueries(
@@ -306,12 +306,12 @@ class SemanticTypeCheckTest extends CypherFunSuite with LoneElement {
 
   test("property references within patterns should not be allowed in INSERT") {
     runReferenceWithinPatternTests("INSERT", CypherVersion.Cypher5)
-    runReferenceWithinPatternTests("INSERT", CypherVersion.Cypher6)
+    runReferenceWithinPatternTests("INSERT", CypherVersion.Cypher25)
   }
 
   test("property references within patterns should not be allowed in CREATE") {
     runReferenceWithinPatternTests("CREATE", CypherVersion.Cypher5)
-    runReferenceWithinPatternTests("CREATE", CypherVersion.Cypher6)
+    runReferenceWithinPatternTests("CREATE", CypherVersion.Cypher25)
   }
 
   test("property references within patterns should be allowed in MERGE, CYPHER 5") {
@@ -323,8 +323,8 @@ class SemanticTypeCheckTest extends CypherFunSuite with LoneElement {
     }
   }
 
-  test("property references within patterns should not be allowed in MERGE, CYPHER 6") {
-    runReferenceWithinPatternTests("MERGE", CypherVersion.Cypher6)
+  test("property references within patterns should not be allowed in MERGE, CYPHER 25") {
+    runReferenceWithinPatternTests("MERGE", CypherVersion.Cypher25)
   }
 
   private def runPipeline(

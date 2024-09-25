@@ -27,13 +27,13 @@ object UnicodeHelper {
     isAllowedUnicode(p, identifierPartUnicodesPerCypherVersion(cypherVersion))
 
   def identifierPartUnicodesPerCypherVersion(cypherVersion: CypherVersion): Seq[String] = cypherVersion match {
-    case CypherVersion.Cypher6 => identifierPartUnicodesCypher6
-    case _                     => deprecatedIdentifierPartUnicodes ++ identifierPartUnicodesCypher6
+    case CypherVersion.Cypher25 => identifierPartUnicodesCypher25
+    case _                      => deprecatedIdentifierPartUnicodes ++ identifierPartUnicodesCypher25
   }
 
   def identifierStartUnicodesPerCypherVersion(cypherVersion: CypherVersion): Seq[String] = cypherVersion match {
-    case CypherVersion.Cypher6 => identifierStartUnicodesCypher6
-    case _                     => deprecatedIdentifierStartUnicodes ++ identifierStartUnicodesCypher6
+    case CypherVersion.Cypher25 => identifierStartUnicodesCypher25
+    case _                      => deprecatedIdentifierStartUnicodes ++ identifierStartUnicodesCypher25
   }
 
   private def isAllowedUnicode(p: Int, unicodes: Seq[String]): Boolean = unicodes.exists(unicodeRange => {
@@ -52,7 +52,7 @@ object UnicodeHelper {
   )
 
   // all chars for which Character.isJavaIdentifierStart(c) && Character.getType(c) != Character.CURRENCY_SYMBOL is true (in Java 17)
-  private val identifierStartUnicodesCypher6 = Seq(
+  private val identifierStartUnicodesCypher25 = Seq(
     "\u0041-\u005a",
     "\u005f",
     "\u0061-\u007a",
@@ -468,7 +468,7 @@ object UnicodeHelper {
     "\ufff9-\ufffb"
   )
 
-  val identifierPartUnicodesCypher6: Seq[String] = Seq(
+  val identifierPartUnicodesCypher25: Seq[String] = Seq(
     "\u0030-\u0039",
     "\u0041-\u005a",
     "\u005f",

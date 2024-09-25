@@ -25,7 +25,7 @@ class UnionSemanticAnalysisTest
     extends CypherFunSuite with NameBasedSemanticAnalysisTestSuite {
 
   test(
-    "Union's must have same return ordering: Errors in Cypher 6"
+    "Union's must have same return ordering: Errors in Cypher 25"
   ) {
     val queries: Seq[(String, InputPosition)] = Seq(
       ("MATCH (a)-[]-(b) RETURN a, b UNION MATCH (c)-[]-(d) RETURN c as b, d as a", InputPosition(0, 1, 1)),
@@ -43,7 +43,7 @@ class UnionSemanticAnalysisTest
       ("RETURN COUNT { MATCH (a)-[]-(b) RETURN a, b UNION MATCH (a)-[]-(b) RETURN b, a }", InputPosition(15, 1, 16))
     )
     queries.foreach { query =>
-      runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher6), query._1).errors.toSet shouldEqual Set(
+      runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), query._1).errors.toSet shouldEqual Set(
         SemanticError(
           "All subqueries in a UNION [ALL] must have the same ordering for the return columns.",
           query._2

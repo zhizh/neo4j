@@ -213,11 +213,11 @@ case object CypherVersion extends CypherOptionCompanion[CypherVersion](name = "c
     override def actualVersion: internal.CypherVersion = internal.CypherVersion.Cypher5
   }
 
-  case object cypher6 extends CypherVersion("6") {
-    override def actualVersion: internal.CypherVersion = internal.CypherVersion.Cypher6
+  case object cypher25 extends CypherVersion("25") {
+    override def actualVersion: internal.CypherVersion = internal.CypherVersion.Cypher25
   }
 
-  override def values: Set[CypherVersion] = Set(cypher5, cypher6)
+  override def values: Set[CypherVersion] = Set(cypher5, cypher25)
   override def supportedValues: Seq[CypherVersion] = super.supportedValues.filterNot(_.actualVersion.experimental)
 
   implicit val hasDefault: OptionDefault[CypherVersion] = OptionDefault.create(default)

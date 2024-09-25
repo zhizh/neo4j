@@ -221,21 +221,21 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       ),
       (
         "SHOW NODE UNIQUENESS CONSTRAINTS",
-        showConstraint(ast.NodeUniqueConstraints.cypher6, _, _, _),
+        showConstraint(ast.NodeUniqueConstraints.cypher25, _, _, _),
         "SHOW UNIQUE CONSTRAINTS",
-        showConstraint(ast.UniqueConstraints.cypher6, _, _, _)
+        showConstraint(ast.UniqueConstraints.cypher25, _, _, _)
       ),
       (
         "SHOW REL UNIQUE CONSTRAINTS",
-        showConstraint(ast.RelUniqueConstraints.cypher6, _, _, _),
+        showConstraint(ast.RelUniqueConstraints.cypher25, _, _, _),
         "SHOW EXISTENCE CONSTRAINTS",
-        showConstraint(ast.ExistsConstraints.cypher6, _, _, _)
+        showConstraint(ast.ExistsConstraints.cypher25, _, _, _)
       ),
       (
         "SHOW NODE EXIST CONSTRAINTS",
-        showConstraint(ast.NodeExistsConstraints.cypher6, _, _, _),
+        showConstraint(ast.NodeExistsConstraints.cypher25, _, _, _),
         "SHOW REL EXIST CONSTRAINTS",
-        showConstraint(ast.RelExistsConstraints.cypher6, _, _, _)
+        showConstraint(ast.RelExistsConstraints.cypher25, _, _, _)
       ),
       (
         "SHOW PROPERTY TYPE CONSTRAINTS",
@@ -364,7 +364,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         "TERMINATE TRANSACTIONS 'db1-transaction-123'",
         terminateTx(Right(literalString("db1-transaction-123")), _, _, _),
         "SHOW NODE EXISTENCE CONSTRAINTS",
-        showConstraint(ast.NodeExistsConstraints.cypher6, _, _, _)
+        showConstraint(ast.NodeExistsConstraints.cypher25, _, _, _)
       ),
       (
         "SHOW CONSTRAINTS",
@@ -413,7 +413,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         "SHOW SETTINGS",
         showSetting(Left(List.empty), _, _, _),
         "SHOW UNIQUENESS CONSTRAINTS",
-        showConstraint(ast.UniqueConstraints.cypher6, _, _, _)
+        showConstraint(ast.UniqueConstraints.cypher25, _, _, _)
       ),
       (
         "SHOW CONSTRAINTS",

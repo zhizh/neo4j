@@ -18,7 +18,7 @@ package org.neo4j.cypher.internal;
 
 public enum CypherVersion {
     Cypher5("5", false),
-    Cypher6("6", true);
+    Cypher25("25", true);
 
     public static final CypherVersion Default = Cypher5;
 

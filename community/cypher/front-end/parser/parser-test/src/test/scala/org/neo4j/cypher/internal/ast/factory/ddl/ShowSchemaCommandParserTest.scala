@@ -792,54 +792,54 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
   private val constraintTypesV1 = Seq(
     ("", AllConstraints),
     ("ALL", AllConstraints),
-    ("UNIQUE", UniqueConstraints.cypher6),
+    ("UNIQUE", UniqueConstraints.cypher25),
     ("NODE KEY", NodeKeyConstraints),
-    ("EXIST", ExistsConstraints.cypher6),
-    ("NODE EXIST", NodeExistsConstraints.cypher6),
-    ("RELATIONSHIP EXIST", RelExistsConstraints.cypher6)
+    ("EXIST", ExistsConstraints.cypher25),
+    ("NODE EXIST", NodeExistsConstraints.cypher25),
+    ("RELATIONSHIP EXIST", RelExistsConstraints.cypher25)
   )
 
   // group of added constraint types in 4 and 5, didn't allow brief/verbose
   private val constraintTypeV2 = Seq(
-    ("NODE UNIQUE", NodeUniqueConstraints.cypher6),
-    ("RELATIONSHIP UNIQUE", RelUniqueConstraints.cypher6),
-    ("REL UNIQUE", RelUniqueConstraints.cypher6),
-    ("UNIQUENESS", UniqueConstraints.cypher6),
-    ("NODE UNIQUENESS", NodeUniqueConstraints.cypher6),
-    ("RELATIONSHIP UNIQUENESS", RelUniqueConstraints.cypher6),
-    ("REL UNIQUENESS", RelUniqueConstraints.cypher6),
+    ("NODE UNIQUE", NodeUniqueConstraints.cypher25),
+    ("RELATIONSHIP UNIQUE", RelUniqueConstraints.cypher25),
+    ("REL UNIQUE", RelUniqueConstraints.cypher25),
+    ("UNIQUENESS", UniqueConstraints.cypher25),
+    ("NODE UNIQUENESS", NodeUniqueConstraints.cypher25),
+    ("RELATIONSHIP UNIQUENESS", RelUniqueConstraints.cypher25),
+    ("REL UNIQUENESS", RelUniqueConstraints.cypher25),
     ("KEY", KeyConstraints),
     ("RELATIONSHIP KEY", RelKeyConstraints),
     ("REL KEY", RelKeyConstraints),
-    ("PROPERTY EXISTENCE", ExistsConstraints.cypher6),
-    ("PROPERTY EXIST", ExistsConstraints.cypher6),
-    ("EXISTENCE", ExistsConstraints.cypher6),
-    ("NODE PROPERTY EXISTENCE", NodeExistsConstraints.cypher6),
-    ("NODE PROPERTY EXIST", NodeExistsConstraints.cypher6),
-    ("NODE EXISTENCE", NodeExistsConstraints.cypher6),
-    ("RELATIONSHIP PROPERTY EXISTENCE", RelExistsConstraints.cypher6),
-    ("RELATIONSHIP PROPERTY EXIST", RelExistsConstraints.cypher6),
-    ("RELATIONSHIP EXISTENCE", RelExistsConstraints.cypher6),
-    ("REL PROPERTY EXISTENCE", RelExistsConstraints.cypher6),
-    ("REL PROPERTY EXIST", RelExistsConstraints.cypher6),
-    ("REL EXISTENCE", RelExistsConstraints.cypher6),
-    ("REL EXIST", RelExistsConstraints.cypher6),
+    ("PROPERTY EXISTENCE", ExistsConstraints.cypher25),
+    ("PROPERTY EXIST", ExistsConstraints.cypher25),
+    ("EXISTENCE", ExistsConstraints.cypher25),
+    ("NODE PROPERTY EXISTENCE", NodeExistsConstraints.cypher25),
+    ("NODE PROPERTY EXIST", NodeExistsConstraints.cypher25),
+    ("NODE EXISTENCE", NodeExistsConstraints.cypher25),
+    ("RELATIONSHIP PROPERTY EXISTENCE", RelExistsConstraints.cypher25),
+    ("RELATIONSHIP PROPERTY EXIST", RelExistsConstraints.cypher25),
+    ("RELATIONSHIP EXISTENCE", RelExistsConstraints.cypher25),
+    ("REL PROPERTY EXISTENCE", RelExistsConstraints.cypher25),
+    ("REL PROPERTY EXIST", RelExistsConstraints.cypher25),
+    ("REL EXISTENCE", RelExistsConstraints.cypher25),
+    ("REL EXIST", RelExistsConstraints.cypher25),
     ("NODE PROPERTY TYPE", NodePropTypeConstraints),
     ("RELATIONSHIP PROPERTY TYPE", RelPropTypeConstraints),
     ("REL PROPERTY TYPE", RelPropTypeConstraints),
     ("PROPERTY TYPE", PropTypeConstraints)
   )
 
-  // group of constraint types added in Cypher 6 (not valid before that)
+  // group of constraint types added in Cypher 25 (not valid before that)
   private val constraintTypeV3 = Seq(
-    ("PROPERTY UNIQUE", UniqueConstraints.cypher6),
-    ("NODE PROPERTY UNIQUE", NodeUniqueConstraints.cypher6),
-    ("RELATIONSHIP PROPERTY UNIQUE", RelUniqueConstraints.cypher6),
-    ("REL PROPERTY UNIQUE", RelUniqueConstraints.cypher6),
-    ("PROPERTY UNIQUENESS", UniqueConstraints.cypher6),
-    ("NODE PROPERTY UNIQUENESS", NodeUniqueConstraints.cypher6),
-    ("RELATIONSHIP PROPERTY UNIQUENESS", RelUniqueConstraints.cypher6),
-    ("REL PROPERTY UNIQUENESS", RelUniqueConstraints.cypher6)
+    ("PROPERTY UNIQUE", UniqueConstraints.cypher25),
+    ("NODE PROPERTY UNIQUE", NodeUniqueConstraints.cypher25),
+    ("RELATIONSHIP PROPERTY UNIQUE", RelUniqueConstraints.cypher25),
+    ("REL PROPERTY UNIQUE", RelUniqueConstraints.cypher25),
+    ("PROPERTY UNIQUENESS", UniqueConstraints.cypher25),
+    ("NODE PROPERTY UNIQUENESS", NodeUniqueConstraints.cypher25),
+    ("RELATIONSHIP PROPERTY UNIQUENESS", RelUniqueConstraints.cypher25),
+    ("REL PROPERTY UNIQUENESS", RelUniqueConstraints.cypher25)
   )
 
   Seq("CONSTRAINT", "CONSTRAINTS").foreach {
@@ -966,7 +966,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
           )(pos),
           withFromYield(returnAllItems.withDefaultOrderOnColumns(List("labelsOrTypes")))
         ),
-      RelExistsConstraints.cypher6,
+      RelExistsConstraints.cypher25,
       RelExistsConstraints.cypher5,
       comparePosition = false
     )
@@ -984,7 +984,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
           )(pos),
           withFromYield(returnAllItems)
         ),
-      UniqueConstraints.cypher6,
+      UniqueConstraints.cypher25,
       UniqueConstraints.cypher5,
       comparePosition = false
     )
@@ -1071,7 +1071,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
           )(pos),
           withFromYield(returnAllItems.withDefaultOrderOnColumns(List("CONSTRAINT", "OUTPUT")))
         ),
-      ExistsConstraints.cypher6,
+      ExistsConstraints.cypher25,
       ExistsConstraints.cypher5,
       comparePosition = false
     )
@@ -1086,7 +1086,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
           List.empty,
           yieldAll = false
         )(pos)),
-      NodeExistsConstraints.cypher6,
+      NodeExistsConstraints.cypher25,
       NodeExistsConstraints.cypher5,
       comparePosition = false
     )
@@ -1705,19 +1705,19 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
   constraintTypeV3.foreach {
     case (constraintTypeKeyword, _) =>
       test(s"SHOW $constraintTypeKeyword CONSTRAINTS BRIEF") {
-        assertFailsOnBriefVerboseWhenIntroducedInCypher6("BRIEF", constraintTypeKeyword)
+        assertFailsOnBriefVerboseWhenIntroducedInCypher25("BRIEF", constraintTypeKeyword)
       }
 
       test(s"SHOW $constraintTypeKeyword CONSTRAINT BRIEF OUTPUT") {
-        assertFailsOnBriefVerboseWhenIntroducedInCypher6("BRIEF", constraintTypeKeyword)
+        assertFailsOnBriefVerboseWhenIntroducedInCypher25("BRIEF", constraintTypeKeyword)
       }
 
       test(s"SHOW $constraintTypeKeyword CONSTRAINT VERBOSE") {
-        assertFailsOnBriefVerboseWhenIntroducedInCypher6("VERBOSE", constraintTypeKeyword)
+        assertFailsOnBriefVerboseWhenIntroducedInCypher25("VERBOSE", constraintTypeKeyword)
       }
 
       test(s"SHOW $constraintTypeKeyword CONSTRAINTS VERBOSE OUTPUT") {
-        assertFailsOnBriefVerboseWhenIntroducedInCypher6("VERBOSE", constraintTypeKeyword)
+        assertFailsOnBriefVerboseWhenIntroducedInCypher25("VERBOSE", constraintTypeKeyword)
       }
   }
 
@@ -1951,7 +1951,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
       }
   }
 
-  private def assertFailsOnBriefVerboseWhenIntroducedInCypher6(keyword: String, constraintTypeKeyword: String) = {
+  private def assertFailsOnBriefVerboseWhenIntroducedInCypher25(keyword: String, constraintTypeKeyword: String) = {
     val errorKeyword = constraintTypeKeyword.split(" ").last
     failsParsing[Statements]
       .in {

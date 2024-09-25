@@ -18,15 +18,15 @@ package org.neo4j.cypher.internal.ast.factory.query
 
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher25
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
-import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher6
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 
 class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION RETURN 2 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(return_(aliasedReturnItem(literal(2), "a")))
         ))
@@ -40,7 +40,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION DISTINCT RETURN 2 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(return_(aliasedReturnItem(literal(2), "a")))
         ))
@@ -54,7 +54,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION ALL RETURN 2 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(return_(aliasedReturnItem(literal(2), "a")))
         ).all)
@@ -69,7 +69,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION RETURN 2 AS b") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(return_(aliasedReturnItem(literal(2), "b")))
         ))
@@ -84,7 +84,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION DISTINCT RETURN 2 AS b") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(return_(aliasedReturnItem(literal(2), "b")))
         ))
@@ -99,7 +99,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION ALL RETURN 2 AS b") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(return_(aliasedReturnItem(literal(2), "b")))
         ).all)
@@ -114,7 +114,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION FINISH") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(finish())
         ))
@@ -129,7 +129,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION DISTINCT FINISH") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(finish())
         ))
@@ -144,7 +144,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION ALL FINISH") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
           singleQuery(finish())
         ).all)
@@ -158,7 +158,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("FINISH UNION FINISH") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(finish()),
           singleQuery(finish())
         ))
@@ -172,7 +172,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("FINISH UNION DISTINCT FINISH") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(finish()),
           singleQuery(finish())
         ))
@@ -186,7 +186,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("FINISH UNION ALL FINISH") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(finish()),
           singleQuery(finish())
         ).all)
@@ -201,7 +201,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("FINISH UNION RETURN 2 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(finish()),
           singleQuery(return_(aliasedReturnItem(literal(2), "a")))
         ))
@@ -216,7 +216,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("FINISH UNION DISTINCT RETURN 2 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(finish()),
           singleQuery(return_(aliasedReturnItem(literal(2), "a")))
         ))
@@ -231,7 +231,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("FINISH UNION ALL RETURN 2 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(union(
+      case Cypher25 => _.toAst(union(
           singleQuery(finish()),
           singleQuery(return_(aliasedReturnItem(literal(2), "a")))
         ).all)
@@ -256,7 +256,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION RETURN 2 AS a UNION RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -281,7 +281,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION DISTINCT RETURN 2 AS a UNION RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -306,7 +306,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION RETURN 2 AS a UNION DISTINCT RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -331,7 +331,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION DISTINCT RETURN 2 AS a UNION DISTINCT RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -356,7 +356,7 @@ class UnionParserTest extends AstParsingTestBase {
 
   test("RETURN 1 AS a UNION ALL RETURN 2 AS a UNION ALL RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -382,7 +382,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION RETURN 2 AS a UNION ALL RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -408,7 +408,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION DISTINCT RETURN 2 AS a UNION ALL RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -434,7 +434,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION ALL RETURN 2 AS a UNION RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),
@@ -460,7 +460,7 @@ class UnionParserTest extends AstParsingTestBase {
   // invalid Cypher accepted by parser
   test("RETURN 1 AS a UNION ALL RETURN 2 AS a UNION DISTINCT RETURN 3 AS a") {
     parsesIn[Statement] {
-      case Cypher6 => _.toAst(
+      case Cypher25 => _.toAst(
           union(
             union(
               singleQuery(return_(aliasedReturnItem(literal(1), "a"))),

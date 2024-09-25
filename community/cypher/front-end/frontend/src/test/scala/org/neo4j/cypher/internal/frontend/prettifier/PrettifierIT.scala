@@ -16,7 +16,7 @@
  */
 package org.neo4j.cypher.internal.frontend.prettifier
 
-import PrettifierTestSupport.ChangedBetween5And6
+import PrettifierTestSupport.ChangedBetween5And25
 import PrettifierTestSupport.SameAcrossVersions
 import PrettifierTestSupport.Test
 import PrettifierTestSupport.TestConverter
@@ -855,157 +855,157 @@ class PrettifierIT extends CypherFunSuite {
   )
 
   def constraintCommandTests(): Seq[Test] = Seq(
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `foo` FOR (n:A) REQUIRE n.p IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT $foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT $foo FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT $foo FOR (n:A) REQUIRE (n.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create OR replace CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE OR REPLACE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE OR REPLACE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT foo IF NOT EXISTS FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT foo IF NOT EXISTS FOR (n:A) REQUIRE (n.p) IS NODE KEY",
       "CREATE CONSTRAINT foo IF NOT EXISTS FOR (n:A) REQUIRE (n.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT foo FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS NODE KEY",
       "CREATE CONSTRAINT `$foo` FOR (n:A) REQUIRE (n.p1, n.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {indexProvider: 'range-1.0'}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {indexProvider: "range-1.0"}""",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {indexProvider: "range-1.0"}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT myConstraint FOR (n:A) require (n.p) IS NODE KEY OPTIONS {`indexProvider`: 'range-1.0', indexConfig: {}}",
       """CREATE CONSTRAINT myConstraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}""",
       """CREATE CONSTRAINT myConstraint FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT FOR (n:A) require (n.p) IS NODE KEY OPTIONS {indexConfig: {someConfig: 'toShowItCanBePrettified' }}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}""",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {nonValidOption : 42, `backticks.stays.when.needed`: 'theAnswer'}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}""",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "CREATE constraint FOR (n:A) REQUIRE (n.p) IS NODE KEY OPtiONS {}",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS NODE KEY OPTIONS {}""",
       """CREATE CONSTRAINT FOR (n:A) REQUIRE (n.p) IS KEY OPTIONS {}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT foo FOR ()-[r:R]->() REQUIRE r.p IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `foo` FOR ()<-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `$foo` FOR ()<-[r:R]->() REQUIRE (r.p) IS REL KEY",
       "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create OR replace CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE OR REPLACE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE OR REPLACE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT foo IF NOT EXISTS FOR ()-[r:R]-() REQUIRE (r.p) IS KEY",
       "CREATE CONSTRAINT foo IF NOT EXISTS FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo IF NOT EXISTS FOR ()-[r:R]-() REQUIRE (r.p) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT foo FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS RELATIONSHIP KEY",
       "CREATE CONSTRAINT `$foo` FOR ()-[r:R]-() REQUIRE (r.p1, r.p2) IS KEY"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {indexProvider: 'range-1.0'}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {indexProvider: "range-1.0"}""",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {indexProvider: "range-1.0"}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT myConstraint FOR ()-[r:R]-() require (r.p) IS RELATIONSHIP KEY OPTIONS {`indexProvider`: 'range-1.0', indexConfig: {}}",
       """CREATE CONSTRAINT myConstraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}""",
       """CREATE CONSTRAINT myConstraint FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {indexProvider: "range-1.0", indexConfig: {}}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "create CONSTRAINT FOR ()-[r:R]-() require (r.p) IS RELATIONSHIP KEY OPTIONS {indexConfig: {someConfig: 'toShowItCanBePrettified' }}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}""",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {indexConfig: {someConfig: "toShowItCanBePrettified"}}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {nonValidOption : 42, `backticks.stays.when.needed`: 'theAnswer'}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}""",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {nonValidOption: 42, `backticks.stays.when.needed`: "theAnswer"}"""
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "CREATE constraint FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPtiONS {}",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS RELATIONSHIP KEY OPTIONS {}""",
       """CREATE CONSTRAINT FOR ()-[r:R]-() REQUIRE (r.p) IS KEY OPTIONS {}"""
@@ -1227,42 +1227,42 @@ class PrettifierIT extends CypherFunSuite {
       "SHOW RELATIONSHIP PROPERTY EXISTENCE CONSTRAINTS",
     "show rel property EXISTence cOnStRaInTs" ->
       "SHOW RELATIONSHIP PROPERTY EXISTENCE CONSTRAINTS",
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show unique constraint",
       "SHOW UNIQUENESS CONSTRAINTS",
       "SHOW PROPERTY UNIQUENESS CONSTRAINTS"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show node unique constraint",
       "SHOW NODE UNIQUENESS CONSTRAINTS",
       "SHOW NODE PROPERTY UNIQUENESS CONSTRAINTS"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show REL unique constraint",
       "SHOW RELATIONSHIP UNIQUENESS CONSTRAINTS",
       "SHOW RELATIONSHIP PROPERTY UNIQUENESS CONSTRAINTS"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show Relationship unique constraint",
       "SHOW RELATIONSHIP UNIQUENESS CONSTRAINTS",
       "SHOW RELATIONSHIP PROPERTY UNIQUENESS CONSTRAINTS"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show uniqueness constraint",
       "SHOW UNIQUENESS CONSTRAINTS",
       "SHOW PROPERTY UNIQUENESS CONSTRAINTS"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show node uniqueness constraint",
       "SHOW NODE UNIQUENESS CONSTRAINTS",
       "SHOW NODE PROPERTY UNIQUENESS CONSTRAINTS"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show REL uniqueness constraint",
       "SHOW RELATIONSHIP UNIQUENESS CONSTRAINTS",
       "SHOW RELATIONSHIP PROPERTY UNIQUENESS CONSTRAINTS"
     ),
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show Relationship uniqueness constraint",
       "SHOW RELATIONSHIP UNIQUENESS CONSTRAINTS",
       "SHOW RELATIONSHIP PROPERTY UNIQUENESS CONSTRAINTS"
@@ -1292,7 +1292,7 @@ class PrettifierIT extends CypherFunSuite {
     "show constraint  YIELD *" ->
       """SHOW ALL CONSTRAINTS
         |YIELD *""".stripMargin,
-    ChangedBetween5And6(
+    ChangedBetween5And25(
       "show UNIQUE constraint  YIELD * Return DISTINCT type",
       """SHOW UNIQUENESS CONSTRAINTS
         |YIELD *
@@ -3117,15 +3117,15 @@ class PrettifierIT extends CypherFunSuite {
           prettifier.asString(statement) should equal(expected)
         }
       }
-    case ChangedBetween5And6(inputString, expectedCypher5, expectedCypher6AndLater) =>
+    case ChangedBetween5And25(inputString, expectedCypher5, expectedCypher25AndLater) =>
       test(inputString) {
         val statementJavaCc = JavaCCParser.parse(inputString, OpenCypherExceptionFactory(None))
         prettifier.asString(statementJavaCc) should equal(expectedCypher5)
 
         CypherVersion.values().foreach { version =>
-          if (version >= CypherVersion.Cypher6) {
+          if (version >= CypherVersion.Cypher25) {
             val statement = parseAntlr(version, inputString)
-            prettifier.asString(statement) should equal(expectedCypher6AndLater)
+            prettifier.asString(statement) should equal(expectedCypher25AndLater)
           } else {
             val statement = parseAntlr(CypherVersion.Cypher5, inputString)
             // The two Cypher 5 parsers should get the same values
@@ -3144,6 +3144,8 @@ class PrettifierIT extends CypherFunSuite {
 object PrettifierTestSupport {
   sealed trait Test
   case class SameAcrossVersions(inputString: String, output: String) extends Test
-  case class ChangedBetween5And6(inputString: String, outputCypher5: String, outputCypher6AndLater: String) extends Test
+
+  case class ChangedBetween5And25(inputString: String, outputCypher5: String, outputCypher25AndLater: String)
+      extends Test
   implicit class TestConverter(tuple: (String, String)) extends SameAcrossVersions(tuple._1, tuple._2)
 }

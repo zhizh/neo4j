@@ -28,11 +28,11 @@ sealed trait NodeKey extends CreateConstraintType {
 }
 
 object NodeKey {
-  def cypher6: NodeKey = NodeKeyCypher6
+  def cypher25: NodeKey = NodeKeyCypher25
   def cypher5: NodeKey = NodeKeyCypher5
 }
 
-private case object NodeKeyCypher6 extends NodeKey {
+private case object NodeKeyCypher25 extends NodeKey {
   override val predicate: String = "IS KEY"
 }
 
@@ -45,11 +45,11 @@ sealed trait RelationshipKey extends CreateConstraintType {
 }
 
 object RelationshipKey {
-  def cypher6: RelationshipKey = RelationshipKeyCypher6
+  def cypher25: RelationshipKey = RelationshipKeyCypher25
   def cypher5: RelationshipKey = RelationshipKeyCypher5
 }
 
-private case object RelationshipKeyCypher6 extends RelationshipKey {
+private case object RelationshipKeyCypher25 extends RelationshipKey {
   override val predicate: String = "IS KEY"
 }
 

@@ -100,6 +100,8 @@ class PreParserTest extends CypherFunSuite {
 
     intercept[InvalidCypherOption](preParse("CYPHER 6 RETURN 42"))
       .getMessage shouldBe "6 is not a valid option for cypher version. Valid options are: 5"
+    intercept[InvalidCypherOption](preParse("CYPHER 25 RETURN 42"))
+      .getMessage shouldBe "25 is not a valid option for cypher version. Valid options are: 5"
     intercept[InvalidCypherOption](preParse("CYPHER 5.20 RETURN 42"))
       .getMessage shouldBe "5.20 is not a valid option for cypher version. Valid options are: 5"
     intercept[InvalidCypherOption](preParse("CYPHER 4.4 RETURN 42"))

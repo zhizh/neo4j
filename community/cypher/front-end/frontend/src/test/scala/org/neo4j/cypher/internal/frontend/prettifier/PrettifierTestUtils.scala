@@ -23,8 +23,8 @@ import org.neo4j.cypher.internal.ast.factory.neo4j.JavaCCParser
 import org.neo4j.cypher.internal.ast.prettifier.Prettifier
 import org.neo4j.cypher.internal.parser.AstParserFactory
 import org.neo4j.cypher.internal.parser.ast.AstParser
+import org.neo4j.cypher.internal.parser.v25.Cypher25ParserUtil
 import org.neo4j.cypher.internal.parser.v5.Cypher5ParserUtil
-import org.neo4j.cypher.internal.parser.v6.Cypher6ParserUtil
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.OpenCypherExceptionFactory
 import org.neo4j.cypher.internal.util.Rewriter
@@ -170,7 +170,7 @@ trait PrettifierTestUtils extends Matchers {
     // Clear the parser DFA cache occasionally to not go OOM but not too often as it makes the test slower
     if (queriesSinceClearCache == 50) {
       Cypher5ParserUtil.clearDFACache()
-      Cypher6ParserUtil.clearDFACache()
+      Cypher25ParserUtil.clearDFACache()
       queriesSinceClearCache = 0
     }
     statement

@@ -653,7 +653,7 @@ object CreateConstraint {
       entityName = label,
       properties,
       name,
-      constraintType = if (fromCypher5) NodeKey.cypher5 else NodeKey.cypher6,
+      constraintType = if (fromCypher5) NodeKey.cypher5 else NodeKey.cypher25,
       ifExistsDo,
       options,
       useGraph
@@ -674,7 +674,7 @@ object CreateConstraint {
       entityName = relType,
       properties,
       name,
-      constraintType = if (fromCypher5) RelationshipKey.cypher5 else RelationshipKey.cypher6,
+      constraintType = if (fromCypher5) RelationshipKey.cypher5 else RelationshipKey.cypher25,
       ifExistsDo,
       options,
       useGraph

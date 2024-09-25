@@ -25,9 +25,9 @@ import org.neo4j.cypher.internal.ast.SubqueryCall
 import org.neo4j.cypher.internal.ast.UseGraph
 import org.neo4j.cypher.internal.ast.factory.neo4j.Neo4jASTExceptionFactory
 import org.neo4j.cypher.internal.ast.factory.neo4j.Neo4jASTFactory
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher25
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
-import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher6
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.ParseFailure
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.ParseResult
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.ParseResults
@@ -55,10 +55,10 @@ import org.neo4j.cypher.internal.parser.AstRuleCtx
 import org.neo4j.cypher.internal.parser.common.ast.factory.ParameterType
 import org.neo4j.cypher.internal.parser.javacc.Cypher
 import org.neo4j.cypher.internal.parser.javacc.CypherCharStream
+import org.neo4j.cypher.internal.parser.v25.Cypher25Parser
+import org.neo4j.cypher.internal.parser.v25.ast.factory.Cypher25AstParser
 import org.neo4j.cypher.internal.parser.v5.Cypher5Parser
 import org.neo4j.cypher.internal.parser.v5.ast.factory.Cypher5AstParser
-import org.neo4j.cypher.internal.parser.v6.Cypher6Parser
-import org.neo4j.cypher.internal.parser.v6.ast.factory.Cypher6AstParser
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.Neo4jCypherExceptionFactory
 import org.neo4j.cypher.internal.util.OpenCypherExceptionFactory
@@ -91,11 +91,11 @@ object AstParsing extends AstParsing {
   sealed trait ParserInTest
 
   object ParserInTest {
-    val AllParsers: Seq[ParserInTest] = Seq(Cypher5JavaCc, Cypher5, Cypher6)
+    val AllParsers: Seq[ParserInTest] = Seq(Cypher5JavaCc, Cypher5, Cypher25)
   }
   case object Cypher5JavaCc extends ParserInTest
   case object Cypher5 extends ParserInTest
-  case object Cypher6 extends ParserInTest
+  case object Cypher25 extends ParserInTest
 
   case class ParseResults[T](cypher: String, result: Map[ParserInTest, ParseResult]) {
     def apply(parser: ParserInTest): ParseResult = result(parser)
@@ -183,7 +183,7 @@ object Parsers {
 
   private val factories = Map[ParserInTest, ParserFactory](
     Cypher5 -> Cypher5Factory,
-    Cypher6 -> Cypher6Factory,
+    Cypher25 -> Cypher25Factory,
     Cypher5JavaCc -> Cypher5JavaCcFactory
   )
 
@@ -222,10 +222,10 @@ object Parsers {
     override def quantifiedPath(): Parser[QuantifiedPath] = parse(_.parenthesizedPath())
   }
 
-  private object Cypher6Factory extends ParserFactory {
+  private object Cypher25Factory extends ParserFactory {
 
-    private def parse[T <: ASTNode](f: Cypher6Parser => AstRuleCtx): Parser[T] = (cypher: String) => {
-      new Cypher6AstParser(cypher, Neo4jCypherExceptionFactory(cypher, None), None).parse(f)
+    private def parse[T <: ASTNode](f: Cypher25Parser => AstRuleCtx): Parser[T] = (cypher: String) => {
+      new Cypher25AstParser(cypher, Neo4jCypherExceptionFactory(cypher, None), None).parse(f)
     }
     override def statements(): Parser[Statements] = parse(_.statements())
     override def statement(): Parser[Statement] = parse(_.statement())

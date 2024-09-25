@@ -3822,7 +3822,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       attach(
         CreateConstraint(
           None,
-          NodeKey.cypher6,
+          NodeKey.cypher25,
           label("Label"),
           Seq(prop("x", "prop1"), prop("x", "prop2")),
           Some(Left("constraintName")),
@@ -3837,7 +3837,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         Seq(details("CONSTRAINT constraintName FOR (x:Label) REQUIRE (x.prop1, x.prop2) IS KEY")),
         Set.empty
       ),
-      cypherVersion = CypherVersion.Cypher6
+      cypherVersion = CypherVersion.Cypher25
     )
   }
 
@@ -3958,7 +3958,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
 
     assertGood(
       attach(
-        CreateConstraint(None, RelationshipKey.cypher6, relType("REL_TYPE"), Seq(prop(" x", "prop")), None, NoOptions),
+        CreateConstraint(None, RelationshipKey.cypher25, relType("REL_TYPE"), Seq(prop(" x", "prop")), None, NoOptions),
         63.2
       ),
       planDescription(
@@ -3968,7 +3968,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         Seq(details("CONSTRAINT FOR ()-[` x`:REL_TYPE]-() REQUIRE (` x`.prop) IS KEY")),
         Set.empty
       ),
-      cypherVersion = CypherVersion.Cypher6
+      cypherVersion = CypherVersion.Cypher25
     )
   }
 
@@ -4323,7 +4323,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     assertGood(
       attach(
         ShowConstraints(
-          constraintType = UniqueConstraints.cypher6,
+          constraintType = UniqueConstraints.cypher25,
           List.empty,
           List.empty,
           yieldAll = true
@@ -4361,7 +4361,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     assertGood(
       attach(
         ShowConstraints(
-          constraintType = RelUniqueConstraints.cypher6,
+          constraintType = RelUniqueConstraints.cypher25,
           List.empty,
           List.empty,
           yieldAll = true
@@ -4438,7 +4438,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     assertGood(
       attach(
         ShowConstraints(
-          constraintType = NodeExistsConstraints.cypher6,
+          constraintType = NodeExistsConstraints.cypher25,
           List.empty,
           List.empty,
           yieldAll = false

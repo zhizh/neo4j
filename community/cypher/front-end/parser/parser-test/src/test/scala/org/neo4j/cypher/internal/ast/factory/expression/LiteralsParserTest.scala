@@ -22,9 +22,9 @@ import org.neo4j.cypher.internal.ast.factory.expression.LiteralsParserTest.escap
 import org.neo4j.cypher.internal.ast.factory.expression.LiteralsParserTest.genCodepoint
 import org.neo4j.cypher.internal.ast.factory.expression.LiteralsParserTest.genCypherUnicodeEscape
 import org.neo4j.cypher.internal.ast.factory.expression.LiteralsParserTest.toCypherHex
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher25
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
-import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher6
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.expressions.DecimalDoubleLiteral
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
@@ -59,20 +59,20 @@ class LiteralsParserTest extends AstParsingTestBase
     }
 
     val validOctalIntsCypher5 = Seq("0234", "0o234", "-0o234", "-0234", "01", "0o1", "0_2", "0o_2")
-    val validOctalIntsCypher6 = Seq("0o234", "-0o234", "0o1", "0o_2")
+    val validOctalIntsCypher25 = Seq("0o234", "-0o234", "0o1", "0o_2")
     for (o <- validOctalIntsCypher5) {
       o should parseIn[NumberLiteral] {
-        case Cypher6 if !validOctalIntsCypher6.contains(o) => _.withMessageStart("""Invalid input""".stripMargin)
-        case _                                             => _.toAst(SignedOctalIntegerLiteral(o)(pos))
+        case Cypher25 if !validOctalIntsCypher25.contains(o) => _.withMessageStart("""Invalid input""".stripMargin)
+        case _                                               => _.toAst(SignedOctalIntegerLiteral(o)(pos))
       }
     }
 
     val validHexIntsCypher5 = Seq("0x1", "0X1", "0xffff", "-0x45FG")
-    val validHexIntsCypher6 = Seq("0x1", "0xffff", "-0x45FG")
+    val validHexIntsCypher25 = Seq("0x1", "0xffff", "-0x45FG")
     for (h <- validHexIntsCypher5) {
       h should parseIn[NumberLiteral] {
-        case Cypher6 if !validHexIntsCypher6.contains(h) => _.withMessageStart("""Invalid input""".stripMargin)
-        case _                                           => _.toAst(SignedHexIntegerLiteral(h)(pos))
+        case Cypher25 if !validHexIntsCypher25.contains(h) => _.withMessageStart("""Invalid input""".stripMargin)
+        case _                                             => _.toAst(SignedHexIntegerLiteral(h)(pos))
       }
     }
 
@@ -124,7 +124,7 @@ class LiteralsParserTest extends AstParsingTestBase
             |"RETURN 0_.0"
             |          ^""".stripMargin
         )
-      case Cypher6 => _.withSyntaxError(
+      case Cypher25 => _.withSyntaxError(
           """Invalid input '0_': expected an expression, '*' or 'DISTINCT' (line 1, column 8 (offset: 7))
             |"RETURN 0_.0"
             |        ^""".stripMargin
@@ -167,7 +167,7 @@ class LiteralsParserTest extends AstParsingTestBase
             |"$0_2"
             |  ^""".stripMargin
         )
-      case Cypher6 => _.toAst(parameter("0_2", CTAny))
+      case Cypher25 => _.toAst(parameter("0_2", CTAny))
     }
     "return $1.0f" should notParse[Statements].in {
       case Cypher5JavaCc => _.withMessageStart("Invalid input '$': expected \"+\" or \"-\"")

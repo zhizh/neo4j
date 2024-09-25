@@ -51,17 +51,17 @@ class PrettifierTCKTest extends PrettifierTCKTestBase {
   @Test
   def allVersionsHaveCoverage(): Unit = {
     // If this starts to fail you need to add a new prettifyer test for the new version and adapt this test.
-    assertEquals(Set(CypherVersion.Cypher5, CypherVersion.Cypher6), CypherVersion.values().toSet)
+    assertEquals(Set(CypherVersion.Cypher5, CypherVersion.Cypher25), CypherVersion.values().toSet)
   }
 }
 
-class Cypher6PrettifierTCKTest extends PrettifierTCKTestBase {
+class Cypher25PrettifierTCKTest extends PrettifierTCKTestBase {
 
   override protected def parseStatements(query: String): Statement =
-    AstParserFactory(CypherVersion.Cypher6)(query, Neo4jCypherExceptionFactory(query, None), None).singleStatement()
+    AstParserFactory(CypherVersion.Cypher25)(query, Neo4jCypherExceptionFactory(query, None), None).singleStatement()
 
   override def denylist(): Seq[DenylistEntry] = super.denylist() ++ Seq(
-    // Parser changes for Cypher 6
+    // Parser changes for Cypher 25
     """Feature "LiteralAcceptance": Scenario "Fail on a hexadecimal number with underscore in prefix"""",
     """Feature "LiteralAcceptance": Scenario "Fail on an deprecated octal number syntax with underscore"""",
     """Feature "LiteralAcceptance": Scenario "Fail on an octal number with underscore in prefix""""
