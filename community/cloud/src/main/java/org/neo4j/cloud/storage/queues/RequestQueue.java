@@ -19,6 +19,7 @@
  */
 package org.neo4j.cloud.storage.queues;
 
+import static java.util.Objects.requireNonNull;
 import static org.neo4j.util.Preconditions.requireNonNegative;
 import static org.neo4j.util.Preconditions.requirePositive;
 
@@ -26,33 +27,31 @@ import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import org.neo4j.cloud.storage.queues.RequestQueueConfigs.QueueConfig;
 
 /**
  * Utility for processing as many cloud range requests as sensibly possible. A queue of requests is maintained and
  * an attempt is made to keep it as full as possible with requests for a contiguous range of chunks.
  */
-abstract class RequestQueue implements AutoCloseable {
+public abstract class RequestQueue implements AutoCloseable {
 
     private final Queue<CompletableFuture<ByteBuffer>> queue;
 
-    private final int maxQueueSize;
-    private final int chunkSize;
+    private final QueueConfig queueConfig;
     private final long objectSize;
 
     private long nextRequestPosition;
 
     /**
-     * @param queueSize the size of the queue that maintains at most <code>queueSize</code> requests concurrently running
-     * @param chunkSize the size of the data chunk to be downloaded in each request
+     * @param queueConfig the queue config for sizing and chunk size
      * @param objectSize the total size of the object
      * @param startPosition the initial position of the object
      */
-    protected RequestQueue(int queueSize, int chunkSize, long objectSize, long startPosition) {
-        this.maxQueueSize = requirePositive(queueSize);
-        this.chunkSize = requirePositive(chunkSize);
+    protected RequestQueue(QueueConfig queueConfig, long objectSize, long startPosition) {
+        this.queueConfig = requireNonNull(queueConfig);
         this.objectSize = requirePositive(objectSize);
         this.nextRequestPosition = requireNonNegative(startPosition);
-        this.queue = new ArrayDeque<>(queueSize);
+        this.queue = new ArrayDeque<>(queueConfig.queueSize());
     }
 
     /**
@@ -67,20 +66,16 @@ abstract class RequestQueue implements AutoCloseable {
         clearQueue();
     }
 
+    protected final QueueConfig queueConfig() {
+        return queueConfig;
+    }
+
     protected final long getObjectSize() {
         return objectSize;
     }
 
-    protected final int maxQueueSize() {
-        return maxQueueSize;
-    }
-
     protected final int queueSize() {
         return queue.size();
-    }
-
-    protected final int chunkSize() {
-        return chunkSize;
     }
 
     protected final long nextRequestPosition() {
@@ -92,7 +87,7 @@ abstract class RequestQueue implements AutoCloseable {
     }
 
     protected final void fillQueue() {
-        for (var i = queueSize(); i < maxQueueSize(); i++) {
+        for (var i = queueSize(); i < queueConfig().queueSize(); i++) {
             if (!maybeRequestChunk()) {
                 break;
             }
@@ -121,7 +116,7 @@ abstract class RequestQueue implements AutoCloseable {
             return false;
         }
 
-        nextRequestPosition += chunkSize;
+        nextRequestPosition += queueConfig.chunkSize();
         queue.offer(request(rangeStart));
         return true;
     }
@@ -131,7 +126,7 @@ abstract class RequestQueue implements AutoCloseable {
     }
 
     private CompletableFuture<ByteBuffer> request(long from) {
-        final var end = Math.min(from + chunkSize, objectSize);
+        final var end = Math.min(from + queueConfig.chunkSize(), objectSize);
         onBeforeLoad(from, end);
         return get(from, end);
     }

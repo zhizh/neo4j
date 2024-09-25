@@ -44,6 +44,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
@@ -84,6 +85,11 @@ public abstract class StorageSystemProvider extends FileSystemProvider implement
         this.memoryTracker = requireNonNull(memoryTracker);
     }
 
+    public static Config config(StoragePath path) {
+        //noinspection resource
+        return Objects.requireNonNull(path).getFileSystem().provider().config();
+    }
+
     /**
      * @param path the storage path to access
      * @param options the options to use when opening the channel for read/write operations
@@ -122,6 +128,13 @@ public abstract class StorageSystemProvider extends FileSystemProvider implement
      * @return the resource's storage location
      */
     protected abstract StorageLocation resolve(URI uri);
+
+    /**
+     * @return the configuration associated with this storage provider
+     */
+    public Config config() {
+        return config;
+    }
 
     /**
      * Get or create a storage system

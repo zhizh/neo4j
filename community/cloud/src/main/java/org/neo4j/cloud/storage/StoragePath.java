@@ -41,7 +41,10 @@ import java.nio.file.WatchService;
 import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.map.ImmutableMap;
 import org.neo4j.internal.helpers.collection.Iterables;
 import org.neo4j.util.Preconditions;
 
@@ -51,9 +54,16 @@ public class StoragePath implements Path {
 
     private final PathRepresentation path;
 
-    StoragePath(StorageSystem storage, PathRepresentation path) {
+    private final Map<String, Object> metadata;
+
+    private StoragePath(StorageSystem storage, PathRepresentation path, Map<String, Object> metadata) {
         this.storage = Objects.requireNonNull(storage);
         this.path = Objects.requireNonNull(path);
+        this.metadata = Objects.requireNonNull(metadata);
+    }
+
+    StoragePath(StorageSystem storage, PathRepresentation path) {
+        this(storage, path, Maps.mutable.empty());
     }
 
     public static boolean isRoot(StoragePath storagePath) {
@@ -80,6 +90,19 @@ public class StoragePath implements Path {
 
     public boolean isDirectory() {
         return path.isDirectory();
+    }
+
+    public ImmutableMap<String, Object> metadata() {
+        return Maps.immutable.ofMap(metadata);
+    }
+
+    public StoragePath addMetadata(String key, Object value) {
+        metadata.put(key, value);
+        return this;
+    }
+
+    public StoragePath copy() {
+        return new StoragePath(storage, path, Maps.mutable.withMap(metadata));
     }
 
     @Override
@@ -385,12 +408,12 @@ public class StoragePath implements Path {
         }
 
         StoragePath that = (StoragePath) o;
-        return storage.equals(that.storage) && path.equals(that.path);
+        return storage.equals(that.storage) && path.equals(that.path) && metadata.equals(that.metadata);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(storage, path);
+        return Objects.hash(storage, path, metadata);
     }
 
     private StoragePath getRelativePathFromDifference(

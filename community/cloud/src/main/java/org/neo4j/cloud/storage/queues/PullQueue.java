@@ -25,6 +25,8 @@ import static org.neo4j.util.Preconditions.requireNonNegative;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import org.neo4j.cloud.storage.StorageSettingsDeclaration;
+import org.neo4j.cloud.storage.queues.RequestQueueConfigs.QueueConfig;
 import org.neo4j.function.ThrowingSupplier;
 
 /**
@@ -38,12 +40,12 @@ public abstract class PullQueue extends RequestQueue implements ThrowingSupplier
     private boolean fillOnNextGet = true;
 
     /**
-     * @param queueSize  the size of the queue that maintains at most <code>queueSize</code> requests concurrently running
-     * @param chunkSize  the size of the data chunk to be downloaded in each request
+     * @param config the queue config
+     * {@link StorageSettingsDeclaration#pull_queue_chunk_size}
      * @param objectSize the total size of the object in cloud storage
      */
-    protected PullQueue(int queueSize, int chunkSize, long objectSize) {
-        super(queueSize, chunkSize, objectSize, 0L);
+    protected PullQueue(QueueConfig config, long objectSize) {
+        super(config, objectSize, 0L);
     }
 
     /**
@@ -58,7 +60,7 @@ public abstract class PullQueue extends RequestQueue implements ThrowingSupplier
             return clearAndPosition(position);
         }
 
-        final var chunkSize = chunkSize();
+        final var chunkSize = queueConfig().chunkSize();
         var lowestQueueBound = Math.max(0L, nextRequestPosition - ((long) queueSize() * chunkSize));
         if (position < lowestQueueBound) {
             return clearAndPosition(position);

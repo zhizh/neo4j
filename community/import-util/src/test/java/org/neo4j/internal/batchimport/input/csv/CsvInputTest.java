@@ -2186,7 +2186,8 @@ class CsvInputTest {
     private static Input.Estimates calculateEstimatesOnSingleFileNodeData(IdType idType, Path nodeDataFile)
             throws IOException {
         Input input = new CsvInput(
-                dataIterable(config -> undecorated(() -> Readables.individualFiles(defaultCharset(), nodeDataFile))),
+                dataIterable(
+                        config -> undecorated(() -> Readables.individualFiles(config, defaultCharset(), nodeDataFile))),
                 defaultFormatNodeFileHeader(),
                 emptyList(),
                 defaultFormatRelationshipFileHeader(),

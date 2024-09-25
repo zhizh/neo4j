@@ -23,6 +23,7 @@ import static org.neo4j.cloud.storage.StorageUtils.toIOException;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import org.neo4j.cloud.storage.queues.RequestQueueConfigs.QueueConfig;
 
 /**
  * A request queue that pushes response buffers to the client as soon as they are available, in the sequential order
@@ -33,13 +34,12 @@ public abstract class PushQueue extends RequestQueue implements Runnable {
     public static final int QUEUE_SIZE = 64;
 
     /**
-     * @param queueSize the size of the queue that maintains at most <code>queueSize</code> requests concurrently running
-     * @param chunkSize the size of the data chunk to be downloaded in each request
+     * @param queueConfig the queue config for sizing and chunk size
      * @param objectSize the total size of the object in the cloud storage
      * @param startPosition the initial position of the object in cloud storage
      */
-    protected PushQueue(int queueSize, int chunkSize, long objectSize, long startPosition) {
-        super(queueSize, chunkSize, objectSize, startPosition);
+    protected PushQueue(QueueConfig queueConfig, long objectSize, long startPosition) {
+        super(queueConfig, objectSize, startPosition);
     }
 
     /**

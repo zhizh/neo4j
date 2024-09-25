@@ -422,6 +422,31 @@ class StoragePathTest {
     }
 
     @Test
+    void copy() {
+        final var path = path("/foo/bar/baz");
+        assertThat(path.copy()).isEqualTo(path);
+    }
+
+    @Test
+    void metadata() {
+        final var path = path("/foo/bar/baz");
+        assertThat(path.metadata()).isEmpty();
+
+        final var clone = path.copy();
+        path.addMetadata("foo", "bar");
+        assertThat(path.metadata()).hasSize(1);
+        assertThat(path).isNotEqualTo(clone);
+
+        clone.addMetadata("baz", "bof");
+        assertThat(clone.metadata()).hasSize(1);
+        assertThat(path).isNotEqualTo(clone);
+
+        path.addMetadata("baz", "bof");
+        clone.addMetadata("foo", "bar");
+        assertThat(path).isEqualTo(clone);
+    }
+
+    @Test
     void unsupportedMethods() {
         final var root = path("/");
         assertThatThrownBy(root::toFile);

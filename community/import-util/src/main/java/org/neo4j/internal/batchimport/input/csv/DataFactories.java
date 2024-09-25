@@ -91,7 +91,7 @@ public class DataFactories {
         return config -> new Data() {
             @Override
             public RawIterator<CharReadable, IOException> stream() {
-                return individualFiles(charset, files);
+                return individualFiles(config, charset, files);
             }
 
             @Override
