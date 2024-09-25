@@ -68,19 +68,7 @@ public interface RelationshipModifications {
     };
 
     static IdDataDecorator noAdditionalDataDecorator() {
-        return new IdDataDecorator() {
-            @Override
-            public <E extends Exception> void accept(long id, RelationshipVisitorWithProperties<E> visitor) throws E {
-                visitor.visit(
-                        id,
-                        NO_TOKEN,
-                        LongReference.NULL,
-                        LongReference.NULL,
-                        emptyList(),
-                        emptyList(),
-                        IntLists.immutable.empty());
-            }
-        };
+        return IdDataDecorator.EMPTY_ID_DATA_DECORATOR;
     }
 
     static RelationshipBatch idsAsBatch(LongSet ids) {
@@ -349,6 +337,8 @@ public interface RelationshipModifications {
      * transaction state interface which isn't really available in this component.
      */
     interface IdDataDecorator {
+        IdDataDecorator EMPTY_ID_DATA_DECORATOR = new EmptyDataDecorator();
+
         /**
          * Allows visitor to get more data about the relationship of the given id.
          * @param id the relationship id.
@@ -357,5 +347,21 @@ public interface RelationshipModifications {
          * @throws E on visitor error.
          */
         <E extends Exception> void accept(long id, RelationshipVisitorWithProperties<E> visitor) throws E;
+    }
+
+    class EmptyDataDecorator implements IdDataDecorator {
+        private EmptyDataDecorator() {}
+
+        @Override
+        public <E extends Exception> void accept(long id, RelationshipVisitorWithProperties<E> visitor) throws E {
+            visitor.visit(
+                    id,
+                    NO_TOKEN,
+                    LongReference.NULL,
+                    LongReference.NULL,
+                    emptyList(),
+                    emptyList(),
+                    IntLists.immutable.empty());
+        }
     }
 }
