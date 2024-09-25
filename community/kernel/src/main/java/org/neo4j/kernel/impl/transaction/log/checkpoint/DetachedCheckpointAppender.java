@@ -22,9 +22,7 @@ package org.neo4j.kernel.impl.transaction.log.checkpoint;
 import static java.util.Objects.requireNonNull;
 import static org.neo4j.kernel.KernelVersion.VERSION_APPEND_INDEX_INTRODUCED;
 import static org.neo4j.kernel.KernelVersion.VERSION_CHECKPOINT_NOT_COMPLETED_POSITION_INTRODUCED;
-import static org.neo4j.kernel.impl.transaction.log.LogVersionBridge.NO_MORE_CHANNELS;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEntrySerializationSets.serializationSet;
-import static org.neo4j.storageengine.api.CommandReaderFactory.NO_COMMANDS;
 import static org.neo4j.storageengine.api.TransactionIdStore.BASE_TX_CHECKSUM;
 
 import java.io.IOException;
@@ -36,18 +34,13 @@ import org.neo4j.io.memory.NativeScopedBuffer;
 import org.neo4j.kernel.BinarySupportedKernelVersions;
 import org.neo4j.kernel.KernelVersion;
 import org.neo4j.kernel.KernelVersionProvider;
-import org.neo4j.kernel.impl.transaction.UnclosableChannel;
-import org.neo4j.kernel.impl.transaction.log.LogEntryCursor;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
-import org.neo4j.kernel.impl.transaction.log.LogPositionMarker;
 import org.neo4j.kernel.impl.transaction.log.LogTailMetadata;
 import org.neo4j.kernel.impl.transaction.log.PhysicalFlushableLogPositionAwareChannel;
 import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
-import org.neo4j.kernel.impl.transaction.log.ReadAheadUtils;
 import org.neo4j.kernel.impl.transaction.log.entry.AbstractVersionAwareLogEntry;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEntryTypeCodes;
 import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
-import org.neo4j.kernel.impl.transaction.log.entry.VersionAwareLogEntryReader;
 import org.neo4j.kernel.impl.transaction.log.entry.v50.LogEntryDetachedCheckpointV5_0;
 import org.neo4j.kernel.impl.transaction.log.entry.v520.LogEntryDetachedCheckpointV5_20;
 import org.neo4j.kernel.impl.transaction.log.entry.v522.LogEntryDetachedCheckpointV5_22;
@@ -139,7 +132,8 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
         }
         var lastCheckPoint = tailMetadata.getLastCheckPoint();
         if (lastCheckPoint.isEmpty()) {
-            channel.position(lastReadablePosition());
+            LogHeader logHeader = logHeader(channel.getLogVersion());
+            channel.position(logHeader.getStartPosition().getByteOffset());
             return;
         }
         LogPosition channelPosition = lastCheckPoint.get().channelPositionAfterCheckpoint();
@@ -148,24 +142,6 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
                     + ", does not match to found tail version " + channelPosition.getLogVersion());
         }
         channel.position(channelPosition.getByteOffset());
-    }
-
-    private long lastReadablePosition() throws IOException {
-        try (var reader = ReadAheadUtils.newChannel(
-                        new UnclosableChannel(channel),
-                        NO_MORE_CHANNELS,
-                        logHeader(channel.getLogVersion()),
-                        context.getMemoryTracker());
-                var logEntryCursor = new LogEntryCursor(
-                        new VersionAwareLogEntryReader(NO_COMMANDS, true, binarySupportedKernelVersions), reader)) {
-            LogPositionMarker beforeEntry = new LogPositionMarker();
-            reader.getCurrentLogPosition(beforeEntry);
-            while (logEntryCursor.next()) {
-                logEntryCursor.get();
-                reader.getCurrentLogPosition(beforeEntry);
-            }
-            return beforeEntry.getByteOffset();
-        }
     }
 
     @Override
