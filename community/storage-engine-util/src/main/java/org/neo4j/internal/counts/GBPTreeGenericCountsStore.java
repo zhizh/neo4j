@@ -45,6 +45,7 @@ import java.util.function.Function;
 import java.util.function.LongConsumer;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.primitive.MutableLongSet;
+import org.eclipse.collections.impl.factory.primitive.LongSets;
 import org.eclipse.collections.impl.set.mutable.primitive.LongHashSet;
 import org.neo4j.annotations.documented.ReporterFactory;
 import org.neo4j.collection.PrimitiveLongArrayQueue;
@@ -114,7 +115,7 @@ public class GBPTreeGenericCountsStore implements AutoCloseable, ConsistencyChec
     private final int maxCacheSize;
     private final int highMarkCacheSize;
     protected volatile CountsChanges changes = createCountChanges();
-    private final TxIdInformation txIdInformation;
+    private TxIdInformation txIdInformation;
     private final FileSystemAbstraction fileSystem;
     private final InternalLogProvider userLogProvider;
     private volatile boolean started;
@@ -261,10 +262,8 @@ public class GBPTreeGenericCountsStore implements AutoCloseable, ConsistencyChec
      * @param newTxId transaction ID to let this counts store catch up to.
      */
     public void catchUpToTransactionId(long newTxId) {
-        long prevTxId = idSequence.getHighestGapFreeNumber();
-        for (long txId = prevTxId + 1; txId <= newTxId; txId++) {
-            idSequence.offer(txId, EMPTY_META);
-        }
+        idSequence.set(newTxId, EMPTY_META);
+        txIdInformation = new TxIdInformation(newTxId, LongSets.immutable.empty());
     }
 
     @Override
