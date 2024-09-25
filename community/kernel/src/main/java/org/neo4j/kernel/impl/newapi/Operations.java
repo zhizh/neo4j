@@ -69,7 +69,6 @@ import org.neo4j.configuration.Config;
 import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.dbms.DbmsRuntimeVersionProvider;
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.function.ThrowingIntFunction;
 import org.neo4j.function.ThrowingLongConsumer;
 import org.neo4j.internal.helpers.collection.Iterators;
 import org.neo4j.internal.kernel.api.CursorFactory;
@@ -89,9 +88,7 @@ import org.neo4j.internal.kernel.api.Upgrade;
 import org.neo4j.internal.kernel.api.Write;
 import org.neo4j.internal.kernel.api.exceptions.EntityAlreadyExistsException;
 import org.neo4j.internal.kernel.api.exceptions.EntityNotFoundException;
-import org.neo4j.internal.kernel.api.exceptions.LabelNotFoundKernelException;
 import org.neo4j.internal.kernel.api.exceptions.PropertyKeyIdNotFoundKernelException;
-import org.neo4j.internal.kernel.api.exceptions.RelationshipTypeIdNotFoundKernelException;
 import org.neo4j.internal.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
 import org.neo4j.internal.kernel.api.exceptions.schema.CreateConstraintFailureException;
@@ -1742,17 +1739,8 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         return index;
     }
 
-    private IndexPrototype ensureIndexPrototypeHasName(IndexPrototype prototype) throws KernelException {
+    private IndexPrototype ensureIndexPrototypeHasName(IndexPrototype prototype) {
         return prototype.getName().isEmpty() ? prototype.withName(generateNameFrom(prototype)) : prototype;
-    }
-
-    private static <E extends Exception> String[] resolveTokenNames(
-            ThrowingIntFunction<String, E> resolver, int[] tokenIds) throws E {
-        String[] names = new String[tokenIds.length];
-        for (int i = 0; i < tokenIds.length; i++) {
-            names[i] = resolver.apply(tokenIds[i]);
-        }
-        return names;
     }
 
     private IndexPrototype ensureIndexPrototypeHasIndexProvider(IndexPrototype prototype) {
@@ -2723,21 +2711,8 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         return constraint.getName() == null ? (T) constraint.withName(generateNameFrom(constraint)) : constraint;
     }
 
-    private String generateNameFrom(SchemaDescriptorSupplier schemaDescriptorSupplier)
-            throws LabelNotFoundKernelException, RelationshipTypeIdNotFoundKernelException,
-                    PropertyKeyIdNotFoundKernelException {
-        SchemaDescriptor schema = schemaDescriptorSupplier.schema();
-
-        int[] entityTokenIds = schema.getEntityTokenIds();
-        String[] entityTokenNames =
-                switch (schema.entityType()) {
-                    case NODE -> resolveTokenNames(token::nodeLabelName, entityTokenIds);
-                    case RELATIONSHIP -> resolveTokenNames(token::relationshipTypeName, entityTokenIds);
-                };
-        int[] propertyIds = schema.getPropertyIds();
-        String[] propertyNames = resolveTokenNames(token::propertyKeyName, propertyIds);
-
-        return SchemaNameUtil.generateName(schemaDescriptorSupplier, entityTokenNames, propertyNames);
+    private String generateNameFrom(SchemaDescriptorSupplier schemaDescriptorSupplier) {
+        return SchemaNameUtil.generateName(schemaDescriptorSupplier, token);
     }
 
     IndexDescriptor findUsableTokenIndex(EntityType entityType) throws IndexNotFoundKernelException {

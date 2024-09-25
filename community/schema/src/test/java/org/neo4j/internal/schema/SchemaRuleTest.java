@@ -247,13 +247,13 @@ class SchemaRuleTest {
         assertName(nodeTypeConstraintBoolString, "constraint_c99ece6");
         assertName(nodeTypeConstraintIntBool, "constraint_f37a6b9f");
         assertName(nodeTypeConstraintBoolInt, "constraint_f37a6b9f");
-        assertName(relationshipEndpointStartConstraint, "constraint_1c619983");
-        assertName(relationshipEndpointStartAnotherLabelConstraint, "constraint_c3dfc973");
-        assertName(relationshipEndpointStartAnotherRelTypeConstraint, "constraint_c295018");
-        assertName(relationshipEndpointEndConstraint, "constraint_c8e153f6");
-        assertName(labelCoexistenceConstraint, "constraint_4da3555e");
-        assertName(labelCoexistenceAnotherConstrainedLabelConstraint, "constraint_c634a948");
-        assertName(labelCoexistenceAnotherRequiredLabelConstraint, "constraint_4a5a94e4");
+        assertName(relationshipEndpointStartConstraint, "constraint_45a43ff5");
+        assertName(relationshipEndpointStartAnotherLabelConstraint, "constraint_dc30653e");
+        assertName(relationshipEndpointStartAnotherRelTypeConstraint, "constraint_22d39b8c");
+        assertName(relationshipEndpointEndConstraint, "constraint_32fd396b");
+        assertName(labelCoexistenceConstraint, "constraint_e9e53eab");
+        assertName(labelCoexistenceAnotherConstrainedLabelConstraint, "constraint_29315144");
+        assertName(labelCoexistenceAnotherRequiredLabelConstraint, "constraint_e19ffddf");
         assertName(allLabelsPrototype, "index_343aff4e");
         assertName(allRelTypesPrototype, "index_f7700477");
         assertName(textLabelPrototype, "index_19f9e602");
@@ -449,22 +449,7 @@ class SchemaRuleTest {
     }
 
     private void assertName(SchemaDescriptorSupplier schemaish, String expectedName) {
-        var entityToken = schemaish.schema().getEntityTokenIds();
-        var entityTokenNames = new String[entityToken.length];
-        for (int i = 0; i < entityToken.length; i++) {
-            entityTokenNames[i] = switch (schemaish.schema().entityType()) {
-                case NODE -> lookup.labelGetName(entityToken[i]);
-                case RELATIONSHIP -> lookup.relationshipTypeGetName(entityToken[i]);
-            };
-        }
-
-        var propertyToken = schemaish.schema().getPropertyIds();
-        var propertyTokenNames = new String[propertyToken.length];
-        for (int i = 0; i < propertyToken.length; i++) {
-            propertyTokenNames[i] = lookup.propertyKeyGetName(propertyToken[i]);
-        }
-
-        String generateName = SchemaNameUtil.generateName(schemaish, entityTokenNames, propertyTokenNames);
+        String generateName = SchemaNameUtil.generateName(schemaish, lookup);
         assertThat(generateName).isEqualTo(expectedName);
         assertThat(SchemaNameUtil.sanitiseName(generateName)).isEqualTo(expectedName);
     }

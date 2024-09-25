@@ -20,7 +20,9 @@
 package org.neo4j.internal.schema;
 
 import java.util.Optional;
+import org.neo4j.common.TokenNameLookup;
 import org.neo4j.hashing.HashFunction;
+import org.neo4j.util.Preconditions;
 
 public class SchemaNameUtil {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -58,24 +60,48 @@ public class SchemaNameUtil {
 
     /**
      * Generate a <em>deterministic</em> name for the given {@link SchemaDescriptorSupplier}.
+     * Only {@link SchemaRule} implementations, and {@link IndexPrototype}, are supported arguments for the schema descriptor supplier.
+     * This only accepts schemas that does not target any entity tokens or properties. Otherwise, use
+     * {@link #generateName(SchemaDescriptorSupplier, TokenNameLookup)}.
      *
+     * @param rule The {@link SchemaDescriptorSupplier} to generate a name for.
+     * @return A name.
+     */
+    public static String generateName(SchemaDescriptorSupplier rule) {
+        Preconditions.checkArgument(
+                rule.schema().getEntityTokenIds().length == 0,
+                "Schema should target no entity tokens (labels, relationship types).");
+        Preconditions.checkArgument(
+                rule.schema().getPropertyIds().length == 0, "Schema should target no property keys.");
+        return generateName(rule, null);
+    }
+
+    /**
+     * Generate a <em>deterministic</em> name for the given {@link SchemaDescriptorSupplier}.
      * Only {@link SchemaRule} implementations, and {@link IndexPrototype}, are supported arguments for the schema descriptor supplier.
      *
      * @param rule The {@link SchemaDescriptorSupplier} to generate a name for.
-     * @param entityTokenNames The resolved names of the schema entity tokens, that is, label names or relationship type names.
-     * @param propertyNames The resolved property key names.
+     * @param tokenNameLookup The {@link TokenNameLookup} to fetch the names for tokens.
      * @return A name.
      */
-    public static String generateName(
-            SchemaDescriptorSupplier rule, String[] entityTokenNames, String[] propertyNames) {
+    public static String generateName(SchemaDescriptorSupplier rule, TokenNameLookup tokenNameLookup) {
         // NOTE to future maintainers: You probably want to avoid touching this function.
         // Last time this was changed, we had some 400+ tests to update.
         HashFunction hf = HashFunction.incrementalXXH64();
         long key = hf.initialise(Boolean.hashCode(rule instanceof ConstraintDescriptor));
         key = hf.update(key, rule.schema().entityType().ordinal());
         key = hf.update(key, rule.schema().schemaPatternMatchingType().ordinal());
-        key = hf.updateWithArray(key, entityTokenNames, String::hashCode);
-        key = hf.updateWithArray(key, propertyNames, String::hashCode);
+        switch (rule.schema().entityType()) {
+            case NODE -> key = hf.updateWithArray(key, rule.schema().getEntityTokenIds(), id -> tokenNameLookup
+                    .labelGetName(id)
+                    .hashCode());
+            case RELATIONSHIP -> key = hf.updateWithArray(key, rule.schema().getEntityTokenIds(), id -> tokenNameLookup
+                    .relationshipTypeGetName(id)
+                    .hashCode());
+        }
+        key = hf.updateWithArray(key, rule.schema().getPropertyIds(), id -> tokenNameLookup
+                .propertyKeyGetName(id)
+                .hashCode());
 
         if (rule instanceof IndexRef<?> indexRef) {
             key = hf.update(key, indexRef.getIndexType().getTypeNumber());
@@ -94,17 +120,22 @@ public class SchemaNameUtil {
                         constraint.asPropertyTypeConstraint().propertyType().hashCode());
             }
             if (constraint.isRelationshipEndpointConstraint()) {
-                key = hf.update(
-                        key, constraint.asRelationshipEndpointConstraint().endpointLabelId());
+                var relEndpointConstraint = constraint.asRelationshipEndpointConstraint();
                 key = hf.update(
                         key,
-                        constraint
-                                .asRelationshipEndpointConstraint()
-                                .endpointType()
-                                .ordinal());
+                        tokenNameLookup
+                                .labelGetName(relEndpointConstraint.endpointLabelId())
+                                .hashCode());
+                key = hf.update(key, relEndpointConstraint.endpointType().ordinal());
             }
             if (constraint.isLabelCoexistenceConstraint()) {
-                key = hf.update(key, constraint.asLabelCoexistenceConstraint().requiredLabelId());
+                key = hf.update(
+                        key,
+                        tokenNameLookup
+                                .labelGetName(constraint
+                                        .asLabelCoexistenceConstraint()
+                                        .requiredLabelId())
+                                .hashCode());
             }
             return String.format("constraint_%x", hf.toInt(hf.finalise(key)));
         }

@@ -19,11 +19,10 @@
  */
 package org.neo4j.internal.schema;
 
-import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.neo4j.internal.schema.AllIndexProviderDescriptors.RANGE_DESCRIPTOR;
 
-import java.util.List;
 import java.util.Optional;
+import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.schema.SchemaCommand.IndexCommand;
 
 public interface SchemaCommandUtils {
@@ -39,23 +38,20 @@ public interface SchemaCommandUtils {
         return IndexPrototype.uniqueForSchema(schema, providerDescriptor.orElse(RANGE_DESCRIPTOR));
     }
 
-    static IndexPrototype withName(
-            String name, IndexPrototype prototype, List<String> entityTokenNames, List<String> propertyNames) {
+    static IndexPrototype withName(String name, IndexPrototype prototype, TokenNameLookup tokenNameLookup) {
         if (name != null && !name.isEmpty()) {
             return prototype.withName(name);
         }
 
-        return prototype.withName(SchemaNameUtil.generateName(
-                prototype, entityTokenNames.toArray(EMPTY_STRING_ARRAY), propertyNames.toArray(EMPTY_STRING_ARRAY)));
+        return prototype.withName(SchemaNameUtil.generateName(prototype, tokenNameLookup));
     }
 
     static ConstraintDescriptor withName(
-            String name, ConstraintDescriptor constraint, List<String> entityTokenNames, List<String> propertyNames) {
+            String name, ConstraintDescriptor constraint, TokenNameLookup tokenNameLookup) {
         if (name != null && !name.isEmpty()) {
             return constraint.withName(name);
         }
 
-        return constraint.withName(SchemaNameUtil.generateName(
-                constraint, entityTokenNames.toArray(EMPTY_STRING_ARRAY), propertyNames.toArray(EMPTY_STRING_ARRAY)));
+        return constraint.withName(SchemaNameUtil.generateName(constraint, tokenNameLookup));
     }
 }

@@ -652,7 +652,7 @@ public class Database extends AbstractDatabase {
         IndexPrototype prototype = IndexPrototype.forSchema(descriptor)
                 .withIndexType(LOOKUP)
                 .withIndexProvider(indexProviderMap.getTokenIndexProvider().getProviderDescriptor());
-        prototype = prototype.withName(SchemaNameUtil.generateName(prototype, new String[] {}, new String[] {}));
+        prototype = prototype.withName(SchemaNameUtil.generateName(prototype));
 
         tx.schemaWrite().indexCreate(prototype);
     }
