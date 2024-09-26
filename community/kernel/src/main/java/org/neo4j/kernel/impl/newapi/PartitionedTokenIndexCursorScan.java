@@ -26,7 +26,7 @@ import org.neo4j.kernel.api.index.IndexProgressor;
 import org.neo4j.kernel.impl.index.schema.PartitionedTokenScan;
 
 public class PartitionedTokenIndexCursorScan<Cursor extends org.neo4j.internal.kernel.api.Cursor>
-        implements PartitionedScan<Cursor> {
+        implements PartitionedScan<Cursor>, PartitionedTokenCursorScan<Cursor> {
     private final TokenPredicate query;
     private final PartitionedTokenScan tokenScan;
 
@@ -53,7 +53,8 @@ public class PartitionedTokenIndexCursorScan<Cursor extends org.neo4j.internal.k
         return true;
     }
 
-    PartitionedTokenScan getTokenScan() {
+    @Override
+    public PartitionedTokenScan getTokenScan() {
         return tokenScan;
     }
 }

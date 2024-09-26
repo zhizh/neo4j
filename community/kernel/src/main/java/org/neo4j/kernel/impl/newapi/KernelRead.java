@@ -667,7 +667,7 @@ public final class KernelRead implements Read {
         }
 
         final var defaultSession = (DefaultTokenReadSession) session;
-        final var leadingTokenIndexCursorScan = (PartitionedTokenIndexCursorScan<C>) leadingPartitionScan;
+        final var leadingTokenIndexCursorScan = (PartitionedTokenCursorScan<C>) leadingPartitionScan;
         final var tokenScan = defaultSession.reader.entityTokenScan(leadingTokenIndexCursorScan.getTokenScan(), query);
         return new PartitionedTokenIndexCursorScan<>(query, tokenScan);
     }
