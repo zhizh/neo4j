@@ -24,6 +24,7 @@ import static org.neo4j.collection.Dependencies.dependenciesOf;
 import static org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME;
 import static org.neo4j.configuration.GraphDatabaseSettings.pagecache_memory;
 import static org.neo4j.dbms.database.readonly.DatabaseReadOnlyChecker.readOnly;
+import static org.neo4j.io.ByteUnit.bytesToString;
 import static org.neo4j.kernel.impl.pagecache.ConfigurableStandalonePageCacheFactory.createPageCache;
 import static org.neo4j.storageengine.api.TransactionIdStore.BASE_TX_ID;
 
@@ -54,6 +55,7 @@ import org.neo4j.internal.helpers.Exceptions;
 import org.neo4j.io.ByteUnit;
 import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemAbstraction;
+import org.neo4j.io.fs.FileSystemUtils;
 import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.io.locker.FileLockException;
@@ -202,6 +204,12 @@ public class MigrateStoreCommand extends AbstractAdminCommand {
 
                     DatabaseLayout databaseLayout = Neo4jLayout.of(config).databaseLayout(dbName);
                     checkDatabaseExistence(databaseLayout);
+
+                    resultLog.info("Number of CPUs: " + Runtime.getRuntime().availableProcessors());
+                    resultLog.info(
+                            "Page cache size: " + bytesToString(pageCache.maxCachedPages() * pageCache.pageSize()));
+                    resultLog.info("Store size: "
+                            + bytesToString(FileSystemUtils.size(fs, databaseLayout.databaseDirectory())));
 
                     try (Closeable ignored = LockChecker.checkDatabaseLock(databaseLayout)) {
                         SimpleLogService logService = new SimpleLogService(logProvider);
