@@ -60,6 +60,7 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.schema.Schema;
+import org.neo4j.internal.kernel.api.IndexMonitor;
 import org.neo4j.internal.kernel.api.InternalIndexState;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexPrototype;
@@ -74,6 +75,7 @@ import org.neo4j.kernel.KernelVersion;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.index.IndexAccessor;
 import org.neo4j.kernel.api.index.IndexPopulator;
+import org.neo4j.kernel.api.index.IndexPopulator.Adapter;
 import org.neo4j.kernel.api.index.IndexProvider;
 import org.neo4j.kernel.api.index.IndexSample;
 import org.neo4j.kernel.api.index.IndexUpdater;
@@ -227,24 +229,19 @@ class IndexRecoveryIT {
     @Test
     void shouldBeAbleToRecoverInTheMiddleOfPopulatingAnIndex() throws Exception {
         // Given
-        final Semaphore populationSemaphore = new Semaphore(0);
-        try {
-            startDb();
-            when(mockedIndexProvider.getPopulator(
-                            any(IndexDescriptor.class),
-                            any(IndexSamplingConfig.class),
-                            any(),
-                            any(),
-                            any(TokenNameLookup.class),
-                            any(),
-                            any()))
-                    .thenReturn(indexPopulatorWithControlledCompletionTiming(populationSemaphore));
-            createSomeData();
-            createIndex();
-            killDb(populationSemaphore);
-        } finally {
-            populationSemaphore.release();
-        }
+        startDb();
+        when(mockedIndexProvider.getPopulator(
+                        any(IndexDescriptor.class),
+                        any(IndexSamplingConfig.class),
+                        any(),
+                        any(),
+                        any(TokenNameLookup.class),
+                        any(),
+                        any()))
+                .thenReturn(new Adapter());
+        createSomeData();
+        createIndex();
+        killDb();
 
         // When
         doReturn(InternalIndexState.POPULATING)
@@ -265,6 +262,18 @@ class IndexRecoveryIT {
                             any());
             var minimalIndexAccessor = mock(MinimalIndexAccessor.class);
             doReturn(minimalIndexAccessor).when(mockedIndexProvider).getMinimalIndexAccessor(any(), anyBoolean());
+
+            // There is a race condition where we cancel the recovery index population job just before it runs.
+            // The IndexPopulator::run() checks if it's marked as stopped and return before calling create.
+            // To prevent that, we drain the semaphore if we get a cancel job, which should only happen from
+            // the recovery flow.
+            monitors.addMonitorListener(new IndexMonitor.MonitorAdapter() {
+                @Override
+                public void populationCancelled(IndexDescriptor[] indexDescriptors, boolean storeScanHadStated) {
+                    recoverySemaphore.drainPermits();
+                }
+            });
+
             startDb();
 
             try (Transaction transaction = db.beginTx()) {
@@ -439,18 +448,6 @@ class IndexRecoveryIT {
                 .build();
 
         db = (GraphDatabaseAPI) managementService.database(DEFAULT_DATABASE_NAME);
-    }
-
-    private void killDb(Semaphore populationSemaphore) {
-        if (db != null) {
-            Path snapshotDir = testDirectory.directory("snapshot");
-            snapshotFs(snapshotDir);
-            // The index population is waiting for this semaphore, and shutting down the database will
-            // wait for the index population, so release the semaphore here.
-            populationSemaphore.release();
-            managementService.shutdown();
-            restoreSnapshot(snapshotDir);
-        }
     }
 
     private void killDb() {
