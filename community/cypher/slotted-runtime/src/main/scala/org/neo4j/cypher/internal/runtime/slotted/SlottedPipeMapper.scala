@@ -1868,7 +1868,8 @@ class SlottedPipeMapper(
           expressionConverters.toCommandExpression(id, batchSize),
           onErrorBehaviour,
           (rhsPlan.availableSymbols.map(_.name) -- lhsPlan.availableSymbols.map(_.name)).map(slots.apply),
-          maybeReportAs.map(slots.apply)
+          maybeReportAs.map(slots.apply),
+          argumentSize
         )(id = id)
 
       case TransactionForeach(
@@ -1903,7 +1904,8 @@ class SlottedPipeMapper(
           maybeConcurrency.map(expressionConverters.toCommandExpression(id, _)),
           onErrorBehaviour,
           (rhsPlan.availableSymbols.map(_.name) -- lhsPlan.availableSymbols.map(_.name)).map(slots.apply),
-          maybeReportAs.map(slots.apply)
+          maybeReportAs.map(slots.apply),
+          argumentSize
         )(id = id)
 
       case SelectOrSemiApply(_, _, expression) =>

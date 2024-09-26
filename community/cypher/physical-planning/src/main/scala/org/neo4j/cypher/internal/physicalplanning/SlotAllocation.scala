@@ -1277,6 +1277,9 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         breakingPolicy.invoke(lp, lhs, argument.slotConfiguration, applyPlans)
 
       case t: TransactionForeach =>
+        // For consistency with TransactionApply
+        recordArgument(lp)
+
         t.maybeReportAs.foreach { statusVar =>
           lhs.newReference(statusVar, nullable, CTMap)
         }
@@ -1284,6 +1287,9 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         breakingPolicy.invoke(lp, lhs, argument.slotConfiguration, applyPlans)
 
       case t: TransactionApply =>
+        // We need argument size to determine which slots to (not) null out later
+        recordArgument(lp)
+
         // We need to declare the slot for the status variable
         t.maybeReportAs.foreach { statusVar =>
           rhs.newReference(statusVar, nullable, CTMap)

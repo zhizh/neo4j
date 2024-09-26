@@ -23,6 +23,7 @@ import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour
 import org.neo4j.cypher.internal.physicalplanning.LongSlot
 import org.neo4j.cypher.internal.physicalplanning.RefSlot
 import org.neo4j.cypher.internal.physicalplanning.Slot
+import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
 import org.neo4j.cypher.internal.runtime
 import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.ClosingIterator.JavaIteratorAsClosingIterator
@@ -73,7 +74,8 @@ case class ConcurrentTransactionApplySlottedPipe(
   concurrency: Option[Expression],
   onErrorBehaviour: InTransactionsOnErrorBehaviour,
   nullableSlots: Set[Slot],
-  statusSlot: Option[Slot]
+  statusSlot: Option[Slot],
+  argumentSize: SlotConfiguration.Size
 )(val id: Id = Id.INVALID_ID)
     extends AbstractConcurrentTransactionsSlottedPipe(
       source,
@@ -83,8 +85,12 @@ case class ConcurrentTransactionApplySlottedPipe(
       onErrorBehaviour,
       statusSlot
     ) {
-  private[this] val nullableLongOffsets = nullableSlots.toArray.collect { case LongSlot(offset, _, _) => offset }
-  private[this] val nullableRefOffsets = nullableSlots.toArray.collect { case RefSlot(offset, _, _) => offset }
+
+  private[this] val nullableLongOffsets =
+    nullableSlots.toArray.collect { case LongSlot(offset, _, _) if offset >= argumentSize.nLongs => offset }
+
+  private[this] val nullableRefOffsets =
+    nullableSlots.toArray.collect { case RefSlot(offset, _, _) if offset >= argumentSize.nReferences => offset }
 
   override protected def nullRows(lhs: EagerBuffer[CypherRow], state: QueryState): ClosingIterator[CypherRow] = {
     lhs.autoClosingIterator().asClosingIterator.map { row =>

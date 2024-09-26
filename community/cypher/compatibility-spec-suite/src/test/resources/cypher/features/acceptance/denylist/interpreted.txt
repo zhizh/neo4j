@@ -58,3 +58,9 @@ Feature "DynamicLabelsAcceptance": Scenario "Dynamic Labels in MATCH with all an
 Feature "DynamicLabelsAcceptance": Scenario "Should throw type errors when a node property being used as a dynamic label is invalid"
 Feature "DynamicLabelsAcceptance": Scenario "Should throw token type errors when a node property being used as a dynamic label is invalid token"
 Feature "DynamicLabelsAcceptance": Scenario "Dynamic Labels from a Collect in CREATE clause acting on graph data"
+
+// Legacy behaves differently because it didn't receive the bugfix from PR #27330
+Feature "CallInTransactionsErrorHandlingWithReturn": Scenario "Create and return aliased imported node in transactions ON ERROR CONTINUE"
+Feature "CallInTransactionsErrorHandlingWithReturn": Scenario "Create and return aliased imported node in concurrent transactions ON ERROR CONTINUE"
+Feature "CallInTransactionsErrorHandlingWithReturn": Scenario "Create and return aliased imported variable in transactions ON ERROR CONTINUE"
+Feature "CallInTransactionsErrorHandlingWithReturn": Scenario "Create and return aliased imported variable in concurrent transactions ON ERROR CONTINUE"

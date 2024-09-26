@@ -461,3 +461,115 @@ Feature: CallInTransactionsErrorHandlingWithReturn
       | +nodes      | 6 |
       | +properties | 6 |
       | +labels     | 1 |
+
+  Scenario: Create and return aliased imported variable in transactions ON ERROR CONTINUE
+    Given an empty graph
+    When executing query:
+      """
+      UNWIND [1, 2, 3, 0, 4] AS i
+      CALL {
+        WITH i
+        UNWIND [1, 0] AS j
+        CREATE (n:N {p: 1/(i + j)})
+        RETURN i AS k, j
+      } IN TRANSACTIONS
+        OF 2 ROWS
+        ON ERROR CONTINUE
+      RETURN
+        i,
+        j,
+        k
+      """
+    Then the result should be, in order:
+      | i |    j | k |
+      | 1 |    1 | 1 |
+      | 1 |    0 | 1 |
+      | 2 |    1 | 2 |
+      | 2 |    0 | 2 |
+      | 3 | null | 3 |
+      | 0 | null | 0 |
+      | 4 |    1 | 4 |
+      | 4 |    0 | 4 |
+    And the side effects should be:
+      | +nodes      | 6 |
+      | +properties | 6 |
+      | +labels     | 1 |
+
+  Scenario: Create and return aliased imported node in transactions ON ERROR CONTINUE
+    Given any graph
+    When executing query:
+      """
+      MATCH (a:A { name: 'a' })
+      MATCH (x:X { name: 'b1' })
+      CALL {
+        WITH a
+        CREATE (b:B { prop: (1/0) })
+        RETURN a AS c, b
+      }
+      IN TRANSACTIONS
+      ON ERROR CONTINUE
+      RETURN a.name, c.name, x.name, b.name
+      """
+    Then the result should be, in order:
+      | a.name | c.name | x.name | b.name |
+      |    'a' |    'a' |   'b1' |   null |
+    And the side effects should be:
+      | +nodes      | 0 |
+      | +properties | 0 |
+      | +labels     | 0 |
+
+  Scenario: Create and return aliased imported variable in concurrent transactions ON ERROR CONTINUE
+    Given an empty graph
+    When executing query:
+      """
+      UNWIND [1, 2, 3, 0, 4] AS i
+      CALL {
+        WITH i
+        UNWIND [1, 0] AS j
+        CREATE (n:N {p: 1/(i + j)})
+        RETURN i AS k, j
+      } IN CONCURRENT TRANSACTIONS
+        OF 2 ROWS
+        ON ERROR CONTINUE
+      RETURN
+        i,
+        j,
+        k
+      """
+    Then the result should be, in any order:
+      | i |    j | k |
+      | 1 |    1 | 1 |
+      | 1 |    0 | 1 |
+      | 2 |    1 | 2 |
+      | 2 |    0 | 2 |
+      | 3 | null | 3 |
+      | 0 | null | 0 |
+      | 4 |    1 | 4 |
+      | 4 |    0 | 4 |
+    And the side effects should be:
+      | +nodes      | 6 |
+      | +properties | 6 |
+      | +labels     | 1 |
+
+  Scenario: Create and return aliased imported node in concurrent transactions ON ERROR CONTINUE
+    Given any graph
+    When executing query:
+      """
+      MATCH (a:A { name: 'a' })
+      MATCH (x:X { name: 'b1' })
+      CALL {
+        WITH a
+        CREATE (b:B { prop: (1/0) })
+        RETURN a AS c, b
+      }
+      IN CONCURRENT TRANSACTIONS
+      ON ERROR CONTINUE
+      RETURN a.name, c.name, x.name, b.name
+      """
+    Then the result should be, in order:
+      | a.name | c.name | x.name | b.name |
+      |    'a' |    'a' |   'b1' |   null |
+    And the side effects should be:
+      | +nodes      | 0 |
+      | +properties | 0 |
+      | +labels     | 0 |

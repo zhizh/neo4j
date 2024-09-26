@@ -47,7 +47,15 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
     val lhs = FakeSlottedPipe(slots, Seq(Map(), Map(), Map()))
     val rhs = FakeSlottedPipe(slots, Seq(Map(), Map()), new FailingNextIterable(Map(), Map()), Seq(Map()))
 
-    val pipe = TransactionApplySlottedPipe(lhs, rhs, literal(1), OnErrorFail, Set.empty, slots.get("status"))()
+    val pipe = TransactionApplySlottedPipe(
+      lhs,
+      rhs,
+      literal(1),
+      OnErrorFail,
+      Set.empty,
+      slots.get("status"),
+      SlotConfiguration.Size.zero
+    )()
 
     withQueryState(IMPLICIT) { state =>
       state.setExecutionContextFactory(SlottedCypherRowFactory(slots, slots.size()))
@@ -76,7 +84,15 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
     val lhs = FakeSlottedPipe(slots, Seq(Map(), Map(), Map()))
     val rhs = FakeSlottedPipe(slots, Seq(Map(), Map()), new FailingNextIterable(Map(), Map()), Seq(Map(), Map()))
 
-    val pipe = TransactionApplySlottedPipe(lhs, rhs, literal(1), OnErrorBreak, Set.empty, slots.get("status"))()
+    val pipe = TransactionApplySlottedPipe(
+      lhs,
+      rhs,
+      literal(1),
+      OnErrorBreak,
+      Set.empty,
+      slots.get("status"),
+      SlotConfiguration.Size.zero
+    )()
 
     withQueryState(IMPLICIT) { state =>
       state.setExecutionContextFactory(SlottedCypherRowFactory(slots, slots.size()))
@@ -113,7 +129,15 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
       new FailingNextIterable(Map())
     )
 
-    val pipe = TransactionApplySlottedPipe(lhs, rhs, literal(1), OnErrorContinue, Set.empty, slots.get("status"))()
+    val pipe = TransactionApplySlottedPipe(
+      lhs,
+      rhs,
+      literal(1),
+      OnErrorContinue,
+      Set.empty,
+      slots.get("status"),
+      SlotConfiguration.Size.zero
+    )()
 
     withQueryState(IMPLICIT) { state =>
       state.setExecutionContextFactory(SlottedCypherRowFactory(slots, slots.size()))
