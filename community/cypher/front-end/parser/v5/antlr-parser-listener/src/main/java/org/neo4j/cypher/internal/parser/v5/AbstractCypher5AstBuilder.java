@@ -495,10 +495,10 @@ public abstract class AbstractCypher5AstBuilder implements Cypher5ParserListener
                     (Cypher5Parser.UnescapedSymbolicNameStringContext) ctx);
             case Cypher5Parser.RULE_symbolicLabelNameString -> exitSymbolicLabelNameString(
                     (Cypher5Parser.SymbolicLabelNameStringContext) ctx);
-            case Cypher5Parser.RULE_externalKeywords -> exitExternalKeywords(
-                    (Cypher5Parser.ExternalKeywordsContext) ctx);
             case Cypher5Parser.RULE_unescapedLabelSymbolicNameString -> exitUnescapedLabelSymbolicNameString(
                     (Cypher5Parser.UnescapedLabelSymbolicNameStringContext) ctx);
+            case Cypher5Parser.RULE_unescapedLabelSymbolicNameString_ -> exitUnescapedLabelSymbolicNameString_(
+                    (Cypher5Parser.UnescapedLabelSymbolicNameString_Context) ctx);
             case Cypher5Parser.RULE_endOfFile -> exitEndOfFile((Cypher5Parser.EndOfFileContext) ctx);
             default -> throw new IllegalStateException("Unknown rule index " + ctx.getRuleIndex());
         }

@@ -156,8 +156,8 @@ class LiteralInterpreterBuilder implements ParseTreeListener {
             case Cypher5Parser.RULE_expression10 -> exitDefault((AstRuleCtx) ctx);
             case Cypher5Parser.RULE_expression11 -> exitDefault((AstRuleCtx) ctx);
             case Cypher5Parser.RULE_namespace -> exitNameSpace((Cypher5Parser.NamespaceContext) ctx);
-            case Cypher5Parser.RULE_unescapedLabelSymbolicNameString -> exitUnescapedLabelSymbolicNameString(
-                    (Cypher5Parser.UnescapedLabelSymbolicNameStringContext) ctx);
+            case Cypher5Parser.RULE_unescapedLabelSymbolicNameString_ -> exitUnescapedLabelSymbolicNameString_(
+                    (Cypher5Parser.UnescapedLabelSymbolicNameString_Context) ctx);
 
             default -> exitDefault((AstRuleCtx) ctx);
         }
@@ -386,7 +386,7 @@ class LiteralInterpreterBuilder implements ParseTreeListener {
         ctx.ast = ctx.getText();
     }
 
-    private void exitUnescapedLabelSymbolicNameString(Cypher5Parser.UnescapedLabelSymbolicNameStringContext ctx) {
+    private void exitUnescapedLabelSymbolicNameString_(Cypher5Parser.UnescapedLabelSymbolicNameString_Context ctx) {
         ctx.ast = ctx.getText();
     }
 

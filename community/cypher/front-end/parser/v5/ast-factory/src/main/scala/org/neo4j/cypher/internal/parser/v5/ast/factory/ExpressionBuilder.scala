@@ -1003,10 +1003,6 @@ trait ExpressionBuilder extends Cypher5ParserListener {
     ctx.ast = text
   }
 
-  final override def exitExternalKeywords(ctx: Cypher5Parser.ExternalKeywordsContext): Unit = {
-    AssertMacros.checkOnlyWhenAssertionsAreEnabled(false)
-  }
-
   final override def exitSymbolicLabelNameString(
     ctx: Cypher5Parser.SymbolicLabelNameStringContext
   ): Unit = {
@@ -1015,6 +1011,12 @@ trait ExpressionBuilder extends Cypher5ParserListener {
 
   final override def exitUnescapedLabelSymbolicNameString(
     ctx: Cypher5Parser.UnescapedLabelSymbolicNameStringContext
+  ): Unit = {
+    ctx.ast = ctxChild(ctx, 0).ast
+  }
+
+  final override def exitUnescapedLabelSymbolicNameString_(
+    ctx: Cypher5Parser.UnescapedLabelSymbolicNameString_Context
   ): Unit = {
     ctx.ast = ctx.getText
   }

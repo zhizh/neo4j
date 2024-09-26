@@ -494,10 +494,10 @@ public abstract class AbstractCypher25AstBuilder implements Cypher25ParserListen
                     (Cypher25Parser.UnescapedSymbolicNameStringContext) ctx);
             case Cypher25Parser.RULE_symbolicLabelNameString -> exitSymbolicLabelNameString(
                     (Cypher25Parser.SymbolicLabelNameStringContext) ctx);
-            case Cypher25Parser.RULE_externalKeywords -> exitExternalKeywords(
-                    (Cypher25Parser.ExternalKeywordsContext) ctx);
             case Cypher25Parser.RULE_unescapedLabelSymbolicNameString -> exitUnescapedLabelSymbolicNameString(
                     (Cypher25Parser.UnescapedLabelSymbolicNameStringContext) ctx);
+            case Cypher25Parser.RULE_unescapedLabelSymbolicNameString_ -> exitUnescapedLabelSymbolicNameString_(
+                    (Cypher25Parser.UnescapedLabelSymbolicNameString_Context) ctx);
             case Cypher25Parser.RULE_endOfFile -> exitEndOfFile((Cypher25Parser.EndOfFileContext) ctx);
             default -> throw new IllegalStateException("Unknown rule index " + ctx.getRuleIndex());
         }

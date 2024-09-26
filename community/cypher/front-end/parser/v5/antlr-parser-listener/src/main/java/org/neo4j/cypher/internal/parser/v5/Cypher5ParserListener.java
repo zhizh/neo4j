@@ -685,9 +685,9 @@ public interface Cypher5ParserListener extends ParseTreeListener {
 
     void exitSymbolicLabelNameString(Cypher5Parser.SymbolicLabelNameStringContext ctx);
 
-    void exitExternalKeywords(Cypher5Parser.ExternalKeywordsContext ctx);
-
     void exitUnescapedLabelSymbolicNameString(Cypher5Parser.UnescapedLabelSymbolicNameStringContext ctx);
+
+    void exitUnescapedLabelSymbolicNameString_(Cypher5Parser.UnescapedLabelSymbolicNameString_Context ctx);
 
     void exitEndOfFile(Cypher5Parser.EndOfFileContext ctx);
 }

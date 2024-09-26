@@ -985,12 +985,7 @@ trait ExpressionBuilder extends Cypher25ParserListener {
   protected def notificationLogger: Option[InternalNotificationLogger]
 
   final override def exitUnescapedSymbolicNameString(ctx: Cypher25Parser.UnescapedSymbolicNameStringContext): Unit = {
-    val text = ctx.getText
-    ctx.ast = text
-  }
-
-  final override def exitExternalKeywords(ctx: Cypher25Parser.ExternalKeywordsContext): Unit = {
-    AssertMacros.checkOnlyWhenAssertionsAreEnabled(false)
+    ctx.ast = ctx.getText
   }
 
   final override def exitSymbolicLabelNameString(
@@ -1001,6 +996,12 @@ trait ExpressionBuilder extends Cypher25ParserListener {
 
   final override def exitUnescapedLabelSymbolicNameString(
     ctx: Cypher25Parser.UnescapedLabelSymbolicNameStringContext
+  ): Unit = {
+    ctx.ast = ctxChild(ctx, 0).ast
+  }
+
+  final override def exitUnescapedLabelSymbolicNameString_(
+    ctx: Cypher25Parser.UnescapedLabelSymbolicNameString_Context
   ): Unit = {
     ctx.ast = ctx.getText
   }

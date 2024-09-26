@@ -1791,11 +1791,11 @@ symbolicLabelNameString
 
 // Do not remove this, it is needed for composing the grammar
 // with other ones (e.g. language support ones)
-externalKeywords
-   : IDENTIFIER
+unescapedLabelSymbolicNameString
+   : unescapedLabelSymbolicNameString_
    ;
 
-unescapedLabelSymbolicNameString
+unescapedLabelSymbolicNameString_
    : IDENTIFIER
    | ACCESS
    | ACTIVE
@@ -2054,7 +2054,6 @@ unescapedLabelSymbolicNameString
    | YIELD
    | ZONE
    | ZONED
-   | externalKeywords
    ;
 
 endOfFile
