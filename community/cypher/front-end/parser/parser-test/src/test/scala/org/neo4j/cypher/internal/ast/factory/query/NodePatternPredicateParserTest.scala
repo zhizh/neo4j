@@ -63,7 +63,7 @@ class NodePatternPredicateParserTest extends AstParsingTestBase with LegacyAstPa
   }
 
   test("(n:A:B:C {prop: 42} WHERE n.otherProp < 123)") {
-    parseTo {
+    parsesTo {
       NodePattern(
         variable = Some(varFor("n", (1, 2, 1))),
         labelExpression = Some(
