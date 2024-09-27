@@ -25,11 +25,15 @@ import static org.neo4j.kernel.api.exceptions.Status.General.DatabaseUnavailable
 import static org.neo4j.kernel.api.exceptions.Status.Procedure.ProcedureCallFailed;
 import static org.neo4j.values.storable.Values.NO_VALUE;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.neo4j.common.panic.PanicEventHandler;
 import org.neo4j.common.panic.PanicReason;
 import org.neo4j.configuration.Config;
+import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
@@ -44,6 +48,7 @@ import org.neo4j.kernel.database.DatabaseReferenceRepository;
 import org.neo4j.kernel.database.DefaultDatabaseResolver;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.logging.InternalLogProvider;
+import org.neo4j.util.VisibleForTesting;
 import org.neo4j.values.storable.TextValue;
 import org.neo4j.values.virtual.MapValue;
 
@@ -62,6 +67,12 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
     private final boolean echoRoutingContextAddressWhenAlone;
     private volatile PanicReason panicReason;
 
+    private final boolean clientProvidedRouterEnabled;
+    private final List<String> clientProvidedRouterPrefixes;
+    private final Duration clientProvidedRouterPrefixRotationPeriod;
+    private final String clientProvidedRouterSuffix;
+    private final Clock clock;
+
     public DefaultRoutingService(
             InternalLogProvider logProvider,
             RoutingTableServiceValidator validator,
@@ -72,7 +83,8 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
             InstanceClusterView instanceClusterView,
             DefaultDatabaseResolver defaultDatabaseResolver,
             DatabaseReferenceRepository databaseReferenceRepo,
-            boolean echoRoutingContextAddressWhenAlone) {
+            boolean echoRoutingContextAddressWhenAlone,
+            Clock clock) {
         this.log = logProvider.getLog(getClass());
         this.validator = validator;
         this.clientSideRoutingTableProvider = clientSideRoutingTableProvider;
@@ -84,6 +96,12 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
         this.defaultDatabaseResolver = defaultDatabaseResolver;
         this.databaseReferenceRepo = databaseReferenceRepo;
         this.echoRoutingContextAddressWhenAlone = echoRoutingContextAddressWhenAlone;
+        this.clientProvidedRouterEnabled = config.get(GraphDatabaseInternalSettings.client_provided_router_enabled);
+        this.clientProvidedRouterPrefixes = config.get(GraphDatabaseInternalSettings.client_provided_router_prefixes);
+        this.clientProvidedRouterSuffix = config.get(GraphDatabaseInternalSettings.client_provided_router_suffix);
+        this.clientProvidedRouterPrefixRotationPeriod =
+                config.get(GraphDatabaseInternalSettings.client_provided_router_prefix_rotation_period);
+        this.clock = clock;
     }
 
     @Override
@@ -125,6 +143,15 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
                 validator.isValidForServerSideRouting((DatabaseReferenceImpl.Internal) databaseReference);
                 result = serverSideRoutingTableProvider.getServerSideRoutingTable(routingContext);
             }
+        }
+
+        var validClientProvidedRouterExists = clientProvidedAddress
+                .map(a -> a.getHostname().endsWith(clientProvidedRouterSuffix))
+                .orElse(false);
+        var shouldReplaceRouter = clientProvidedRouterEnabled && validClientProvidedRouterExists;
+
+        if (shouldReplaceRouter) {
+            result = replaceRouterWithClientProvidedAddress(result, clientProvidedAddress.get());
         }
 
         assertRoutingResultNotEmpty(result, databaseReference);
@@ -207,6 +234,32 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
                             + databaseReference.alias().name() + "' because the request came from another alias '"
                             + sourceAliasString + "' and alias chains " + "are not permitted.");
         }
+    }
+
+    private RoutingResult replaceRouterWithClientProvidedAddress(
+            RoutingResult oldResult, SocketAddress clientProvidedAddress) {
+
+        var millisSinceEpoch = clock.instant().toEpochMilli();
+        var prefix = calculateClientProvidedRouterPrefix(
+                this.clientProvidedRouterPrefixes,
+                this.clientProvidedRouterPrefixRotationPeriod.toMillis(),
+                millisSinceEpoch);
+
+        return new RoutingResult(
+                List.of(new SocketAddress(
+                        String.format("%s-%s", prefix, clientProvidedAddress.getHostname()),
+                        clientProvidedAddress.getPort())),
+                oldResult.writeEndpoints(),
+                oldResult.readEndpoints(),
+                oldResult.ttlMillis());
+    }
+
+    @VisibleForTesting
+    public static String calculateClientProvidedRouterPrefix(
+            List<String> prefixes, long rotationPeriodMills, long millisSinceEpoch) {
+        var periodsSinceEpoch = millisSinceEpoch / rotationPeriodMills;
+        var prefixToSelect = (int) (periodsSinceEpoch % prefixes.size());
+        return prefixes.get(prefixToSelect);
     }
 
     @Override

@@ -95,6 +95,7 @@ import org.neo4j.kernel.impl.util.ValueUtils;
 import org.neo4j.logging.AssertableLogProvider;
 import org.neo4j.logging.InternalLogProvider;
 import org.neo4j.logging.NullLogProvider;
+import org.neo4j.time.Clocks;
 import org.neo4j.values.AnyValue;
 import org.neo4j.values.storable.Values;
 import org.neo4j.values.virtual.MapValue;
@@ -552,7 +553,8 @@ public class SingleInstanceGetRoutingTableProcedureTest {
                 () -> false,
                 defaultDatabaseResolver,
                 databaseReferenceRepo,
-                true);
+                true,
+                Clocks.systemClock());
 
         var routingTableProcedures = GetRoutingTableProcedure.from(routingService, logProvider);
         return routingTableProcedures.current();

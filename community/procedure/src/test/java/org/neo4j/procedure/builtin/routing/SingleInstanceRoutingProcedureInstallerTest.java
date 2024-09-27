@@ -48,6 +48,7 @@ import org.neo4j.kernel.database.DatabaseReferenceRepository;
 import org.neo4j.kernel.database.DefaultDatabaseResolver;
 import org.neo4j.logging.NullLogProvider;
 import org.neo4j.procedure.impl.GlobalProceduresRegistry;
+import org.neo4j.time.Clocks;
 
 class SingleInstanceRoutingProcedureInstallerTest {
     @Test
@@ -75,7 +76,8 @@ class SingleInstanceRoutingProcedureInstallerTest {
                 () -> false,
                 defaultDatabaseResolver,
                 databaseReferenceRepo,
-                true);
+                true,
+                Clocks.systemClock());
 
         GlobalProcedures procedures = spy(new GlobalProceduresRegistry());
 

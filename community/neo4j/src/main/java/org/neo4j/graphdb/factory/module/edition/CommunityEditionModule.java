@@ -260,7 +260,8 @@ public class CommunityEditionModule extends AbstractEditionModule implements Def
                 () -> true,
                 defaultDatabaseResolver,
                 databaseReferenceRepo,
-                true);
+                true,
+                globalModule.getGlobalClock());
     }
 
     @Override
