@@ -4003,6 +4003,14 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.SYSTEM_CONFIGURATION_OR_OPERATION_EXCEPTION,
             "system database is immutable"),
+    STATUS_51N70(
+            new GqlStatus("51N70"),
+            """
+                    Cannot get routing table for { %s } because Bolt is not enabled. Please update your configuration such that 'server.bolt.enabled' is set to true.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.db},
+            emptyMap(),
+            Condition.PROCEDURE_EXCEPTION,
+            "bolt is not enabled"),
     STATUS_52N01(
             new GqlStatus("52N01"),
             """
@@ -4069,14 +4077,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.PROCEDURE_EXCEPTION,
             "invalid server id argument to checkConnectivity"),
-    STATUS_52N09(
-            new GqlStatus("52N09"),
-            """
-                    Cannot get routing table for { %s } because Bolt is not enabled. Please update your configuration such that 'server.bolt.enabled' is set to true.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.db},
-            emptyMap(),
-            Condition.PROCEDURE_EXCEPTION,
-            "bolt is not enabled"),
     STATUS_52N10(
             new GqlStatus("52N10"),
             """
@@ -4108,7 +4108,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlParams.GqlParam[] {GqlParams.StringParam.db},
             emptyMap(),
             Condition.PROCEDURE_EXCEPTION,
-            "default database does not exist"),
+            "new default database does not exist"),
     STATUS_52N14(
             new GqlStatus("52N14"),
             """

@@ -32,6 +32,16 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject getGql52N02_52N11(String procedure) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02)
+                .withParam(GqlParams.StringParam.proc, procedure)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N11)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+    }
+
     /**
      * Append the exception cause as the bottom GQL cause of the inner ErrorGqlStatusObject if the following applies
      * - the exception cause is an ErrorGqlStatusObject (and not e.g. a generic Java exception)

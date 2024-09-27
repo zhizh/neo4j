@@ -24,6 +24,7 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class ProcedureException extends KernelException {
+    @Deprecated
     public ProcedureException(Status statusCode, Throwable cause, String message, Object... parameters) {
         super(statusCode, cause, message, parameters);
     }
@@ -37,6 +38,7 @@ public class ProcedureException extends KernelException {
         super(gqlStatusObject, statusCode, cause, message, parameters);
     }
 
+    @Deprecated
     public ProcedureException(Status statusCode, String message, Object... parameters) {
         super(statusCode, message, parameters);
     }
