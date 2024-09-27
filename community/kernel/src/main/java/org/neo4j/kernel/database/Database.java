@@ -909,7 +909,7 @@ public class Database extends AbstractDatabase {
         life.add(transactionAppender);
 
         final LogicalTransactionStore logicalTransactionStore = new PhysicalLogicalTransactionStore(
-                logFiles, transactionMetadataCache, commandReaderFactory, monitors, true, config, fs);
+                logFiles, transactionMetadataCache, commandReaderFactory, monitors, true, config);
 
         CheckPointThreshold threshold = CheckPointThreshold.createThreshold(config, clock, logPruning, logProvider);
 

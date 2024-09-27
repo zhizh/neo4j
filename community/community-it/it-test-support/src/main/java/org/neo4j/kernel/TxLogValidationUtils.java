@@ -112,10 +112,27 @@ public class TxLogValidationUtils {
             Consumer<LogEntryCommit> extraCommitCheck,
             CommandReaderFactory commandReaderFactory)
             throws IOException {
+        return assertWholeTransactionsIn(
+                logFile,
+                logVersion,
+                extraStartCheck,
+                extraCommitCheck,
+                commandReaderFactory,
+                LogVersionBridge.NO_MORE_CHANNELS);
+    }
+
+    public static int assertWholeTransactionsIn(
+            LogFile logFile,
+            long logVersion,
+            Consumer<LogEntryStart> extraStartCheck,
+            Consumer<LogEntryCommit> extraCommitCheck,
+            CommandReaderFactory commandReaderFactory,
+            LogVersionBridge logVersionBridge)
+            throws IOException {
         int transactions = 0;
 
-        try (ReadableLogChannel reader = logFile.getReader(
-                logFile.extractHeader(logVersion).getStartPosition(), LogVersionBridge.NO_MORE_CHANNELS)) {
+        try (ReadableLogChannel reader =
+                logFile.getReader(logFile.extractHeader(logVersion).getStartPosition(), logVersionBridge)) {
             LogEntryReader entryReader = new VersionAwareLogEntryReader(
                     commandReaderFactory,
                     new BinarySupportedKernelVersions(Config.defaults(

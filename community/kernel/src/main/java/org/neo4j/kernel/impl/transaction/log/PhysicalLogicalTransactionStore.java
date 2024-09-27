@@ -24,12 +24,10 @@ import static org.neo4j.configuration.GraphDatabaseInternalSettings.pre_sketch_t
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
 import org.neo4j.configuration.Config;
-import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.kernel.BinarySupportedKernelVersions;
 import org.neo4j.kernel.impl.transaction.log.entry.VersionAwareLogEntryReader;
 import org.neo4j.kernel.impl.transaction.log.files.LogFile;
 import org.neo4j.kernel.impl.transaction.log.files.LogFiles;
-import org.neo4j.kernel.impl.transaction.log.reverse.ForwardCommandBatchCursor;
 import org.neo4j.kernel.impl.transaction.log.reverse.ReversedMultiFileCommandBatchCursor;
 import org.neo4j.kernel.impl.transaction.log.reverse.ReversedTransactionCursorMonitor;
 import org.neo4j.monitoring.Monitors;
@@ -43,7 +41,6 @@ public class PhysicalLogicalTransactionStore implements LogicalTransactionStore 
     private final boolean failOnCorruptedLogFiles;
     private final boolean presketchLogFiles;
     private final BinarySupportedKernelVersions binarySupportedKernelVersions;
-    private final FileSystemAbstraction fs;
 
     public PhysicalLogicalTransactionStore(
             LogFiles logFiles,
@@ -51,8 +48,7 @@ public class PhysicalLogicalTransactionStore implements LogicalTransactionStore 
             CommandReaderFactory commandReaderFactory,
             Monitors monitors,
             boolean failOnCorruptedLogFiles,
-            Config config,
-            FileSystemAbstraction fs) {
+            Config config) {
         this.logFile = logFiles.getLogFile();
         this.transactionMetadataCache = transactionMetadataCache;
         this.commandReaderFactory = commandReaderFactory;
@@ -60,16 +56,13 @@ public class PhysicalLogicalTransactionStore implements LogicalTransactionStore 
         this.failOnCorruptedLogFiles = failOnCorruptedLogFiles;
         this.presketchLogFiles = config.get(pre_sketch_transaction_logs);
         this.binarySupportedKernelVersions = new BinarySupportedKernelVersions(config);
-        this.fs = fs;
     }
 
     @Override
     public CommandBatchCursor getCommandBatches(LogPosition position) throws IOException {
-        return new ForwardCommandBatchCursor(
-                logFile,
-                position,
-                new VersionAwareLogEntryReader(commandReaderFactory, binarySupportedKernelVersions),
-                fs);
+        return new CommittedCommandBatchCursor(
+                logFile.getReader(position),
+                new VersionAwareLogEntryReader(commandReaderFactory, binarySupportedKernelVersions));
     }
 
     @Override
@@ -92,7 +85,8 @@ public class PhysicalLogicalTransactionStore implements LogicalTransactionStore 
                     transactionMetadataCache.getTransactionMetadata(appendIndexToStartFrom);
             if (transactionMetadata != null) {
                 // we're good
-                return new ForwardCommandBatchCursor(logFile, transactionMetadata.startPosition(), logEntryReader, fs);
+                return new CommittedCommandBatchCursor(
+                        logFile.getReader(transactionMetadata.startPosition()), logEntryReader);
             }
 
             // ask logFiles about the version it may be in
@@ -104,7 +98,7 @@ public class PhysicalLogicalTransactionStore implements LogicalTransactionStore 
             logFile.accept(transactionPositionLocator, headerVisitor.getLogPositionOrThrow());
             var position = transactionPositionLocator.getLogPositionOrThrow();
             transactionMetadataCache.cacheTransactionMetadata(appendIndexToStartFrom, position);
-            return new ForwardCommandBatchCursor(logFile, position, logEntryReader, fs);
+            return new CommittedCommandBatchCursor(logFile.getReader(position), logEntryReader);
         } catch (NoSuchFileException e) {
             throw new NoSuchLogEntryException(
                     appendIndexToStartFrom,

@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.configuration.Config;
@@ -60,6 +61,7 @@ import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
 import org.neo4j.kernel.impl.coreapi.TransactionImpl;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
+import org.neo4j.kernel.impl.transaction.log.ReaderLogVersionBridge;
 import org.neo4j.kernel.impl.transaction.log.entry.LogFormat;
 import org.neo4j.kernel.impl.transaction.log.files.LogFiles;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -382,6 +384,29 @@ class TransactionLogsUpgradeIT {
                         + 2 /* the guaranteed before and after */
                         + 1 /* the version update */
                         + txsBefore);
+    }
+
+    @Test
+    void shouldReadOverFormatSwitch() throws Exception {
+        shutdownDbms();
+        startDbms(this::configureGloriousFutureAsLatest);
+
+        createWriteTransaction(testDb);
+        assertKernelVersion(testDb, LATEST_KERNEL_VERSION);
+
+        upgradeDatabase(managementService, testDb, LATEST_KERNEL_VERSION, GLORIOUS_FUTURE);
+        createWriteTransaction(testDb);
+
+        LogFiles logFiles = testDb.getDependencyResolver().resolveDependency(LogFiles.class);
+
+        assertThat(assertWholeTransactionsIn(
+                        logFiles.getLogFile(),
+                        INITIAL_LOG_VERSION,
+                        (startEntry) -> {},
+                        (commitEntry) -> {},
+                        commandReaderFactory,
+                        ReaderLogVersionBridge.forFile(logFiles.getLogFile())))
+                .isBetween(5, 6); // One extra token tx on record
     }
 
     private long getNodeCount(GraphDatabaseAPI db) {

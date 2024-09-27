@@ -53,7 +53,10 @@ import org.neo4j.kernel.impl.transaction.SimpleTransactionIdStore;
 import org.neo4j.kernel.impl.transaction.log.CompleteCommandBatch;
 import org.neo4j.kernel.impl.transaction.log.FlushableLogPositionAwareChannel;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
+import org.neo4j.kernel.impl.transaction.log.LogVersionBridge;
+import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
 import org.neo4j.kernel.impl.transaction.log.ReadAheadLogChannel;
+import org.neo4j.kernel.impl.transaction.log.ReaderLogVersionBridge;
 import org.neo4j.kernel.impl.transaction.log.TransactionLogWriter;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEntryWriter;
 import org.neo4j.kernel.impl.transaction.log.files.LogFile;
@@ -64,6 +67,7 @@ import org.neo4j.kernel.impl.transaction.tracing.LogAppendEvent;
 import org.neo4j.kernel.lifecycle.LifeSupport;
 import org.neo4j.logging.AssertableLogProvider;
 import org.neo4j.logging.InternalLogProvider;
+import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.storageengine.api.CommandBatch;
 import org.neo4j.storageengine.api.LogVersionRepository;
 import org.neo4j.storageengine.api.StorageCommand;
@@ -187,8 +191,11 @@ class ReversedSingleFileCommandBatchCursorTest {
         writeTransactions(1, 1, 1);
 
         // when
-        try (ReadAheadLogChannel channel = (ReadAheadLogChannel)
-                logFile.getReader(logFiles.getLogFile().extractHeader(0).getStartPosition())) {
+        PhysicalLogVersionedStoreChannel logChannel = logFile.openForVersion(0);
+        logChannel.position(
+                logFiles.getLogFile().extractHeader(0).getStartPosition().getByteOffset());
+        try (ReadAheadLogChannel channel = new ReadAheadLogChannel(
+                logChannel, ReaderLogVersionBridge.forFile(logFile), EmptyMemoryTracker.INSTANCE)) {
             assertThatThrownBy(
                             () -> new ReversedSingleFileCommandBatchCursor(channel, logEntryReader(), false, monitor))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -242,8 +249,8 @@ class ReversedSingleFileCommandBatchCursorTest {
     }
 
     private ReversedSingleFileCommandBatchCursor txCursor(boolean failOnCorruptedLogFiles) throws IOException {
-        ReadAheadLogChannel fileReader = (ReadAheadLogChannel)
-                logFile.getReader(logFiles.getLogFile().extractHeader(0).getStartPosition());
+        ReadAheadLogChannel fileReader = (ReadAheadLogChannel) logFile.getReader(
+                logFiles.getLogFile().extractHeader(0).getStartPosition(), LogVersionBridge.NO_MORE_CHANNELS);
         try {
             return new ReversedSingleFileCommandBatchCursor(
                     fileReader, logEntryReader(), failOnCorruptedLogFiles, monitor);

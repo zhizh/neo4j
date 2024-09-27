@@ -78,8 +78,19 @@ public final class ReadAheadUtils {
             return new EnvelopeReadChannel(
                     channel, logHeader.getSegmentBlockSize(), logVersionBridge, memoryTracker, raw);
         } else {
+            return getNonEnvelopeReadableLogChannel(channel, logVersionBridge, memoryTracker, raw);
+        }
+    }
+
+    private static ReadableLogChannel getNonEnvelopeReadableLogChannel(
+            LogVersionedStoreChannel channel,
+            LogVersionBridge logVersionBridge,
+            MemoryTracker memoryTracker,
+            boolean raw) {
+        if (logVersionBridge == NO_MORE_CHANNELS) {
             return new ReadAheadLogChannel(channel, logVersionBridge, memoryTracker, raw);
         }
+        return new FormatSwitchingReadAheadLogChannel(channel, logVersionBridge, memoryTracker, raw);
     }
 
     /**
@@ -111,7 +122,7 @@ public final class ReadAheadUtils {
             LogHeader logHeader = logFile.extractHeader(version);
             return newChannel(channel, logVersionBridge, logHeader, memoryTracker);
         } else {
-            return new ReadAheadLogChannel(channel, logVersionBridge, memoryTracker, false);
+            return getNonEnvelopeReadableLogChannel(channel, logVersionBridge, memoryTracker, false);
         }
     }
 }

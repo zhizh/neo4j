@@ -696,8 +696,7 @@ public final class Recovery {
                 storageEngineFactory.commandReaderFactory(),
                 monitors,
                 failOnCorruptedLogFiles,
-                config,
-                fs);
+                config);
 
         LifeSupport schemaLife = new LifeSupport();
         schemaLife.add(storageEngine.schemaAndTokensLifecycle());

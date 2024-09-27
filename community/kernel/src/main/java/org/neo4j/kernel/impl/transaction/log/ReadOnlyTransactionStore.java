@@ -49,7 +49,7 @@ public class ReadOnlyTransactionStore implements LogicalTransactionStore {
                 .withConfig(config)
                 .build();
         physicalStore = new PhysicalLogicalTransactionStore(
-                logFiles, transactionMetadataCache, commandReaderFactory, monitors, true, config, fs);
+                logFiles, transactionMetadataCache, commandReaderFactory, monitors, true, config);
     }
 
     @Override
