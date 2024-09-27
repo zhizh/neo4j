@@ -31,7 +31,7 @@ package org.neo4j.dbms.systemgraph.allocation;
  * @param weight a whole number greater than or equal to zero
  */
 public record DatabaseWeight(int weight) implements DatabaseAllocationHints.Hint<Integer>, Comparable<DatabaseWeight> {
-
+    public static final DatabaseWeight DEFAULT_WEIGHT = new DatabaseWeight(10);
     public static final String KEY = "weight";
 
     public DatabaseWeight {

@@ -73,7 +73,7 @@ public class DatabaseAllocationHintsTest {
             AnyValue hintValue,
             Class<? extends DatabaseAllocationHints.Hint<?>> expectedHintClass,
             Object expectedValue) {
-        var hint = DatabaseAllocationHints.createHintFromInput(hintKey, hintValue);
+        var hint = DatabaseAllocationHints.createFromInput(hintKey, hintValue);
         assertThat(hint).isInstanceOf(expectedHintClass);
         assertThat(hint.getValue()).isEqualTo(expectedValue);
     }
@@ -96,14 +96,13 @@ public class DatabaseAllocationHintsTest {
             AnyValue hintValue,
             Class<? extends DatabaseAllocationHints.Hint<?>> expectedHintClass,
             Object expectedValue) {
-        assertThrows(
-                IllegalArgumentException.class, () -> DatabaseAllocationHints.createHintFromInput(hintKey, hintValue));
+        assertThrows(IllegalArgumentException.class, () -> DatabaseAllocationHints.createFromInput(hintKey, hintValue));
     }
 
     @Test
     void parseUnknownKeysShouldThrow() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> DatabaseAllocationHints.createHintFromInput("_unknown_key_", Values.intValue(100)));
+                () -> DatabaseAllocationHints.createFromInput("_unknown_key_", Values.intValue(100)));
     }
 }

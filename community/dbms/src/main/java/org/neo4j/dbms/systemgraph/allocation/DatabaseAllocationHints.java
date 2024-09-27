@@ -21,6 +21,9 @@ package org.neo4j.dbms.systemgraph.allocation;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel;
@@ -35,8 +38,14 @@ import org.neo4j.values.virtual.MapValue;
 import org.neo4j.values.virtual.MapValueBuilder;
 
 public final class DatabaseAllocationHints {
-
     public static DatabaseAllocationHints EMPTY = new DatabaseAllocationHints(Set.of());
+
+    public static DatabaseAllocationHints DEFAULT =
+            new DatabaseAllocationHints(Arrays.stream(Hint.class.getPermittedSubclasses())
+                    .filter(hint -> defaultValue(hint).isPresent())
+                    .map(hintClass -> defaultValue(hintClass).orElseThrow())
+                    .collect(Collectors.toSet()));
+
     public static Set<String> VALID_HINT_KEYS = Arrays.stream(Hint.class.getPermittedSubclasses())
             .map(DatabaseAllocationHints::key)
             .collect(Collectors.toSet());
@@ -49,7 +58,7 @@ public final class DatabaseAllocationHints {
 
     public static DatabaseAllocationHints createFromInput(MapValue providedHints) {
         var hints = new HashSet<Hint<?>>();
-        providedHints.foreach((k, v) -> hints.add(createHintFromInput(k, v)));
+        providedHints.foreach((k, v) -> hints.add(createFromInput(k, v)));
 
         if (hints.isEmpty()) {
             return EMPTY;
@@ -57,23 +66,28 @@ public final class DatabaseAllocationHints {
         return new DatabaseAllocationHints(Set.copyOf(hints));
     }
 
-    public static DatabaseAllocationHints createFromGraph(Node allocationHints) {
-        var labels = Iterables.asSet(allocationHints.getLabels());
-        var labelString = labels.stream().map(Label::name).collect(Collectors.joining(", ", "'", "'"));
-        if (!labels.contains(TopologyGraphDbmsModel.ALLOCATION_HINTS_LABEL)) {
-            throw new IllegalArgumentException(String.format(
-                    "Incorrect Node labels for creating a DatabaseAllocationHints object! Required label %s, found %s",
-                    TopologyGraphDbmsModel.ALLOCATION_HINTS_LABEL.name(), labelString));
-        }
+    public static DatabaseAllocationHints createFromAllocationHintsNode(Node allocationHintsNode) {
+        assertLabel(allocationHintsNode, TopologyGraphDbmsModel.ALLOCATION_HINTS_LABEL);
+        return createFromNode(allocationHintsNode, "").orElse(EMPTY);
+    }
 
-        Set<Hint<?>> hints = allocationHints.getAllProperties().entrySet().stream()
+    public static DatabaseAllocationHints createFromSettingsNode(Node settingsNode) {
+        assertLabel(settingsNode, TopologyGraphDbmsModel.TOPOLOGY_GRAPH_CONFIG_LABEL);
+        return createFromNode(settingsNode, TopologyGraphDbmsModel.TOPOLOGY_GRAPH_CONFIG_DEFAULT_ALLOCATION_HINT_PREFIX)
+                .orElse(DEFAULT);
+    }
+
+    private static Optional<DatabaseAllocationHints> createFromNode(Node node, String prefix) {
+        Set<Hint<?>> hints = node.getAllProperties().entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(prefix))
+                .map(entry -> Map.entry(entry.getKey().substring(prefix.length()), entry.getValue()))
                 .filter(entry -> VALID_HINT_KEYS.contains(entry.getKey()))
-                .map(entry -> createHintFromObject(entry.getKey(), entry.getValue()))
+                .map(entry -> createFromNodeProperty(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toUnmodifiableSet());
         if (hints.isEmpty()) {
-            return EMPTY;
+            return Optional.empty();
         }
-        return new DatabaseAllocationHints(hints);
+        return Optional.of(new DatabaseAllocationHints(hints));
     }
 
     /**
@@ -83,11 +97,11 @@ public final class DatabaseAllocationHints {
      * @param value a Cypher value provided within the allocationHints OPTION for CREATE and ALTER DATABASE commands
      */
     public static void validate(String key, AnyValue value) {
-        createHintFromInput(key, value);
+        createFromInput(key, value);
     }
 
     @VisibleForTesting
-    static Hint<?> createHintFromInput(String key, AnyValue value) {
+    static Hint<?> createFromInput(String key, AnyValue value) {
         switch (key) {
             case DatabaseWeight.KEY:
                 if (value instanceof IntegralValue v) {
@@ -104,7 +118,7 @@ public final class DatabaseAllocationHints {
         }
     }
 
-    private static Hint<?> createHintFromObject(String key, Object value) {
+    private static Hint<?> createFromNodeProperty(String key, Object value) {
         switch (key) {
             case DatabaseWeight.KEY:
                 if (value instanceof Integer v) {
@@ -130,11 +144,7 @@ public final class DatabaseAllocationHints {
      */
     @VisibleForTesting
     static String key(Class<?> hintClass) {
-        if (!Hint.class.isAssignableFrom(hintClass)) {
-            throw new IllegalArgumentException(String.format(
-                    "Class does not implement %s: %s", Hint.class.getSimpleName(), hintClass.getSimpleName()));
-        }
-
+        assertClass(hintClass);
         if (hintClass == DatabaseWeight.class) {
             return DatabaseWeight.KEY;
         } else {
@@ -142,19 +152,89 @@ public final class DatabaseAllocationHints {
         }
     }
 
+    @VisibleForTesting
+    static Optional<Hint<?>> defaultValue(Class<?> hintClass) {
+        assertClass(hintClass);
+        if (hintClass == DatabaseWeight.class) {
+            return Optional.of(DatabaseWeight.DEFAULT_WEIGHT);
+        } else {
+            throw new IllegalArgumentException("Unexpected hint type with unknown key: " + hintClass.getSimpleName());
+        }
+    }
+
+    private static void assertClass(Class<?> hintClass) {
+        if (!Hint.class.isAssignableFrom(hintClass)) {
+            throw new IllegalArgumentException(String.format(
+                    "Class does not implement %s: %s", Hint.class.getSimpleName(), hintClass.getSimpleName()));
+        }
+    }
+
+    private static void assertLabel(Node node, Label label) {
+        var labels = Iterables.asSet(node.getLabels());
+        var labelString = labels.stream().map(Label::name).collect(Collectors.joining(", ", "'", "'"));
+        if (!labels.contains(label)) {
+            throw new IllegalArgumentException(String.format(
+                    "Incorrect Node labels for creating a DatabaseAllocationHints object! Required label %s, found %s",
+                    label.name(), labelString));
+        }
+    }
+
     public Set<Hint<?>> hints() {
         return hints;
     }
 
+    public Object hint(String key) {
+        return hints.stream()
+                .filter(hint -> hint.getKey().equals(key))
+                .findFirst()
+                .map(Hint::getValue)
+                .orElse(null);
+    }
+
     public MapValue toMapValue() {
+        if (hints.isEmpty()) {
+            return MapValue.EMPTY;
+        }
         var hintsMapBuilder = new MapValueBuilder(hints.size());
         hints.forEach(h -> hintsMapBuilder.add(h.getKey(), Values.of(h.getValue())));
         return hintsMapBuilder.build();
     }
 
+    public void writeToAllocationHintsNode(Node allocationHintsNode) {
+        assertLabel(allocationHintsNode, TopologyGraphDbmsModel.ALLOCATION_HINTS_LABEL);
+        writeToNode(allocationHintsNode, "");
+    }
+
+    public void writeToSettingsNode(Node settingsNode) {
+        assertLabel(settingsNode, TopologyGraphDbmsModel.TOPOLOGY_GRAPH_CONFIG_LABEL);
+        writeToNode(settingsNode, TopologyGraphDbmsModel.TOPOLOGY_GRAPH_CONFIG_DEFAULT_ALLOCATION_HINT_PREFIX);
+    }
+
+    private void writeToNode(Node node, String prefix) {
+        hints.forEach(hint -> {
+            var key = prefix + hint.getKey();
+            if (!node.hasProperty(key)) {
+                node.setProperty(key, hint.getValue());
+            }
+        });
+    }
+
     @Override
     public String toString() {
-        return "DatabaseAllocationHints{" + "hints=" + hints + '}';
+        return "DatabaseAllocationHints{hints=" + hints + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DatabaseAllocationHints that = (DatabaseAllocationHints) o;
+        return Objects.equals(hints, that.hints);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(hints);
     }
 
     public sealed interface Hint<T> permits DatabaseWeight {
