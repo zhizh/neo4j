@@ -118,6 +118,10 @@ case class SystemCommandProfile(rows: Long, dbHits: Long) extends QueryProfile w
 
   override def maxAllocatedMemory(): Long = OperatorProfile.NO_DATA
 
+  override def numberOfAvailableWorkers(): Int = OperatorProfile.NO_DATA.toInt
+
+  override def numberOfAvailableProcessors(): Int = OperatorProfile.NO_DATA.toInt
+
   override def hashCode: Int = util.Arrays.hashCode(
     Array(this.time(), this.dbHits, this.rows, this.pageCacheHits(), this.pageCacheMisses(), this.maxAllocatedMemory())
   )

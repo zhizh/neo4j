@@ -19,6 +19,8 @@
  */
 package org.neo4j.cypher.internal.plandescription
 
+import org.neo4j.cypher.internal.plandescription.Arguments.AvailableProcessors
+import org.neo4j.cypher.internal.plandescription.Arguments.AvailableWorkers
 import org.neo4j.cypher.internal.plandescription.Arguments.DbHits
 import org.neo4j.cypher.internal.plandescription.Arguments.GlobalMemory
 import org.neo4j.cypher.internal.plandescription.Arguments.Rows
@@ -102,5 +104,29 @@ class RenderSummaryTest extends CypherFunSuite {
     val plan = PlanDescriptionImpl(id, "NAME", NoChildren, arguments, Set())
 
     renderSummary(plan) should equal("Total database accesses: 33, total allocated memory: 1234")
+  }
+
+  test("should show number of available workers") {
+    val arguments = Seq(
+      Rows(42),
+      DbHits(33),
+      AvailableWorkers(32)
+    )
+
+    val plan = PlanDescriptionImpl(id, "NAME", NoChildren, arguments, Set())
+
+    renderSummary(plan) should equal("Total database accesses: 33, number of available workers: 32")
+  }
+
+  test("should show number of available processors") {
+    val arguments = Seq(
+      Rows(42),
+      DbHits(33),
+      AvailableProcessors(16)
+    )
+
+    val plan = PlanDescriptionImpl(id, "NAME", NoChildren, arguments, Set())
+
+    renderSummary(plan) should equal("Total database accesses: 33, number of available processors: 16")
   }
 }

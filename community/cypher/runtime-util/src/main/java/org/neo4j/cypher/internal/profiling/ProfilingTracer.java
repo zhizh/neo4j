@@ -62,6 +62,16 @@ public class ProfilingTracer implements QueryProfiler, QueryProfile {
         return OperatorProfile.NO_DATA;
     }
 
+    @Override
+    public int numberOfAvailableWorkers() {
+        return (int) OperatorProfile.NO_DATA;
+    }
+
+    @Override
+    public int numberOfAvailableProcessors() {
+        return (int) OperatorProfile.NO_DATA;
+    }
+
     public long timeOf(Id operatorId) {
         return operatorProfile(operatorId.x()).time();
     }

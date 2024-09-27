@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.plandescription
 
+import org.neo4j.cypher.internal.plandescription.Arguments.AvailableProcessors
 import org.neo4j.cypher.internal.plandescription.Arguments.AvailableWorkers
 import org.neo4j.cypher.internal.plandescription.Arguments.BatchSize
 import org.neo4j.cypher.internal.plandescription.Arguments.ByteCode
@@ -56,6 +57,7 @@ object PlanDescriptionArgumentSerializer {
       case Memory(value)                          => Long.box(value)
       case GlobalMemory(value)                    => Long.box(value)
       case AvailableWorkers(value)                => Int.box(value)
+      case AvailableProcessors(value)             => Int.box(value)
       case PageCacheHits(value)                   => Long.box(value)
       case PageCacheMisses(value)                 => Long.box(value)
       case Rows(value)                            => Long.box(value)

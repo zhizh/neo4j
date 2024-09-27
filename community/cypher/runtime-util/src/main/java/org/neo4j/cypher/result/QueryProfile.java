@@ -40,9 +40,9 @@ public interface QueryProfile {
      */
     long maxAllocatedMemory();
 
-    default int numberOfAvailableWorkers() {
-        return 1;
-    }
+    int numberOfAvailableWorkers();
+
+    int numberOfAvailableProcessors();
 
     QueryProfile NONE = new QueryProfile() {
         @Override
@@ -53,6 +53,16 @@ public interface QueryProfile {
         @Override
         public long maxAllocatedMemory() {
             return OperatorProfile.NO_DATA;
+        }
+
+        @Override
+        public int numberOfAvailableWorkers() {
+            return (int) OperatorProfile.NO_DATA;
+        }
+
+        @Override
+        public int numberOfAvailableProcessors() {
+            return (int) OperatorProfile.NO_DATA;
         }
     };
 }

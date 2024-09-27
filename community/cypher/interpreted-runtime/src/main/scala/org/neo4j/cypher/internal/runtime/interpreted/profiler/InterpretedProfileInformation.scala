@@ -96,6 +96,10 @@ class InterpretedProfileInformation extends QueryProfile {
   override def maxAllocatedMemory(): Long =
     MemoryTrackerForOperatorProvider.memoryAsProfileData(memoryTracker.heapHighWaterMark)
 
+  override def numberOfAvailableWorkers(): Int = OperatorProfile.NO_DATA.toInt
+
+  override def numberOfAvailableProcessors: Int = OperatorProfile.NO_DATA.toInt
+
   def merge(other: InterpretedProfileInformation): Unit = {
     other.rowMap.foreach { case (id, otherIterator) =>
       rowMap.getOrElseUpdate(id, ProfilingIterator.empty).increment(otherIterator.count)
