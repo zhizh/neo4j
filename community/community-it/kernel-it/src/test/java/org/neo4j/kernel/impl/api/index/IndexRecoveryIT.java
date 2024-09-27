@@ -75,7 +75,6 @@ import org.neo4j.kernel.KernelVersion;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.index.IndexAccessor;
 import org.neo4j.kernel.api.index.IndexPopulator;
-import org.neo4j.kernel.api.index.IndexPopulator.Adapter;
 import org.neo4j.kernel.api.index.IndexProvider;
 import org.neo4j.kernel.api.index.IndexSample;
 import org.neo4j.kernel.api.index.IndexUpdater;
@@ -238,7 +237,12 @@ class IndexRecoveryIT {
                         any(TokenNameLookup.class),
                         any(),
                         any()))
-                .thenReturn(new Adapter());
+                .thenReturn(new IndexPopulator.Adapter() {
+                    @Override
+                    public void create() {
+                        throw new RuntimeException("Make sure index is not in online mode");
+                    }
+                });
         createSomeData();
         createIndex();
         killDb();
