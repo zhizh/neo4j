@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.expressions.ExplicitParameter
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
 import org.neo4j.cypher.internal.logical.plans.DoNotGetValue
 import org.neo4j.cypher.internal.logical.plans.GetValue
+import org.neo4j.cypher.internal.logical.plans.IndexOrderAscending
 import org.neo4j.cypher.internal.planner.spi.DatabaseMode
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -66,6 +67,14 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
     .addNodeIndex("Person", List("id"), existsSelectivity = 1.0, uniqueSelectivity = 1.0 / 9892.0, isUnique = true)
     .addNodeIndex("Person", List("firstName"), existsSelectivity = 1.0, uniqueSelectivity = 1 / 1323.0)
     .addNodeIndex("Message", List("creationDate"), existsSelectivity = 1.0, uniqueSelectivity = 3033542.0 / 3055774.0)
+    .addRelationshipIndex("COMMENT_HAS_CREATOR", List("location"), existsSelectivity = 1.0, uniqueSelectivity = 0.1)
+    .addRelationshipIndex(
+      "COMMENT_HAS_CREATOR",
+      List("id"),
+      existsSelectivity = 1.0,
+      uniqueSelectivity = 1.0 / 2052169,
+      isUnique = true
+    )
     .build()
 
   test("should batch node properties") {
@@ -85,8 +94,7 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
       .build()
   }
 
-  // TODO: this will be fixed in the next commit.
-  ignore("should handle renamed variables from within an apply") {
+  test("should handle renamed variables from within an apply") {
     val query =
       """MATCH (person:Person {id:$Person}) WHERE person.firstName IS NOT NULL
         |CALL {
@@ -101,7 +109,7 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
       .planBuilder()
       .produceResults("personFirstName")
       .projection(Map(
-        "personLastName" -> cachedNodeProp("person", "lastName", "x")
+        "personFirstName" -> cachedNodeProp("person", "firstName", "x")
       ))
       .projection("person AS x")
       .filter("cacheN[person.firstName] IS NOT NULL")
@@ -194,15 +202,14 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
       .planBuilder()
       .produceResults("expandIntoProp", "standaloneProp")
       .projection("cacheN[a.prop] AS expandIntoProp", "cacheN[n0.prop] AS standaloneProp")
-      .remoteBatchProperties("cacheNFromStore[a.prop]")
       .expandInto("(a)-[r2]->(n1)")
       .filterExpression(assertIsNode("n0"))
       .apply()
       .|.nodeIndexOperator(
         "a:L0(prop = 42)",
         argumentIds = Set("n0", "n1", "r1"),
-        getValue = Map("prop" -> DoNotGetValue)
-      ) // TODO: a.prop should get value here but it doesn't know that this is being used in a projection.
+        getValue = Map("prop" -> GetValue)
+      )
       .optional()
       .expandAll("(n0)-[r1]->(n1)")
       .filter("cacheN[n0.prop] = 42")
@@ -550,17 +557,19 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
         "cacheN[friend.firstName] AS personFirstName"
       )
       .remoteBatchProperties(
-        "cacheNFromStore[message.imageFile]",
         "cacheNFromStore[friend.lastName]",
         "cacheNFromStore[friend.id]",
-        "cacheNFromStore[friend.firstName]",
-        "cacheNFromStore[message.content]"
+        "cacheNFromStore[friend.firstName]"
       )
       .top(20, "`message.creationDate` DESC", "`message.id` ASC")
       .projection("cacheN[message.creationDate] AS `message.creationDate`", "cacheN[message.id] AS `message.id`")
-      .remoteBatchProperties("cacheNFromStore[message.id]")
       .filter("cacheN[message.creationDate] < $Date0")
-      .remoteBatchProperties("cacheNFromStore[message.creationDate]")
+      .remoteBatchProperties(
+        "cacheNFromStore[message.content]",
+        "cacheNFromStore[message.creationDate]",
+        "cacheNFromStore[message.id]",
+        "cacheNFromStore[message.imageFile]"
+      )
       .expandAll("(friend)<-[anon_0:POST_HAS_CREATOR|COMMENT_HAS_CREATOR]-(message)")
       .projection("friend AS friend")
       .filter("NOT person = friend")
@@ -568,8 +577,271 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
       .nodeIndexOperator(
         "person:Person(id = ???)",
         paramExpr = Some(parameter("Person", CTAny)),
+        getValue = Map("id" -> DoNotGetValue),
         unique = true
       )
       .build()
+  }
+
+  test("should batch properties in relationship indexes") {
+    val query =
+      """MATCH (person:Person)<-[r:COMMENT_HAS_CREATOR]-(message)
+        |WHERE r.location = 'London' AND person.firstName IS NOT NULL
+        |RETURN r.location AS posterLocation,
+        |       coalesce(message.content,message.imageFile) AS messageContent,
+        |       person.firstName AS personFirstName,
+        |       person.lastName AS personLastName""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("posterLocation", "messageContent", "personFirstName", "personLastName")
+      .projection(
+        "cacheR[r.location] AS posterLocation",
+        "coalesce(cacheN[message.content], cacheN[message.imageFile]) AS messageContent",
+        "cacheN[person.firstName] AS personFirstName",
+        "cacheN[person.lastName] AS personLastName"
+      )
+      .remoteBatchProperties("cacheNFromStore[message.content]", "cacheNFromStore[message.imageFile]")
+      .filterExpressionOrString(
+        "cacheN[person.firstName] IS NOT NULL",
+        hasLabels("person", "Person")
+      )
+      .remoteBatchProperties("cacheNFromStore[person.lastName]", "cacheNFromStore[person.firstName]")
+      .relationshipIndexOperator(
+        "(message)-[r:COMMENT_HAS_CREATOR(location = 'London')]->(person)",
+        getValue = Map("location" -> GetValue)
+      )
+      .build()
+  }
+
+  test("should batch properties in relationship indexes by id seek") {
+    val query =
+      """MATCH (person:Person)<-[r:COMMENT_HAS_CREATOR {id:$CommentCreatorId}]-(message)
+        |WHERE person.firstName IS NOT NULL
+        |RETURN r.id AS commentorId,
+        |       coalesce(message.content,message.imageFile) AS messageContent,
+        |       person.firstName AS personFirstName,
+        |       person.lastName AS personLastName""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("commentorId", "messageContent", "personFirstName", "personLastName")
+      .projection(
+        "cacheR[r.id] AS commentorId",
+        "coalesce(cacheN[message.content], cacheN[message.imageFile]) AS messageContent",
+        "cacheN[person.firstName] AS personFirstName",
+        "cacheN[person.lastName] AS personLastName"
+      )
+      .remoteBatchProperties("cacheNFromStore[message.content]", "cacheNFromStore[message.imageFile]")
+      .filterExpressionOrString(
+        "cacheN[person.firstName] IS NOT NULL",
+        hasLabels("person", "Person")
+      )
+      .remoteBatchProperties("cacheNFromStore[person.lastName]", "cacheNFromStore[person.firstName]")
+      .relationshipIndexOperator(
+        "(message)-[r:COMMENT_HAS_CREATOR(id = ???)]->(person)",
+        paramExpr = Some(ExplicitParameter("CommentCreatorId", CTAny)(InputPosition.NONE)),
+        getValue = Map("id" -> GetValue),
+        unique = true
+      )
+      .build()
+  }
+
+  test("should batch properties for aggregating functions like max") {
+    val query =
+      """MATCH (person)
+        |WITH MAX(person.age) as maxAge, person
+        |WHERE person.age = maxAge
+        |RETURN person.name""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("`person.name`")
+      .projection("cacheN[person.name] AS `person.name`")
+      .filter("person.age = maxAge")
+      .aggregation(Seq("person AS person"), Seq("MAX(cacheN[person.age]) AS maxAge"))
+      .remoteBatchProperties("cacheNFromStore[person.age]", "cacheNFromStore[person.name]")
+      .allNodeScan("person")
+      .build()
+  }
+
+  test("should batch properties for aggregating functions with grouping keys") {
+    val query =
+      """MATCH (person)
+        |WITH person, max(person.age) - person.age AS ageDifference
+        |RETURN person.name, ageDifference""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("`person.name`", "ageDifference")
+      .projection("cacheN[person.name] AS `person.name`")
+      .projection("anon_0 - anon_1 AS ageDifference")
+      .aggregation(Seq("cacheN[person.age] AS anon_1", "person AS person"), Seq("max(cacheN[person.age]) AS anon_0"))
+      .remoteBatchProperties("cacheNFromStore[person.age]", "cacheNFromStore[person.name]")
+      .allNodeScan("person")
+      .build()
+  }
+
+  test("should batch properties for ordered aggregations") {
+    val query =
+      """MATCH (person)
+        |WITH person ORDER BY person.age
+        |RETURN person.name, person.age, count(person.age)""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("`person.name`", "`person.age`", "`count(person.age)`")
+      .orderedAggregation(
+        Seq("cacheN[person.name] AS `person.name`", "cacheN[person.age] AS `person.age`"),
+        Seq("count(cacheN[person.age]) AS `count(person.age)`"),
+        Seq("cacheN[person.age]")
+      )
+      .sort("`person.age` ASC")
+      .projection("cacheN[person.age] AS `person.age`")
+      .remoteBatchProperties("cacheNFromStore[person.name]", "cacheNFromStore[person.age]")
+      .allNodeScan("person")
+      .build()
+  }
+
+  test("should batch properties for collect function") {
+    val query =
+      """MATCH (person)
+        |RETURN collect(person.age) as ages""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("ages")
+      .aggregation(Seq(), Seq("collect(cacheN[person.age]) AS ages"))
+      .remoteBatchProperties("cacheNFromStore[person.age]")
+      .allNodeScan("person")
+      .build()
+  }
+
+  test("should batch properties for rollup apply") {
+    val query =
+      """
+        |MATCH (p:Person)
+        |RETURN p.name, [(p)<-[r:COMMENT_HAS_CREATOR]-(message) | message.name] AS title
+        |""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("`p.name`", "title")
+      .projection("cacheN[p.name] AS `p.name`")
+      .remoteBatchProperties("cacheNFromStore[p.name]")
+      .rollUpApply("title", "anon_0")
+      .|.projection("cacheN[message.name] AS anon_0")
+      .|.remoteBatchProperties("cacheNFromStore[message.name]")
+      .|.expandAll("(p)<-[r:COMMENT_HAS_CREATOR]-(message)")
+      .|.argument("p")
+      .nodeByLabelScan("p", "Person")
+      .build()
+  }
+
+  test("should propagate cached properties for an unwind projection") {
+    val query =
+      """
+        |MATCH (n:Person)
+        |UNWIND [n.firstName] AS foo
+        |MATCH (n)-[:KNOWS]-(friend:Person {lastName: foo})
+        |RETURN n.firstName, friend.firstName""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .projection("cacheN[n.firstName] AS `n.firstName`", "cacheN[friend.firstName] AS `friend.firstName`")
+      .filter("cacheN[friend.lastName] = foo", "friend:Person")
+      .remoteBatchProperties("cacheNFromStore[friend.lastName]", "cacheNFromStore[friend.firstName]")
+      .expandAll("(n)-[anon_0:KNOWS]-(friend)")
+      .unwind("[cacheN[n.firstName]] AS foo")
+      .remoteBatchProperties("cacheNFromStore[n.firstName]")
+      .nodeByLabelScan("n", "Person")
+      .build())
+  }
+
+  test("should propagate cached properties for an ordered distinct projection") {
+    val query =
+      """
+        |MATCH (n:Person)
+        |WHERE n.firstName = 'foo'
+        |RETURN DISTINCT n.firstName""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .orderedDistinct(Seq("cacheN[n.firstName]"), "cacheN[n.firstName] AS `n.firstName`")
+      .nodeIndexOperator(
+        "n:Person(firstName = 'foo')",
+        indexOrder = IndexOrderAscending,
+        getValue = Map("firstName" -> GetValue)
+      )
+      .build())
+  }
+
+  test("should propagate cached properties for a distinct projection") {
+    val query =
+      """
+        |MATCH (n:Person)
+        |WHERE n.firstName = 'foo'
+        |RETURN DISTINCT n.lastName""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .distinct("cacheN[n.lastName] AS `n.lastName`")
+      .remoteBatchProperties("cacheNFromStore[n.lastName]")
+      .nodeIndexOperator("n:Person(firstName = 'foo')", getValue = Map("firstName" -> DoNotGetValue))
+      .build())
+  }
+
+  test("optional match with properties from outer matches should fetch batches") {
+    val query =
+      """
+        |MATCH (p:Person {firstName: 'foo'})
+        |OPTIONAL MATCH (p)-[:KNOWS]-(s:Person) WHERE s.firstName <> p.firstName
+        |RETURN p.firstName,s.firstName
+        |""".stripMargin
+
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .projection("cacheN[p.firstName] AS `p.firstName`", "cacheN[s.firstName] AS `s.firstName`")
+      .apply()
+      .|.optional("p")
+      .|.filter("NOT cacheN[s.firstName] = cacheN[p.firstName]", "s:Person")
+      .|.remoteBatchProperties("cacheNFromStore[s.firstName]", "cacheNFromStore[p.firstName]")
+      .|.expandAll("(p)-[anon_0:KNOWS]-(s)")
+      .|.argument("p")
+      .nodeIndexOperator("p:Person(firstName = 'foo')", getValue = Map("firstName" -> GetValue))
+      .build())
+  }
+
+  test("should propagate cached properties from a nodeindex scan ") {
+    val query =
+      """
+        |MATCH (p)-[:KNOWS]-(s:Person) WHERE s.firstName <> p.firstName
+        |RETURN p.firstName,s.firstName
+        |""".stripMargin
+
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .projection("cacheN[p.firstName] AS `p.firstName`", "cacheN[s.firstName] AS `s.firstName`")
+      .filter("NOT cacheN[s.firstName] = cacheN[p.firstName]")
+      .remoteBatchProperties("cacheNFromStore[p.firstName]")
+      .expandAll("(s)-[anon_0:KNOWS]-(p)")
+      .nodeIndexOperator("s:Person(firstName)", getValue = Map("firstName" -> GetValue))
+      .build())
   }
 }

@@ -62,6 +62,14 @@ case class CachedProperties(entries: Map[LogicalVariable, CachedProperties.Entry
   def contains(entityVariable: LogicalVariable, propertyKey: PropertyKeyName): Boolean =
     entries.get(entityVariable).exists(_.properties.contains(propertyKey))
 
+  def propertiesNotYetCached(
+    entityVariable: LogicalVariable,
+    propertyKeys: Set[PropertyKeyName]
+  ): Set[PropertyKeyName] = entries.get(entityVariable) match {
+    case Some(entry) => propertyKeys.diff(entry.properties)
+    case None        => propertyKeys
+  }
+
   def rename(renamedToCurrentVariablesMap: Map[LogicalVariable, LogicalVariable]): CachedProperties = {
     val renamedVariables = renamedToCurrentVariablesMap.values.toSet
     CachedProperties(

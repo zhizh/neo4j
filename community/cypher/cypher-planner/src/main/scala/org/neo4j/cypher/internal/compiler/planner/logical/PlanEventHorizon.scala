@@ -260,9 +260,15 @@ case object PlanEventHorizon extends EventHorizonPlanner {
           if (correlated)
             context.withModifiedPlannerState(_
               .forSubquery()
-              .withUpdatedLabelInfo(plan, context.staticComponents.planningAttributes.solveds))
+              .withUpdatedLabelInfo(plan, context.staticComponents.planningAttributes.solveds)
+              .withPreviouslyCachedProperties(
+                context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(plan.id)
+              ))
           else
-            context.withModifiedPlannerState(_.forSubquery())
+            context.withModifiedPlannerState(_.forSubquery()
+              .withPreviouslyCachedProperties(
+                context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(plan.id)
+              ))
 
         val subPlan = plannerQueryPlanner.plan(callSubquery, subqueryContext)
 

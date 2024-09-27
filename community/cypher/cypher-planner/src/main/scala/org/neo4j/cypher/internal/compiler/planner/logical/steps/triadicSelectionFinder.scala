@@ -40,6 +40,7 @@ import org.neo4j.cypher.internal.ir.Selections.containsExistsSubquery
 import org.neo4j.cypher.internal.ir.SimplePatternLength
 import org.neo4j.cypher.internal.ir.ast.ExistsIRExpression
 import org.neo4j.cypher.internal.ir.ordering.InterestingOrder
+import org.neo4j.cypher.internal.logical.plans.CachedProperties
 import org.neo4j.cypher.internal.logical.plans.Expand
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpandAll
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
@@ -179,7 +180,8 @@ case object triadicSelectionFinder extends SelectionCandidateGenerator {
         patternNodes = Set(exp2.from),
         patternRels = Set(exp1.relName),
         other = Set.empty,
-        context = context
+        context = context,
+        previouslyCachedProperties = CachedProperties.empty
       )
       val newExpand2 = {
         val from = exp2.from

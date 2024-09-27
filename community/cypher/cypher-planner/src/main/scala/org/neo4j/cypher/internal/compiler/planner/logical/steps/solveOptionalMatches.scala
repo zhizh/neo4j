@@ -115,7 +115,17 @@ case object applyOptional extends OptionalSolver {
           innerContext,
           optionalQg
         )
-        val applied = context.staticComponents.logicalPlanProducer.planApply(lhs, rhs, context)
+        // since inner is solved before the lhs, we are unable to carry the cached properties from lhs to the rhs.
+        // therefore, we need to use a union to get the cached properties from both the lhs and rhs.
+        val lhsPlanCachedProperties = context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(lhs.id)
+        val rhsPlanCachedProperties = context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(rhs.id)
+        val cachedPropertiesForOptional = lhsPlanCachedProperties.union(rhsPlanCachedProperties)
+        val applied = context.staticComponents.logicalPlanProducer.planApplyWithCachedProperties(
+          lhs,
+          rhs,
+          context,
+          cachedPropertiesForOptional
+        )
 
         // Often the Apply can be rewritten into an OptionalExpand. We want to do that before cost estimating against the hash joins, otherwise that
         // is not a fair comparison (as they cannot be rewritten to something cheaper).

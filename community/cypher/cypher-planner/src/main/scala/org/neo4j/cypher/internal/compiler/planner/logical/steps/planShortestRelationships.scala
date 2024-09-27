@@ -148,13 +148,20 @@ case object planShortestRelationships {
         Set(nodePredicates, relPredicates).flatMap(_.flatMap { varPred =>
           varPred.predicate.dependencies - varPred.variable
         })
+
+    // shortest relationships do not support batching remote batch properties.
+    // we will instead pass on the previously cached properties so that subsequent operators may use them.
+    val previouslyCachedProperties =
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(inner.id)
+
     // Plan FindShortestPaths within an Apply with an Optional so we get null rows when
     // the graph algorithm does not find anything (left-hand-side)
     val lhsArgument = context.staticComponents.logicalPlanProducer.planArgument(
       patternNodes = argumentNodes,
       patternRels = Set.empty,
       other = otherDependencies,
-      context = context
+      context = context,
+      previouslyCachedProperties = previouslyCachedProperties
     )
 
     val lhsSp = lpp.planShortestRelationship(
@@ -175,7 +182,8 @@ case object planShortestRelationships {
       patternNodes = argumentNodes,
       patternRels = Set.empty,
       other = otherDependencies,
-      context = context
+      context = context,
+      previouslyCachedProperties = previouslyCachedProperties
     )
 
     val rhs =

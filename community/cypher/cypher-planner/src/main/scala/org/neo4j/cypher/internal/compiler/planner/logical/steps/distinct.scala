@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.compiler.planner.logical.steps
 
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
+import org.neo4j.cypher.internal.compiler.planner.logical.RemoteBatchingResult
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.leverageOrder.OrderToLeverageWithAliases
 import org.neo4j.cypher.internal.ir.DistinctQueryProjection
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
@@ -45,6 +46,15 @@ object distinct {
     val inputProvidedOrder = context.staticComponents.planningAttributes.providedOrders(plan.id)
     val OrderToLeverageWithAliases(orderToLeverageForGrouping, newGroupingExpressionsMap, _) =
       leverageOrder(inputProvidedOrder, groupingExpressionsMap, Map.empty, plan.availableSymbols)
+    val RemoteBatchingResult(
+      rewrittenExpressionsWithCachedProperties,
+      planWithAllProperties
+    ) = context.settings.remoteBatchPropertiesStrategy.planBatchPropertiesForGroupingExpressions(
+      rewrittenPlan,
+      context,
+      groupingExpressionsMap = newGroupingExpressionsMap,
+      orderToLeverage = orderToLeverageForGrouping
+    )
 
     val previousDistinctness = rewrittenPlan.distinctness
 
@@ -52,35 +62,40 @@ object distinct {
     // then we do not need to plan a Distinct.
     if (previousDistinctness.covers(newGroupingExpressionsMap.values)) {
       val projections =
-        projection.filterOutEmptyProjections(newGroupingExpressionsMap, rewrittenPlan.availableSymbols)
+        projection.filterOutEmptyProjections(
+          rewrittenExpressionsWithCachedProperties.groupExpressions,
+          rewrittenPlan.availableSymbols
+        )
 
       if (projections.isEmpty) {
         context.staticComponents.logicalPlanProducer.planEmptyDistinct(
-          rewrittenPlan,
+          planWithAllProperties,
           distinctQueryProjection.groupingExpressions,
           context
         )
       } else {
         context.staticComponents.logicalPlanProducer.planProjectionForDistinct(
-          rewrittenPlan,
+          planWithAllProperties,
           projections,
           distinctQueryProjection.groupingExpressions,
           context
         )
       }
-    } else if (orderToLeverageForGrouping.isEmpty || !context.settings.executionModel.providedOrderPreserving) {
+    } else if (
+      rewrittenExpressionsWithCachedProperties.orderToLeverage.isEmpty || !context.settings.executionModel.providedOrderPreserving
+    ) {
       // Parallel runtime does currently not support OrderedDistinct
       context.staticComponents.logicalPlanProducer.planDistinct(
-        rewrittenPlan,
-        newGroupingExpressionsMap,
+        planWithAllProperties,
+        rewrittenExpressionsWithCachedProperties.groupExpressions,
         distinctQueryProjection.groupingExpressions,
         context
       )
     } else {
       context.staticComponents.logicalPlanProducer.planOrderedDistinct(
-        rewrittenPlan,
-        newGroupingExpressionsMap,
-        orderToLeverageForGrouping,
+        planWithAllProperties,
+        rewrittenExpressionsWithCachedProperties.groupExpressions,
+        rewrittenExpressionsWithCachedProperties.orderToLeverage,
         distinctQueryProjection.groupingExpressions,
         context
       )

@@ -66,12 +66,21 @@ object PropertyAccessHelper {
     }
   }
 
-  def findLocalPropertyAccessesWithContext(query: SinglePlannerQuery): ContextualPropertyAccess =
-    ContextualPropertyAccess(
-      queryGraph = findPropertyAccesses(Seq(query.queryGraph)),
-      horizon = findPropertyAccesses(Seq(query.horizon)),
-      interestingOrder = findPropertyAccesses(Seq(query.interestingOrder))
-    )
+  def findGlobalPropertyAccessesWithContext(query: SinglePlannerQuery): ContextualPropertyAccess = {
+    @tailrec
+    def rec(currentQuery: SinglePlannerQuery, acc: ContextualPropertyAccess): ContextualPropertyAccess = {
+      val accumulatedPropertyAccesses = ContextualPropertyAccess(
+        queryGraph = acc.queryGraph ++ findPropertyAccesses(Seq(currentQuery.queryGraph)),
+        horizon = acc.horizon ++ findPropertyAccesses(Seq(currentQuery.horizon)),
+        interestingOrder = acc.interestingOrder ++ findPropertyAccesses(Seq(currentQuery.interestingOrder))
+      )
+      currentQuery.tail match {
+        case Some(tailQuery) => rec(tailQuery, accumulatedPropertyAccesses)
+        case None            => accumulatedPropertyAccesses
+      }
+    }
+    rec(query, ContextualPropertyAccess.empty)
+  }
 
   def findPropertyAccesses(propertyAccessLocations: Seq[Any]): Set[PropertyAccess] = {
     propertyAccessLocations.folder.treeFold(Set[PropertyAccess]()) {

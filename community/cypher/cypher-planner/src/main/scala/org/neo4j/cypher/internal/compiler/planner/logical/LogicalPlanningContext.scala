@@ -40,6 +40,7 @@ import org.neo4j.cypher.internal.compiler.planner.logical.steps.CostComparisonLi
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.LogicalPlanProducer
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.IndexCompatiblePredicatesProviderContext
 import org.neo4j.cypher.internal.ir.SinglePlannerQuery
+import org.neo4j.cypher.internal.logical.plans.CachedProperties
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.ordering.DefaultProvidedOrderFactory
 import org.neo4j.cypher.internal.logical.plans.ordering.ParallelExecutionProvidedOrderFactory
@@ -224,9 +225,13 @@ object LogicalPlanningContext {
    * @param indexCompatiblePredicatesProviderContext extracted information from the query, relevant to the index planning.
    * @param accessedProperties All properties that are referenced (in the head planner query)
    *                           Used to break potential ties between index leaf plans
+   * @param contextualPropertyAccess All properties that are referenced in all the planner queries and their usage.
+   *                                 Used to plan fetching remote properties.
    * @param config several internal configurations bundled in an object.
    *                           These are purely internal, and there is no way to use something other than the default when running neo4j.
    *                           Thus not relevant for caching.
+   * @param previouslyCachedProperties properties that have already been fetched by previous horizons.
+   *                                   This is useful in the RHS of apply's, optionalMatch, etc so that the rhs doesn't try to fetch properties again.
    */
   case class PlannerState(
     input: QueryGraphSolverInput = QueryGraphSolverInput.empty,
@@ -236,7 +241,8 @@ object LogicalPlanningContext {
       IndexCompatiblePredicatesProviderContext.default,
     accessedProperties: Set[PropertyAccess] = Set.empty,
     contextualPropertyAccess: ContextualPropertyAccess = ContextualPropertyAccess.empty,
-    config: QueryPlannerConfiguration = QueryPlannerConfiguration.default
+    config: QueryPlannerConfiguration = QueryPlannerConfiguration.default,
+    previouslyCachedProperties: CachedProperties = CachedProperties.empty
   ) {
 
     val accessedAndAggregatingProperties: Set[PropertyAccess] =
@@ -287,6 +293,9 @@ object LogicalPlanningContext {
         indexCompatiblePredicatesProviderContext.copy(outerPlanHasUpdates = hasUpdates)
       )
     }
+
+    def withPreviouslyCachedProperties(cachedProperties: CachedProperties): PlannerState =
+      copy(previouslyCachedProperties = cachedProperties)
   }
 
 }

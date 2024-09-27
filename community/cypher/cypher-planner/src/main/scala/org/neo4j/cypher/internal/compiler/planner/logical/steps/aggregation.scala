@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.compiler.planner.logical.steps
 
 import org.neo4j.cypher.internal.compiler.helpers.AggregationHelper
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
+import org.neo4j.cypher.internal.compiler.planner.logical.RemoteBatchingResult
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.leverageOrder.OrderToLeverageWithAliases
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LogicalVariable
@@ -43,7 +44,6 @@ object aggregation {
     previousInterestingOrder: Option[InterestingOrder],
     context: LogicalPlanningContext
   ): LogicalPlan = {
-
     val solver = SubqueryExpressionSolver.solverFor(plan, context)
     val groupingExpressionsMap = aggregation.groupingExpressions.map { case (k, v) =>
       (k, solver.solve(v, Some(k)))
@@ -81,9 +81,18 @@ object aggregation {
       }
 
     if (projectionMapForLimit.nonEmpty) {
-      val projectedPlan = context.staticComponents.logicalPlanProducer.planRegularProjection(
+      val RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties,
+        planWithAllProperties
+      ) = context.settings.remoteBatchPropertiesStrategy.planBatchPropertiesForProjections(
         rewrittenPlan,
-        projectionMapForLimit,
+        context,
+        projectionMapForLimit
+      )
+
+      val projectedPlan = context.staticComponents.logicalPlanProducer.planRegularProjection(
+        planWithAllProperties,
+        rewrittenExpressionsWithCachedProperties.projections,
         None,
         context
       )
@@ -96,16 +105,37 @@ object aggregation {
         context = context
       )
     } else {
-      val inputProvidedOrder = context.staticComponents.planningAttributes.providedOrders(plan.id)
-      val OrderToLeverageWithAliases(orderToLeverageForGrouping, newGroupingExpressionsMap, newAggregationExpressions) =
-        leverageOrder(inputProvidedOrder, groupingExpressionsMap, aggregations, plan.availableSymbols)
+      val inputProvidedOrder =
+        context.staticComponents.planningAttributes.providedOrders(rewrittenPlan.id)
+      val OrderToLeverageWithAliases(
+        orderToLeverageForGrouping,
+        solvedGroupExpressionsMap,
+        solvedAggregationsMap
+      ) =
+        leverageOrder(
+          inputProvidedOrder,
+          groupingExpressionsMap,
+          aggregations,
+          rewrittenPlan.availableSymbols
+        )
+
+      val RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties,
+        planWithAllProperties
+      ) = context.settings.remoteBatchPropertiesStrategy.planBatchPropertiesForAggregations(
+        rewrittenPlan,
+        context,
+        aggregations = solvedAggregationsMap,
+        groupingExpressionsMap = solvedGroupExpressionsMap,
+        orderToLeverage = orderToLeverageForGrouping
+      )
 
       // Parallel runtime does currently not support OrderedAggregation
       if (orderToLeverageForGrouping.isEmpty || !context.settings.executionModel.providedOrderPreserving) {
         context.staticComponents.logicalPlanProducer.planAggregation(
-          rewrittenPlan,
-          newGroupingExpressionsMap,
-          newAggregationExpressions,
+          planWithAllProperties,
+          rewrittenExpressionsWithCachedProperties.groupExpressions,
+          rewrittenExpressionsWithCachedProperties.aggregations,
           aggregation.groupingExpressions,
           aggregation.aggregationExpressions,
           previousInterestingOrder,
@@ -113,10 +143,10 @@ object aggregation {
         )
       } else {
         context.staticComponents.logicalPlanProducer.planOrderedAggregation(
-          rewrittenPlan,
-          newGroupingExpressionsMap,
-          newAggregationExpressions,
-          orderToLeverageForGrouping,
+          planWithAllProperties,
+          rewrittenExpressionsWithCachedProperties.groupExpressions,
+          rewrittenExpressionsWithCachedProperties.aggregations,
+          rewrittenExpressionsWithCachedProperties.orderToLeverage,
           aggregation.groupingExpressions,
           aggregation.aggregationExpressions,
           context

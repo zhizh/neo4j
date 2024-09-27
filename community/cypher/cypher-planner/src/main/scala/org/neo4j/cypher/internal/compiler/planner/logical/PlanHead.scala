@@ -40,10 +40,11 @@ case class PlanHead(
     context: LogicalPlanningContext
   ): (BestPlans, LogicalPlanningContext) = {
     val aggregationPropertyAccesses = PropertyAccessHelper.findAggregationPropertyAccesses(headQuery)
-    val contextualPropertyAccess = PropertyAccessHelper.findLocalPropertyAccessesWithContext(headQuery)
+    val localPropertyAccess = PropertyAccessHelper.findLocalPropertyAccesses(headQuery)
+    val contextualPropertyAccess = PropertyAccessHelper.findGlobalPropertyAccessesWithContext(headQuery)
     val updatedContext = context.withModifiedPlannerState(_
       .withAggregationProperties(aggregationPropertyAccesses)
-      .withAccessedProperties(contextualPropertyAccess.allPropertyAccesses ++ aggregationPropertyAccesses)
+      .withAccessedProperties(localPropertyAccess ++ aggregationPropertyAccesses)
       .withContextualPropertyAccess(contextualPropertyAccess))
 
     val plans = countStorePlanner(headQuery, updatedContext) match {

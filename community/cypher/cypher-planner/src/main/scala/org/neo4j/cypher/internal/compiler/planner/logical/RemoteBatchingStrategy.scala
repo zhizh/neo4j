@@ -34,7 +34,6 @@ import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.RELATIONSHIP_TYPE
 import org.neo4j.cypher.internal.ir.PlannerQuery
 import org.neo4j.cypher.internal.ir.QueryGraph
-import org.neo4j.cypher.internal.logical.plans.CachedProperties
 import org.neo4j.cypher.internal.logical.plans.CanGetValue
 import org.neo4j.cypher.internal.logical.plans.DoNotGetValue
 import org.neo4j.cypher.internal.logical.plans.GetValue
@@ -42,22 +41,14 @@ import org.neo4j.cypher.internal.logical.plans.GetValueFromIndexBehavior
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.planner.spi.DatabaseMode.SHARDED
 import org.neo4j.cypher.internal.planner.spi.IndexDescriptor
+import org.neo4j.cypher.internal.util.Foldable.SkipChildren
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.Rewriter
-import org.neo4j.cypher.internal.util.bottomUpWithRecorder
+import org.neo4j.cypher.internal.util.bottomUp
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTRelationship
 
-import scala.collection.mutable
-
 sealed trait RemoteBatchingStrategy {
-
-  def planBatchProperties(
-    accessedProperties: Set[PropertyAccess],
-    input: LogicalPlan,
-    context: LogicalPlanningContext,
-    cachedPropertiesRewritableExpressions: CachePropertiesRewritableExpressions
-  ): RemoteBatchingResult
 
   def getValueFromIndexBehaviors(
     indexDescriptor: IndexDescriptor,
@@ -73,6 +64,34 @@ sealed trait RemoteBatchingStrategy {
     context: LogicalPlanningContext,
     predicatesToSolve: Set[Expression]
   ): RemoteBatchingResult
+
+  def planBatchPropertiesForAggregations(
+    input: LogicalPlan,
+    context: LogicalPlanningContext,
+    aggregations: Map[LogicalVariable, Expression],
+    groupingExpressionsMap: Map[LogicalVariable, Expression],
+    orderToLeverage: Seq[Expression]
+  ): RemoteBatchingResult
+
+  def planBatchPropertiesForProjections(
+    input: LogicalPlan,
+    context: LogicalPlanningContext,
+    projections: Map[LogicalVariable, Expression],
+    orderToLeverage: Seq[Expression] = Seq.empty
+  ): RemoteBatchingResult
+
+  def planBatchPropertiesForGroupingExpressions(
+    input: LogicalPlan,
+    context: LogicalPlanningContext,
+    groupingExpressionsMap: Map[LogicalVariable, Expression],
+    orderToLeverage: Seq[Expression]
+  ): RemoteBatchingResult
+
+  def planBatchPropertiesForLeveragedOrder(
+    input: LogicalPlan,
+    context: LogicalPlanningContext,
+    orderToLeverage: Seq[Expression]
+  ): RemoteBatchingResult
 }
 
 case class RemoteBatchingResult(
@@ -82,18 +101,11 @@ case class RemoteBatchingResult(
 
 case class CachePropertiesRewritableExpressions(
   selections: Set[Expression] = Set.empty,
-  projections: Map[LogicalVariable, Expression] = Map.empty
-) {
-
-  def rewrite(rewriter: Rewriter): CachePropertiesRewritableExpressions = {
-    val rewrittenSelections =
-      selections.map(_.endoRewrite(rewriter)) // todo: pushdown predicates to remote batch properties
-    val rewrittenProjections = projections.map {
-      case (variable, projection) => variable -> projection.endoRewrite(rewriter)
-    }
-    CachePropertiesRewritableExpressions(rewrittenSelections, rewrittenProjections)
-  }
-}
+  projections: Map[LogicalVariable, Expression] = Map.empty,
+  aggregations: Map[LogicalVariable, Expression] = Map.empty,
+  groupExpressions: Map[LogicalVariable, Expression] = Map.empty,
+  orderToLeverage: Seq[Expression] = Seq.empty
+)
 
 object RemoteBatchingStrategy {
 
@@ -111,30 +123,6 @@ object RemoteBatchingStrategy {
   def defaultValue(): RemoteBatchingStrategy = SkipRemoteBatching
 
   private case object InPlannerRemoteBatching extends RemoteBatchingStrategy {
-
-    override def planBatchProperties(
-      accessedProperties: Set[PropertyAccess],
-      input: LogicalPlan,
-      context: LogicalPlanningContext,
-      cachedPropertiesRewritableExpressions: CachePropertiesRewritableExpressions
-    ): RemoteBatchingResult = {
-      val previouslyCachedProperties =
-        context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(input.id)
-      val propertiesToFetchBuilder = Set.newBuilder[CachedProperty]
-      val rewriter =
-        cachedPropertiesRewriter(
-          context,
-          previouslyCachedProperties,
-          toMap(accessedProperties),
-          propertiesToFetchBuilder
-        )
-      val rewrittenExpressionsWithCachedProperties = cachedPropertiesRewritableExpressions.rewrite(rewriter)
-      val propertiesToFetch = propertiesToFetchBuilder.result()
-      val inputWithProperties = if (propertiesToFetch.nonEmpty)
-        context.staticComponents.logicalPlanProducer.planRemoteBatchProperties(input, propertiesToFetch, context)
-      else input
-      RemoteBatchingResult(rewrittenExpressionsWithCachedProperties, inputWithProperties)
-    }
 
     override def planBatchPropertiesForSelections(
       queryGraph: QueryGraph,
@@ -154,11 +142,121 @@ object RemoteBatchingStrategy {
       val accessedProperties =
         accessedPropertiesForPredicates ++ context.plannerState.contextualPropertyAccess.interestingOrder ++ context.plannerState.contextualPropertyAccess.horizon
 
-      context.settings.remoteBatchPropertiesStrategy.planBatchProperties(
-        accessedProperties,
-        input,
-        context,
-        CachePropertiesRewritableExpressions(selections = predicatesToSolve)
+      val rewriter = cachedPropertiesRewriter(input, context)
+      val rewrittenSelections = predicatesToSolve.map(_.endoRewrite(rewriter))
+      RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties =
+          CachePropertiesRewritableExpressions(selections = rewrittenSelections),
+        plan = planBatchProperties(input, context, accessedProperties, rewrittenSelections.toSeq)
+      )
+    }
+
+    override def planBatchPropertiesForAggregations(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      aggregations: Map[LogicalVariable, Expression],
+      groupingExpressionsMap: Map[LogicalVariable, Expression],
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = {
+      val accessedProperties =
+        context.plannerState.contextualPropertyAccess.interestingOrder ++ context.plannerState.contextualPropertyAccess.horizon
+
+      val rewriter = cachedPropertiesRewriter(input, context)
+      val rewrittenAggregations = aggregations.map {
+        case (v, e) => v -> e.endoRewrite(rewriter)
+      }
+      val rewrittenGroupExpressions = groupingExpressionsMap.map {
+        case (v, e) => v -> e.endoRewrite(rewriter)
+      }
+
+      val rewrittenOrderToLeverage = orderToLeverage.map(_.endoRewrite(rewriter))
+      RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties =
+          CachePropertiesRewritableExpressions(
+            aggregations = rewrittenAggregations,
+            groupExpressions = rewrittenGroupExpressions,
+            orderToLeverage = rewrittenOrderToLeverage
+          ),
+        plan = planBatchProperties(
+          input,
+          context,
+          accessedProperties,
+          (rewrittenAggregations.values ++ rewrittenGroupExpressions.values ++ rewrittenOrderToLeverage).toSeq
+        )
+      )
+    }
+
+    override def planBatchPropertiesForGroupingExpressions(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      groupingExpressionsMap: Map[LogicalVariable, Expression],
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = {
+      val accessedProperties =
+        context.plannerState.contextualPropertyAccess.interestingOrder ++ context.plannerState.contextualPropertyAccess.horizon
+      val rewriter = cachedPropertiesRewriter(input, context)
+      val rewrittenGroupExpressions = groupingExpressionsMap.map {
+        case (v, e) => v -> e.endoRewrite(rewriter)
+      }
+      val rewrittenOrderToLeverage = orderToLeverage.map(_.endoRewrite(rewriter))
+      RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties =
+          CachePropertiesRewritableExpressions(
+            groupExpressions = rewrittenGroupExpressions,
+            orderToLeverage = rewrittenOrderToLeverage
+          ),
+        plan = planBatchProperties(
+          input,
+          context,
+          accessedProperties,
+          (rewrittenGroupExpressions.values ++ rewrittenOrderToLeverage).toSeq
+        )
+      )
+    }
+
+    override def planBatchPropertiesForProjections(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      projections: Map[LogicalVariable, Expression],
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = {
+      val accessedProperties =
+        context.plannerState.contextualPropertyAccess.interestingOrder ++ context.plannerState.contextualPropertyAccess.horizon
+      val rewriter = cachedPropertiesRewriter(input, context)
+      val rewrittenProjections = projections.map {
+        case (v, e) => v -> e.endoRewrite(rewriter)
+      }
+      val rewrittenOrderToLeverage = orderToLeverage.map(_.endoRewrite(rewriter))
+      RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties =
+          CachePropertiesRewritableExpressions(
+            projections = rewrittenProjections,
+            orderToLeverage = rewrittenOrderToLeverage
+          ),
+        plan = planBatchProperties(
+          input,
+          context,
+          accessedProperties,
+          (rewrittenProjections.values ++ rewrittenOrderToLeverage).toSeq
+        )
+      )
+    }
+
+    override def planBatchPropertiesForLeveragedOrder(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = {
+      val accessedProperties =
+        context.plannerState.contextualPropertyAccess.interestingOrder ++ context.plannerState.contextualPropertyAccess.horizon
+      val rewriter = cachedPropertiesRewriter(input, context)
+      val rewrittenOrderToLeverage = orderToLeverage.map(_.endoRewrite(rewriter))
+      RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties =
+          CachePropertiesRewritableExpressions(
+            orderToLeverage = rewrittenOrderToLeverage
+          ),
+        planBatchProperties(input, context, accessedProperties, rewrittenOrderToLeverage)
       )
     }
 
@@ -202,24 +300,23 @@ object RemoteBatchingStrategy {
       }
     }
 
-    private def toMap(accessedProperties: Set[PropertyAccess]): Map[LogicalVariable, Set[PropertyKeyName]] =
-      accessedProperties.map {
-        accessedProperty =>
-          accessedProperty.variable -> PropertyKeyName(accessedProperty.propertyName)(InputPosition.NONE)
-      }.groupMap(_._1)(_._2)
-
     private def cachedPropertiesRewriter(
-      context: LogicalPlanningContext,
-      previouslyCachedProperties: CachedProperties,
-      accessedProperties: Map[LogicalVariable, Set[PropertyKeyName]],
-      propertiesToFetchBuilder: mutable.Builder[CachedProperty, Set[CachedProperty]]
+      inputPlan: LogicalPlan,
+      context: LogicalPlanningContext
     ) = {
-      bottomUpWithRecorder.apply(
+      val alreadyCachedProperties =
+        context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(inputPlan.id)
+      bottomUp.apply(
         rewriter = Rewriter.lift {
           case property @ Property(logicalVariable: LogicalVariable, propertyKeyName) =>
-            previouslyCachedProperties.entries.get(logicalVariable) match {
+            alreadyCachedProperties.entries.get(logicalVariable) match {
               case Some(entry) =>
-                CachedProperty(entry.originalEntity, logicalVariable, propertyKeyName, entry.entityType)(
+                CachedProperty(
+                  entry.originalEntity,
+                  logicalVariable,
+                  propertyKeyName,
+                  entry.entityType
+                )(
                   property.position
                 )
               case None =>
@@ -227,36 +324,51 @@ object RemoteBatchingStrategy {
                 if (entityType.is(CTNode))
                   CachedProperty(logicalVariable, logicalVariable, propertyKeyName, NODE_TYPE)(property.position)
                 else if (entityType.is(CTRelationship))
-                  CachedProperty(logicalVariable, logicalVariable, propertyKeyName, RELATIONSHIP_TYPE)(
-                    property.position
-                  )
+                  CachedProperty(
+                    logicalVariable,
+                    logicalVariable,
+                    propertyKeyName,
+                    RELATIONSHIP_TYPE
+                  )(property.position)
                 else
                   property
             }
         },
-        recorder = {
-          case (_, cachedProperty: CachedProperty) =>
-            val cachedPropertiesForEntity =
-              previouslyCachedProperties
-                .entries
-                .get(cachedProperty.entityVariable)
-                .map(_.properties)
-                .getOrElse(Set.empty)
-            if (!cachedPropertiesForEntity.contains(cachedProperty.propertyKey)) {
-              val newProps = accessedProperties
-                .getOrElse(cachedProperty.entityVariable, Set.empty)
-                .incl(cachedProperty.propertyKey)
-                .diff(cachedPropertiesForEntity)
-                .view
-                .map { propertyKeyName =>
-                  cachedProperty.copy(propertyKey = propertyKeyName, knownToAccessStore = true)(InputPosition.NONE)
-                }
-              propertiesToFetchBuilder.addAll(newProps)
-            }
-          case _ => ()
-        },
         cancellation = context.staticComponents.cancellationChecker
       )
+    }
+
+    private def planBatchProperties(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      accessedProperties: Set[PropertyAccess],
+      expressions: Seq[Expression]
+    ): LogicalPlan = {
+      val accessedPropertiesMap = accessedProperties.map {
+        accessedProperty =>
+          accessedProperty.variable -> PropertyKeyName(accessedProperty.propertyName)(InputPosition.NONE)
+      }.groupMap(_._1)(_._2)
+
+      val alreadyCachedProperties =
+        context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(input.id)
+
+      val propertiesToFetch = expressions.folder.treeFold(Set[CachedProperty]()) {
+        case cachedProperty: CachedProperty
+          if !alreadyCachedProperties.contains(cachedProperty.entityVariable, cachedProperty.propertyKey) =>
+          set =>
+            val props = accessedPropertiesMap
+              .getOrElse(cachedProperty.entityVariable, Set.empty)
+              .incl(cachedProperty.propertyKey)
+            val newProps = alreadyCachedProperties.propertiesNotYetCached(cachedProperty.entityVariable, props)
+              .map { propertyKeyName =>
+                cachedProperty.copy(propertyKey = propertyKeyName, knownToAccessStore = true)(InputPosition.NONE)
+              }
+            SkipChildren(set ++ newProps)
+      }
+
+      if (propertiesToFetch.nonEmpty)
+        context.staticComponents.logicalPlanProducer.planRemoteBatchProperties(input, propertiesToFetch, context)
+      else input
     }
 
     private def propertyAccessesToPredicatesMap(predicates: Set[Expression]): PropertyAccessInPredicates = {
@@ -279,13 +391,6 @@ object RemoteBatchingStrategy {
 
   private case object SkipRemoteBatching extends RemoteBatchingStrategy {
 
-    override def planBatchProperties(
-      accessedProperties: Set[PropertyAccess],
-      input: LogicalPlan,
-      context: LogicalPlanningContext,
-      cachedPropertiesRewritableExpressions: CachePropertiesRewritableExpressions
-    ): RemoteBatchingResult = RemoteBatchingResult(cachedPropertiesRewritableExpressions, input)
-
     override def getValueFromIndexBehaviors(
       indexDescriptor: IndexDescriptor,
       propertyPredicates: Seq[IndexCompatiblePredicate],
@@ -304,5 +409,55 @@ object RemoteBatchingStrategy {
       predicatesToSolve: Set[Expression]
     ): RemoteBatchingResult =
       RemoteBatchingResult(CachePropertiesRewritableExpressions(selections = predicatesToSolve), input)
+
+    override def planBatchPropertiesForAggregations(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      aggregations: Map[LogicalVariable, Expression],
+      groupingExpressionsMap: Map[LogicalVariable, Expression],
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = RemoteBatchingResult(
+      CachePropertiesRewritableExpressions(
+        aggregations = aggregations,
+        groupExpressions = groupingExpressionsMap,
+        orderToLeverage = orderToLeverage
+      ),
+      plan = input
+    )
+
+    override def planBatchPropertiesForProjections(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      projections: Map[LogicalVariable, Expression],
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = RemoteBatchingResult(
+      CachePropertiesRewritableExpressions(projections = projections, orderToLeverage = orderToLeverage),
+      plan = input
+    )
+
+    override def planBatchPropertiesForGroupingExpressions(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      groupingExpressionsMap: Map[LogicalVariable, Expression],
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = RemoteBatchingResult(
+      CachePropertiesRewritableExpressions(
+        groupExpressions = groupingExpressionsMap,
+        orderToLeverage = orderToLeverage
+      ),
+      plan = input
+    )
+
+    override def planBatchPropertiesForLeveragedOrder(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      orderToLeverage: Seq[Expression]
+    ): RemoteBatchingResult = RemoteBatchingResult(
+      CachePropertiesRewritableExpressions(
+        orderToLeverage = orderToLeverage
+      ),
+      plan = input
+    )
+
   }
 }

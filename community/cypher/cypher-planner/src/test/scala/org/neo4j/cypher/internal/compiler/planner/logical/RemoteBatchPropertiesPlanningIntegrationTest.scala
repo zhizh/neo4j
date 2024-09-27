@@ -539,4 +539,67 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
       .nodeByLabelScan("person", "Person")
       .build()
   }
+
+  test("should batch properties for aggregating function") {
+    val query =
+      """MATCH (person)
+        |WITH MAX(person.age) as maxAge
+        |MATCH (person) WHERE person.age = maxAge
+        |RETURN person.name""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("`person.name`")
+      .projection("cacheN[person.name] AS `person.name`")
+      .remoteBatchProperties("cacheNFromStore[person.name]")
+      .filter("cacheN[person.age] = maxAge")
+      .remoteBatchProperties("cacheNFromStore[person.age]")
+      .apply()
+      .|.allNodeScan("person", "maxAge")
+      .aggregation(Seq(), Seq("MAX(cacheN[person.age]) AS maxAge"))
+      .remoteBatchProperties("cacheNFromStore[person.age]")
+      .allNodeScan("person")
+      .build()
+  }
+
+  test("should batch properties for ordered aggregations") {
+    val query =
+      """MATCH (person)
+        |WITH person ORDER BY person.age
+        |RETURN person.name, person.age, count(person.age)""".stripMargin
+
+    val plan = planner.plan(query)
+
+    plan shouldEqual planner
+      .planBuilder()
+      .produceResults("`person.name`", "`person.age`", "`count(person.age)`")
+      .orderedAggregation(
+        Seq("cacheN[person.name] AS `person.name`", "cacheN[person.age] AS `person.age`"),
+        Seq("count(cacheN[person.age]) AS `count(person.age)`"),
+        Seq("cacheN[person.age]")
+      )
+      .remoteBatchProperties("cacheNFromStore[person.name]")
+      .sort("`person.age` ASC")
+      .projection("cacheN[person.age] AS `person.age`")
+      .remoteBatchProperties("cacheNFromStore[person.age]")
+      .allNodeScan("person")
+      .build()
+  }
+
+  test("should propagate cached properties for an unwind projection") {
+    val query =
+      """
+        |MATCH (n:Person)
+        |WHERE n.firstName = 'foo'
+        |UNWIND [n.firstName] AS foo
+        |RETURN foo""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .unwind("[cacheN[n.firstName]] AS foo")
+      .nodeIndexOperator("n:Person(firstName = 'foo')", _ => GetValue)
+      .build())
+  }
 }

@@ -49,6 +49,9 @@ case class PlanWithTail(
       updatedContext
         .withModifiedPlannerState(_
           .withOuterPlan(lhsPlans.bestResult)
+          .withPreviouslyCachedProperties(
+            updatedContext.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(lhsPlans.bestResult.id)
+          )
           .withUpdatedLabelInfo(lhsPlans.bestResult, context.staticComponents.planningAttributes.solveds))
     )
     (planApply(lhsPlans, rhsPlan, previousInterestingOrder, tailQuery, updatedContext), updatedContext)

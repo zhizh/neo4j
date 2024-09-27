@@ -19,7 +19,6 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.steps
 
-import org.neo4j.cypher.internal.compiler.planner.logical.CachePropertiesRewritableExpressions
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.RemoteBatchingResult
 import org.neo4j.cypher.internal.expressions.Expression
@@ -52,17 +51,19 @@ object projection {
       context.staticComponents.logicalPlanProducer.planStarProjection(plan, projectionsToMarkSolved)
     } else {
 
-      val RemoteBatchingResult(CachePropertiesRewritableExpressions(_, rewrittenProjections), planWithProperties) =
-        context.settings.remoteBatchPropertiesStrategy.planBatchProperties(
-          context.plannerState.contextualPropertyAccess.horizon ++ context.plannerState.contextualPropertyAccess.interestingOrder,
+      val RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties,
+        planWithProperties
+      ) =
+        context.settings.remoteBatchPropertiesStrategy.planBatchPropertiesForProjections(
           plan,
           context,
-          CachePropertiesRewritableExpressions(projections = projectionsDiff)
+          projections = projectionsDiff
         )
 
       context.staticComponents.logicalPlanProducer.planRegularProjection(
         planWithProperties,
-        rewrittenProjections,
+        rewrittenExpressionsWithCachedProperties.projections,
         projectionsToMarkSolved,
         context
       )

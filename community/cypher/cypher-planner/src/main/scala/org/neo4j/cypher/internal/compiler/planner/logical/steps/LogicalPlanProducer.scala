@@ -43,6 +43,7 @@ import org.neo4j.cypher.internal.compiler.helpers.PredicateHelper.coercePredicat
 import org.neo4j.cypher.internal.compiler.planner.ProcedureCallProjection
 import org.neo4j.cypher.internal.compiler.planner.logical.LogicalPlanningContext
 import org.neo4j.cypher.internal.compiler.planner.logical.Metrics.CardinalityModel
+import org.neo4j.cypher.internal.compiler.planner.logical.RemoteBatchingResult
 import org.neo4j.cypher.internal.compiler.planner.logical.irExpressionRewriter
 import org.neo4j.cypher.internal.compiler.planner.logical.ordering.InterestingOrderConfig
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.LogicalPlanProducer.solvedForTailApply
@@ -61,7 +62,6 @@ import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.LabelToken
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.MapProjection
-import org.neo4j.cypher.internal.expressions.NODE_TYPE
 import org.neo4j.cypher.internal.expressions.Parameter
 import org.neo4j.cypher.internal.expressions.PatternComprehension
 import org.neo4j.cypher.internal.expressions.PatternExpression
@@ -318,7 +318,17 @@ case class LogicalPlanProducer(
   object ForSubqueryExpressionSolver {
 
     def planArgument(argumentIds: Set[LogicalVariable], context: LogicalPlanningContext): LogicalPlan = {
-      annotate(Argument(argumentIds), SinglePlannerQuery.empty, ProvidedOrder.empty, CachedProperties.empty, context)
+      val previouslyCachedProperties =
+        context.plannerState.outerPlan.map(outerPlan => cachedPropertiesPerPlan.get(outerPlan.id)).getOrElse(
+          CachedProperties.empty
+        )
+      annotate(
+        Argument(argumentIds),
+        SinglePlannerQuery.empty,
+        ProvidedOrder.empty,
+        previouslyCachedProperties,
+        context
+      )
     }
 
     def planApply(left: LogicalPlan, right: LogicalPlan, context: LogicalPlanningContext): LogicalPlan = {
@@ -332,7 +342,7 @@ case class LogicalPlanProducer(
         plan,
         solved,
         providedOrder,
-        cachedPropertiesPerPlan.get(left.id).union(cachedPropertiesPerPlan.get(right.id)),
+        cachedPropertiesPerPlan.get(right.id),
         context
       )
     }
@@ -501,7 +511,8 @@ case class LogicalPlanProducer(
         solvedHint,
         argumentIds,
         providedOrder,
-        context
+        context,
+        context.plannerState.previouslyCachedProperties
       )
     }
 
@@ -557,7 +568,8 @@ case class LogicalPlanProducer(
         solvedHints,
         argumentIds,
         providedOrder,
-        context
+        context,
+        CachedProperties.empty
       )
     }
 
@@ -615,7 +627,8 @@ case class LogicalPlanProducer(
         solvedHint,
         argumentIds,
         providedOrder,
-        context
+        context,
+        cachedPropertiesForIndexedProperties(context, variable, properties)
       )
     }
 
@@ -675,7 +688,8 @@ case class LogicalPlanProducer(
           solvedHint,
           argumentIds,
           providedOrder,
-          context
+          context,
+          cachedPropertiesForIndexedProperties(context, variable, properties)
         )
       }
     }
@@ -776,7 +790,8 @@ case class LogicalPlanProducer(
           solvedHint,
           argumentIds,
           providedOrder,
-          context
+          context,
+          cachedPropertiesForIndexedProperties(context, variable, properties)
         )
       }
     }
@@ -887,7 +902,6 @@ case class LogicalPlanProducer(
             argumentIds ++ newArguments
           )
         }
-
       solver.rewriteLeafPlan {
         annotateRelationshipLeafPlan(
           leafPlan,
@@ -896,7 +910,8 @@ case class LogicalPlanProducer(
           None,
           argumentIds,
           ProvidedOrder.empty,
-          context
+          context,
+          context.plannerState.previouslyCachedProperties
         )
       }
     }
@@ -911,7 +926,8 @@ case class LogicalPlanProducer(
     solvedHint: IterableOnce[Hint],
     argumentIds: Set[LogicalVariable],
     providedOrder: ProvidedOrder,
-    context: LogicalPlanningContext
+    context: LogicalPlanningContext,
+    cachedProperties: CachedProperties
   ): RelationshipLogicalLeafPlan = {
     val solved = RegularSinglePlannerQuery(queryGraph =
       QueryGraph.empty
@@ -921,7 +937,7 @@ case class LogicalPlanProducer(
         .addArgumentIds(argumentIds.toIndexedSeq)
     )
 
-    annotate(leafPlan, solved, providedOrder, CachedProperties.empty, context)
+    annotate(leafPlan, solved, providedOrder, cachedProperties, context)
   }
 
   private def computeBatchSize(maybeBatchSize: Option[Expression]): Expression = {
@@ -974,6 +990,15 @@ case class LogicalPlanProducer(
   }
 
   def planApply(left: LogicalPlan, right: LogicalPlan, context: LogicalPlanningContext): LogicalPlan = {
+    planApplyWithCachedProperties(left, right, context, cachedPropertiesPerPlan.get(right.id))
+  }
+
+  def planApplyWithCachedProperties(
+    left: LogicalPlan,
+    right: LogicalPlan,
+    context: LogicalPlanningContext,
+    cachedProperties: CachedProperties
+  ): LogicalPlan = {
     // We don't want to keep the arguments that this Apply is inserting on the RHS, so we remove them here.
     val rhsSolved =
       solveds.get(right.id).asSinglePlannerQuery.updateTailOrSelf(_.amendQueryGraph(_.withArgumentIds(Set.empty)))
@@ -981,7 +1006,6 @@ case class LogicalPlanProducer(
     val plan = Apply(left, right)
     val providedOrder =
       providedOrderOfApply(left, right, plan, context.settings.executionModel, context.providedOrderFactory)
-    val cachedProperties = cachedPropertiesPerPlan.get(left.id).union(cachedPropertiesPerPlan.get(right.id))
     annotate(plan, solved, providedOrder, cachedProperties, context)
   }
 
@@ -1052,8 +1076,7 @@ case class LogicalPlanProducer(
 
     val providedOrder =
       providedOrderOfApply(left, right, plan, context.settings.executionModel, context.providedOrderFactory)
-    val cachedProperties = cachedPropertiesPerPlan.get(left.id).union(cachedPropertiesPerPlan.get(right.id))
-    annotate(plan, solved, providedOrder, cachedProperties, context)
+    annotate(plan, solved, providedOrder, cachedPropertiesPerPlan.get(right.id), context)
   }
 
   def planTailApply(left: LogicalPlan, right: LogicalPlan, context: LogicalPlanningContext): LogicalPlan = {
@@ -1061,8 +1084,7 @@ case class LogicalPlanProducer(
     val plan = Apply(left, right)
     val providedOrder =
       providedOrderOfApply(left, right, plan, context.settings.executionModel, context.providedOrderFactory)
-    val cachedProperties = cachedPropertiesPerPlan.get(left.id).union(cachedPropertiesPerPlan.get(right.id))
-    annotate(plan, solved, providedOrder, cachedProperties, context)
+    annotate(plan, solved, providedOrder, cachedPropertiesPerPlan.get(right.id), context)
   }
 
   def planInputApply(
@@ -1317,7 +1339,7 @@ case class LogicalPlanProducer(
       makePlan(variable, rewrittenNodeIds, argumentIds ++ newArguments),
       solved,
       ProvidedOrder.empty,
-      CachedProperties.empty,
+      context.plannerState.previouslyCachedProperties,
       context
     )
     solver.rewriteLeafPlan(leafPlan)
@@ -1343,7 +1365,7 @@ case class LogicalPlanProducer(
       NodeByLabelScan(variable, label, argumentIds, toIndexOrder(providedOrder)),
       solved,
       providedOrder,
-      CachedProperties.empty,
+      context.plannerState.previouslyCachedProperties,
       context
     )
   }
@@ -1368,7 +1390,7 @@ case class LogicalPlanProducer(
       UnionNodeByLabelsScan(variable, labels, argumentIds, toIndexOrder(providedOrder)),
       solved,
       providedOrder,
-      CachedProperties.empty,
+      context.plannerState.previouslyCachedProperties,
       context
     )
   }
@@ -1393,7 +1415,7 @@ case class LogicalPlanProducer(
       IntersectionNodeByLabelsScan(variable, labels, argumentIds, toIndexOrder(providedOrder)),
       solved,
       providedOrder,
-      CachedProperties.empty,
+      context.plannerState.previouslyCachedProperties,
       context
     )
   }
@@ -1419,7 +1441,7 @@ case class LogicalPlanProducer(
       SubtractionNodeByLabelsScan(variable, positiveLabels, negativeLabels, argumentIds, toIndexOrder(providedOrder)),
       solved,
       providedOrder,
-      CachedProperties.empty,
+      context.plannerState.previouslyCachedProperties,
       context
     )
   }
@@ -1462,7 +1484,13 @@ case class LogicalPlanProducer(
     )
 
     val annotatedPlan =
-      annotate(plan, solved, providedOrder, cachedPropertiesForIndexSeek(variable, properties), context)
+      annotate(
+        plan,
+        solved,
+        providedOrder,
+        cachedPropertiesForIndexedProperties(context, variable, properties),
+        context
+      )
 
     solver.rewriteLeafPlan(annotatedPlan)
   }
@@ -1499,7 +1527,7 @@ case class LogicalPlanProducer(
       ),
       solved,
       providedOrder,
-      CachedProperties.empty,
+      cachedPropertiesForIndexedProperties(context, variable, properties),
       context
     )
   }
@@ -1543,7 +1571,13 @@ case class LogicalPlanProducer(
       indexOrder,
       indexType.toPublicApi
     )
-    val annotatedPlan = annotate(plan, solved, providedOrder, CachedProperties.empty, context)
+    val annotatedPlan = annotate(
+      plan,
+      solved,
+      providedOrder,
+      cachedPropertiesForIndexedProperties(context, variable, properties),
+      context
+    )
 
     solver.rewriteLeafPlan(annotatedPlan)
   }
@@ -1621,26 +1655,32 @@ case class LogicalPlanProducer(
     )
 
     val annotatedPlan =
-      annotate(plan, solved, providedOrder, cachedPropertiesForIndexSeek(variable, properties), context)
+      annotate(
+        plan,
+        solved,
+        providedOrder,
+        cachedPropertiesForIndexedProperties(context, variable, properties),
+        context
+      )
 
     solver.rewriteLeafPlan(annotatedPlan)
 
   }
 
-  private def cachedPropertiesForIndexSeek(
+  private def cachedPropertiesForIndexedProperties(
+    context: LogicalPlanningContext,
     variable: LogicalVariable,
     properties: Seq[IndexedProperty]
-  ): CachedProperties = {
-    val cachedPropertyKeyNames = properties.view.collect {
+  ): CachedProperties =
+    context.plannerState.previouslyCachedProperties.addAll(properties.view.collect {
       case property if property.getValueFromIndex == GetValue =>
-        PropertyKeyName(property.propertyKeyToken.name)(InputPosition.NONE)
-    }.toSet
-
-    if (cachedPropertyKeyNames.nonEmpty)
-      CachedProperties.singleton(variable, variable, NODE_TYPE, cachedPropertyKeyNames)
-    else
-      CachedProperties.empty
-  }
+        CachedProperty(
+          variable,
+          variable,
+          PropertyKeyName(property.propertyKeyToken.name)(InputPosition.NONE),
+          property.entityType
+        )(InputPosition.NONE)
+    }.toSet)
 
   def planAssertSameNode(
     node: LogicalVariable,
@@ -2020,14 +2060,15 @@ case class LogicalPlanProducer(
         .filter(rel => queryGraph.argumentIds.contains(rel.variable))
         .map(_.variable)
     val otherIds = queryGraph.argumentIds -- patternNodes
-    planArgument(patternNodes, patternRels, otherIds, context)
+    planArgument(patternNodes, patternRels, otherIds, context, context.plannerState.previouslyCachedProperties)
   }
 
   def planArgument(
     patternNodes: Set[LogicalVariable],
     patternRels: Set[LogicalVariable] = Set.empty,
     other: Set[LogicalVariable] = Set.empty,
-    context: LogicalPlanningContext
+    context: LogicalPlanningContext,
+    previouslyCachedProperties: CachedProperties
   ): LogicalPlan = {
     val coveredIds = patternNodes ++ patternRels ++ other
 
@@ -2039,7 +2080,7 @@ case class LogicalPlanProducer(
       )
     )
 
-    annotate(Argument(coveredIds), solved, ProvidedOrder.empty, CachedProperties.empty, context)
+    annotate(Argument(coveredIds), solved, ProvidedOrder.empty, previouslyCachedProperties, context)
   }
 
   def planArgument(context: LogicalPlanningContext): LogicalPlan =
@@ -2107,7 +2148,7 @@ case class LogicalPlanProducer(
       agg,
       solved,
       context.providedOrderFactory.providedOrder(trimmedAndRenamed, ProvidedOrder.Left, Some(agg)),
-      CachedProperties.empty,
+      cachedPropertiesPerPlan.get(left.id),
       context
     )
 
@@ -2145,7 +2186,7 @@ case class LogicalPlanProducer(
       agg,
       solved,
       context.providedOrderFactory.providedOrder(trimmedAndRenamed, ProvidedOrder.Left, Some(agg)),
-      CachedProperties.empty,
+      cachedPropertiesPerPlan.get(left.id),
       context
     )
     markOrderAsLeveragedBackwardsUntilOrigin(plan, context.providedOrderFactory)
@@ -2278,11 +2319,19 @@ case class LogicalPlanProducer(
     val solved =
       solveds.get(inner.id).asSinglePlannerQuery.updateTailOrSelf(_.withHorizon(UnwindProjection(variable, expression)))
     val (rewrittenExpression, rewrittenInner) = SubqueryExpressionSolver.ForSingle.solve(inner, expression, context)
+    val RemoteBatchingResult(
+      rewrittenExpressionsWithCachedProperties,
+      planWithAllProperties
+    ) = context.settings.remoteBatchPropertiesStrategy.planBatchPropertiesForProjections(
+      rewrittenInner,
+      context,
+      projections = Map(variable -> rewrittenExpression)
+    )
     annotate(
-      UnwindCollection(rewrittenInner, variable, rewrittenExpression),
+      UnwindCollection(planWithAllProperties, variable, rewrittenExpressionsWithCachedProperties.projections(variable)),
       solved,
       ProvidedOrder.Left,
-      CachedProperties.empty,
+      cachedPropertiesPerPlan.get(planWithAllProperties.id),
       context
     )
   }
@@ -2807,11 +2856,23 @@ case class LogicalPlanProducer(
     if (returnAll.isEmpty) {
       annotate(left.copyPlanWithIdGen(idGen), solved, ProvidedOrder.Left, CachedProperties.empty, context)
     } else {
+      val RemoteBatchingResult(
+        rewrittenExpressionsWithCachedProperties,
+        planWithAllProperties
+      ) = context.settings.remoteBatchPropertiesStrategy.planBatchPropertiesForLeveragedOrder(
+        left,
+        context,
+        orderToLeverage = orderToLeverage
+      )
       val plan = annotate(
-        OrderedDistinct(left, returnAll.toMap, orderToLeverage),
-        solved,
+        OrderedDistinct(
+          planWithAllProperties,
+          returnAll.toMap,
+          rewrittenExpressionsWithCachedProperties.orderToLeverage
+        ),
+        solveds.get(planWithAllProperties.id),
         ProvidedOrder.Left,
-        CachedProperties.empty,
+        cachedPropertiesPerPlan.get(planWithAllProperties.id),
         context
       )
       markOrderAsLeveragedBackwardsUntilOrigin(plan, context.providedOrderFactory)
