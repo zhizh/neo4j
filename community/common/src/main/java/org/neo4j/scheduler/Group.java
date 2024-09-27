@@ -140,6 +140,7 @@ public enum Group {
     RAFTED_STATUS_CHECKS("RaftedStatusChecks"),
     COMMIT_COORDINATOR("CommitCoordinator"),
     METADATA_SCRIPT_PROVIDER("MetadataScriptProvider"),
+    PROCEDURE_ASYNC_CALLER("ProceduresAsyncCaller"),
 
     /** Rolls back idle transactions on the server. */
     SERVER_TRANSACTION_TIMEOUT("ServerTransactionTimeout"),
