@@ -48,19 +48,20 @@ public class BackupDescription implements Comparable<BackupDescription> {
             boolean full,
             long lowestAppendIndex,
             long highestAppendIndex) {
-        this.databaseName = new NormalizedDatabaseName(databaseName).name();
-        this.storeId = storeId;
-        this.databaseId = databaseId;
-        this.backupTime = backupTime.truncatedTo(ChronoUnit.SECONDS);
-        this.recovered = recovered;
-        this.compressed = compressed;
-        this.full = full;
-        this.lowestAppendIndex = lowestAppendIndex;
-        this.highestAppendIndex = highestAppendIndex;
-        this.metadataScript = null;
+        this(
+                databaseName,
+                storeId,
+                databaseId,
+                backupTime,
+                recovered,
+                compressed,
+                full,
+                lowestAppendIndex,
+                highestAppendIndex,
+                null);
     }
 
-    private BackupDescription(
+    protected BackupDescription(
             String databaseName,
             StoreId storeId,
             DatabaseId databaseId,
