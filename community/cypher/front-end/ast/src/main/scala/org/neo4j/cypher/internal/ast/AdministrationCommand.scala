@@ -1300,32 +1300,39 @@ final case class ShowDatabase(
 
 object ShowDatabase {
 
-  val NAME_COL = "name"
+  // Provided by the cypher stack - must be the same for all rows of a database
   val ALIASES_COL = "aliases"
-  val TYPE_COL = "type"
-  val ACCESS_COL = "access"
-  val DATABASE_ID_COL = "databaseID"
-  val SERVER_ID_COL = "serverID"
-  val ADDRESS_COL = "address"
-  val ROLE_COL = "role"
-  val WRITER_COL = "writer"
-  val CURRENT_STATUS_COL = "currentStatus"
   val REQUESTED_STATUS_COL = "requestedStatus"
-  val STATUS_MSG_COL = "statusMessage"
   val DEFAULT_COL = "default"
   val HOME_COL = "home"
-  val CURRENT_PRIMARIES_COUNT_COL = "currentPrimariesCount"
-  val CURRENT_SECONDARIES_COUNT_COL = "currentSecondariesCount"
   val REQUESTED_PRIMARIES_COUNT_COL = "requestedPrimariesCount"
   val REQUESTED_SECONDARIES_COUNT_COL = "requestedSecondariesCount"
   val CREATION_TIME_COL = "creationTime"
   val LAST_START_TIME_COL = "lastStartTime"
   val LAST_STOP_TIME_COL = "lastStopTime"
+  val CONSTITUENTS_COL = "constituents"
+
+  // Provided by TopologyInfoService - same for every row for a database
+  val NAME_COL = "name"
+  val TYPE_COL = "type"
+  val CURRENT_PRIMARIES_COUNT_COL = "currentPrimariesCount"
+  val CURRENT_SECONDARIES_COUNT_COL = "currentSecondariesCount"
+  val OPTIONS_COL = "options"
+
+  // Provided by TopologyInfoService - if present must be the same for every row for a database
+  val DATABASE_ID_COL = "databaseID"
   val STORE_COL = "store"
+
+  // Provided by TopologyInfoService - can/will/must be different for every row for a database
+  val ACCESS_COL = "access"
+  val ROLE_COL = "role"
+  val WRITER_COL = "writer"
+  val CURRENT_STATUS_COL = "currentStatus"
+  val STATUS_MSG_COL = "statusMessage"
   val LAST_COMMITTED_TX_COL = "lastCommittedTxn"
   val REPLICATION_LAG_COL = "replicationLag"
-  val CONSTITUENTS_COL = "constituents"
-  val OPTIONS_COL = "options"
+  val SERVER_ID_COL = "serverID"
+  val ADDRESS_COL = "address"
 
   def apply(scope: DatabaseScope, yieldOrWhere: YieldOrWhere)(position: InputPosition): ShowDatabase = {
     val showColumns = List(
