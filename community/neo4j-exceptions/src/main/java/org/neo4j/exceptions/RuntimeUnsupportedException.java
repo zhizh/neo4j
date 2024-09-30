@@ -19,7 +19,10 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class RuntimeUnsupportedException extends Neo4jException {
@@ -28,7 +31,7 @@ public class RuntimeUnsupportedException extends Neo4jException {
         super(message, cause);
     }
 
-    public RuntimeUnsupportedException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+    private RuntimeUnsupportedException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
     }
 
@@ -37,8 +40,42 @@ public class RuntimeUnsupportedException extends Neo4jException {
         super(message);
     }
 
-    public RuntimeUnsupportedException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    private RuntimeUnsupportedException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
+    }
+
+    public static RuntimeUnsupportedException invalidParallelRuntimeConfiguration(String settingName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N47)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        return new RuntimeUnsupportedException(
+                gql,
+                "There are no workers configured for the parallel runtime. "
+                        + String.format("Change '%s' to some larger value to use the parallel runtime.", settingName));
+    }
+
+    public static RuntimeUnsupportedException parallelRuntimeWrite() {
+        return new RuntimeUnsupportedException(
+                unsupportedParallelRuntimeGqlStatusObject(),
+                "The parallel runtime does not support updating queries. Please use another runtime");
+    }
+
+    public static RuntimeUnsupportedException parallelRuntimeChangesInTransactionState() {
+        return new RuntimeUnsupportedException(
+                unsupportedParallelRuntimeGqlStatusObject(),
+                "The parallel runtime is not supported if there are changes in the transaction state. Use another runtime.");
+    }
+
+    private static ErrorGqlStatusObject unsupportedParallelRuntimeGqlStatusObject() {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N46)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
     }
 
     @Override

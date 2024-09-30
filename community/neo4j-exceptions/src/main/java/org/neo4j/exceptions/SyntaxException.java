@@ -22,7 +22,10 @@ package org.neo4j.exceptions;
 import static java.lang.System.lineSeparator;
 
 import java.util.Optional;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -79,6 +82,20 @@ public class SyntaxException extends Neo4jException {
 
     public SyntaxException(ErrorGqlStatusObject gqlStatusObject, String message) {
         this(gqlStatusObject, message, "", Optional.empty(), null);
+    }
+
+    public static SyntaxException invalidShortestPathException(String start) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N33)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        return new SyntaxException(
+                gql,
+                String.format(
+                        "To find a shortest path, both ends of the path need to be provided. Couldn't find `%s`",
+                        start));
     }
 
     @Override

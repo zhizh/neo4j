@@ -405,15 +405,8 @@ public class PointValue extends HashMemoizingScalarValue implements Point, Compa
                         case WGS_84_3D -> List.of("latitude", "longitude", "height");
                     };
 
-            var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
-                    .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N18)
-                            .withClassification(ErrorClassification.CLIENT_ERROR)
-                            .withParam(GqlParams.StringParam.crs, String.valueOf(crs))
-                            .withParam(GqlParams.ListParam.mapKeyList, mandatoryKeysList)
-                            .build())
-                    .build();
-            throw new InvalidArgumentException(gql, String.format("A %s point must contain %s", crs, mandatoryKeys));
+            throw InvalidArgumentException.incompleteSpatialValue(
+                    String.valueOf(crs), mandatoryKeys, mandatoryKeysList);
         }
 
         if (crs.getDimension() != coordinates.length) {

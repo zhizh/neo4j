@@ -19,6 +19,7 @@
  */
 package org.neo4j.exceptions;
 
+import java.util.List;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
@@ -59,5 +60,32 @@ public class InvalidArgumentException extends Neo4jException {
                         .build())
                 .build();
         return new InvalidArgumentException(gql, "Unknown normal form. Valid values are: NFC, NFD, NFKC, NFKD.");
+    }
+
+    public static InvalidArgumentException incompleteSpatialValue(
+            String crs, String mandatoryKeys, List<String> mandatoryKeysList) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N18)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.crs, String.valueOf(crs))
+                        .withParam(GqlParams.ListParam.mapKeyList, mandatoryKeysList)
+                        .build())
+                .build();
+        return new InvalidArgumentException(gql, String.format("A %s point must contain %s", crs, mandatoryKeys));
+    }
+
+    public static InvalidArgumentException timezoneAndOffsetMismatch(
+            String zoneName, String offset, List<String> validOffsets, String matcherGroup) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N04)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.input, zoneName)
+                        .withParam(GqlParams.StringParam.context, String.valueOf(offset))
+                        .withParam(GqlParams.ListParam.inputList, validOffsets)
+                        .build())
+                .build();
+        return new InvalidArgumentException(gql, "Timezone and offset do not match: " + matcherGroup);
     }
 }

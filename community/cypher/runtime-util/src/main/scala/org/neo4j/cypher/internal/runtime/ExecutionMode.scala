@@ -20,20 +20,11 @@
 package org.neo4j.cypher.internal.runtime
 
 import org.neo4j.exceptions.InvalidSemanticsException
-import org.neo4j.gqlstatus.ErrorClassification
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 object ExecutionMode {
 
   def cantMixProfileAndExplain: Nothing = {
-    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-      .withClassification(ErrorClassification.CLIENT_ERROR)
-      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N52)
-        .withClassification(ErrorClassification.CLIENT_ERROR)
-        .build())
-      .build()
-    throw new InvalidSemanticsException(gql, "Can't mix PROFILE and EXPLAIN")
+    throw InvalidSemanticsException.invalidCombinationOfProfileAndExplain()
   }
 }
 

@@ -19,7 +19,10 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class InvalidSemanticsException extends Neo4jException {
@@ -28,7 +31,7 @@ public class InvalidSemanticsException extends Neo4jException {
         super(message, cause);
     }
 
-    public InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+    private InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
     }
 
@@ -37,8 +40,18 @@ public class InvalidSemanticsException extends Neo4jException {
         super(message);
     }
 
-    public InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    private InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
+    }
+
+    public static InvalidSemanticsException invalidCombinationOfProfileAndExplain() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N52)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        return new InvalidSemanticsException(gql, "Can't mix PROFILE and EXPLAIN");
     }
 
     @Override

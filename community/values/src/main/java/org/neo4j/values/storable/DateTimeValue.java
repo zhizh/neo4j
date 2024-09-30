@@ -53,16 +53,13 @@ import java.time.temporal.IsoFields;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalUnit;
 import java.time.zone.ZoneRulesException;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.neo4j.exceptions.InvalidArgumentException;
 import org.neo4j.exceptions.TemporalParseException;
 import org.neo4j.exceptions.UnsupportedTemporalUnitException;
-import org.neo4j.gqlstatus.ErrorClassification;
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
-import org.neo4j.gqlstatus.GqlParams;
-import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.helpers.collection.Pair;
 import org.neo4j.values.AnyValue;
 import org.neo4j.values.StructureBuilder;
@@ -527,18 +524,12 @@ public final class DateTimeValue extends TemporalValue<ZonedDateTime, DateTimeVa
             if (offset != null) {
                 try {
                     if (!zone.getRules().isValidOffset(local, offset)) {
-                        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
-                                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N04)
-                                        .withClassification(ErrorClassification.CLIENT_ERROR)
-                                        .withParam(GqlParams.StringParam.input, zoneName)
-                                        .withParam(GqlParams.StringParam.context, String.valueOf(offset))
-                                        .withParam(
-                                                GqlParams.ListParam.inputList,
-                                                zone.getRules().getValidOffsets(local))
-                                        .build())
-                                .build();
-                        throw new InvalidArgumentException(gql, "Timezone and offset do not match: " + matcher.group());
+                        String actualOffset = String.valueOf(offset);
+                        List<String> validOffsets = zone.getRules().getValidOffsets(local).stream()
+                                .map(String::valueOf)
+                                .toList();
+                        throw InvalidArgumentException.timezoneAndOffsetMismatch(
+                                zoneName, actualOffset, validOffsets, matcher.group());
                     }
                 } catch (ZoneRulesException e) {
                     throw new TemporalParseException(e.getMessage(), e);
