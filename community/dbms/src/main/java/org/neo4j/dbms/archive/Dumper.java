@@ -105,7 +105,7 @@ public class Dumper {
      * @param transactionalLogsPath tx logs location
      * @param out output stream, will be closed by this method
      * @param format compression format
-     * @param exclude exlusion predicate
+     * @param exclude exclusion predicate
      * @throws IOException in case of error
      */
     public void dump(
@@ -122,6 +122,15 @@ public class Dumper {
             visitPath(transactionalLogsPath, exclude);
         }
 
+        dump(out, format);
+    }
+
+    /**
+     * @param out output stream, will be closed by this method
+     * @param format compression format
+     * @throws IOException in case of error
+     */
+    public void dump(OutputStream out, CompressionFormat format) throws IOException {
         progressPrinter.reset();
         for (ArchiveOperation operation : operations) {
             progressPrinter.maxBytes(progressPrinter.maxBytes() + operation.size);
@@ -136,14 +145,19 @@ public class Dumper {
         }
     }
 
-    private void visitPath(Path transactionalLogsPath, Predicate<Path> exclude) throws IOException {
+    /**
+     * @param folderPath folder to archive
+     * @param exclude exclusion predicate
+     * @throws IOException in case of error
+     */
+    public void visitPath(Path folderPath, Predicate<Path> exclude) throws IOException {
         Files.walkFileTree(
-                transactionalLogsPath,
+                folderPath,
                 onlyMatching(
                         exclude.negate(),
                         throwExceptions(onDirectory(
-                                dir -> dumpDirectory(transactionalLogsPath, dir),
-                                onFile(file -> dumpFile(transactionalLogsPath, file), justContinue())))));
+                                dir -> dumpDirectory(folderPath, dir),
+                                onFile(file -> dumpFile(folderPath, file), justContinue())))));
     }
 
     private ArchiveOutputStream wrapArchiveOut(OutputStream out, CompressionFormat format) throws IOException {
