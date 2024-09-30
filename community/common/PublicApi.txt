@@ -164,7 +164,6 @@ org.neo4j.kernel.api.exceptions.Status.Statement::ArithmeticError org.neo4j.kern
 org.neo4j.kernel.api.exceptions.Status.Statement::CartesianProduct org.neo4j.kernel.api.exceptions.Status.Statement public static final
 org.neo4j.kernel.api.exceptions.Status.Statement::CodeGenerationFailed org.neo4j.kernel.api.exceptions.Status.Statement public static final
 org.neo4j.kernel.api.exceptions.Status.Statement::ConstraintVerificationFailed org.neo4j.kernel.api.exceptions.Status.Statement public static final
-org.neo4j.kernel.api.exceptions.Status.Statement::DeprecatedBooleanCoercion org.neo4j.kernel.api.exceptions.Status.Statement public static final
 org.neo4j.kernel.api.exceptions.Status.Statement::DynamicProperty org.neo4j.kernel.api.exceptions.Status.Statement public static final
 org.neo4j.kernel.api.exceptions.Status.Statement::EagerOperator org.neo4j.kernel.api.exceptions.Status.Statement public static final
 org.neo4j.kernel.api.exceptions.Status.Statement::EntityNotFound org.neo4j.kernel.api.exceptions.Status.Statement public static final
