@@ -20,7 +20,6 @@
 
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs;
 
-import java.util.BitSet;
 import org.neo4j.collection.trackable.HeapTrackingArrayList;
 import org.neo4j.collection.trackable.HeapTrackingIntArrayList;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
@@ -45,10 +44,6 @@ public class SignpostStack {
      */
     private final HeapTrackingIntArrayList nodeSourceSignpostIndices;
 
-    // TODO: this bit set is only needed for Trail, we should hide this.
-    //      it could go in ExpansionTracker
-    private final BitSet targetTrails;
-
     private final PPBFSHooks hooks;
 
     private NodeState targetNode = null;
@@ -57,14 +52,12 @@ public class SignpostStack {
 
     private int dgLengthToTarget = -1;
 
-    private final ExpansionTracker expansionTracker;
+    private final SignpostTracking signpostTracking;
 
-    SignpostStack(MemoryTracker memoryTracker, ExpansionTracker relationshipTracker, PPBFSHooks hooks) {
+    SignpostStack(MemoryTracker memoryTracker, SignpostTracking signpostTracking, PPBFSHooks hooks) {
         this.activeSignposts = HeapTrackingArrayList.newArrayList(memoryTracker);
         this.nodeSourceSignpostIndices = HeapTrackingIntArrayList.newIntArrayList(memoryTracker);
-        this.expansionTracker = relationshipTracker;
-        this.targetTrails = new BitSet();
-        this.targetTrails.set(0);
+        this.signpostTracking = signpostTracking;
         this.hooks = hooks;
         this.nodeSourceSignpostIndices.add(-1);
     }
@@ -73,6 +66,9 @@ public class SignpostStack {
         return nodeSourceSignpostIndices.notEmpty();
     }
 
+    public boolean isProtectedFromPruning() {
+        return signpostTracking.isProtectedFromPruning(size());
+    }
     /**
      * Remove NodeState/TwoWaySignpost references, allowing them to be garbage collected.
      * {@link #initialize} must be called after this to correctly set up the SignpostStack.
@@ -80,7 +76,7 @@ public class SignpostStack {
     public void reset() {
         this.targetNode = null;
 
-        this.expansionTracker.clear();
+        this.signpostTracking.clear();
         this.activeSignposts.clear();
 
         this.nodeSourceSignpostIndices.clear();
@@ -149,6 +145,14 @@ public class SignpostStack {
         return this.dgLength - dgLengthToTarget;
     }
 
+    int dgLength() {
+        return this.dgLength;
+    }
+
+    PPBFSHooks hooks() {
+        return this.hooks;
+    }
+
     public void materialize(PathWriter writer) {
         for (int i = activeSignposts.size() - 1; i >= 0; i--) {
             var signpost = activeSignposts.get(i);
@@ -172,29 +176,17 @@ public class SignpostStack {
         var signpost = current.getSourceSignpost(nextIndex);
         activeSignposts.add(signpost);
 
-        // TODO: For non-Trail targetTrails will always be set since we set 0 and then
-        //      distanceToDuplicate() always returns 0
-        targetTrails.set(size(), targetTrails.get(size() - 1) && distanceToDuplicate() == 0);
-
         dgLengthToTarget += signpost.dataGraphLength();
         nodeSourceSignpostIndices.set(nodeSourceSignpostIndices.size() - 1, nextIndex);
         nodeSourceSignpostIndices.add(-1);
-        // TODO: if we move targetTrails to the tracker, I think we can hide it all behind this call
-        //      we will have to juggle with size and size - 1
-        expansionTracker.set(signpost, size() - 1, dgLengthToTarget);
+        signpostTracking.set(signpost, this);
         hooks.activateSignpost(lengthFromSource(), signpost);
 
         return true;
     }
 
-    // TODO implicitly assumes Trail, will always be 0 otherwise. Clean up.
-    public int distanceToDuplicate() {
-        return expansionTracker.distanceToDuplicate(headSignpost());
-    }
-
-    // TODO should be called something like validateExpansion?
-    public boolean validateTrail() {
-        return expansionTracker.validateTrail(this, dgLength, hooks);
+    public boolean validate() {
+        return signpostTracking.validate(this);
     }
 
     /**
@@ -208,15 +200,18 @@ public class SignpostStack {
         }
 
         var signpost = activeSignposts.removeLast();
-        expansionTracker.popSignpostAtDepth(signpost, size(), dgLengthToTarget);
+        signpostTracking.popSignpost(signpost, this);
         dgLengthToTarget -= signpost.dataGraphLength();
 
         hooks.deactivateSignpost(lengthFromSource(), signpost);
         return signpost;
     }
 
-    // TODO: Assumes trail, hide somewhere
-    public boolean isTargetTrail() {
-        return this.targetTrails.get(this.size());
+    public boolean onNextSignpost() {
+        return signpostTracking.onNextSignpost(this);
+    }
+
+    public boolean shouldExitEarly() {
+        return signpostTracking.shouldExitEarly(this);
     }
 }

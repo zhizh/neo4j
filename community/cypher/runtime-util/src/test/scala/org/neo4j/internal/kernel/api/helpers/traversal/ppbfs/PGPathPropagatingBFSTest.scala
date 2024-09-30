@@ -1311,7 +1311,7 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     def createPathTracer(_mt: MemoryTracker, hooks: PPBFSHooks): PathTracer[TracedPath] =
       new PathTracer(
         EmptyMemoryTracker.INSTANCE,
-        ExpansionTracker.createTracker(EmptyMemoryTracker.INSTANCE),
+        TraversalMatchModeFactory.trailMode(EmptyMemoryTracker.INSTANCE),
         hooks
       )
 
@@ -1611,8 +1611,8 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     def filter(predicate: A => Boolean): FixtureBuilder[A] = copy(predicate = predicate)
 
     def tracker(memoryTracker: MemoryTracker) =
-      if (matchMode == TraversalMatchMode.Walk) ExpansionTracker.NO_TRACKING
-      else ExpansionTracker.createTracker(EmptyMemoryTracker.INSTANCE)
+      if (matchMode == TraversalMatchMode.Walk) TraversalMatchModeFactory.walkMode()
+      else TraversalMatchModeFactory.trailMode(memoryTracker)
 
     def build(createPathTracer: (MemoryTracker, PPBFSHooks) => PathTracer[A] =
       (memoryTracker, hooks) => new PathTracer(memoryTracker, tracker(memoryTracker), hooks)) =

@@ -39,30 +39,32 @@ public interface Lengths extends Measurable {
         }
     }
 
-    boolean get(int index, RelTrackingLengths.Type type);
+    boolean get(int index, TrailModeLengths.Type type);
 
-    void set(int index, RelTrackingLengths.Type type);
+    void set(int index, TrailModeLengths.Type type);
 
-    void clear(int index, RelTrackingLengths.Type type);
+    void clear(int index, TrailModeLengths.Type type);
 
-    int max(RelTrackingLengths.Type type);
+    int max(TrailModeLengths.Type type);
 
-    int next(int start, RelTrackingLengths.Type type);
+    int next(int start, TrailModeLengths.Type type);
 
-    int min(RelTrackingLengths.Type type);
+    int min(TrailModeLengths.Type type);
 
-    boolean isEmpty(RelTrackingLengths.Type type);
+    boolean isEmpty(TrailModeLengths.Type type);
 
     boolean isEmpty();
 
     String renderSourceLengths();
 
-    static Lengths relationshipUniquenessTrackingLengths() {
-        return new RelTrackingLengths();
+    boolean isWalkMode();
+
+    static Lengths trailMode() {
+        return new TrailModeLengths();
     }
 
-    static Lengths nonRelationshipUniquenessTrackingLengths() {
-        return new NonTrackingLengths();
+    static Lengths walkMode() {
+        return new WalkModeLengths();
     }
 
     /**
@@ -72,11 +74,11 @@ public interface Lengths extends Measurable {
      * <p>
      * Implemented by interleaving multiple indexes into a single bitset, in order to conserve memory (we create many of these).
      */
-    class RelTrackingLengths extends BitSet implements Lengths {
+    class TrailModeLengths extends BitSet implements Lengths {
         private static final int FACTOR = Type.values().length;
 
         private static final long SHALLOW_SIZE =
-                HeapEstimator.shallowSizeOfInstance(RelTrackingLengths.class) + HeapEstimator.sizeOfLongArray(1);
+                HeapEstimator.shallowSizeOfInstance(TrailModeLengths.class) + HeapEstimator.sizeOfLongArray(1);
 
         @Override
         public boolean get(int index, Type type) {
@@ -130,6 +132,11 @@ public interface Lengths extends Measurable {
         }
 
         @Override
+        public boolean isWalkMode() {
+            return false;
+        }
+
+        @Override
         public long estimatedHeapUsage() {
             return SHALLOW_SIZE;
         }
@@ -139,9 +146,9 @@ public interface Lengths extends Measurable {
         }
     }
 
-    class NonTrackingLengths extends BitSet implements Lengths {
+    class WalkModeLengths extends BitSet implements Lengths {
 
-        private static final long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(NonTrackingLengths.class);
+        private static final long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(WalkModeLengths.class);
 
         @Override
         public boolean get(int index, Type type) {
@@ -188,6 +195,11 @@ public interface Lengths extends Measurable {
         @Override
         public String renderSourceLengths() {
             return toString();
+        }
+
+        @Override
+        public boolean isWalkMode() {
+            return true;
         }
 
         @Override

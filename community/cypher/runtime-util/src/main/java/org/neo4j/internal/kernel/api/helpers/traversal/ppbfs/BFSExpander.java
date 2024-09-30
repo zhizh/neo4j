@@ -37,7 +37,7 @@ final class BFSExpander implements AutoCloseable {
     private final ProductGraphTraversalCursor pgCursor;
     private final ProductGraphTraversalCursor.DataGraphRelationshipCursor relCursor;
     private final long intoTarget;
-    private final ExpansionTracker tracker;
+    private final TraversalMatchModeFactory tracker;
 
     // allocated once and reused per source nodeState
     private final HeapTrackingArrayList<State> statesList;
@@ -50,7 +50,7 @@ final class BFSExpander implements AutoCloseable {
             ProductGraphTraversalCursor.DataGraphRelationshipCursor relCursor,
             long intoTarget,
             int nfaStateCount,
-            ExpansionTracker tracker) {
+            TraversalMatchModeFactory tracker) {
         this.mt = globalState.mt;
         this.hooks = globalState.hooks;
         this.globalState = globalState;
@@ -76,7 +76,7 @@ final class BFSExpander implements AutoCloseable {
                     case FORWARD -> {
                         var nextNode = encounter(node.id(), nj.targetState(), direction);
                         var signpost = TwoWaySignpost.fromNodeJuxtaposition(
-                                mt, node, nextNode, foundNodes.forwardDepth(), tracker.createLengths());
+                                mt, node, nextNode, foundNodes.forwardDepth(), tracker.lengths());
                         if (globalState.searchMode == SearchMode.Unidirectional
                                 || !nextNode.hasSourceSignpost(signpost)) {
                             nextNode.addSourceSignpost(signpost, foundNodes.forwardDepth());
@@ -85,8 +85,7 @@ final class BFSExpander implements AutoCloseable {
 
                     case BACKWARD -> {
                         var nextNode = encounter(node.id(), nj.sourceState(), direction);
-                        var signpost =
-                                TwoWaySignpost.fromNodeJuxtaposition(mt, nextNode, node, tracker.createLengths());
+                        var signpost = TwoWaySignpost.fromNodeJuxtaposition(mt, nextNode, node, tracker.lengths());
 
                         if (!nextNode.hasTargetSignpost(signpost)) {
                             var addedSignpost = node.upsertSourceSignpost(signpost);
@@ -104,7 +103,7 @@ final class BFSExpander implements AutoCloseable {
         var nodeState = foundNodes.get(nodeId, state.id());
 
         if (nodeState == null) {
-            nodeState = new NodeState(globalState, nodeId, state, intoTarget, tracker.createLengths());
+            nodeState = new NodeState(globalState, nodeId, state, intoTarget, tracker.lengths());
             discover(nodeState, direction);
         } else if (globalState.searchMode == SearchMode.Bidirectional && !nodeState.hasBeenSeen(direction)) {
             // this branch means we continue expanding in both directions past the opposite frontier, if the node has
@@ -113,24 +112,6 @@ final class BFSExpander implements AutoCloseable {
         }
 
         return nodeState;
-    }
-
-    private boolean validateRelationshipUniqueness(
-            TraversalDirection direction, int depth, VirtualRelationshipValue[] rels) {
-        boolean isUnique = true;
-        switch (direction) {
-            case FORWARD -> {
-                for (int i = 0; i < depth && isUnique; i++) {
-                    isUnique = rels[i].id() != relCursor.relationshipReference();
-                }
-            }
-            case BACKWARD -> {
-                for (int i = rels.length - 1; i > rels.length - depth - 1 && isUnique; i--) {
-                    isUnique = rels[i].id() != relCursor.relationshipReference();
-                }
-            }
-        }
-        return isUnique;
     }
 
     private void multiHopDFS(NodeState startNode, MultiRelationshipExpansion expansion, TraversalDirection direction) {
@@ -143,6 +124,7 @@ final class BFSExpander implements AutoCloseable {
         HeapTrackingArrayList<VirtualRelationshipValue>[] relTree = new HeapTrackingArrayList[expansion.length()];
 
         int depth = 0;
+        MREValidator mreValidator = tracker.mreValidator();
         while (depth != -1) {
             assert depth <= expansion.length()
                     : "Multi-hop depth first search should never exceed total expansion length";
@@ -181,7 +163,7 @@ final class BFSExpander implements AutoCloseable {
                                     expansion,
                                     nextNode,
                                     foundNodes.forwardDepth(),
-                                    tracker.createLengths());
+                                    tracker.lengths());
                             if (globalState.searchMode == SearchMode.Unidirectional
                                     || !nextNode.hasSourceSignpost(signpost)) {
                                 nextNode.addSourceSignpost(signpost, foundNodes.forwardDepth());
@@ -189,7 +171,7 @@ final class BFSExpander implements AutoCloseable {
                         }
                         case BACKWARD -> {
                             var signpost = TwoWaySignpost.fromMultiRel(
-                                    mt, nextNode, relIds, nodes.clone(), expansion, startNode, tracker.createLengths());
+                                    mt, nextNode, relIds, nodes.clone(), expansion, startNode, tracker.lengths());
                             if (!nextNode.hasTargetSignpost(signpost)) {
                                 var addedSignpost = startNode.upsertSourceSignpost(signpost);
                                 addedSignpost.setMinTargetDistance(
@@ -219,8 +201,7 @@ final class BFSExpander implements AutoCloseable {
                 boolean canExpand = false;
                 while (relCursor.nextRelationship()) {
                     if (relHop.predicate().test(relCursor) && nodePredicate.test(relCursor.otherNode())) {
-                        if (!tracker.requireUniqueRelationships()
-                                || validateRelationshipUniqueness(direction, depth, rels)) {
+                        if (mreValidator.validateRelationships(direction, depth, rels, relCursor)) {
                             if (nodeTree[depth + 1] == null) {
                                 nodeTree[depth + 1] = HeapTrackingLongArrayList.newLongArrayList(mt);
                             }
@@ -285,7 +266,7 @@ final class BFSExpander implements AutoCloseable {
                                 nextNode,
                                 re,
                                 foundNodes.forwardDepth(),
-                                tracker.createLengths());
+                                tracker.lengths());
 
                         if (globalState.searchMode == SearchMode.Unidirectional
                                 || !nextNode.hasSourceSignpost(signpost)) {
@@ -298,7 +279,7 @@ final class BFSExpander implements AutoCloseable {
                         var node = statesById.get(re.targetState().id());
 
                         var signpost = TwoWaySignpost.fromRelExpansion(
-                                mt, nextNode, pgCursor.relationshipReference(), node, re, tracker.createLengths());
+                                mt, nextNode, pgCursor.relationshipReference(), node, re, tracker.lengths());
 
                         if (!nextNode.hasTargetSignpost(signpost)) {
                             var addedSignpost = node.upsertSourceSignpost(signpost);

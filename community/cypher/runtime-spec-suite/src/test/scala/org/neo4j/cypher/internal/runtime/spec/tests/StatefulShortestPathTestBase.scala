@@ -9230,23 +9230,12 @@ abstract class StatefulShortestPathTrailModeTestBase[CONTEXT <: RuntimeContext](
 ) extends StatefulShortestPathTestBase[CONTEXT](edition, runtime, sizeHint, TraversalMatchMode.Trail) {
 
   override protected def filterOutDuplicateRelsIfApplicable(seq: Seq[Array[Object]]): Seq[Array[Object]] = {
-    val relFilter: Array[Object] => Boolean = (row: Array[Object]) => {
+    seq.filter((row: Array[Object]) => {
       val allRels = row.collect {
         case r: Relationship => r
       }
       allRels.length == allRels.toSet.size
-    }
-    val pathFilter: Array[Object] => Boolean = (row: Array[Object]) => {
-      row.forall {
-        case p: Path =>
-          p.relationships().asScala.toSet.size == p.length()
-        case p: VirtualPathValue =>
-          p.relationshipIds().toSet.size == p.size()
-        case _ => true
-      }
-    }
-
-    seq.filter(relFilter).filter(pathFilter)
+    })
   }
 }
 

@@ -19,7 +19,6 @@
  */
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs;
 
-import java.util.BitSet;
 import java.util.function.Function;
 import org.neo4j.internal.helpers.collection.PrefetchingIterator;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
@@ -36,11 +35,8 @@ import org.neo4j.util.Preconditions;
 public final class PathTracer<Row> extends PrefetchingIterator<Row> {
     private final PPBFSHooks hooks;
     private final SignpostStack stack;
-    private final ExpansionTracker tracker;
     private NodeState sourceNode;
 
-    // TODO: this is also only used for Trail
-    private final BitSet protectFromPruning;
     private Function<SignpostStack, Row> toRow;
 
     /**
@@ -60,11 +56,9 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
      */
     private boolean ready = false;
 
-    public PathTracer(MemoryTracker memoryTracker, ExpansionTracker tracker, PPBFSHooks hooks) {
-        this.protectFromPruning = new BitSet();
+    public PathTracer(MemoryTracker memoryTracker, TraversalMatchModeFactory tracker, PPBFSHooks hooks) {
         this.hooks = hooks;
-        this.stack = new SignpostStack(memoryTracker, tracker, hooks);
-        this.tracker = tracker;
+        this.stack = new SignpostStack(memoryTracker, tracker.twoWaySignpostTracking(), hooks);
     }
 
     /**
@@ -110,7 +104,7 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
         }
 
         int sourceLength = stack.lengthFromSource();
-        if (!popped.isVerifiedAtLength(sourceLength) && !this.protectFromPruning.get(stack.size())) {
+        if (!popped.isVerifiedAtLength(sourceLength) && !stack.isProtectedFromPruning()) {
             popped.pruneSourceLength(sourceLength);
         }
     }
@@ -133,17 +127,15 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
                 popAndPrune();
             } else {
                 var sourceSignpost = stack.headSignpost();
-                this.protectFromPruning.set(stack.size() - 1, false);
-
-                if (stack.isTargetTrail() && !sourceSignpost.hasBeenTraced()) {
+                if (stack.onNextSignpost() && !sourceSignpost.hasBeenTraced()) {
                     sourceSignpost.setMinTargetDistance(stack.lengthToTarget(), PGPathPropagatingBFS.Phase.Tracing);
                 }
 
-                if (allNodesAreValidatedBetweenDuplicates()) {
+                if (stack.shouldExitEarly()) {
                     hooks.skippingDuplicateRelationship(stack);
                     stack.pop();
-                    // the order of these predicates is important since validateTrail has side effects:
-                } else if (sourceSignpost.prevNode == sourceNode && stack.validateTrail() && !isSaturated()) {
+                    // the order of these predicates is important since validate has side effects:
+                } else if (sourceSignpost.prevNode == sourceNode && stack.validate() && !isSaturated()) {
                     Preconditions.checkState(
                             stack.lengthFromSource() == 0,
                             "Attempting to return a path that does not reach the source");
@@ -153,37 +145,6 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
             }
         }
         return null;
-    }
-
-    // TODO: This method sort of assumes we are looking for a Trail, see if we can hide it better
-    //      Reason this "works" is that dup is always 0 for Walk, I am not crazy about that either
-    /** this function allows us to abandon a trace branch early. if we have detected a duplicate relationship then
-     * the set of paths we're currently tracing are all invalid and so we should be able to abort tracing them, except
-     * tracing also performs verification/validation.
-     *
-     * if the current node is validated then further tracing has no benefit, so we can pop back to the previous
-     * node.
-     * */
-    private boolean allNodesAreValidatedBetweenDuplicates() {
-        int dup = stack.distanceToDuplicate();
-
-        if (dup == 0) {
-            return false;
-        }
-
-        int sourceLength = stack.lengthFromSource();
-        for (int i = 0; i <= dup; i++) {
-            var candidate = stack.signpost(stack.size() - 1 - i);
-
-            if (!candidate.prevNode.validatedAtLength(sourceLength)) {
-                return false;
-            }
-
-            sourceLength += candidate.dataGraphLength();
-        }
-
-        this.protectFromPruning.set(stack.size() - 1 - dup, stack.size() - 1, true);
-        return true;
     }
 
     public void decrementTargetCount() {

@@ -53,7 +53,6 @@ public final class NodeState implements AutoCloseable, Measurable {
     private final Lengths lengths;
 
     // The length of the shortest path in the data graph from the source node to this node which is accepted by the NFA.
-    // TODO update comment NodeState shouldn't have any assumption to TraversalMatchMode
     // This is not necessarily a trail length, the corresponding path may have repeated relationships.
     private int sourceDistance = NO_SOURCE_DISTANCE;
 
@@ -188,7 +187,7 @@ public final class NodeState implements AutoCloseable, Measurable {
             if (hasMinDistToTarget(targetLength)) {
                 globalState.schedule(this, sourceLength, targetLength, GlobalState.ScheduleSource.Propagated);
             }
-            if (lengths instanceof Lengths.NonTrackingLengths) {
+            if (lengths.isWalkMode()) {
                 if (targetSignposts != null) {
                     for (var tsp : targetSignposts) {
                         if (tsp.minTargetDistance > targetLength) {
@@ -263,7 +262,7 @@ public final class NodeState implements AutoCloseable, Measurable {
 
         for (TwoWaySignpost tsp : targetSignposts) {
             if (tsp.minTargetDistance() == lengthToTarget
-                    || (lengths instanceof Lengths.NonTrackingLengths && tsp.minTargetDistance() >= lengthToTarget)) {
+                    || (lengths.isWalkMode() && tsp.minTargetDistance() >= lengthToTarget)) {
                 tsp.propagate(lengthFromSource, tsp.minTargetDistance());
             }
         }

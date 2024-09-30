@@ -27,15 +27,15 @@ import org.neo4j.cypher.internal.runtime.ClosingIterator.JavaAutoCloseableIterat
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.Predicate
-import org.neo4j.cypher.internal.runtime.interpreted.pipes.StatefulShortestPathPipe.relationshipUnqiuenessTracker
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.StatefulShortestPathPipe.traversalMatchModeFactory
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.exceptions.InternalException
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.ExpansionTracker
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFS
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PathTracer
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PathWriter
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.SignpostStack
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalMatchModeFactory
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.memory.MemoryTracker
 import org.neo4j.values.VirtualValue
@@ -73,7 +73,7 @@ case class StatefulShortestPathPipe(
 
     val hooks = PPBFSHooks.getInstance()
 
-    val tracker = relationshipUnqiuenessTracker(matchMode, memoryTracker)
+    val tracker = traversalMatchModeFactory(matchMode, memoryTracker)
     val pathTracer =
       new PathTracer[CypherRow](memoryTracker, tracker, hooks)
     val pathPredicate =
@@ -157,9 +157,12 @@ case class StatefulShortestPathPipe(
 
 object StatefulShortestPathPipe {
 
-  def relationshipUnqiuenessTracker(matchMode: TraversalMatchMode, memoryTracker: MemoryTracker) = matchMode match {
+  def traversalMatchModeFactory(
+    matchMode: TraversalMatchMode,
+    memoryTracker: MemoryTracker
+  ): TraversalMatchModeFactory = matchMode match {
     case TraversalMatchMode.Trail =>
-      ExpansionTracker.createTracker(memoryTracker)
-    case TraversalMatchMode.Walk => ExpansionTracker.NO_TRACKING
+      TraversalMatchModeFactory.trailMode(memoryTracker)
+    case TraversalMatchMode.Walk => TraversalMatchModeFactory.walkMode()
   }
 }

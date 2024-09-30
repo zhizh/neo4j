@@ -38,7 +38,7 @@ import scala.collection.compat.immutable.ArraySeq
 class TwoWaySignpostTest extends CypherFunSuite {
   private val meter = MemoryMeter.builder.build
   private def deduplicatedSize(o: AnyRef*) = meter.measureDeep(o) - meter.measureDeep(ArraySeq.fill(o.size)(null))
-  private val ls = Lengths.relationshipUniquenessTrackingLengths()
+  private val ls = Lengths.trailMode()
 
   test("memory allocation on construction of node signpost") {
     val mt = new LocalMemoryTracker()
