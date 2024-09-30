@@ -56,10 +56,11 @@ case class ProcedureCallPipe(
     state: QueryState
   ): ClosingIterator[CypherRow] = {
     val qtx = state.query
+    val memoryTracker = state.memoryTrackerForOperatorProvider.memoryTrackerForOperator(id.x)
     input.flatMap { input =>
       val args = argExprs.map(_.apply(input, state))
       callMode
-        .callProcedure(qtx, pId, args, qtx.procedureCallContext(pId, originalFieldNames))
+        .callProcedure(qtx, pId, args, qtx.procedureCallContext(pId, originalFieldNames, memoryTracker))
         .asClosingIterator
         .map { resultValues =>
           val output = rowFactory.copyWith(input)
@@ -87,9 +88,11 @@ case class VoidProcedureCallPipe(
     state: QueryState
   ): ClosingIterator[CypherRow] = {
     val qtx = state.query
+    val memoryTracker = state.memoryTrackerForOperatorProvider.memoryTrackerForOperator(id.x)
     input map { input =>
       val args = argExprs.map(arg => arg(input, state))
-      val results = callMode.callProcedure(qtx, pId, args, qtx.procedureCallContext(pId, originalFieldNames))
+      val results =
+        callMode.callProcedure(qtx, pId, args, qtx.procedureCallContext(pId, originalFieldNames, memoryTracker))
       // the iterator here should be empty; we'll drain just in case
       while (results.hasNext) results.next()
       input

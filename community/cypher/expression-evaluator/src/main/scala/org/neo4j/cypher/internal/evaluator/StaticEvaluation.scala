@@ -44,6 +44,8 @@ import org.neo4j.cypher.internal.runtime.RelationshipOperations
 import org.neo4j.cypher.internal.runtime.RelationshipReadOperations
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.cypher.internal.runtime.memory.NoOpMemoryTrackerForOperatorProvider
+import org.neo4j.cypher.internal.runtime.memory.NoOpQueryMemoryTracker
 import org.neo4j.dbms.database.DatabaseContext
 import org.neo4j.dbms.database.DatabaseContextProvider
 import org.neo4j.graphdb.GraphDatabaseService
@@ -73,6 +75,7 @@ import org.neo4j.kernel.api.index.IndexUsageStats
 import org.neo4j.kernel.impl.query.FunctionInformation
 import org.neo4j.kernel.impl.query.QuerySubscriber
 import org.neo4j.logging.InternalLogProvider
+import org.neo4j.memory.MemoryTracker
 import org.neo4j.scheduler.JobScheduler
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.TextValue
@@ -91,6 +94,7 @@ object StaticEvaluation {
 
   class StaticEvaluator(makeQueryContext: () => QueryContext) extends SimpleInternalExpressionEvaluator {
 
+    // Note! No memory tracking.
     override def queryState(nExpressionSlots: Int, slottedParams: Array[AnyValue]) = new QueryState(
       query = makeQueryContext(),
       resources = null,
@@ -102,8 +106,8 @@ object StaticEvaluation {
       relTypeTokenReadSession = None,
       expressionVariables = new Array(nExpressionSlots),
       subscriber = QuerySubscriber.DO_NOTHING_SUBSCRIBER,
-      queryMemoryTracker = null,
-      memoryTrackerForOperatorProvider = null
+      queryMemoryTracker = NoOpQueryMemoryTracker,
+      memoryTrackerForOperatorProvider = NoOpMemoryTrackerForOperatorProvider
     )
 
     override def evaluate(expression: Expression, params: MapValue, context: CypherRow): AnyValue = {
@@ -657,12 +661,16 @@ object StaticEvaluation {
 
     override def entityTransformer: EntityTransformer = notAvailable()
 
-    override def procedureCallContext(fcnId: Int): ProcedureCallContext = {
-      new ProcedureCallContext(fcnId, true, "", false, "")
+    override def procedureCallContext(fcnId: Int, memoryTracker: MemoryTracker): ProcedureCallContext = {
+      new ProcedureCallContext(fcnId, true, "", false, "", memoryTracker)
     }
 
-    override def procedureCallContext(procId: Int, outputFields: Array[String]): ProcedureCallContext = {
-      new ProcedureCallContext(procId, outputFields, true, "", false, "")
+    override def procedureCallContext(
+      procId: Int,
+      outputFields: Array[String],
+      m: MemoryTracker
+    ): ProcedureCallContext = {
+      new ProcedureCallContext(procId, outputFields, true, "", false, "", m)
     }
   }
 

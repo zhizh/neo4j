@@ -102,6 +102,8 @@ import org.neo4j.procedure.impl.ProcedureGraphDatabaseAPI;
 import org.neo4j.procedure.impl.ProcedureLoginContextTransformer;
 import org.neo4j.procedure.impl.TerminationGuardProvider;
 import org.neo4j.procedure.impl.TransactionStatusDetailsProvider;
+import org.neo4j.procedure.impl.memory.ProcedureMemoryProvider;
+import org.neo4j.procedure.memory.ProcedureMemory;
 import org.neo4j.server.configuration.ServerSettings;
 import org.neo4j.server.web.DisabledNeoWebServer;
 import org.neo4j.values.ValueMapper;
@@ -404,6 +406,7 @@ public class DatabaseManagementServiceFactory {
                                 ctx.dependencyResolver().resolveDependency(Config.class)),
                         true);
                 registry.registerComponent(ValueMapper.class, Context::valueMapper, true);
+                registry.registerComponent(ProcedureMemory.class, new ProcedureMemoryProvider(), true);
 
                 // Edition procedures
                 try {

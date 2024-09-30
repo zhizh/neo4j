@@ -480,7 +480,7 @@ trait ReadQueryContext extends ReadTokenContext with DbAccess with AutoCloseable
 
   override def dataRead: Read = transactionalContext.dataRead
 
-  override def procedureCallContext(fcn: Int): ProcedureCallContext = {
+  override def procedureCallContext(fcn: Int, memoryTracker: MemoryTracker): ProcedureCallContext = {
     val context = transactionalContext
     val databaseId = context.databaseId
     new ProcedureCallContext(
@@ -488,11 +488,16 @@ trait ReadQueryContext extends ReadTokenContext with DbAccess with AutoCloseable
       true,
       databaseId.name(),
       databaseId.isSystemDatabase,
-      context.kernelExecutingQuery.cypherRuntime()
+      context.kernelExecutingQuery.cypherRuntime(),
+      memoryTracker
     )
   }
 
-  override def procedureCallContext(procId: Int, originalFieldNames: Array[String]): ProcedureCallContext = {
+  override def procedureCallContext(
+    procId: Int,
+    originalFieldNames: Array[String],
+    memoryTracker: MemoryTracker
+  ): ProcedureCallContext = {
     val context = transactionalContext
     val databaseId = context.databaseId
     new ProcedureCallContext(
@@ -501,7 +506,8 @@ trait ReadQueryContext extends ReadTokenContext with DbAccess with AutoCloseable
       true,
       databaseId.name(),
       databaseId.isSystemDatabase,
-      context.kernelExecutingQuery.cypherRuntime()
+      context.kernelExecutingQuery.cypherRuntime(),
+      memoryTracker
     )
   }
 }

@@ -82,6 +82,7 @@ import org.neo4j.kernel.impl.factory.FacadeKernelTransactionFactory;
 import org.neo4j.kernel.impl.factory.GraphDatabaseFacade;
 import org.neo4j.kernel.impl.factory.KernelTransactionFactory;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.memory.LocalMemoryTracker;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Mode;
@@ -836,7 +837,8 @@ class Neo4jTransactionalContextIT {
                 .getCurrentView()
                 .procedure(new QualifiedName("tx", "setMetaData"), QueryLanguage.CYPHER_5);
         var id = txSetMetaData.id();
-        var procContext = new ProcedureCallContext(id, EMPTY_STRING_ARRAY, false, "", false, "runtimeUsed");
+        var procContext = new ProcedureCallContext(
+                id, EMPTY_STRING_ARRAY, false, "", false, "runtimeUsed", EmptyMemoryTracker.INSTANCE);
 
         // When
         AnyValue[] arguments = {VirtualValues.map(new String[] {"foo"}, new AnyValue[] {Values.stringValue("bar")})};

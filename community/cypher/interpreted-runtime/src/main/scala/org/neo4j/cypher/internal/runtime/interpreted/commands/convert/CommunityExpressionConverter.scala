@@ -450,11 +450,11 @@ case class CommunityExpressionConverter(
           }
         val signature = e.fcnSignature.get
         if (signature.isAggregate)
-          commands.expressions.AggregationFunctionInvocation(signature, callArgumentCommands)
+          commands.expressions.AggregationFunctionInvocation(id, signature, callArgumentCommands)
         else if (signature.builtIn) {
-          commands.expressions.BuiltInFunctionInvocation(signature, callArgumentCommands.toArray)
+          commands.expressions.BuiltInFunctionInvocation(id, signature, callArgumentCommands.toArray)
         } else
-          commands.expressions.UserFunctionInvocation(signature, callArgumentCommands.toArray)
+          commands.expressions.UserFunctionInvocation(id, signature, callArgumentCommands.toArray)
 
       case _: internal.expressions.MapProjection =>
         throw new InternalException("`MapProjection` should have been rewritten away")

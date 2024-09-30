@@ -38,6 +38,8 @@ import org.neo4j.cypher.internal.runtime.expressionVariableAllocation
 import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.CommunityExpressionConverter
 import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.ExpressionConverters
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.cypher.internal.runtime.memory.NoOpMemoryTrackerForOperatorProvider
+import org.neo4j.cypher.internal.runtime.memory.NoOpQueryMemoryTracker
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.Foldable.TraverseChildren
 import org.neo4j.cypher.internal.util.Rewriter
@@ -86,6 +88,7 @@ class SimpleInternalExpressionEvaluator extends InternalExpressionEvaluator {
     commandExpr(context, state)
   }
 
+  // Note! No memory tracking.
   def queryState(nExpressionSlots: Int, slottedParams: Array[AnyValue]) =
     new QueryState(
       query = null,
@@ -98,8 +101,8 @@ class SimpleInternalExpressionEvaluator extends InternalExpressionEvaluator {
       relTypeTokenReadSession = None,
       expressionVariables = new Array(nExpressionSlots),
       subscriber = QuerySubscriber.DO_NOTHING_SUBSCRIBER,
-      queryMemoryTracker = null,
-      memoryTrackerForOperatorProvider = null
+      queryMemoryTracker = NoOpQueryMemoryTracker,
+      memoryTrackerForOperatorProvider = NoOpMemoryTrackerForOperatorProvider
     )
 
   private def withSlottedParams(input: Expression, params: MapValue): (Expression, Array[AnyValue]) = {

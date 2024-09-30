@@ -30,7 +30,7 @@ import org.neo4j.memory.MemoryTracker;
 import org.neo4j.util.VisibleForTesting;
 
 @SuppressWarnings("ExternalizableWithoutPublicNoArgConstructor")
-public class HeapTrackingUnifiedMap<K, V> extends UnifiedMap<K, V> implements AutoCloseable {
+public class HeapTrackingUnifiedMap<K, V> extends UnifiedMap<K, V> implements HeapTracking.Map<K, V> {
     private static final long SHALLOW_SIZE = shallowSizeOfInstance(HeapTrackingUnifiedMap.class);
     private final MemoryTracker memoryTracker;
     private long trackedHeap;

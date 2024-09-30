@@ -62,6 +62,7 @@ import org.neo4j.kernel.impl.util.PathWrappingPathValue;
 import org.neo4j.kernel.impl.util.RelationshipEntityWrappingValue;
 import org.neo4j.kernel.impl.util.ValueUtils;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.NotThreadSafe;
@@ -304,8 +305,7 @@ class ExecutionContextProcedureIT {
             try {
                 var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguage.CYPHER_5);
                 transaction.rollback();
-                var procContext =
-                        new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
+                var procContext = procedureCtx(handle.id());
                 assertThatThrownBy(() -> executionContext
                                 .procedures()
                                 .procedureCallRead(handle.id(), new Value[] {intValue(0), intValue(2)}, procContext))
@@ -321,7 +321,7 @@ class ExecutionContextProcedureIT {
     void testProcedureWithWriteAccessMode() throws ProcedureException {
         doWithExecutionContext(executionContext -> {
             var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguage.CYPHER_5);
-            var procContext = new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
+            var procContext = procedureCtx(handle.id());
             assertThatThrownBy(() -> executionContext
                             .procedures()
                             .procedureCallWrite(handle.id(), new Value[] {intValue(0), intValue(2)}, procContext))
@@ -335,7 +335,7 @@ class ExecutionContextProcedureIT {
     void testProcedureWithSchemaAccessMode() throws ProcedureException {
         doWithExecutionContext(executionContext -> {
             var handle = executionContext.procedures().procedureGet(getName("range"), QueryLanguage.CYPHER_5);
-            var procContext = new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
+            var procContext = procedureCtx(handle.id());
             assertThatThrownBy(() -> executionContext
                             .procedures()
                             .procedureCallSchema(handle.id(), new Value[] {intValue(0), intValue(2)}, procContext))
@@ -381,7 +381,7 @@ class ExecutionContextProcedureIT {
     private List<AnyValue[]> invokeProcedure(ExecutionContext executionContext, String name, AnyValue... args)
             throws ProcedureException {
         var handle = executionContext.procedures().procedureGet(getName(name), QueryLanguage.CYPHER_5);
-        var procContext = new ProcedureCallContext(handle.id(), EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED);
+        var procContext = procedureCtx(handle.id());
         RawIterator<AnyValue[], ProcedureException> iterator =
                 executionContext.procedures().procedureCallRead(handle.id(), args, procContext);
         var result = new ArrayList<AnyValue[]>();
@@ -403,6 +403,11 @@ class ExecutionContextProcedureIT {
 
     private QualifiedName getName(String name) {
         return new QualifiedName("execution", "context", "test", "procedure", name);
+    }
+
+    private ProcedureCallContext procedureCtx(int id) {
+        return new ProcedureCallContext(
+                id, EMPTY_STRING_ARRAY, false, "", false, RUNTIME_USED, EmptyMemoryTracker.INSTANCE);
     }
 
     private interface ExecutionContextLogic {

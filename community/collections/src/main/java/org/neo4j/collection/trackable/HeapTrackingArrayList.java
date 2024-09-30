@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.RandomAccess;
 import java.util.function.Consumer;
 import org.neo4j.memory.MemoryTracker;
 
@@ -45,7 +46,7 @@ import org.neo4j.memory.MemoryTracker;
  * @param <E> element type
  */
 @SuppressWarnings("unchecked")
-public class HeapTrackingArrayList<E> implements List<E>, AutoCloseable {
+public class HeapTrackingArrayList<E> implements HeapTracking.List<E>, RandomAccess {
     private static final long SHALLOW_SIZE = shallowSizeOfInstance(HeapTrackingArrayList.class);
 
     private final MemoryTracker memoryTracker;
@@ -292,6 +293,7 @@ public class HeapTrackingArrayList<E> implements List<E>, AutoCloseable {
 
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
+        // If this is implemented, change documentation of ProcedureMemory.
         throw new UnsupportedOperationException();
     }
 

@@ -20,6 +20,7 @@
 package org.neo4j.internal.kernel.api.procs;
 
 import java.util.stream.Stream;
+import org.neo4j.memory.MemoryTracker;
 
 /**
  * This class captures information about the context in which a procedure was called. For example if it was called within Cypher it might
@@ -35,12 +36,18 @@ public class ProcedureCallContext {
     private final boolean calledFromCypher;
     private final String database;
     private final boolean isSystemDatabase;
+    private final MemoryTracker memoryTracker;
 
     private final String runtimeUsed;
 
     public ProcedureCallContext(
-            int id, boolean calledFromCypher, String database, boolean isSystemDatabase, String runtimeUsed) {
-        this(id, EMPTY_OUTPUT_FIELDNAMES, calledFromCypher, database, isSystemDatabase, runtimeUsed);
+            int id,
+            boolean calledFromCypher,
+            String database,
+            boolean isSystemDatabase,
+            String runtimeUsed,
+            MemoryTracker memoryTracker) {
+        this(id, EMPTY_OUTPUT_FIELDNAMES, calledFromCypher, database, isSystemDatabase, runtimeUsed, memoryTracker);
     }
 
     public ProcedureCallContext(
@@ -49,13 +56,15 @@ public class ProcedureCallContext {
             boolean calledFromCypher,
             String database,
             boolean isSystemDatabase,
-            String runtimeUsed) {
+            String runtimeUsed,
+            MemoryTracker memoryTracker) {
         this.id = id;
         this.outputFieldNames = outputFieldNames;
         this.calledFromCypher = calledFromCypher;
         this.database = database;
         this.isSystemDatabase = isSystemDatabase;
         this.runtimeUsed = runtimeUsed;
+        this.memoryTracker = memoryTracker;
     }
 
     /*
@@ -84,7 +93,7 @@ public class ProcedureCallContext {
 
     /* should only be used for testing purposes */
     public static final ProcedureCallContext EMPTY =
-            new ProcedureCallContext(-1, EMPTY_OUTPUT_FIELDNAMES, false, "", false, "");
+            new ProcedureCallContext(-1, EMPTY_OUTPUT_FIELDNAMES, false, "", false, "", null);
 
     public int id() {
         return id;
@@ -92,5 +101,15 @@ public class ProcedureCallContext {
 
     public String cypherRuntimeName() {
         return runtimeUsed;
+    }
+
+    /*
+     * This memory tracker is NOT intended to be used directly from procedures.
+     * Instead, prefer to inject org.neo4j.procedure.memory.ProcedureMemory and access trackers from there.
+     * Returns a memory tracker that is bound to the executing query,
+     * that can be used to record allocations inside procedures.
+     */
+    public MemoryTracker memoryTracker() {
+        return memoryTracker;
     }
 }

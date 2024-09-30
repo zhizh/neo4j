@@ -20,11 +20,11 @@
 package org.neo4j.cypher.internal.runtime.interpreted.commands.expressions
 
 import org.neo4j.cypher.internal.frontend.phases.UserFunctionSignature
-import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.ReadableRow
 import org.neo4j.cypher.internal.runtime.interpreted.GraphElementPropertyFunctions
 import org.neo4j.cypher.internal.runtime.interpreted.commands.AstNode
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.values.AnyValue
 
 abstract class FunctionInvocation(signature: UserFunctionSignature, input: Array[Expression])
@@ -35,7 +35,6 @@ abstract class FunctionInvocation(signature: UserFunctionSignature, input: Array
   override def children: Seq[AstNode[_]] = input
 
   override def apply(row: ReadableRow, state: QueryState): AnyValue = {
-    val query = state.query
     val length = arguments.length
     val argValues = new Array[AnyValue](length)
     var i = 0
@@ -44,32 +43,42 @@ abstract class FunctionInvocation(signature: UserFunctionSignature, input: Array
       i += 1
     }
 
-    call(query, argValues)
+    call(state, argValues)
   }
 
-  protected def call(query: QueryContext, argValues: Array[AnyValue]): AnyValue
+  protected def call(state: QueryState, argValues: Array[AnyValue]): AnyValue
 
   override def toString = s"${signature.name}(${input.mkString(",")})"
 }
 
-case class BuiltInFunctionInvocation(signature: UserFunctionSignature, input: Array[Expression])
+case class BuiltInFunctionInvocation(opId: Id, signature: UserFunctionSignature, input: Array[Expression])
     extends FunctionInvocation(signature, input) {
 
-  override protected def call(query: QueryContext, argValues: Array[AnyValue]): AnyValue = {
-    query.callBuiltInFunction(signature.id, argValues, query.procedureCallContext(signature.id))
+  override protected def call(state: QueryState, argValues: Array[AnyValue]): AnyValue = {
+    val query = state.query
+    query.callBuiltInFunction(
+      signature.id,
+      argValues,
+      query.procedureCallContext(signature.id, state.memoryTrackerForOperatorProvider.memoryTrackerForOperator(opId.x))
+    )
   }
 
   override def rewrite(f: Expression => Expression): Expression =
-    f(BuiltInFunctionInvocation(signature, input.map(a => a.rewrite(f))))
+    f(BuiltInFunctionInvocation(opId, signature, input.map(a => a.rewrite(f))))
 }
 
-case class UserFunctionInvocation(signature: UserFunctionSignature, input: Array[Expression])
+case class UserFunctionInvocation(opId: Id, signature: UserFunctionSignature, input: Array[Expression])
     extends FunctionInvocation(signature, input) {
 
-  override protected def call(query: QueryContext, argValues: Array[AnyValue]): AnyValue = {
-    query.callFunction(signature.id, argValues, query.procedureCallContext(signature.id))
+  override protected def call(state: QueryState, argValues: Array[AnyValue]): AnyValue = {
+    val query = state.query
+    query.callFunction(
+      signature.id,
+      argValues,
+      query.procedureCallContext(signature.id, state.memoryTrackerForOperatorProvider.memoryTrackerForOperator(opId.x))
+    )
   }
 
   override def rewrite(f: Expression => Expression): Expression =
-    f(UserFunctionInvocation(signature, input.map(a => a.rewrite(f))))
+    f(UserFunctionInvocation(opId, signature, input.map(a => a.rewrite(f))))
 }
