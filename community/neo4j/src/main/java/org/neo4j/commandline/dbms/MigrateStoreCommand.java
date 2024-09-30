@@ -46,8 +46,7 @@ import org.neo4j.configuration.helpers.DatabaseNamePattern;
 import org.neo4j.dbms.database.readonly.DatabaseReadOnlyChecker;
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.HostedOnMode;
 import org.neo4j.function.Suppliers;
-import org.neo4j.graphdb.event.DatabaseEventListenerAdapter;
-import org.neo4j.graphdb.facade.SystemDbUpgrader;
+import org.neo4j.graphdb.facade.SystemDatabaseUpgrader;
 import org.neo4j.graphdb.factory.module.edition.migration.MigrationEditionModuleFactory;
 import org.neo4j.graphdb.factory.module.edition.migration.SystemDatabaseMigrator;
 import org.neo4j.index.internal.gbptree.RecoveryCleanupWorkCollector;
@@ -322,13 +321,8 @@ public class MigrateStoreCommand extends AbstractAdminCommand {
         try {
             var editionModuleFactory = loadEditionModuleFactory();
             var systemDatabaseMigrator = loadSystemDatabaseMigrator();
-            SystemDbUpgrader.upgrade(
-                    editionModuleFactory,
-                    systemDatabaseMigrator,
-                    config,
-                    logProvider,
-                    systemDbStartupLogProvider,
-                    new DatabaseEventListenerAdapter());
+            SystemDatabaseUpgrader.upgrade(
+                    editionModuleFactory, systemDatabaseMigrator, config, logProvider, systemDbStartupLogProvider);
         } catch (Exception e) {
             throw new CommandFailedException(e.getMessage(), e);
         }

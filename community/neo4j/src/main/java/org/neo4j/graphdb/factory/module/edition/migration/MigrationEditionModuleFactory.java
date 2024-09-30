@@ -19,11 +19,9 @@
  */
 package org.neo4j.graphdb.factory.module.edition.migration;
 
-import java.util.function.Function;
 import org.neo4j.annotations.service.Service;
 import org.neo4j.commandline.dbms.MigrateStoreCommand;
-import org.neo4j.graphdb.factory.module.GlobalModule;
-import org.neo4j.graphdb.factory.module.edition.AbstractEditionModule;
+import org.neo4j.graphdb.facade.SystemDatabaseRunner;
 import org.neo4j.service.PrioritizedService;
 
 /**
@@ -32,5 +30,4 @@ import org.neo4j.service.PrioritizedService;
  * modify behaviour to fit migration and upgrade.
  */
 @Service
-public interface MigrationEditionModuleFactory
-        extends Function<GlobalModule, AbstractEditionModule>, PrioritizedService {}
+public interface MigrationEditionModuleFactory extends SystemDatabaseRunner.EditionModuleFactory, PrioritizedService {}

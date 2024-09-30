@@ -24,23 +24,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.neo4j.configuration.Config;
 import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
-import org.neo4j.dbms.api.DatabaseManagementService;
-import org.neo4j.dbms.api.DatabaseManagementServiceBuilder;
 import org.neo4j.dbms.api.Neo4jDatabaseManagementServiceBuilder;
 import org.neo4j.dbms.database.SystemGraphComponent.Status;
 import org.neo4j.dbms.database.SystemGraphComponents;
 import org.neo4j.graphdb.config.Setting;
-import org.neo4j.graphdb.event.DatabaseEventContext;
-import org.neo4j.graphdb.event.DatabaseEventListenerAdapter;
-import org.neo4j.graphdb.facade.SystemDbUpgrader;
+import org.neo4j.graphdb.facade.SystemDatabaseUpgrader;
 import org.neo4j.graphdb.factory.module.edition.migration.MigrationEditionModuleFactory;
 import org.neo4j.graphdb.factory.module.edition.migration.SystemDatabaseMigrator;
 import org.neo4j.io.ByteUnit;
@@ -52,26 +46,9 @@ import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.Neo4jLayoutExtension;
 
 @Neo4jLayoutExtension
-public abstract class SystemDbUpgraderAbstractTestBase {
+public abstract class SystemDatabaseUpgraderAbstractTestBase {
     @Inject
     protected Neo4jLayout databaseLayout;
-
-    @Test
-    void shouldOnlyStartSystemDb() throws Exception {
-        createDatabase();
-
-        var editionFactory = migrationEditionModuleFactory();
-        var systemDatabaseMigrator = systemDatabaseMigrator();
-        var eventListener = new StartedDatabaseEventListener();
-        SystemDbUpgrader.upgrade(
-                editionFactory,
-                systemDatabaseMigrator,
-                getConfig(databaseLayout.homeDirectory()),
-                NullLogProvider.getInstance(),
-                NullLogProvider.getInstance(),
-                eventListener);
-        assertThat(eventListener.startedDatabases).containsExactly(SYSTEM_DATABASE_NAME);
-    }
 
     @Test
     void shouldMigrateSystemDatabase() throws Exception {
@@ -80,13 +57,12 @@ public abstract class SystemDbUpgraderAbstractTestBase {
 
         var editionFactory = migrationEditionModuleFactory();
         var systemDatabaseMigrator = systemDatabaseMigrator();
-        SystemDbUpgrader.upgrade(
+        SystemDatabaseUpgrader.upgrade(
                 editionFactory,
                 systemDatabaseMigrator,
                 getConfig(homeDirectory),
                 NullLogProvider.getInstance(),
-                NullLogProvider.getInstance(),
-                new DatabaseEventListenerAdapter());
+                NullLogProvider.getInstance());
 
         var dbms = dbmsBuilder(homeDirectory)
                 .setConfig(BoltConnector.enabled, FALSE)
@@ -111,15 +87,6 @@ public abstract class SystemDbUpgraderAbstractTestBase {
                 .build();
     }
 
-    private void createDatabase() {
-        DatabaseManagementService dbms = new DatabaseManagementServiceBuilder(databaseLayout.homeDirectory())
-                .setConfig(BoltConnector.enabled, FALSE)
-                .setConfig(GraphDatabaseSettings.pagecache_memory, ByteUnit.mebiBytes(8))
-                .setConfig(baseConfig())
-                .build();
-        dbms.shutdown();
-    }
-
     protected abstract Map<Setting<?>, Object> baseConfig();
 
     protected abstract MigrationEditionModuleFactory migrationEditionModuleFactory();
@@ -129,13 +96,4 @@ public abstract class SystemDbUpgraderAbstractTestBase {
     protected abstract String previousMajorsSystemDatabase();
 
     protected abstract Neo4jDatabaseManagementServiceBuilder dbmsBuilder(Path homePath);
-
-    private static class StartedDatabaseEventListener extends DatabaseEventListenerAdapter {
-        private final List<String> startedDatabases = new ArrayList<>();
-
-        @Override
-        public void databaseStart(DatabaseEventContext eventContext) {
-            startedDatabases.add(eventContext.getDatabaseName());
-        }
-    }
 }

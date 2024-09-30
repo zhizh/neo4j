@@ -29,7 +29,7 @@ import org.neo4j.graphdb.factory.module.edition.migration.CommunitySystemDatabas
 import org.neo4j.graphdb.factory.module.edition.migration.MigrationEditionModuleFactory;
 import org.neo4j.graphdb.factory.module.edition.migration.SystemDatabaseMigrator;
 
-public class SystemDbUpgraderCommunityTest extends SystemDbUpgraderAbstractTestBase {
+public class SystemDatabaseUpgraderCommunityTest extends SystemDatabaseUpgraderAbstractTestBase {
     @Override
     protected Map<Setting<?>, Object> baseConfig() {
         return Map.of();
