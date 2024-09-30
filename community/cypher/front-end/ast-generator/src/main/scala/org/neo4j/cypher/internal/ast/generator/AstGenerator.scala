@@ -124,6 +124,7 @@ import org.neo4j.cypher.internal.ast.ExecuteProcedureAction
 import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.ExistsExpression
 import org.neo4j.cypher.internal.ast.FileResource
+import org.neo4j.cypher.internal.ast.Finish
 import org.neo4j.cypher.internal.ast.Foreach
 import org.neo4j.cypher.internal.ast.FulltextIndexes
 import org.neo4j.cypher.internal.ast.FunctionQualifier
@@ -478,8 +479,12 @@ import org.neo4j.cypher.internal.expressions.Xor
 import org.neo4j.cypher.internal.expressions.functions.Labels
 import org.neo4j.cypher.internal.expressions.functions.Type
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.Conjunctions
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.AnyType
 import org.neo4j.cypher.internal.util.symbols.CTMap
@@ -1054,20 +1059,20 @@ class AstGenerator(
     dynamicLabelsAllowed: Boolean
   ): Gen[LabelExpression] = {
 
-    def _labelExpressionConjunction(): Gen[LabelExpression.Conjunctions] = for {
+    def _labelExpressionConjunction(): Gen[Conjunctions] = for {
       lhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
       rhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
-    } yield LabelExpression.Conjunctions.flat(lhs, rhs, pos, containsIs)
+    } yield Conjunctions.flat(lhs, rhs, pos, containsIs)
 
-    def _labelExpressionDisjunction(): Gen[LabelExpression.Disjunctions] = for {
+    def _labelExpressionDisjunction(): Gen[Disjunctions] = for {
       lhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
       rhs <- _labelExpression(entityType, containsIs, dynamicLabelsAllowed)
-    } yield LabelExpression.Disjunctions.flat(lhs, rhs, pos, containsIs)
+    } yield Disjunctions.flat(lhs, rhs, pos, containsIs)
 
     for {
       labelExpr <- frequency(
         5 -> oneOf[LabelExpression](
-          lzy(LabelExpression.Wildcard(containsIs)(pos)),
+          lzy(Wildcard(containsIs)(pos)),
           lzy(entityType match {
             case Some(NODE_TYPE)         => _labelName.map(Leaf(_, containsIs))
             case Some(RELATIONSHIP_TYPE) => _relTypeName.map(Leaf(_, containsIs))
@@ -1086,7 +1091,7 @@ class AstGenerator(
         1 -> oneOf[LabelExpression](
           lzy(_labelExpressionConjunction()),
           lzy(_labelExpressionDisjunction()),
-          lzy(_labelExpression(entityType, containsIs, dynamicLabelsAllowed).map(LabelExpression.Negation(
+          lzy(_labelExpression(entityType, containsIs, dynamicLabelsAllowed).map(Negation(
             _,
             containsIs
           )(pos)))
@@ -1272,10 +1277,10 @@ class AstGenerator(
 
   def _insertNodeLabelExpression(containsIs: Boolean): Gen[LabelExpression] = {
 
-    def _insertLabelExpressionConjunction(): Gen[LabelExpression.Conjunctions] = for {
+    def _insertLabelExpressionConjunction(): Gen[Conjunctions] = for {
       lhs <- _insertNodeLabelExpression(containsIs)
       rhs <- _insertNodeLabelExpression(containsIs)
-    } yield LabelExpression.Conjunctions.flat(lhs, rhs, pos, containsIs)
+    } yield Conjunctions.flat(lhs, rhs, pos, containsIs)
 
     for {
       labelExpr <- frequency(
@@ -1359,6 +1364,8 @@ class AstGenerator(
     skip <- option(_skip)
     limit <- option(_limit)
   } yield Return(distinct, ReturnItems(inclExisting, retItems)(pos), orderBy, skip, limit)(pos)
+
+  def _finish: Gen[Finish] = const(Finish()(pos))
 
   def _yield: Gen[Yield] = for {
     retItems <- oneOrMore(_yieldItem)
@@ -1558,6 +1565,7 @@ class AstGenerator(
     lzy(_with),
     lzy(_orderByAndPageStatement),
     lzy(_return),
+    lzy(_finish),
     lzy(_match),
     lzy(_create),
     lzy(_insert),
