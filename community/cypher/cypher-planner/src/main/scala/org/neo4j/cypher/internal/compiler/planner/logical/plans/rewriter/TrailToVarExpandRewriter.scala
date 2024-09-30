@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.expressions.Disjoint
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.IsRepeatTrailUnique
+import org.neo4j.cypher.internal.expressions.LogicalProperty
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.NoneOfRelationships
 import org.neo4j.cypher.internal.expressions.SemanticDirection
@@ -91,7 +92,8 @@ import org.neo4j.cypher.internal.util.topDown
 case class TrailToVarExpandRewriter(
   labelAndRelTypeInfos: LabelAndRelTypeInfos,
   otherAttributes: Attributes[LogicalPlan],
-  anonymousVariableNameGenerator: AnonymousVariableNameGenerator
+  anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
+  isBlockFormat: Boolean
 ) extends Rewriter with TopDownMergeableRewriter {
 
   private def createVarLengthExpand(
@@ -114,13 +116,13 @@ case class TrailToVarExpandRewriter(
       pathDirection = expand.dir,
       mode = convertToInlinedPredicates.Mode.Trail,
       anonymousVariableNameGenerator = anonymousVariableNameGenerator
-    )
-      .map(inlinedPredicates => {
+    ).collect {
+      case inlinedPredicates if shouldInlinePredicates(inlinedPredicates) =>
         val varExpand = createVarExpand(trail, expand, quantifier, inlinedPredicates, varExpandRel, expansionMode)
         val expandWithUniqueRel = maybeAddRelUniquenessPredicates(trail, varExpandRel, varExpand)
         val expandWithUniqueGroupRel = maybeAddGroupRelUniquenessPredicates(trail, varExpandRel, expandWithUniqueRel)
         expandWithUniqueGroupRel
-      })
+    }
   }
 
   override val innerRewriter: Rewriter = Rewriter.lift {
@@ -247,6 +249,19 @@ case class TrailToVarExpandRewriter(
     val id = otherAttributes.copy(source.id).id()
     labelAndRelTypeInfos.set(id, Some(LabelAndRelTypeInfo(Map.empty, Map.empty)))
     Selection(Ands(predicates)(InputPosition.NONE), source)(SameId(id))
+  }
+
+  private def shouldInlinePredicates(inlinedPredicates: InlinedPredicates): Boolean = {
+    if (isBlockFormat) !containsRelationshipPropertyPredicate(inlinedPredicates)
+    else true
+  }
+
+  private def containsRelationshipPropertyPredicate(inlinedPredicates: InlinedPredicates): Boolean = {
+    inlinedPredicates.relationshipPredicates.exists { variablePredicate =>
+      variablePredicate.predicate.folder.treeExists {
+        case LogicalProperty(v: LogicalVariable, _) if v == variablePredicate.variable => true
+      }
+    }
   }
 }
 

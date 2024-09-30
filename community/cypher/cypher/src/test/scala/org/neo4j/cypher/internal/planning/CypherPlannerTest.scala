@@ -260,6 +260,8 @@ class CypherPlannerTest extends CypherFunSuite {
       override def procedureSignatureVersion: Long = -1
 
       override def databaseMode: DatabaseMode = DatabaseMode.SINGLE
+
+      override def storageHasPropertyColocation: Boolean = true
     }
 
     CypherPlanner.customPlanContextCreator = Some((_, _, _, _) => planContext)

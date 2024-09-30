@@ -207,4 +207,6 @@ trait PlanContext extends ReadTokenContext with ScopedProcedureSignatureResolver
    * Return the database mode
    */
   def databaseMode: DatabaseMode.DatabaseMode
+
+  def storageHasPropertyColocation: Boolean
 }

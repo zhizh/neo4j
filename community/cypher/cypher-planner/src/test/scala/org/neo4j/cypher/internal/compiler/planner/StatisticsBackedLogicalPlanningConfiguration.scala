@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.compiler.planner
 import org.neo4j.common
 import org.neo4j.configuration.Config
 import org.neo4j.configuration.GraphDatabaseInternalSettings
+import org.neo4j.configuration.GraphDatabaseSettings
 import org.neo4j.cypher.graphcounts.Constraint
 import org.neo4j.cypher.graphcounts.GraphCountData
 import org.neo4j.cypher.graphcounts.Index
@@ -38,6 +39,7 @@ import org.neo4j.cypher.internal.compiler.helpers.LogicalPlanResolver
 import org.neo4j.cypher.internal.compiler.helpers.TokenContainer
 import org.neo4j.cypher.internal.compiler.phases.LogicalPlanState
 import org.neo4j.cypher.internal.compiler.planner.StatisticsBackedLogicalPlanningConfigurationBuilder.Cardinalities
+import org.neo4j.cypher.internal.compiler.planner.StatisticsBackedLogicalPlanningConfigurationBuilder.DatabaseFormat
 import org.neo4j.cypher.internal.compiler.planner.StatisticsBackedLogicalPlanningConfigurationBuilder.ExistenceConstraintDefinition
 import org.neo4j.cypher.internal.compiler.planner.StatisticsBackedLogicalPlanningConfigurationBuilder.IndexCapabilities
 import org.neo4j.cypher.internal.compiler.planner.StatisticsBackedLogicalPlanningConfigurationBuilder.IndexDefinition
@@ -125,7 +127,8 @@ trait StatisticsBackedLogicalPlanningSupport {
 object StatisticsBackedLogicalPlanningConfigurationBuilder {
 
   private val defaultSettingsOverrides: Map[Setting[_], AnyRef] = Map(
-    GraphDatabaseInternalSettings.cypher_lp_eager_analysis_fallback_enabled -> Boolean.box(false)
+    GraphDatabaseInternalSettings.cypher_lp_eager_analysis_fallback_enabled -> Boolean.box(false),
+    GraphDatabaseSettings.db_format -> DatabaseFormat.Block.settingValue // to match DefaultDbFormatSettingMigrator
   )
 
   def newBuilder(): StatisticsBackedLogicalPlanningConfigurationBuilder =
@@ -279,6 +282,17 @@ object StatisticsBackedLogicalPlanningConfigurationBuilder {
     val text_2_0: IndexCapability = org.neo4j.kernel.api.impl.schema.TextIndexCapability.trigram()
     val point: IndexCapability = org.neo4j.kernel.impl.index.schema.PointIndexProvider.CAPABILITY
     val range: IndexCapability = org.neo4j.kernel.impl.index.schema.RangeIndexProvider.CAPABILITY
+  }
+
+  sealed trait DatabaseFormat extends Product {
+    def settingValue: String = productPrefix.toLowerCase
+  }
+
+  object DatabaseFormat {
+    case object Block extends DatabaseFormat
+    case object Aligned extends DatabaseFormat
+
+    def default: DatabaseFormat = Block
   }
 }
 
@@ -1018,6 +1032,10 @@ case class StatisticsBackedLogicalPlanningConfigurationBuilder private (
   ): StatisticsBackedLogicalPlanningConfigurationBuilder =
     this.copy(options = options.copy(databaseReferenceRepository = databaseReferenceRepository))
 
+  def setDatabaseFormat(dbFormat: DatabaseFormat): StatisticsBackedLogicalPlanningConfigurationBuilder = {
+    withSetting(GraphDatabaseSettings.db_format, dbFormat.settingValue)
+  }
+
   def build(): StatisticsBackedLogicalPlanningConfiguration = {
     require(cardinalities.allNodes.isDefined, "Please specify allNodesCardinality using `setAllNodesCardinality`.")
     cardinalities.allNodes.foreach(anc =>
@@ -1114,6 +1132,8 @@ case class StatisticsBackedLogicalPlanningConfigurationBuilder private (
     val planContext: PlanContext = new NotImplementedPlanContext() {
 
       override def databaseMode: DatabaseMode = dbMode
+
+      override def storageHasPropertyColocation: Boolean = dbFormatFromSettings == DatabaseFormat.Block
 
       override def statistics: InstrumentedGraphStatistics =
         InstrumentedGraphStatistics(graphStatistics, new MutableGraphStatisticsSnapshot())
@@ -1377,8 +1397,18 @@ case class StatisticsBackedLogicalPlanningConfigurationBuilder private (
       resolver,
       planContext,
       options,
-      defaultSettingsOverrides ++ settings
+      allSettings
     )
+  }
+
+  private def allSettings: Map[Setting[_], AnyRef] = defaultSettingsOverrides ++ settings
+
+  private def dbFormatFromSettings: DatabaseFormat = {
+    allSettings.get(GraphDatabaseSettings.db_format).fold(DatabaseFormat.default) { dbFormatSetting =>
+      Seq(DatabaseFormat.Block, DatabaseFormat.Aligned)
+        .find(_.settingValue == dbFormatSetting)
+        .getOrElse(throw new IllegalArgumentException(s"Unknown database format: $dbFormatSetting"))
+    }
   }
 }
 

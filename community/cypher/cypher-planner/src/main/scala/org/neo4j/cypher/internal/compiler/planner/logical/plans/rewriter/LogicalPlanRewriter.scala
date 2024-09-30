@@ -92,7 +92,8 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
       Some(TrailToVarExpandRewriter(
         labelAndRelTypeInfos,
         otherAttributes.withAlso(solveds, cardinalities, effectiveCardinalities, providedOrders),
-        anonymousVariableNameGenerator
+        anonymousVariableNameGenerator,
+        isBlockFormat = context.planContext.storageHasPropertyColocation
       )),
       Some(fuseSelections),
       Some(UnnestApply(

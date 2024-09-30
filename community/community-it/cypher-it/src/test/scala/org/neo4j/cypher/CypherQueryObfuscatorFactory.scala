@@ -204,5 +204,7 @@ class CypherQueryObfuscatorFactory {
     override def withNotificationLogger(notificationLogger: InternalNotificationLogger): PlanContext = this
 
     override def databaseMode: DatabaseMode = fail()
+
+    override def storageHasPropertyColocation: Boolean = fail()
   }
 }

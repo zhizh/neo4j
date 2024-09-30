@@ -19,19 +19,14 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter
 
-import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
 import org.neo4j.cypher.internal.compiler.helpers.LogicalPlanBuilder
-import org.neo4j.cypher.internal.compiler.planner.LogicalPlanConstructionTestSupport
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanTestOps
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningTestSupport
+import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.DbFormat
 import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.TrailParametersOps
 import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.`(a) ((n)-[r]-(m))+ (b)`
 import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.`(b) ((x)-[rr]-(y))+ (c)`
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.preserves
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.rewrite
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.rewrites
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.subPlanBuilder
 import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.TrailParameters
@@ -48,10 +43,9 @@ import org.neo4j.cypher.internal.util.UpperBound.Limited
 import org.neo4j.cypher.internal.util.UpperBound.Unlimited
 import org.neo4j.cypher.internal.util.attribution.Attributes
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
-import org.scalatest.Assertion
 
 // Additional tests can be found in QuantifiedPathPatternPlanningIntegrationTest
-class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTestSupport {
+class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTestSupport with LogicalPlanTestOps {
 
   // happy case
   test("Rewrites MATCH (a) ((n)-[r]->(m))+ (b) RETURN 1 AS s") {
@@ -88,7 +82,7 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
       .expand("(a)-[r*]->(b)")
       .allNodeScan("a")
       .build()
-    rewrite(trail) should equal(expand)
+    rewrites(trail, expand)
   }
 
   // node variable n is used
@@ -204,7 +198,9 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
       .expand("(a)-[r_i*1..]->(b)", relationshipPredicates = Seq(Predicate("  UNNAMED1", "`  UNNAMED1`.p = true")))
       .allNodeScan("a")
       .build()
-    rewrites(trail, expand)
+
+    rewrites(trail, expand, dbFormat = DbFormat.Aligned)
+    preserves(trail, dbFormat = DbFormat.Block)
   }
 
   // pre-filter predicate with inner node dependency
@@ -315,7 +311,9 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
       .cacheProperties("cacheNFromStore[z.p]")
       .allNodeScan("z")
       .build()
-    rewrites(trail, expand)
+
+    rewrites(trail, expand, dbFormat = DbFormat.Aligned)
+    preserves(trail, dbFormat = DbFormat.Block)
   }
 
   // pre-filter relationship type predicate
@@ -347,7 +345,9 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
       .expand("(a)-[r_i*1..]->(b)", relationshipPredicates = Seq(Predicate("  UNNAMED1", "`  UNNAMED1`.p = 0")))
       .allNodeScan("a")
       .build()
-    rewrites(trail, expand)
+
+    rewrites(trail, expand, dbFormat = DbFormat.Aligned)
+    preserves(trail, dbFormat = DbFormat.Block)
   }
 
   // post-filter predicate
@@ -1110,13 +1110,30 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
 
     rewrites(selectionAndTrail, expand)
   }
+
+  private def rewrites(trail: LogicalPlan, expand: LogicalPlan, dbFormat: DbFormat = DbFormat.All): Unit =
+    for (isBlockFormat <- dbFormat.isBlockFormat) withClue(s"isBlockFormat = $isBlockFormat\n") {
+      rewrite(trail, isBlockFormat).stripProduceResults should equal(expand.stripProduceResults)
+    }
+
+  private def preserves(trail: LogicalPlan, dbFormat: DbFormat = DbFormat.All): Unit = {
+    for (isBlockFormat <- dbFormat.isBlockFormat) withClue(s"isBlockFormat = $isBlockFormat\n") {
+      rewrite(trail, isBlockFormat).stripProduceResults should equal(trail.stripProduceResults)
+    }
+  }
+
+  private def rewrite(p: LogicalPlan, isBlockFormat: Boolean): LogicalPlan =
+    p.endoRewrite(TrailToVarExpandRewriter(
+      new StubLabelAndRelTypeInfos,
+      Attributes(idGen, new StubSolveds),
+      new AnonymousVariableNameGenerator,
+      isBlockFormat = isBlockFormat
+    ))
+
+  private def subPlanBuilder = new LogicalPlanBuilder(wholePlan = false)
 }
 
-object TrailToVarExpandRewriterTest
-    extends CypherFunSuite
-    with LogicalPlanTestOps
-    with LogicalPlanConstructionTestSupport
-    with AstConstructionTestSupport {
+object TrailToVarExpandRewriterTest {
 
   implicit class TrailParametersOps(params: TrailParameters) {
 
@@ -1137,13 +1154,7 @@ object TrailToVarExpandRewriterTest
       params.copy(min = min, max = max)
   }
 
-  private def rewrites(trail: LogicalPlan, expand: LogicalPlan): Assertion =
-    rewrite(trail).stripProduceResults should equal(expand)
-
-  private def preserves(trail: LogicalPlan): Assertion =
-    rewrite(trail).stripProduceResults should equal(trail.stripProduceResults)
-
-  object `(a) ((n)-[r]-(m))+ (b)` {
+  private object `(a) ((n)-[r]-(m))+ (b)` {
 
     val full: TrailParameters = TrailParameters(
       min = 1,
@@ -1175,7 +1186,7 @@ object TrailToVarExpandRewriterTest
     val empty: TrailParameters = full.copy(groupNodes = Set.empty, groupRelationships = Set.empty)
   }
 
-  object `(b) ((x)-[rr]-(y))+ (c)` {
+  private object `(b) ((x)-[rr]-(y))+ (c)` {
 
     val empty: TrailParameters = TrailParameters(
       min = 1,
@@ -1195,12 +1206,20 @@ object TrailToVarExpandRewriterTest
     val xyless: TrailParameters = empty.copy(groupRelationships = Set(("rr_i", "rr")))
   }
 
-  private def rewrite(p: LogicalPlan): LogicalPlan =
-    p.endoRewrite(TrailToVarExpandRewriter(
-      new StubLabelAndRelTypeInfos,
-      Attributes(idGen, new StubSolveds),
-      new AnonymousVariableNameGenerator
-    ))
+  sealed private trait DbFormat {
 
-  private def subPlanBuilder = new LogicalPlanBuilder(wholePlan = false)
+    def isBlockFormat: Seq[Boolean] = {
+      this match {
+        case DbFormat.Block   => Seq(true)
+        case DbFormat.Aligned => Seq(false)
+        case DbFormat.All     => Seq(true, false)
+      }
+    }
+  }
+
+  private object DbFormat {
+    case object Block extends DbFormat
+    case object Aligned extends DbFormat
+    case object All extends DbFormat
+  }
 }

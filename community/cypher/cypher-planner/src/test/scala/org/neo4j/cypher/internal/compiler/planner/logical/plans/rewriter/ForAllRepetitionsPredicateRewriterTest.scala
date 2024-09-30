@@ -22,9 +22,7 @@ package org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
 import org.neo4j.cypher.internal.compiler.helpers.LogicalPlanBuilder
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.StubCardinalities
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.StubProvidedOrders
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.StubSolveds
+import org.neo4j.cypher.internal.compiler.planner.LogicalPlanConstructionTestSupport
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.ir.NodeBinding
@@ -43,7 +41,8 @@ import org.neo4j.cypher.internal.util.attribution.SameId
 import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
-class ForAllRepetitionsPredicateRewriterTest extends CypherFunSuite with AstConstructionTestSupport {
+class ForAllRepetitionsPredicateRewriterTest extends CypherFunSuite with AstConstructionTestSupport
+    with LogicalPlanConstructionTestSupport {
 
   // (start) ((x)-[r]->(y)-[q]->(z))* (end)
   private val qpp = QuantifiedPathPattern(

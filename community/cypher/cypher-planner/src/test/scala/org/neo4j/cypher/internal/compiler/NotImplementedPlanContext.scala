@@ -158,4 +158,6 @@ class NotImplementedPlanContext extends PlanContext {
   override def withNotificationLogger(notificationLogger: InternalNotificationLogger): PlanContext = this
 
   override def databaseMode: DatabaseMode = ???
+
+  override def storageHasPropertyColocation: Boolean = ???
 }

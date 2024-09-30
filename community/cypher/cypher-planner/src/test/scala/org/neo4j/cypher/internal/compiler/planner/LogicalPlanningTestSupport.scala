@@ -252,6 +252,8 @@ trait LogicalPlanningTestSupport extends AstConstructionTestSupport with Logical
       override def txStateHasChanges(): Boolean = false
 
       override def databaseMode: DatabaseMode = DatabaseMode.SINGLE
+
+      override def storageHasPropertyColocation: Boolean = false
     }
   }
 

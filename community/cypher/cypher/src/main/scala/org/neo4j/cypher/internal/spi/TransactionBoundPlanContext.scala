@@ -50,6 +50,7 @@ import org.neo4j.cypher.internal.util.LabelId
 import org.neo4j.cypher.internal.util.PropertyKeyId
 import org.neo4j.cypher.internal.util.RelTypeId
 import org.neo4j.exceptions.KernelException
+import org.neo4j.exceptions.Neo4jException
 import org.neo4j.internal.kernel.api.InternalIndexState
 import org.neo4j.internal.kernel.api.exceptions.schema.IndexNotFoundKernelException
 import org.neo4j.internal.kernel.api.procs
@@ -532,5 +533,14 @@ class TransactionBoundPlanContext(
     case TransactionalContext.DatabaseMode.SINGLE    => DatabaseMode.SINGLE
     case TransactionalContext.DatabaseMode.COMPOSITE => DatabaseMode.COMPOSITE
     case TransactionalContext.DatabaseMode.SHARDED   => DatabaseMode.SHARDED
+  }
+
+  override def storageHasPropertyColocation: Boolean = {
+    try {
+      tc.kernelTransaction.storageEngineCostCharacteristics().hasPropertyColocation
+    } catch {
+      // VirtualKernelTransaction.storageEngineCostCharacteristics throws
+      case _: Neo4jException => false
+    }
   }
 }

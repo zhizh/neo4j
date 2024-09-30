@@ -509,6 +509,8 @@ trait LogicalPlanningTestSupport2 extends AstConstructionTestSupport with Logica
       override def txStateHasChanges(): Boolean = false
 
       override def databaseMode: DatabaseMode = DatabaseMode.SINGLE
+
+      override def storageHasPropertyColocation: Boolean = false
     }
 
     def getLogicalPlanFor(
