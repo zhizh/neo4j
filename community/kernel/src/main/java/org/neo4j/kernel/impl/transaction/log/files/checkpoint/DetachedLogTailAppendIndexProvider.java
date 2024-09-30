@@ -29,7 +29,6 @@ import org.neo4j.kernel.impl.transaction.log.AppendBatchInfo;
 import org.neo4j.kernel.impl.transaction.log.LastAppendBatchInfoProvider;
 import org.neo4j.kernel.impl.transaction.log.LogEntryCursor;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
-import org.neo4j.kernel.impl.transaction.log.entry.AbstractLogEntry;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEntryCommit;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEntryStart;
 import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
@@ -39,6 +38,7 @@ import org.neo4j.kernel.impl.transaction.log.entry.v57.LogEntryChunkEnd;
 import org.neo4j.kernel.impl.transaction.log.entry.v57.LogEntryChunkStart;
 import org.neo4j.kernel.impl.transaction.log.entry.v57.LogEntryRollback;
 import org.neo4j.kernel.impl.transaction.log.files.LogFile;
+import org.neo4j.storageengine.AppendIndexProvider;
 import org.neo4j.storageengine.api.CommandReaderFactory;
 
 public class DetachedLogTailAppendIndexProvider implements LastAppendBatchInfoProvider {
@@ -83,23 +83,25 @@ public class DetachedLogTailAppendIndexProvider implements LastAppendBatchInfoPr
                             new VersionAwareLogEntryReader(commandReaderFactory, binarySupportedKernelVersions);
                     try (var reader = logFile.getReader(lookupPosition, NO_MORE_CHANNELS);
                             var cursor = new LogEntryCursor(logEntryReader, reader)) {
-                        AbstractLogEntry entry;
+                        long currentAppendIndex = AppendIndexProvider.UNKNOWN_APPEND_INDEX;
                         while (cursor.next()) {
-                            entry = (AbstractLogEntry) cursor.get();
+                            var entry = cursor.get();
                             if (entry instanceof LogEntryStart startEntry) {
-                                appendIndex = startEntry.getAppendIndex();
+                                currentAppendIndex = startEntry.getAppendIndex();
                             } else if (entry instanceof LogEntryChunkStart chunkStart) {
-                                appendIndex = chunkStart.getAppendIndex();
-                            } else if (entry instanceof LogEntryChunkEnd) {
-                                postLogPosition = reader.getCurrentLogPosition();
+                                currentAppendIndex = chunkStart.getAppendIndex();
                             } else if (entry instanceof LogEntryRollback rollback) {
+                                assert currentAppendIndex == AppendIndexProvider.UNKNOWN_APPEND_INDEX;
                                 appendIndex = rollback.getAppendIndex();
                                 postLogPosition = reader.getCurrentLogPosition();
-                            } else if ((entry instanceof LogEntryCommit commit)) {
-                                if (checkCommitEntries) {
-                                    appendIndex = commit.getTxId();
+                            } else if (entry instanceof LogEntryChunkEnd || (entry instanceof LogEntryCommit)) {
+                                if (checkCommitEntries && entry instanceof LogEntryCommit commit) {
+                                    currentAppendIndex = commit.getTxId();
                                 }
+                                assert currentAppendIndex != AppendIndexProvider.UNKNOWN_APPEND_INDEX;
+                                appendIndex = currentAppendIndex;
                                 postLogPosition = reader.getCurrentLogPosition();
+                                currentAppendIndex = AppendIndexProvider.UNKNOWN_APPEND_INDEX;
                             }
                         }
                     } catch (IOException | IllegalStateException | UnsupportedLogVersionException e) {

@@ -189,6 +189,22 @@ class DetachedLogTailScannerTest {
     }
 
     @Test
+    void lastBatchOfFilesWithIncompleteChunkAtTheEnd() throws Exception {
+        long appendIndex = 17;
+        setupLogFiles(
+                10,
+                logFile(start(appendIndex), commit(appendIndex - 5)),
+                logFile(checkPoint()),
+                logFile(start(appendIndex + 1), commit(appendIndex - 4), start(appendIndex + 2)));
+
+        LogTailMetadata logTailInformation = logFiles.getTailMetadata();
+        AppendBatchInfo lastBatch = logTailInformation.lastBatch();
+        assertThat(lastBatch.appendIndex()).isEqualTo(appendIndex + 1);
+        assertThat(lastBatch.logPositionAfter().getLogVersion()).isEqualTo(10);
+        assertThat(lastBatch.logPositionAfter().getByteOffset()).isGreaterThan(LogFormat.BIGGEST_HEADER);
+    }
+
+    @Test
     void detectMissingLogFiles() {
         LogTailMetadata tailInformation = logFiles.getTailMetadata();
         assertTrue(tailInformation.logsMissing());

@@ -84,7 +84,7 @@ public class CorruptedLogsTruncator {
      * Backup copy of removed data will be stored in separate archive.
      *
      * @param positionAfterLastRecoveredTransaction position after last recovered transaction
-     * @param lastCheckpoint last known checkpoint
+     * @param lastCheckpoint                        last known checkpoint
      * @throws IOException
      */
     public void truncate(LogPosition positionAfterLastRecoveredTransaction, CheckpointInfo lastCheckpoint)
@@ -121,6 +121,13 @@ public class CorruptedLogsTruncator {
                     checkpointFile.getCurrentDetachedLogVersion(),
                     checkpointFile::getDetachedCheckpointFileForVersion);
         }
+    }
+
+    public void forceTruncateLogFiles(LogPosition txLogPosition, LogPosition checkpointLogPosition) throws IOException {
+        truncateLogFiles(
+                txLogPosition.getLogVersion(),
+                txLogPosition.getByteOffset(),
+                new CheckpointFileInfo(checkpointLogPosition != null, checkpointLogPosition));
     }
 
     private void truncateFilesFromVersion(
