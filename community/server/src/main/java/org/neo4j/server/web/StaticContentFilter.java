@@ -53,7 +53,6 @@ public class StaticContentFilter implements Filter {
             response.addHeader("X-Content-Type-Options", "nosniff");
             response.addHeader("X-XSS-Protection", "1; mode=block");
         }
-        System.out.println(servletResponse);
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
