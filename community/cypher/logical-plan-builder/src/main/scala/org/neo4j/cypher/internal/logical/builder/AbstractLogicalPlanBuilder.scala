@@ -110,6 +110,7 @@ import org.neo4j.cypher.internal.logical.plans.BFSPruningVarExpand
 import org.neo4j.cypher.internal.logical.plans.BidirectionalRepeatTrail
 import org.neo4j.cypher.internal.logical.plans.CacheProperties
 import org.neo4j.cypher.internal.logical.plans.CartesianProduct
+import org.neo4j.cypher.internal.logical.plans.CoerceToPredicate
 import org.neo4j.cypher.internal.logical.plans.Column
 import org.neo4j.cypher.internal.logical.plans.ColumnOrder
 import org.neo4j.cypher.internal.logical.plans.ConditionalApply
@@ -3450,4 +3451,6 @@ object AbstractLogicalPlanBuilder {
   def column(name: String, cachedProperties: String*): Column = {
     Column(varFor(name), cachedProperties.map(cp => Parser.parseExpression(cp).asInstanceOf[ASTCachedProperty]).toSet)
   }
+
+  def coerceToPredicate(expression: String) = CoerceToPredicate(Parser.parseExpression(expression))
 }
