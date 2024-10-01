@@ -43,6 +43,36 @@ public class ProcedureHeapEstimator implements org.neo4j.procedure.memory.HeapEs
         return HeapEstimator.shallowSizeOfInstance(cls);
     }
 
+    @Override
+    public long shallowSizeOfObjectArray(int size) {
+        return HeapEstimator.shallowSizeOfObjectArray(size);
+    }
+
+    @Override
+    public long sizeOfByteArray(int size) {
+        return HeapEstimator.sizeOfByteArray(size);
+    }
+
+    @Override
+    public long sizeOfIntArray(int size) {
+        return HeapEstimator.sizeOfIntArray(size);
+    }
+
+    @Override
+    public long sizeOfLongArray(int size) {
+        return HeapEstimator.sizeOfLongArray(size);
+    }
+
+    @Override
+    public long sizeOfFloatArray(int size) {
+        return HeapEstimator.sizeOfFloatArray(size);
+    }
+
+    @Override
+    public long sizeOfDoubleArray(int size) {
+        return HeapEstimator.sizeOfDoubleArray(size);
+    }
+
     public static class Estimations {
         private static final long SHALLOW_BASE_CORE_API_SIZE =
                 HeapEstimator.shallowSizeOfInstance(BaseCoreAPIPath.class);

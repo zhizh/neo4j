@@ -98,5 +98,10 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.jbellis</groupId>
+      <artifactId>jamm</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

@@ -173,6 +173,14 @@ public final class HeapEstimator {
         return alignObjectSize((long) ARRAY_HEADER_BYTES + (long) Long.BYTES * size);
     }
 
+    public static long sizeOfFloatArray(int size) {
+        return alignObjectSize((long) ARRAY_HEADER_BYTES + (long) Float.BYTES * size);
+    }
+
+    public static long sizeOfDoubleArray(int size) {
+        return alignObjectSize((long) ARRAY_HEADER_BYTES + (long) Double.BYTES * size);
+    }
+
     public static long sizeOfObjectArray(long elementSize, int size) {
         return shallowSizeOfObjectArray(size) + elementSize * size;
     }

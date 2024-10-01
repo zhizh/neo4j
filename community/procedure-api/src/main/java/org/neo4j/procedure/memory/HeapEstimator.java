@@ -36,4 +36,22 @@ public interface HeapEstimator {
      * @see #shallowSize(Object)
      */
     long shallowSizeOfInstance(Class<?> cls);
+
+    /** Returns an estimate of the shallow heap memory usage in bytes of an object array with the specified size. */
+    long shallowSizeOfObjectArray(int size);
+
+    /** Returns the heap memory usage in bytes of a primitive byte array with the specified size. */
+    long sizeOfByteArray(int size);
+
+    /** Returns the heap memory usage in bytes of a primitive int array with the specified size. */
+    long sizeOfIntArray(int size);
+
+    /** Returns the heap memory usage in bytes of a primitive long array with the specified size. */
+    long sizeOfLongArray(int size);
+
+    /** Returns the heap memory usage in bytes of a primitive float array with the specified size. */
+    long sizeOfFloatArray(int size);
+
+    /** Returns the heap memory usage in bytes of a primitive double array with the specified size. */
+    long sizeOfDoubleArray(int size);
 }
