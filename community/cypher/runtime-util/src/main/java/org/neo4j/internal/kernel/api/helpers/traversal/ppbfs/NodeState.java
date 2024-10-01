@@ -216,9 +216,8 @@ public final class NodeState implements AutoCloseable, Measurable {
             firstTrace = true;
         }
 
-        // Trail logic? Should be moved
         assert !firstTrace || targetLength >= minTargetDistance()
-                : "The first time a node is traced should be with the shortest trail to a target";
+                : "The first time a node is traced should be with the shortest distance to a target";
 
         if (!hasMinDistToTarget(targetLength)) {
             // First time we find a trail to a target of length `targetLength`

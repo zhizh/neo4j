@@ -149,10 +149,6 @@ public class SignpostStack {
         return this.dgLength;
     }
 
-    PPBFSHooks hooks() {
-        return this.hooks;
-    }
-
     public void materialize(PathWriter writer) {
         for (int i = activeSignposts.size() - 1; i >= 0; i--) {
             var signpost = activeSignposts.get(i);

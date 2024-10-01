@@ -1311,7 +1311,7 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     def createPathTracer(_mt: MemoryTracker, hooks: PPBFSHooks): PathTracer[TracedPath] =
       new PathTracer(
         EmptyMemoryTracker.INSTANCE,
-        TraversalMatchModeFactory.trailMode(EmptyMemoryTracker.INSTANCE),
+        TraversalMatchModeFactory.trailMode(EmptyMemoryTracker.INSTANCE, hooks),
         hooks
       )
 
@@ -1610,12 +1610,12 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
       )
     def filter(predicate: A => Boolean): FixtureBuilder[A] = copy(predicate = predicate)
 
-    def tracker(memoryTracker: MemoryTracker) =
+    def tracker(memoryTracker: MemoryTracker, hooks: PPBFSHooks) =
       if (matchMode == TraversalMatchMode.Walk) TraversalMatchModeFactory.walkMode()
-      else TraversalMatchModeFactory.trailMode(memoryTracker)
+      else TraversalMatchModeFactory.trailMode(memoryTracker, hooks)
 
     def build(createPathTracer: (MemoryTracker, PPBFSHooks) => PathTracer[A] =
-      (memoryTracker, hooks) => new PathTracer(memoryTracker, tracker(memoryTracker), hooks)) =
+      (memoryTracker, hooks) => new PathTracer(memoryTracker, tracker(memoryTracker, hooks), hooks)) =
       new PGPathPropagatingBFS[A](
         source,
         nfa.getStart.state,
@@ -1633,7 +1633,7 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
         mt,
         hooks,
         assertOpen,
-        tracker(EmptyMemoryTracker.INSTANCE)
+        tracker(EmptyMemoryTracker.INSTANCE, hooks)
       )
 
     def toList: Seq[A] = build().asScala.toList

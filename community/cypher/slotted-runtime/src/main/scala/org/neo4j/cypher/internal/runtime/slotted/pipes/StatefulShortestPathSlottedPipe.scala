@@ -83,7 +83,7 @@ case class StatefulShortestPathSlottedPipe(
     state.query.resources.trace(traversalCursor)
 
     val hooks = PPBFSHooks.getInstance()
-    val tracker = traversalMatchModeFactory(matchMode, memoryTracker)
+    val tracker = traversalMatchModeFactory(matchMode, memoryTracker, hooks)
     val pathTracer =
       new PathTracer[CypherRow](memoryTracker, tracker, hooks)
     val pathPredicate =

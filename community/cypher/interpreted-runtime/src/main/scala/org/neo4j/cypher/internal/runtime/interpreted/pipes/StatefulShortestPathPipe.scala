@@ -73,7 +73,7 @@ case class StatefulShortestPathPipe(
 
     val hooks = PPBFSHooks.getInstance()
 
-    val tracker = traversalMatchModeFactory(matchMode, memoryTracker)
+    val tracker = traversalMatchModeFactory(matchMode, memoryTracker, hooks)
     val pathTracer =
       new PathTracer[CypherRow](memoryTracker, tracker, hooks)
     val pathPredicate =
@@ -159,10 +159,11 @@ object StatefulShortestPathPipe {
 
   def traversalMatchModeFactory(
     matchMode: TraversalMatchMode,
-    memoryTracker: MemoryTracker
+    memoryTracker: MemoryTracker,
+    hooks: PPBFSHooks
   ): TraversalMatchModeFactory = matchMode match {
     case TraversalMatchMode.Trail =>
-      TraversalMatchModeFactory.trailMode(memoryTracker)
+      TraversalMatchModeFactory.trailMode(memoryTracker, hooks)
     case TraversalMatchMode.Walk => TraversalMatchModeFactory.walkMode()
   }
 }

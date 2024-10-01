@@ -39,8 +39,8 @@ public interface SignpostTracking {
 
     void clear();
 
-    static SignpostTracking trailMode(MemoryTracker memoryTracker) {
-        return new TrailModeSignPostTracking(memoryTracker);
+    static SignpostTracking trailMode(MemoryTracker memoryTracker, PPBFSHooks hooks) {
+        return new TrailModeSignPostTracking(memoryTracker, hooks);
     }
 
     static SignpostTracking walkMode() {
@@ -88,12 +88,14 @@ public interface SignpostTracking {
         private final HeapTrackingLongObjectHashMap<BitSet> relationshipPresenceAtDepth;
         private final BitSet targetTrails;
         private final BitSet protectFromPruning;
+        private final PPBFSHooks hooks;
 
-        TrailModeSignPostTracking(MemoryTracker memoryTracker) {
+        TrailModeSignPostTracking(MemoryTracker memoryTracker, PPBFSHooks hooks) {
             this.relationshipPresenceAtDepth = HeapTrackingLongObjectHashMap.createLongObjectHashMap(memoryTracker);
             this.targetTrails = new BitSet();
             this.targetTrails.set(0);
             this.protectFromPruning = new BitSet();
+            this.hooks = hooks;
         }
 
         @Override
@@ -160,7 +162,6 @@ public interface SignpostTracking {
         @Override
         public boolean validate(SignpostStack stack) {
             int sourceLength = 0;
-            PPBFSHooks hooks = stack.hooks();
             for (int i = stack.size() - 1; i >= 0; i--) {
                 TwoWaySignpost signpost = stack.signpost(i);
                 sourceLength += signpost.dataGraphLength();
