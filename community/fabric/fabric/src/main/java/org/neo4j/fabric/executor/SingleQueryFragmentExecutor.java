@@ -19,13 +19,13 @@
  */
 package org.neo4j.fabric.executor;
 
-import static org.neo4j.notifications.StandardGqlStatusObject.isStandardGqlStatusCode;
 import static scala.jdk.javaapi.CollectionConverters.asJava;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.neo4j.bolt.protocol.common.message.AccessMode;
 import org.neo4j.cypher.internal.FullyParsedQuery;
@@ -78,6 +78,7 @@ abstract class SingleQueryFragmentExecutor {
     private final AccessMode accessMode;
     private final Set<Notification> notifications;
     private final Set<GqlStatusObject> gqlStatusObjects;
+    private final AtomicReference<Collection<GqlStatusObject>> lastAddedGqlStatusObjects;
     private final QueryStatementLifecycles.StatementLifecycle lifecycle;
     private final Prefetcher prefetcher;
     private final QueryRoutingMonitor queryRoutingMonitor;
@@ -95,6 +96,7 @@ abstract class SingleQueryFragmentExecutor {
             AccessMode accessMode,
             Set<Notification> notifications,
             Set<GqlStatusObject> gqlStatusObjects,
+            AtomicReference<Collection<GqlStatusObject>> lastAddedGqlStatusObjects,
             QueryStatementLifecycles.StatementLifecycle lifecycle,
             Prefetcher prefetcher,
             QueryRoutingMonitor queryRoutingMonitor,
@@ -110,6 +112,7 @@ abstract class SingleQueryFragmentExecutor {
         this.accessMode = accessMode;
         this.notifications = notifications;
         this.gqlStatusObjects = gqlStatusObjects;
+        this.lastAddedGqlStatusObjects = lastAddedGqlStatusObjects;
         this.lifecycle = lifecycle;
         this.prefetcher = prefetcher;
         this.queryRoutingMonitor = queryRoutingMonitor;
@@ -378,8 +381,8 @@ abstract class SingleQueryFragmentExecutor {
 
     private void mergeGqlStatusObjects(Collection<GqlStatusObject> newGqlStatusObjects) {
         // The standard statuses of the inner queries should be overwritten by the one from the outer query
-        this.gqlStatusObjects.removeIf(gso -> isStandardGqlStatusCode(gso.gqlStatus()));
         this.gqlStatusObjects.addAll(newGqlStatusObjects);
+        this.lastAddedGqlStatusObjects.set(newGqlStatusObjects);
     }
 
     record PrepareResult(Catalog.Graph graph, Map<String, AnyValue> argumentValues, TransactionMode transactionMode) {}

@@ -21,9 +21,11 @@ package org.neo4j.fabric.executor;
 
 import static scala.jdk.javaapi.CollectionConverters.asJava;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 import org.neo4j.bolt.protocol.common.message.AccessMode;
 import org.neo4j.cypher.internal.FullyParsedQuery;
 import org.neo4j.fabric.eval.UseEvaluation;
@@ -64,6 +66,7 @@ class StandardQueryExecutor extends SingleQueryFragmentExecutor {
             AccessMode accessMode,
             Set<Notification> notifications,
             Set<GqlStatusObject> gqlStatusObjects,
+            AtomicReference<Collection<GqlStatusObject>> lastAddedGqlStatusObjects,
             QueryStatementLifecycles.StatementLifecycle lifecycle,
             Prefetcher prefetcher,
             QueryRoutingMonitor queryRoutingMonitor,
@@ -80,6 +83,7 @@ class StandardQueryExecutor extends SingleQueryFragmentExecutor {
                 accessMode,
                 notifications,
                 gqlStatusObjects,
+                lastAddedGqlStatusObjects,
                 lifecycle,
                 prefetcher,
                 queryRoutingMonitor,

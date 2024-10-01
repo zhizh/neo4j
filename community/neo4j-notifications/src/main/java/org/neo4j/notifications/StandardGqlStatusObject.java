@@ -19,6 +19,8 @@
  */
 package org.neo4j.notifications;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import org.neo4j.gqlstatus.CommonGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.DiagnosticRecord;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -32,6 +34,9 @@ public class StandardGqlStatusObject extends CommonGqlStatusObjectImplementation
             new StandardGqlStatusObject(GqlStatusInfoCodes.STATUS_02N42);
     public static final StandardGqlStatusObject OMITTED_RESULT =
             new StandardGqlStatusObject(GqlStatusInfoCodes.STATUS_00001);
+
+    public static final HashSet<String> STANDARD_GQL_STATUS_CODES = new HashSet<>(Arrays.asList(
+            NO_DATA.gqlStatus(), SUCCESS.gqlStatus(), OMITTED_RESULT.gqlStatus(), UNKNOWN_NO_DATA.gqlStatus()));
 
     StandardGqlStatusObject(GqlStatusInfoCodes gqlStatusInfo) {
         super(gqlStatusInfo, new DiagnosticRecord());
@@ -62,9 +67,6 @@ public class StandardGqlStatusObject extends CommonGqlStatusObjectImplementation
     }
 
     public static boolean isStandardGqlStatusCode(String gqlStatus) {
-        return gqlStatus.equals(StandardGqlStatusObject.NO_DATA.gqlStatus())
-                || gqlStatus.equals(StandardGqlStatusObject.SUCCESS.gqlStatus())
-                || gqlStatus.equals(StandardGqlStatusObject.OMITTED_RESULT.gqlStatus())
-                || gqlStatus.equals(StandardGqlStatusObject.UNKNOWN_NO_DATA.gqlStatus());
+        return STANDARD_GQL_STATUS_CODES.contains(gqlStatus);
     }
 }
