@@ -65,8 +65,8 @@ public interface Lengths extends Measurable {
      */
     final class TrailModeLengths extends BitSet implements Lengths {
         private enum Type {
-            Source(0),
-            ConfirmedSource(1);
+            SEEN(0),
+            VALIDATED(1);
 
             private final int offset;
 
@@ -80,51 +80,39 @@ public interface Lengths extends Measurable {
         private static final long SHALLOW_SIZE =
                 HeapEstimator.shallowSizeOfInstance(TrailModeLengths.class) + HeapEstimator.sizeOfLongArray(1);
 
-        private boolean get(int index, Type type) {
-            return get(index * FACTOR + type.offset);
-        }
-
         @Override
         public boolean validatedAt(int length) {
-            return get(length, Type.ConfirmedSource);
+            return get(length, Type.VALIDATED);
         }
 
         @Override
         public boolean seenAt(int length) {
-            return get(length, Type.Source);
-        }
-
-        private void set(int index, Type type) {
-            set(index * FACTOR + type.offset);
+            return get(length, Type.SEEN);
         }
 
         @Override
         public void markAsSeen(int length) {
-            set(length, Type.Source);
+            set(length, Type.SEEN);
         }
 
         @Override
         public void markAsValidated(int length) {
-            set(length, Type.ConfirmedSource);
+            set(length, Type.VALIDATED);
         }
 
         @Override
         public void clearSeen(int index) {
-            clear(index, Type.Source);
-        }
-
-        private void clear(int index, Type type) {
-            clear(index * FACTOR + type.offset);
+            clear(index, Type.SEEN);
         }
 
         @Override
         public int maxSeen() {
-            return stream(Type.Source).max().orElse(NONE);
+            return stream(Type.SEEN).max().orElse(NONE);
         }
 
         @Override
         public int nextSeen(int start) {
-            int offset = Type.Source.offset;
+            int offset = Type.SEEN.offset;
             for (int i = nextSetBit(start * FACTOR + offset); i != -1; i = nextSetBit(i + 1)) {
                 if (i % FACTOR == offset) {
                     return i / FACTOR;
@@ -135,8 +123,8 @@ public interface Lengths extends Measurable {
 
         @Override
         public String renderSourceLengths() {
-            return stream(Type.Source)
-                    .mapToObj(i -> i + (get(i, Type.ConfirmedSource) ? "✓" : "?"))
+            return stream(Type.SEEN)
+                    .mapToObj(i -> i + (get(i, Type.VALIDATED) ? "✓" : "?"))
                     .collect(Collectors.joining(",", "{", "}"));
         }
 
@@ -148,6 +136,18 @@ public interface Lengths extends Measurable {
         @Override
         public long estimatedHeapUsage() {
             return SHALLOW_SIZE;
+        }
+
+        private boolean get(int index, Type type) {
+            return get(index * FACTOR + type.offset);
+        }
+
+        private void set(int index, Type type) {
+            set(index * FACTOR + type.offset);
+        }
+
+        private void clear(int index, Type type) {
+            clear(index * FACTOR + type.offset);
         }
 
         private IntStream stream(Type type) {
