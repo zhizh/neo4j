@@ -21,6 +21,8 @@ package org.neo4j.kernel.impl.transaction.log.entry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.neo4j.kernel.KernelVersion.VERSION_APPEND_INDEX_INTRODUCED;
+import static org.neo4j.kernel.KernelVersion.VERSION_ENVELOPED_TRANSACTION_LOGS_INTRODUCED;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEntryFactory.newCommitEntry;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEntryFactory.newStartEntry;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEntrySerializationSets.serializationSet;
@@ -58,7 +60,27 @@ class VersionAwareLogEntryReaderTest {
         final LogEntry logEntry = logEntryReader.readLogEntry(channel);
 
         // then
-        assertEquals(start, logEntry);
+        assertEquals(start, logEntry, additionalDebugInfo(kernelVersion, start));
+        // <LogEntryStartV5_20[kernelVersion=KernelVersion{V5_0,version=5}
+    }
+
+    static String additionalDebugInfo(KernelVersion kernelVersion, LogEntry start) {
+        final LogEntryStart recreatedStart =
+                newStartEntry(kernelVersion, 1, 2, 3, BASE_TX_CHECKSUM, new byte[] {4}, new LogPosition(0, 0));
+        return String.format(
+                """
+Additional debug information:
+kernelVersion = %s,
+version.isAtLeast(VERSION_ENVELOPED_TRANSACTION_LOGS_INTRODUCED) = %s,
+version.isAtLeast(VERSION_APPEND_INDEX_INTRODUCED) = %s,
+start = %s,
+recreatedStart = %s,
+""",
+                kernelVersion,
+                kernelVersion.isAtLeast(VERSION_ENVELOPED_TRANSACTION_LOGS_INTRODUCED),
+                kernelVersion.isAtLeast(VERSION_APPEND_INDEX_INTRODUCED),
+                start,
+                recreatedStart);
     }
 
     @ParameterizedTest
