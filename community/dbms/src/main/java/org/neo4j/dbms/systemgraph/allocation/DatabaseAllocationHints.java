@@ -183,12 +183,12 @@ public final class DatabaseAllocationHints {
         return hints;
     }
 
-    public Object hint(String key) {
+    public <U, T extends Hint<U>> Optional<U> hintValue(Class<T> clazz) {
         return hints.stream()
-                .filter(hint -> hint.getKey().equals(key))
-                .findFirst()
+                .filter(hint -> hint.getClass().equals(clazz))
+                .map(clazz::cast)
                 .map(Hint::getValue)
-                .orElse(null);
+                .findFirst();
     }
 
     public MapValue toMapValue() {
