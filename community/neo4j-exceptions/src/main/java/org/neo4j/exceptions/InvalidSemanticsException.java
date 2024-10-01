@@ -40,7 +40,7 @@ public class InvalidSemanticsException extends Neo4jException {
         super(message);
     }
 
-    private InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    public InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
     }
 
