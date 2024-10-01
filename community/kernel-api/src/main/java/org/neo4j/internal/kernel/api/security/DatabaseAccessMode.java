@@ -21,9 +21,28 @@ package org.neo4j.internal.kernel.api.security;
 
 import org.neo4j.kernel.database.DatabaseReference;
 
+/**
+ * Provides an RBAC interface to the database catalogue to make it easy to determine what
+ * access a user has to a database. The logic is the same as is implemented for SHOW DATABASES.
+ */
 public interface DatabaseAccessMode {
+
+    /**
+     * Should the current user be able to know this database exists. The difference between visibility and access
+     * is that DBA level permissions allow users to see all databases but not necessarily access them. All users
+     * can see the system database.
+     *
+     * @param database a reference to the database
+     * @return true if the user would be able to see the database in SHOW DATABASES, false otherwise
+     */
     boolean canSeeDatabase(DatabaseReference database);
 
+    /**
+     * Is the current user able to access this database. All users have access to the system database.
+     *
+     * @param database a reference to the database
+     * @return true if the user has access rights on this database, false otherwise
+     */
     boolean canAccessDatabase(DatabaseReference database);
 
     DatabaseAccessMode FULL = new DatabaseAccessMode() {
