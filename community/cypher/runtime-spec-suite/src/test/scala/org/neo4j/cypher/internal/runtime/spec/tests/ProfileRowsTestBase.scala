@@ -2516,7 +2516,7 @@ trait TrailProfileRowsTestBase[CONTEXT <: RuntimeContext] {
 
     val query = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(TrailParameters(
+      .repeatTrail(TrailParameters(
         min = 0,
         max = Limited(2),
         start = "me",

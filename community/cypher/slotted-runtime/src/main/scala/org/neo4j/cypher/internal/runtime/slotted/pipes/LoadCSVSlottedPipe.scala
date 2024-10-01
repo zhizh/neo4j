@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 import org.neo4j.cypher.internal.ir.CSVFormat
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.ResourceLinenumber
+import org.neo4j.cypher.internal.runtime.RuntimeMetadataValue
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.AbstractLoadCSVPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Pipe
@@ -51,7 +52,7 @@ case class LoadCSVSlottedPipe(
     newRow.setRefAt(refSlotOffset, value)
     newRow.setRefAt(
       metaDataSlotOffset,
-      ResourceLinenumber(filename, linenumber, last)
+      RuntimeMetadataValue(ResourceLinenumber(filename, linenumber, last))
     ) // Always overwrite linenumber if we have nested LoadCsvs
     newRow
   }

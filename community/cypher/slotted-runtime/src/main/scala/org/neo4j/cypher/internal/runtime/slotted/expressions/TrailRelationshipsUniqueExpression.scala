@@ -23,9 +23,12 @@ import org.neo4j.collection.trackable.HeapTrackingLongHashSet
 import org.neo4j.cypher.internal.physicalplanning.Slot
 import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils.makeGetPrimitiveRelationshipFromSlotFunctionFor
 import org.neo4j.cypher.internal.runtime.ReadableRow
+import org.neo4j.cypher.internal.runtime.RuntimeMetadataValue
 import org.neo4j.cypher.internal.runtime.interpreted.commands.AstNode
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.util.CalledFromGeneratedCode
+import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.BooleanValue
 import org.neo4j.values.storable.Values.booleanValue
 
@@ -42,11 +45,18 @@ case class TrailRelationshipsUniqueExpression(trailStateMetadataSlotOffset: Int,
   override def children: collection.Seq[AstNode[_]] = Seq.empty
 
   private def allRelationshipsSeenUnique(row: ReadableRow): Boolean = {
-    val relationshipsSeen = row.getRefAt(trailStateMetadataSlotOffset).asInstanceOf[TrailState].relationshipsSeen
+    val relationshipsSeen = TrailState.fromMetadata(row.getRefAt(trailStateMetadataSlotOffset)).relationshipsSeen
     !relationshipsSeen.contains(innerRelGetter.applyAsLong(row))
   }
 }
 
 trait TrailState {
   def relationshipsSeen: HeapTrackingLongHashSet
+}
+
+object TrailState {
+
+  @CalledFromGeneratedCode
+  def fromMetadata(value: AnyValue): TrailState =
+    RuntimeMetadataValue.extract[TrailState](value)
 }

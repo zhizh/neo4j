@@ -2778,9 +2778,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x1,
         pathReference(Array(x1.getId), Array[Long]())
       ),
@@ -2788,41 +2788,41 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       //  this:   //\s+Seq
       Array[Object](
         x2,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x2,
         pathReference(Array(x2.getId), Array[Long]())
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x3,
         pathReference(Array(x3.getId), Array[Long]())
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x3),
         x3,
         pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       )
@@ -2884,9 +2884,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x1,
         pathReference(Array(x1.getId), Array[Long]())
       ),
@@ -2894,41 +2894,41 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       //  this:   //\s+Seq
       Array[Object](
         x2,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x2,
         pathReference(Array(x2.getId), Array[Long]())
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x3,
         pathReference(Array(x3.getId), Array[Long]())
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x3),
         x3,
         pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       )
@@ -2987,25 +2987,25 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x3),
         x3,
         pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       )
@@ -3066,25 +3066,25 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x3),
         x3,
         pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       )
@@ -3202,73 +3202,73 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x1,
         pathReference(Array(x1.getId), Array[Long]())
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x2,
         pathReference(Array(x2.getId), Array[Long]())
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x3,
         pathReference(Array(x3.getId), Array[Long]())
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x1),
         x1,
         pathReference(Array(x2.getId, x1.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x3),
         x3,
         pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(x3),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x3.getId, x2.getId), Array(y2.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(x3, x2),
-        TrailTestBase.listOf(y2, y1),
-        TrailTestBase.listOf(x2, x1),
+        RepeatTrailTestBase.listOf(x3, x2),
+        RepeatTrailTestBase.listOf(y2, y1),
+        RepeatTrailTestBase.listOf(x2, x1),
         x1,
         pathReference(Array(x3.getId, x2.getId, x1.getId), Array(y2.getId, y1.getId))
       )
@@ -3330,73 +3330,73 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x1,
         pathReference(Array(x1.getId), Array[Long]())
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x2,
         pathReference(Array(x2.getId), Array[Long]())
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
-        TrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
+        RepeatTrailTestBase.listOf(),
         x3,
         pathReference(Array(x3.getId), Array[Long]())
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y1),
-        TrailTestBase.listOf(x1),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y1),
+        RepeatTrailTestBase.listOf(x1),
         x1,
         pathReference(Array(x2.getId, x1.getId), Array(y1.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x3),
         x3,
         pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(x3),
-        TrailTestBase.listOf(y2),
-        TrailTestBase.listOf(x2),
+        RepeatTrailTestBase.listOf(x3),
+        RepeatTrailTestBase.listOf(y2),
+        RepeatTrailTestBase.listOf(x2),
         x2,
         pathReference(Array(x3.getId, x2.getId), Array(y2.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(x3, x2),
-        TrailTestBase.listOf(y2, y1),
-        TrailTestBase.listOf(x2, x1),
+        RepeatTrailTestBase.listOf(x3, x2),
+        RepeatTrailTestBase.listOf(y2, y1),
+        RepeatTrailTestBase.listOf(x2, x1),
         x1,
         pathReference(Array(x3.getId, x2.getId, x1.getId), Array(y2.getId, y1.getId))
       )
@@ -3475,41 +3475,41 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2, x3),
-        TrailTestBase.listOf(y2, y3),
-        TrailTestBase.listOf(x3, x4),
+        RepeatTrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(y2, y3),
+        RepeatTrailTestBase.listOf(x3, x4),
         x4,
         pathReference(Array(x2.getId, x3.getId, x4.getId), Array(y2.getId, y3.getId))
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(x3, x4),
-        TrailTestBase.listOf(y3, y4),
-        TrailTestBase.listOf(x4, x5),
+        RepeatTrailTestBase.listOf(x3, x4),
+        RepeatTrailTestBase.listOf(y3, y4),
+        RepeatTrailTestBase.listOf(x4, x5),
         x5,
         pathReference(Array(x3.getId, x4.getId, x5.getId), Array(y3.getId, y4.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2, x3),
-        TrailTestBase.listOf(y1, y2, y3),
-        TrailTestBase.listOf(x2, x3, x4),
+        RepeatTrailTestBase.listOf(x1, x2, x3),
+        RepeatTrailTestBase.listOf(y1, y2, y3),
+        RepeatTrailTestBase.listOf(x2, x3, x4),
         x4,
         pathReference(Array(x1.getId, x2.getId, x3.getId, x4.getId), Array(y1.getId, y2.getId, y3.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2, x3, x4),
-        TrailTestBase.listOf(y2, y3, y4),
-        TrailTestBase.listOf(x3, x4, x5),
+        RepeatTrailTestBase.listOf(x2, x3, x4),
+        RepeatTrailTestBase.listOf(y2, y3, y4),
+        RepeatTrailTestBase.listOf(x3, x4, x5),
         x5,
         pathReference(Array(x2.getId, x3.getId, x4.getId, x5.getId), Array(y2.getId, y3.getId, y4.getId))
       )
@@ -3590,41 +3590,41 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val expected = Seq(
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2),
-        TrailTestBase.listOf(y1, y2),
-        TrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(x1, x2),
+        RepeatTrailTestBase.listOf(y1, y2),
+        RepeatTrailTestBase.listOf(x2, x3),
         x3,
         pathReference(Array(x1.getId, x2.getId, x3.getId), Array(y1.getId, y2.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2, x3),
-        TrailTestBase.listOf(y2, y3),
-        TrailTestBase.listOf(x3, x4),
+        RepeatTrailTestBase.listOf(x2, x3),
+        RepeatTrailTestBase.listOf(y2, y3),
+        RepeatTrailTestBase.listOf(x3, x4),
         x4,
         pathReference(Array(x2.getId, x3.getId, x4.getId), Array(y2.getId, y3.getId))
       ),
       Array[Object](
         x3,
-        TrailTestBase.listOf(x3, x4),
-        TrailTestBase.listOf(y3, y4),
-        TrailTestBase.listOf(x4, x5),
+        RepeatTrailTestBase.listOf(x3, x4),
+        RepeatTrailTestBase.listOf(y3, y4),
+        RepeatTrailTestBase.listOf(x4, x5),
         x5,
         pathReference(Array(x3.getId, x4.getId, x5.getId), Array(y3.getId, y4.getId))
       ),
       Array[Object](
         x1,
-        TrailTestBase.listOf(x1, x2, x3),
-        TrailTestBase.listOf(y1, y2, y3),
-        TrailTestBase.listOf(x2, x3, x4),
+        RepeatTrailTestBase.listOf(x1, x2, x3),
+        RepeatTrailTestBase.listOf(y1, y2, y3),
+        RepeatTrailTestBase.listOf(x2, x3, x4),
         x4,
         pathReference(Array(x1.getId, x2.getId, x3.getId, x4.getId), Array(y1.getId, y2.getId, y3.getId))
       ),
       Array[Object](
         x2,
-        TrailTestBase.listOf(x2, x3, x4),
-        TrailTestBase.listOf(y2, y3, y4),
-        TrailTestBase.listOf(x3, x4, x5),
+        RepeatTrailTestBase.listOf(x2, x3, x4),
+        RepeatTrailTestBase.listOf(y2, y3, y4),
+        RepeatTrailTestBase.listOf(x3, x4, x5),
         x5,
         pathReference(Array(x2.getId, x3.getId, x4.getId, x5.getId), Array(y2.getId, y3.getId, y4.getId))
       )
@@ -3784,11 +3784,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       Seq(
         Array[Object](
           x0,
-          TrailTestBase.listOf(x0, x3),
-          TrailTestBase.listOf(y1, y3),
-          TrailTestBase.listOf(x2, x1),
-          TrailTestBase.listOf(y2, y0),
-          TrailTestBase.listOf(x3, x0),
+          RepeatTrailTestBase.listOf(x0, x3),
+          RepeatTrailTestBase.listOf(y1, y3),
+          RepeatTrailTestBase.listOf(x2, x1),
+          RepeatTrailTestBase.listOf(y2, y0),
+          RepeatTrailTestBase.listOf(x3, x0),
           x0
         )
       )
@@ -3889,11 +3889,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       Seq(
         Array[Object](
           x0,
-          TrailTestBase.listOf(x0, x3),
-          TrailTestBase.listOf(y1, y3),
-          TrailTestBase.listOf(x2, x1),
-          TrailTestBase.listOf(y2, y0),
-          TrailTestBase.listOf(x3, x0),
+          RepeatTrailTestBase.listOf(x0, x3),
+          RepeatTrailTestBase.listOf(y1, y3),
+          RepeatTrailTestBase.listOf(x2, x1),
+          RepeatTrailTestBase.listOf(y2, y0),
+          RepeatTrailTestBase.listOf(x3, x0),
           x0
         )
       )
@@ -3952,7 +3952,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     def rowStartingWithNodeAtIndexInDiagonal(i: Int): Array[Object] = {
       val n1 = (i until diagonal.size - 1).map(diagonal)
       val n2 = (i + 1 to diagonal.size - 1).map(diagonal)
-      Array[Object](diagonal(i), TrailTestBase.listOf(n1: _*), TrailTestBase.listOf(n2: _*), diagonal.last)
+      Array[Object](diagonal(i), RepeatTrailTestBase.listOf(n1: _*), RepeatTrailTestBase.listOf(n2: _*), diagonal.last)
     }
     val expected = (0 until diagonal.size - 1).map(rowStartingWithNodeAtIndexInDiagonal)
 
@@ -4011,7 +4011,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     def rowStartingWithNodeAtIndexInDiagonal(i: Int): Array[Object] = {
       val n1 = (i until diagonal.size - 1).map(diagonal)
       val n2 = (i + 1 to diagonal.size - 1).map(diagonal)
-      Array[Object](diagonal(i), TrailTestBase.listOf(n1: _*), TrailTestBase.listOf(n2: _*), diagonal.last)
+      Array[Object](diagonal(i), RepeatTrailTestBase.listOf(n1: _*), RepeatTrailTestBase.listOf(n2: _*), diagonal.last)
     }
     val expected = (0 until diagonal.size - 1).map(rowStartingWithNodeAtIndexInDiagonal)
 
@@ -4103,8 +4103,8 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val runtimeResult = execute(logicalQuery, runtime)
 
     // then
-    val rowEnd = TrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
-    val row = TrailTestBase.listOf(
+    val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
+    val row = RepeatTrailTestBase.listOf(
       nodes(0),
       nodes(1),
       nodes(2),
@@ -4218,8 +4218,8 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val runtimeResult = execute(logicalQuery, runtime)
 
     // then
-    val rowEnd = TrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
-    val row = TrailTestBase.listOf(
+    val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
+    val row = RepeatTrailTestBase.listOf(
       nodes(0),
       nodes(1),
       nodes(2),

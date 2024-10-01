@@ -4163,7 +4163,7 @@ sealed trait PlanWithVariableGroupings extends LogicalPlan {
  * @param previouslyBoundRelationshipGroups all relationship group variables of the same MATCH that are present in lhs that are not provably disjoint
  * @param reverseGroupVariableProjections   if `true` reverse the group variable lists
  */
-case class Trail(
+case class RepeatTrail(
   override val left: LogicalPlan,
   override val right: LogicalPlan,
   repetition: Repetition,
@@ -4182,7 +4182,7 @@ case class Trail(
   override def withLhs(newLHS: LogicalPlan)(idGen: IdGen): LogicalBinaryPlan = copy(left = newLHS)(idGen)
   override def withRhs(newRHS: LogicalPlan)(idGen: IdGen): LogicalBinaryPlan = copy(right = newRHS)(idGen)
 
-  def withEnd(newEnd: LogicalVariable)(idGen: IdGen): Trail = copy(end = newEnd)(idGen)
+  def withEnd(newEnd: LogicalVariable)(idGen: IdGen): RepeatTrail = copy(end = newEnd)(idGen)
 
   override def withVariableGroupings(
     nodeVariableGroupings: Set[VariableGrouping],

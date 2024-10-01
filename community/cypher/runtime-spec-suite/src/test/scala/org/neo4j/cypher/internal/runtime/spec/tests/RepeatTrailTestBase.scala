@@ -27,25 +27,25 @@ import org.neo4j.cypher.internal.runtime.spec.Edition
 import org.neo4j.cypher.internal.runtime.spec.GraphCreation.ComplexGraph
 import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(aa) ((e)<-[rrr]-(f)){1,}) (g)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(b) ((d)-[rr]->(aa:A) WHERE EXISTS {...} ){1,} (a)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(b_inner)((bb)-[rr]->(aa:A)){0,}(a)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) ((b)-[r]->(c) WHERE EXISTS {...} ){1,} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) [(a)-[r]->()-[]->(b)]{0,*} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) [(a)-[r]->(b)]{0,*} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) [(a)-[r]->(b)]{0,1} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) [(a)-[r]->(b)]{0,2} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) [(a)-[r]->(b)]{0,3} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) [(a)-[r]->(b)]{1,2} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me) [(a)-[r]->(b)]{2,2} (you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(me)( (b)-[r]->(c) WHERE EXISTS { (b)( (bb)-[rr]->(aa:A) ){0,}(a) } ){0,}(you)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(you) [(b)<-[r]-(a)]{0, *} (me)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(you) [(c)-[rr]->(d)]{0,1} (other)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(you) [(c)-[rr]->(d)]{0,2} (other)`
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase.`(you) [(c)-[rr]->(d)]{1,2} (other)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(aa) ((e)<-[rrr]-(f)){1,}) (g)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(b) ((d)-[rr]->(aa:A) WHERE EXISTS {...} ){1,} (a)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(b_inner)((bb)-[rr]->(aa:A)){0,}(a)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) ((b)-[r]->(c) WHERE EXISTS {...} ){1,} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) [(a)-[r]->()-[]->(b)]{0,*} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) [(a)-[r]->(b)]{0,*} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) [(a)-[r]->(b)]{0,1} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) [(a)-[r]->(b)]{0,2} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) [(a)-[r]->(b)]{0,3} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) [(a)-[r]->(b)]{1,2} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me) [(a)-[r]->(b)]{2,2} (you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(me)( (b)-[r]->(c) WHERE EXISTS { (b)( (bb)-[rr]->(aa:A) ){0,}(a) } ){0,}(you)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(you) [(b)<-[r]-(a)]{0, *} (me)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(you) [(c)-[rr]->(d)]{0,1} (other)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(you) [(c)-[rr]->(d)]{0,2} (other)`
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase.`(you) [(c)-[rr]->(d)]{1,2} (other)`
 import org.neo4j.cypher.internal.util.UpperBound
 import org.neo4j.cypher.internal.util.UpperBound.Limited
 import org.neo4j.cypher.internal.util.UpperBound.Unlimited
@@ -59,7 +59,7 @@ import org.neo4j.values.virtual.VirtualValues.pathReference
 import java.util
 import java.util.Collections.emptyList
 
-abstract class TrailTestBase[CONTEXT <: RuntimeContext](
+abstract class RepeatTrailTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
   runtime: CypherRuntime[CONTEXT],
   protected val sizeHint: Int
@@ -72,7 +72,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -106,7 +106,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -139,7 +139,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{2,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{2,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -171,7 +171,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -219,7 +219,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -287,7 +287,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -390,7 +390,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -548,7 +548,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->()-[]->(b)]{0,*} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->()-[]->(b)]{0,*} (you)`)
       .|.filterExpressionOrString("not r_inner = ranon", isRepeatTrailUnique("ranon"))
       .|.expandAll("(secret)-[ranon]->(b_inner)")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
@@ -592,7 +592,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -662,7 +662,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpressionOrString("b_inner.prop = me.prop", isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -693,7 +693,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "a", "b", "r", "r2")
       .projection("r AS r2")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -722,12 +722,12 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "other", "a", "b", "r", "c", "d", "rr")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{0,1} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,1} (other)`)
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
       .|.expandAll("(c_inner)-[rr_inner]->(d_inner)")
       .|.argument("me", "you", "c_inner")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,1} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,1} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -768,12 +768,12 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "other", "a", "b", "r", "c", "d", "rr")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
       .|.expandAll("(c_inner)-[rr_inner]->(d_inner)")
       .|.argument("me", "c_inner")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -838,7 +838,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("a", "e", "b", "f", "c")
-      .trail(`(anon_start) (()-[f]->(c){1,*} (anon_end)`)
+      .repeatTrail(`(anon_start) (()-[f]->(c){1,*} (anon_end)`)
       .|.filterExpression(isRepeatTrailUnique("f_inner"))
       .|.expandAll("(anon_inner)-[f_inner]->(c_inner)")
       .|.argument("anon_inner")
@@ -860,7 +860,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me")
       .semiApply()
-      .|.trail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
+      .|.repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
       .|.|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.|.argument("me", "a_inner")
@@ -884,7 +884,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.optional("me")
       .|.filter("you:User")
       .|.projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .|.trail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
+      .|.repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`)
       .|.|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.|.argument("me", "a_inner")
@@ -929,7 +929,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     )
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("a", "b", "c", "r", "s")
-      .trail(`() ((a)->[r]->(b)->[s]->(c))+ ()`)
+      .repeatTrail(`() ((a)->[r]->(b)->[s]->(c))+ ()`)
       .|.filterExpressionOrString("not s_inner = r_inner", isRepeatTrailUnique("s_inner"))
       .|.expandAll("(b_inner)-[s_inner]->(c_inner)")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
@@ -956,7 +956,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "a", "b", "r")
       .limit(1)
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -977,7 +977,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.unwind("[1] AS ignore") // pipelined specific: does not need a filtering morsel
       .|.nonFuseable() // pipelined specific: force break to test where RHS output receives normal Morsel but RHS leaf requires FilteringMorsel
       .|.limit(1)
@@ -1007,7 +1007,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.limit(Int.MaxValue) // pipelined specific: test when RHS output receives FilteringMorsel & RHS leaf requires FilteringMorsel in different pipeline
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -1037,7 +1037,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "a", "b", "r")
       .filter(s"id(you)<>${n2.getId}")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -1063,7 +1063,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpressionOrString(s"id(b_inner)<>${n3.getId}", isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -1089,7 +1089,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.unwind("[1] AS ignore") // pipelined specific: does not need a filtering morsel
       .|.nonFuseable() // pipelined specific: force break to test where RHS output receives normal Morsel but RHS leaf requires FilteringMorsel
       .|.filterExpressionOrString(s"id(b_inner)<>${n3.getId}", isRepeatTrailUnique("r_inner"))
@@ -1118,7 +1118,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -1128,7 +1128,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.argument("you", "c_inner")
       .optional("me")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -1165,7 +1165,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{1,2} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{1,2} (other)`)
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -1175,7 +1175,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.argument("you", "c_inner")
       .optional("me")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -1207,7 +1207,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -1217,7 +1217,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.argument("me", "a_inner")
       .optional("me")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -1254,7 +1254,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{1,2} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{1,2} (other)`)
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -1264,7 +1264,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.argument("you", "c_inner")
       .optional("me")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -1296,7 +1296,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`)
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.nodeHashJoin("d_inner")
@@ -1306,7 +1306,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.argument("you", "c_inner")
       .optional("me")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -1345,7 +1345,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
       .projection(Map("path2" -> qppPath(varFor("you"), Seq(varFor("c"), varFor("rr")), varFor("other"))))
-      .trail(`(you) [(c)-[rr]->(d)]{1,2} (other)`)
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{1,2} (other)`)
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.nodeHashJoin("d_inner")
@@ -1355,7 +1355,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.argument("you", "c_inner")
       .optional("me")
       .projection(Map("path1" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`)
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -1395,18 +1395,18 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .filter("end:LOOP")
       .apply()
       .|.projection(Map("path3" -> qppPath(varFor("middle"), Seq(varFor("c"), varFor("r2")), varFor("end"))))
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.filterExpressionOrString("d_inner:LOOP", isRepeatTrailUnique("r2_inner"))
       .|.|.expandAll("(c_inner)-[r2_inner]->(d_inner)")
       .|.|.argument("middle", "c_inner")
       .|.argument("middle")
       .filter("middle:MIDDLE:LOOP")
       .projection(Map("path2" -> qppPath(varFor("firstMiddle"), Seq(varFor("a"), varFor("r1")), varFor("middle"))))
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.filterExpressionOrString("b_inner:MIDDLE", isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.filterExpressionOrString("anon_end_inner:MIDDLE", isRepeatTrailUnique("anon_r_inner"))
       .|.expandAll("(anon_start_inner)-[anon_r_inner]->(anon_end_inner)")
       .|.argument("start", "anon_start_inner")
@@ -1435,7 +1435,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("start", "firstMiddle", "middle", "end", "a", "b", "r1", "c", "d", "r2")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
       .|.|.|.allNodeScan("d_inner")
@@ -1444,14 +1444,14 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.argument("middle", "c_inner")
       .|.argument("middle")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -1502,7 +1502,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.optional("end")
       .|.|.filter("end:LOOP")
       .|.|.apply()
-      .|.|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.|.|.filter("r2_inner IS NOT NULL")
       .|.|.|.|.optional("middle")
       .|.|.|.|.filter("d_inner:LOOP")
@@ -1514,7 +1514,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.|.|.argument("middle", "c_inner")
       .|.|.|.argument("middle")
       .|.|.filter("middle:MIDDLE:LOOP")
-      .|.|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .|.|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.|.|.filter("b_inner:MIDDLE")
       .|.|.|.nodeHashJoin("b_inner")
       .|.|.|.|.allNodeScan("b_inner")
@@ -1523,7 +1523,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.|.optional("start")
       .|.|.|.argument("firstMiddle", "a_inner")
-      .|.|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .|.|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.|.allNodeScan("anon_end_inner")
@@ -1534,7 +1534,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       // (on RHS of Join) Union LHS (identical to Union RHS)
       .|.filter("end:LOOP")
       .|.apply()
-      .|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.|.filter("d_inner:LOOP")
       .|.|.|.nodeHashJoin("d_inner")
       .|.|.|.|.allNodeScan("d_inner")
@@ -1543,14 +1543,14 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.|.argument("middle", "c_inner")
       .|.|.argument("middle")
       .|.filter("middle:MIDDLE:LOOP")
-      .|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.|.filter("b_inner:MIDDLE")
       .|.|.nodeHashJoin("b_inner")
       .|.|.|.allNodeScan("b_inner")
       .|.|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.argument("firstMiddle", "a_inner")
-      .|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.allNodeScan("anon_end_inner")
@@ -1563,7 +1563,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .projection("[start, middle, end, a, b, r1, c, d, r2] AS left")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.limit(Long.MaxValue)
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
@@ -1574,14 +1574,14 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.argument("middle")
       .limit(Long.MaxValue)
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -1609,7 +1609,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .filter("me:START")
-      .trail(`(you) [(b)<-[r]-(a)]{0, *} (me)`)
+      .repeatTrail(`(you) [(b)<-[r]-(a)]{0, *} (me)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(b_inner)<-[r_inner]-(a_inner)")
       .|.argument("you", "b_inner")
@@ -1642,7 +1642,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "c", "r", "rr")
-      .trail(TrailTestBase.`(me) [(a)-[r]->(b)<-[rr]-(c)]{0,1} (you)`)
+      .repeatTrail(RepeatTrailTestBase.`(me) [(a)-[r]->(b)<-[rr]-(c)]{0,1} (you)`)
       .|.filterExpressionOrString("not rr_inner = r_inner", isRepeatTrailUnique("rr_inner"))
       .|.expandAll("(b_inner)<-[rr_inner]-(c_inner)")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
@@ -1675,7 +1675,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "c", "d", "r", "rr", "rrr")
-      .trail(TrailTestBase.`(me) [(a)-[r]->(b)-[rr]->(c)<-[rrr]-(d)]{0,1} (you)`)
+      .repeatTrail(RepeatTrailTestBase.`(me) [(a)-[r]->(b)-[rr]->(c)<-[rrr]-(d)]{0,1} (you)`)
       .|.filterExpressionOrString(
         "not rrr_inner = r_inner",
         "not rrr_inner = rr_inner",
@@ -1713,11 +1713,11 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "b", "c", "r")
-      .trail(`(me)( (b)-[r]->(c) WHERE EXISTS { (b)( (bb)-[rr]->(aa:A) ){0,}(a) } ){0,}(you)`)
+      .repeatTrail(`(me)( (b)-[r]->(c) WHERE EXISTS { (b)( (bb)-[rr]->(aa:A) ){0,}(a) } ){0,}(you)`)
       .|.apply()
       .|.|.limit(1)
       .|.|.filter("a:A")
-      .|.|.trail(`(b_inner)((bb)-[rr]->(aa:A)){0,}(a)`)
+      .|.|.repeatTrail(`(b_inner)((bb)-[rr]->(aa:A)){0,}(a)`)
       .|.|.|.filter("aa_inner:A")
       .|.|.|.filterExpressionOrString(isRepeatTrailUnique("rr_inner"))
       .|.|.|.expandAll("(bb_inner)-[rr_inner]->(aa_inner)")
@@ -1758,15 +1758,15 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "b", "c", "r")
-      .trail(`(me) ((b)-[r]->(c) WHERE EXISTS {...} ){1,} (you)`)
+      .repeatTrail(`(me) ((b)-[r]->(c) WHERE EXISTS {...} ){1,} (you)`)
       .|.apply()
       .|.|.limit(1)
       .|.|.filter("a:A")
-      .|.|.trail(`(b) ((d)-[rr]->(aa:A) WHERE EXISTS {...} ){1,} (a)`)
+      .|.|.repeatTrail(`(b) ((d)-[rr]->(aa:A) WHERE EXISTS {...} ){1,} (a)`)
       .|.|.|.filter("aa_inner:A")
       .|.|.|.apply()
       .|.|.|.|.limit(1)
-      .|.|.|.|.trail(`(aa) ((e)<-[rrr]-(f)){1,}) (g)`)
+      .|.|.|.|.repeatTrail(`(aa) ((e)<-[rrr]-(f)){1,}) (g)`)
       .|.|.|.|.|.filterExpressionOrString(isRepeatTrailUnique("rrr_inner"))
       .|.|.|.|.|.expandAll("(e_inner)<-[rrr_inner]-(f_inner)")
       .|.|.|.|.|.argument("aa_inner", "e_inner")
@@ -1800,7 +1800,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
       .optional()
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -1821,7 +1821,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .produceResults("path")
       .projection(Map("path" -> qppPath(varFor("me"), Seq(varFor("a"), varFor("r")), varFor("you"))))
       .optional()
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`)
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -1866,7 +1866,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.|.optional("end")
       .|.|.|.filter("end:LOOP")
       .|.|.|.apply()
-      .|.|.|.|.trail(TrailParameters(
+      .|.|.|.|.repeatTrail(TrailParameters(
         0,
         Unlimited,
         "middle",
@@ -1895,7 +1895,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.|.sort("foo ASC")
       .|.|.|.projection("start.foo AS foo")
       .|.|.|.filter("middle:MIDDLE AND middle:LOOP")
-      .|.|.|.trail(TrailParameters(
+      .|.|.|.repeatTrail(TrailParameters(
         0,
         Unlimited,
         "firstMiddle",
@@ -1918,7 +1918,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.|.|.optional("start")
       .|.|.|.|.filter("true")
       .|.|.|.|.argument("firstMiddle", "a_inner")
-      .|.|.|.trail(TrailParameters(
+      .|.|.|.repeatTrail(TrailParameters(
         1,
         Limited(1),
         "start",
@@ -1945,7 +1945,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.filter("end:LOOP")
       .|.|.apply()
       .|.|.|.filter("true")
-      .|.|.|.trail(TrailParameters(
+      .|.|.|.repeatTrail(TrailParameters(
         0,
         Unlimited,
         "middle",
@@ -1973,7 +1973,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.projection("start.foo AS foo")
       .|.|.filter("true")
       .|.|.filter("middle:MIDDLE AND middle:LOOP")
-      .|.|.trail(TrailParameters(
+      .|.|.repeatTrail(TrailParameters(
         0,
         Unlimited,
         "firstMiddle",
@@ -1995,7 +1995,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.|.filter("true")
       .|.|.|.argument("firstMiddle", "a_inner")
-      .|.|.trail(TrailParameters(
+      .|.|.repeatTrail(TrailParameters(
         1,
         Limited(1),
         "start",
@@ -2022,7 +2022,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.projection("[start, middle, end, a, b, r1, c, d, r2] AS left")
       .|.filter("end:LOOP")
       .|.apply()
-      .|.|.trail(TrailParameters(
+      .|.|.repeatTrail(TrailParameters(
         0,
         Unlimited,
         "middle",
@@ -2052,7 +2052,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.filter("true")
       .|.projection("start.foo AS foo")
       .|.filter("middle:MIDDLE AND middle:LOOP")
-      .|.trail(TrailParameters(
+      .|.repeatTrail(TrailParameters(
         0,
         Unlimited,
         "firstMiddle",
@@ -2074,7 +2074,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
       .|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.argument("firstMiddle", "a_inner")
       .|.filter("true")
-      .|.trail(TrailParameters(
+      .|.repeatTrail(TrailParameters(
         1,
         Limited(1),
         "start",
@@ -2105,7 +2105,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
     execute(plan, runtime).awaitAll()
   }
 
-  protected def listOf(values: AnyRef*): util.List[AnyRef] = TrailTestBase.listOf(values: _*)
+  protected def listOf(values: AnyRef*): util.List[AnyRef] = RepeatTrailTestBase.listOf(values: _*)
 
   //  (n0:START)                                                  (n6:LOOP)
   //             ↘             →                                ↗     |
@@ -2625,7 +2625,7 @@ abstract class TrailTestBase[CONTEXT <: RuntimeContext](
   }
 }
 
-object TrailTestBase {
+object RepeatTrailTestBase {
   def listOf(values: AnyRef*): util.List[AnyRef] = java.util.List.of[AnyRef](values: _*)
 
   private def createMeYouTrailParameters(min: Int, max: UpperBound): TrailParameters = {
@@ -2878,7 +2878,7 @@ object TrailTestBase {
 }
 
 trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
-  self: TrailTestBase[CONTEXT] =>
+  self: RepeatTrailTestBase[CONTEXT] =>
 
   test("should work with multiple nested trails - with leveraged order on lhs") {
     // (n1:A) <- (n2) -> (n3)
@@ -2886,15 +2886,15 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "b", "c", "r")
-      .trail(`(me) ((b)-[r]->(c) WHERE EXISTS {...} ){1,} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) ((b)-[r]->(c) WHERE EXISTS {...} ){1,} (you)`).withLeveragedOrder()
       .|.apply()
       .|.|.limit(1)
       .|.|.filter("a:A")
-      .|.|.trail(`(b) ((d)-[rr]->(aa:A) WHERE EXISTS {...} ){1,} (a)`).withLeveragedOrder()
+      .|.|.repeatTrail(`(b) ((d)-[rr]->(aa:A) WHERE EXISTS {...} ){1,} (a)`).withLeveragedOrder()
       .|.|.|.filter("aa_inner:A")
       .|.|.|.apply()
       .|.|.|.|.limit(1)
-      .|.|.|.|.trail(`(aa) ((e)<-[rrr]-(f)){1,}) (g)`).withLeveragedOrder()
+      .|.|.|.|.repeatTrail(`(aa) ((e)<-[rrr]-(f)){1,}) (g)`).withLeveragedOrder()
       .|.|.|.|.|.filterExpressionOrString(isRepeatTrailUnique("rrr_inner"))
       .|.|.|.|.|.expandAll("(e_inner)<-[rrr_inner]-(f_inner)")
       .|.|.|.|.|.argument("aa_inner", "e_inner")
@@ -2929,11 +2929,13 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "b", "c", "r")
-      .trail(`(me)( (b)-[r]->(c) WHERE EXISTS { (b)( (bb)-[rr]->(aa:A) ){0,}(a) } ){0,}(you)`).withLeveragedOrder()
+      .repeatTrail(
+        `(me)( (b)-[r]->(c) WHERE EXISTS { (b)( (bb)-[rr]->(aa:A) ){0,}(a) } ){0,}(you)`
+      ).withLeveragedOrder()
       .|.apply()
       .|.|.limit(1)
       .|.|.filter("a:A")
-      .|.|.trail(`(b_inner)((bb)-[rr]->(aa:A)){0,}(a)`)
+      .|.|.repeatTrail(`(b_inner)((bb)-[rr]->(aa:A)){0,}(a)`)
       .|.|.|.filter("aa_inner:A")
       .|.|.|.filterExpressionOrString(isRepeatTrailUnique("rr_inner"))
       .|.|.|.expandAll("(bb_inner)-[rr_inner]->(aa_inner)")
@@ -2992,7 +2994,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3029,7 +3031,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{2,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{2,2} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3062,7 +3064,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3119,7 +3121,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3185,7 +3187,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3264,7 +3266,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->()-[]->(b)]{0,*} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->()-[]->(b)]{0,*} (you)`).withLeveragedOrder()
       .|.filterExpressionOrString("not ranon = r_inner", isRepeatTrailUnique("ranon"))
       .|.expandAll("(secret)-[ranon]->(b_inner)")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
@@ -3324,7 +3326,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,3} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,3} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3390,7 +3392,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,3} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,3} (you)`).withLeveragedOrder()
       .|.filter("b_inner.prop = me.prop")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -3436,7 +3438,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r", "r2")
       .projection("r AS r2")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3475,11 +3477,11 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "other", "a", "b", "r", "c", "d", "rr")
-      .trail(`(you) [(c)-[rr]->(d)]{0,1} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,1} (other)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
       .|.expandAll("(c_inner)-[rr_inner]->(d_inner)")
       .|.argument("me", "you", "c_inner")
-      .trail(`(me) [(a)-[r]->(b)]{0,1} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,1} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3545,11 +3547,11 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "other", "a", "b", "r", "c", "d", "rr")
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
       .|.expandAll("(c_inner)-[rr_inner]->(d_inner)")
       .|.argument("me", "c_inner")
-      .trail(`(me) [(a)-[r]->(b)]{0,3} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,3} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3707,7 +3709,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("a", "e", "b", "f", "c")
-      .trail(`(anon_start) [()-[f]->(c)]{1,*} (anon_end)`).withLeveragedOrder()
+      .repeatTrail(`(anon_start) [()-[f]->(c)]{1,*} (anon_end)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("f_inner"))
       .|.expandAll("(anon_inner)-[f_inner]->(c_inner)")
       .|.argument("anon_inner")
@@ -3742,7 +3744,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me")
       .semiApply()
-      .|.trail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
+      .|.repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
       .|.|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.|.argument("me", "a_inner")
@@ -3771,7 +3773,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .apply()
       .|.optional("me")
       .|.filter("you:User")
-      .|.trail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
+      .|.repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
       .|.|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.|.argument("me", "a_inner")
@@ -3817,7 +3819,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     )
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("a", "b", "c", "r", "s")
-      .trail(`() ((a)->[r]->(b)->[s]->(c))+ ()`).withLeveragedOrder()
+      .repeatTrail(`() ((a)->[r]->(b)->[s]->(c))+ ()`).withLeveragedOrder()
       .|.filterExpressionOrString("not s_inner = r_inner", isRepeatTrailUnique("s_inner"))
       .|.expandAll("(b_inner)-[s_inner]->(c_inner)")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
@@ -3851,7 +3853,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .limit(1)
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3875,7 +3877,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.unwind("[1] AS ignore") // pipelined specific: does not need a filtering morsel
       .|.nonFuseable() // pipelined specific: force break to test where RHS output receives normal Morsel but RHS leaf requires FilteringMorsel
       .|.limit(1)
@@ -3915,7 +3917,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.limit(Int.MaxValue) // pipelined specific: test when RHS output receives FilteringMorsel & RHS leaf requires FilteringMorsel in different pipeline
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -3955,7 +3957,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .filter(s"id(you)<>${n2.getId}")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -3990,7 +3992,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.filter(s"id(b_inner)<>${n3.getId}")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -4026,7 +4028,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.unwind("[1] AS ignore") // pipelined specific: does not need a filtering morsel
       .|.nonFuseable() // pipelined specific: force break to test where RHS output receives normal Morsel but RHS leaf requires FilteringMorsel
       .|.filter(s"id(b_inner)<>${n3.getId}")
@@ -4102,7 +4104,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
-      .trail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,*} (you)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
       .|.argument("me", "a_inner")
@@ -4212,7 +4214,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -4221,7 +4223,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.argument("you", "c_inner")
       .|.argument("you", "c_inner")
       .optional("me")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -4273,7 +4275,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
-      .trail(`(you) [(c)-[rr]->(d)]{1,2} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{1,2} (other)`).withLeveragedOrder()
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -4282,7 +4284,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.argument("you", "c_inner")
       .|.argument("you", "c_inner")
       .optional("me")
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -4324,7 +4326,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -4333,7 +4335,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.argument("me", "a_inner")
       .|.argument("me", "a_inner")
       .optional("me")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -4385,7 +4387,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
-      .trail(`(you) [(c)-[rr]->(d)]{1,2} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{1,2} (other)`).withLeveragedOrder()
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.filterExpression(isRepeatTrailUnique("rr_inner"))
@@ -4394,7 +4396,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.argument("you", "c_inner")
       .|.argument("you", "c_inner")
       .optional("me")
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -4436,7 +4438,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
-      .trail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{0,2} (other)`).withLeveragedOrder()
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.nodeHashJoin("d_inner")
@@ -4445,7 +4447,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.expand("(c_inner)-[rr_inner]->(d_inner)")
       .|.argument("you", "c_inner")
       .optional("me")
-      .trail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{0,2} (you)`).withLeveragedOrder()
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -4498,7 +4500,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "other", "a", "b", "r", "c", "d", "rr")
       .optional("me")
-      .trail(`(you) [(c)-[rr]->(d)]{1,2} (other)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(c)-[rr]->(d)]{1,2} (other)`).withLeveragedOrder()
       .|.sort("d_inner ASC")
       .|.distinct("d_inner  AS d_inner")
       .|.nodeHashJoin("d_inner")
@@ -4507,7 +4509,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.expand("(c_inner)-[rr_inner]->(d_inner)")
       .|.argument("you", "c_inner")
       .optional("me")
-      .trail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
+      .repeatTrail(`(me) [(a)-[r]->(b)]{1,2} (you)`).withLeveragedOrder()
       .|.optional("me")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
@@ -4555,19 +4557,19 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .produceResults("start", "firstMiddle", "middle", "end", "a", "b", "r1", "c", "d", "r2")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.filter("d_inner:LOOP")
       .|.|.filterExpression(isRepeatTrailUnique("r2_inner"))
       .|.|.expandAll("(c_inner)-[r2_inner]->(d_inner)")
       .|.|.argument("middle", "c_inner")
       .|.argument("middle")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.filter("b_inner:MIDDLE")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.filter("anon_end_inner:MIDDLE")
       .|.filterExpression(isRepeatTrailUnique("anon_r_inner"))
       .|.expandAll("(anon_start_inner)-[anon_r_inner]->(anon_end_inner)")
@@ -4599,19 +4601,19 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .produceResults("start", "firstMiddle", "middle", "end", "a", "b", "r1", "c", "d", "r2")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.filter("d_inner:LOOP")
       .|.|.filterExpression(isRepeatTrailUnique("r2_inner"))
       .|.|.expandAll("(c_inner)-[r2_inner]->(d_inner)")
       .|.|.argument("middle", "c_inner")
       .|.argument("middle")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.filter("b_inner:MIDDLE")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.filter("anon_end_inner:MIDDLE")
       .|.filterExpression(isRepeatTrailUnique("anon_r_inner"))
       .|.expandAll("(anon_start_inner)-[anon_r_inner]->(anon_end_inner)")
@@ -4643,7 +4645,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .produceResults("start", "firstMiddle", "middle", "end", "a", "b", "r1", "c", "d", "r2")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.filter("d_inner:LOOP")
       .|.|.filterExpression(isRepeatTrailUnique("r2_inner"))
       .|.|.expandAll("(c_inner)-[r2_inner]->(d_inner)")
@@ -4652,12 +4654,12 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .sort("foo ASC")
       .projection("start.foo AS foo")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.filter("b_inner:MIDDLE")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.filter("anon_end_inner:MIDDLE")
       .|.filterExpression(isRepeatTrailUnique("anon_r_inner"))
       .|.expandAll("(anon_start_inner)-[anon_r_inner]->(anon_end_inner)")
@@ -4687,7 +4689,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .produceResults("start", "firstMiddle", "middle", "end", "a", "b", "r1", "c", "d", "r2").withLeveragedOrder()
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
       .|.|.|.allNodeScan("d_inner")
@@ -4696,14 +4698,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.argument("middle", "c_inner")
       .|.argument("middle")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -4737,7 +4739,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .produceResults("start", "firstMiddle", "middle", "end", "a", "b", "r1", "c", "d", "r2")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
       .|.|.|.allNodeScan("d_inner")
@@ -4746,14 +4748,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.argument("middle", "c_inner")
       .|.argument("middle")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -4787,7 +4789,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .produceResults("start", "firstMiddle", "middle", "end", "a", "b", "r1", "c", "d", "r2")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
       .|.|.|.allNodeScan("d_inner")
@@ -4798,14 +4800,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .sort("foo ASC")
       .projection("start.foo AS foo")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -4858,7 +4860,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.optional("end")
       .|.|.filter("end:LOOP")
       .|.|.apply()
-      .|.|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.|.|.filter("r2_inner IS NOT NULL")
       .|.|.|.|.optional("middle")
       .|.|.|.|.filter("d_inner:LOOP")
@@ -4870,7 +4872,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.|.|.argument("middle", "c_inner")
       .|.|.|.argument("middle")
       .|.|.filter("middle:MIDDLE:LOOP")
-      .|.|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .|.|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.|.|.filter("b_inner:MIDDLE")
       .|.|.|.nodeHashJoin("b_inner")
       .|.|.|.|.allNodeScan("b_inner")
@@ -4879,7 +4881,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.|.optional("start")
       .|.|.|.argument("firstMiddle", "a_inner")
-      .|.|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .|.|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.|.allNodeScan("anon_end_inner")
@@ -4892,7 +4894,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       // (on RHS of Join) Union LHS (identical to Union RHS)
       .|.filter("end:LOOP")
       .|.apply()
-      .|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.|.filter("d_inner:LOOP")
       .|.|.|.nodeHashJoin("d_inner")
       .|.|.|.|.allNodeScan("d_inner")
@@ -4901,14 +4903,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.|.argument("middle", "c_inner")
       .|.|.argument("middle")
       .|.filter("middle:MIDDLE:LOOP")
-      .|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.|.filter("b_inner:MIDDLE")
       .|.|.nodeHashJoin("b_inner")
       .|.|.|.allNodeScan("b_inner")
       .|.|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.argument("firstMiddle", "a_inner")
-      .|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.allNodeScan("anon_end_inner")
@@ -4923,7 +4925,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .projection("[start, middle, end, a, b, r1, c, d, r2] AS left")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.limit(Long.MaxValue)
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
@@ -4934,14 +4936,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.argument("middle")
       .limit(Long.MaxValue)
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -4996,7 +4998,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.optional("end")
       .|.|.filter("end:LOOP")
       .|.|.apply()
-      .|.|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.|.|.filter("r2_inner IS NOT NULL")
       .|.|.|.|.optional("middle")
       .|.|.|.|.filter("d_inner:LOOP")
@@ -5008,7 +5010,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.|.|.argument("middle", "c_inner")
       .|.|.|.argument("middle")
       .|.|.filter("middle:MIDDLE:LOOP")
-      .|.|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .|.|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.|.|.filter("b_inner:MIDDLE")
       .|.|.|.nodeHashJoin("b_inner")
       .|.|.|.|.allNodeScan("b_inner")
@@ -5017,7 +5019,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.|.optional("start")
       .|.|.|.argument("firstMiddle", "a_inner")
-      .|.|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .|.|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.|.allNodeScan("anon_end_inner")
@@ -5030,7 +5032,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       // (on RHS of Join) Union LHS (identical to Union RHS)
       .|.filter("end:LOOP")
       .|.apply()
-      .|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.|.filter("d_inner:LOOP")
       .|.|.|.nodeHashJoin("d_inner")
       .|.|.|.|.allNodeScan("d_inner")
@@ -5039,14 +5041,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.|.argument("middle", "c_inner")
       .|.|.argument("middle")
       .|.filter("middle:MIDDLE:LOOP")
-      .|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.|.filter("b_inner:MIDDLE")
       .|.|.nodeHashJoin("b_inner")
       .|.|.|.allNodeScan("b_inner")
       .|.|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.argument("firstMiddle", "a_inner")
-      .|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.allNodeScan("anon_end_inner")
@@ -5061,7 +5063,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .projection("[start, middle, end, a, b, r1, c, d, r2] AS left")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`)
       .|.|.limit(Long.MaxValue)
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
@@ -5072,14 +5074,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.argument("middle")
       .limit(Long.MaxValue)
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`).withLeveragedOrder()
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`).withLeveragedOrder()
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -5134,7 +5136,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.optional("end")
       .|.|.filter("end:LOOP")
       .|.|.apply()
-      .|.|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.|.|.filter("r2_inner IS NOT NULL")
       .|.|.|.|.optional("middle")
       .|.|.|.|.filter("d_inner:LOOP")
@@ -5148,7 +5150,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.sort("foo ASC")
       .|.|.projection("start.foo AS foo")
       .|.|.filter("middle:MIDDLE:LOOP")
-      .|.|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .|.|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.|.|.filter("b_inner:MIDDLE")
       .|.|.|.nodeHashJoin("b_inner")
       .|.|.|.|.allNodeScan("b_inner")
@@ -5157,7 +5159,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.|.optional("start")
       .|.|.|.argument("firstMiddle", "a_inner")
-      .|.|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .|.|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.|.allNodeScan("anon_end_inner")
@@ -5168,7 +5170,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       // (on RHS of Join) Union LHS (identical to Union RHS)
       .|.filter("end:LOOP")
       .|.apply()
-      .|.|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.|.filter("d_inner:LOOP")
       .|.|.|.nodeHashJoin("d_inner")
       .|.|.|.|.allNodeScan("d_inner")
@@ -5179,14 +5181,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .|.sort("foo ASC")
       .|.projection("start.foo AS foo")
       .|.filter("middle:MIDDLE:LOOP")
-      .|.trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .|.repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.|.filter("b_inner:MIDDLE")
       .|.|.nodeHashJoin("b_inner")
       .|.|.|.allNodeScan("b_inner")
       .|.|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.|.argument("firstMiddle", "a_inner")
-      .|.trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .|.repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.|.nodeHashJoin("anon_end_inner")
       .|.|.|.filter("anon_end_inner:MIDDLE")
       .|.|.|.allNodeScan("anon_end_inner")
@@ -5199,7 +5201,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .projection("[start, middle, end, a, b, r1, c, d, r2] AS left")
       .filter("end:LOOP")
       .apply()
-      .|.trail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
+      .|.repeatTrail(`(middle) [(c)-[r2]->(d:LOOP)]{0, *} (end:LOOP)`).withLeveragedOrder()
       .|.|.limit(Long.MaxValue)
       .|.|.filter("d_inner:LOOP")
       .|.|.nodeHashJoin("d_inner")
@@ -5212,14 +5214,14 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
       .sort("foo ASC")
       .projection("start.foo AS foo")
       .filter("middle:MIDDLE:LOOP")
-      .trail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
+      .repeatTrail(`(firstMiddle) [(a)-[r1]->(b:MIDDLE)]{0, *} (middle:MIDDLE:LOOP)`)
       .|.filter("b_inner:MIDDLE")
       .|.nodeHashJoin("b_inner")
       .|.|.allNodeScan("b_inner")
       .|.filterExpression(isRepeatTrailUnique("r1_inner"))
       .|.expandAll("(a_inner)-[r1_inner]->(b_inner)")
       .|.argument("firstMiddle", "a_inner")
-      .trail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
+      .repeatTrail(`(start:START) [()-[]->(:MIDDLE)]{1, 1} (firstMiddle:MIDDLE)`)
       .|.nodeHashJoin("anon_end_inner")
       .|.|.filter("anon_end_inner:MIDDLE")
       .|.|.allNodeScan("anon_end_inner")
@@ -5253,7 +5255,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "r")
       .filter("me:START")
-      .trail(`(you) [(b)<-[r]-(a)]{0, *} (me)`).withLeveragedOrder()
+      .repeatTrail(`(you) [(b)<-[r]-(a)]{0, *} (me)`).withLeveragedOrder()
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
       .|.expandAll("(b_inner)<-[r_inner]-(a_inner)")
       .|.argument("you", "b_inner")
@@ -5289,7 +5291,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "c", "r", "rr")
-      .trail(TrailTestBase.`(me) [(a)-[r]->(b)<-[rr]-(c)]{0,1} (you)`).withLeveragedOrder()
+      .repeatTrail(RepeatTrailTestBase.`(me) [(a)-[r]->(b)<-[rr]-(c)]{0,1} (you)`).withLeveragedOrder()
       .|.filterExpressionOrString("not rr_inner = r_inner", isRepeatTrailUnique("rr_inner"))
       .|.expandAll("(b_inner)<-[rr_inner]-(c_inner)")
       .|.filterExpression(isRepeatTrailUnique("r_inner"))
@@ -5322,7 +5324,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
     val logicalQuery = new LogicalQueryBuilder(this)
       .produceResults("me", "you", "a", "b", "c", "d", "r", "rr", "rrr")
-      .trail(TrailTestBase.`(me) [(a)-[r]->(b)-[rr]->(c)<-[rrr]-(d)]{0,1} (you)`).withLeveragedOrder()
+      .repeatTrail(RepeatTrailTestBase.`(me) [(a)-[r]->(b)-[rr]->(c)<-[rrr]-(d)]{0,1} (you)`).withLeveragedOrder()
       .|.filterExpressionOrString(
         "not rrr_inner = rr_inner",
         "not rrr_inner = r_inner",
@@ -5381,7 +5383,7 @@ trait OrderedTrailTestBase[CONTEXT <: RuntimeContext] {
 
 object OrderedTrailTestBase {
 
-  protected def listOf(values: AnyRef*): util.List[AnyRef] = TrailTestBase.listOf(values: _*)
+  protected def listOf(values: AnyRef*): util.List[AnyRef] = RepeatTrailTestBase.listOf(values: _*)
 
   /**
    * NOTE: Expected result obviously assumes that certain (equivalent) plans are used, which is the case for all tests calling this method.

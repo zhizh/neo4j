@@ -149,6 +149,7 @@ import org.neo4j.cypher.internal.logical.plans.PruningVarExpand
 import org.neo4j.cypher.internal.logical.plans.RelationshipCountFromCountStore
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.RunQueryAt
@@ -181,7 +182,6 @@ import org.neo4j.cypher.internal.logical.plans.SubtractionNodeByLabelsScan
 import org.neo4j.cypher.internal.logical.plans.TerminateTransactions
 import org.neo4j.cypher.internal.logical.plans.Top
 import org.neo4j.cypher.internal.logical.plans.Top1WithTies
-import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionConcurrency
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
@@ -311,6 +311,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.RelationshipCountFromCountStorePipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.RelationshipTypes
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.RemoveLabelsPipe
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.RollUpApplyPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.RunQueryAtPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.SelectOrSemiApplyPipe
@@ -337,7 +338,6 @@ import org.neo4j.cypher.internal.runtime.interpreted.pipes.TestPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Top1Pipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Top1WithTiesPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.TopNPipe
-import org.neo4j.cypher.internal.runtime.interpreted.pipes.TrailPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.TransactionApplyPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.TransactionForeachPipe
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.TraversalPredicates
@@ -2009,7 +2009,7 @@ case class InterpretedPipeMapper(
           maybeReportAs.map(_.name)
         )(id = id)
 
-      case Trail(
+      case RepeatTrail(
           _,
           _,
           repetition,
@@ -2024,7 +2024,7 @@ case class InterpretedPipeMapper(
           previouslyBoundRelationshipGroups,
           reverseGroupVariableProjections
         ) =>
-        TrailPipe(
+        RepeatPipe(
           lhs,
           rhs,
           repetition,
@@ -2034,9 +2034,11 @@ case class InterpretedPipeMapper(
           innerEnd.name,
           groupNodes,
           groupRelationships,
-          innerRelationships.map(_.name),
-          previouslyBoundRelationships.map(_.name),
-          previouslyBoundRelationshipGroups.map(_.name),
+          RepeatPipe.UniqueRelationships(
+            innerRelationships.map(_.name).toArray,
+            previouslyBoundRelationships.map(_.name),
+            previouslyBoundRelationshipGroups.map(_.name)
+          ),
           reverseGroupVariableProjections
         )(id = id)
 

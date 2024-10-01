@@ -862,7 +862,7 @@ class CardinalityCostModelTest extends CypherFunSuite with AstConstructionTestSu
 
     val builder = new LogicalPlanBuilder(wholePlan = false)
     val plan = builder
-      .trail(trailParams)
+      .repeatTrail(trailParams)
       .|.expand("(a)-[r]->(b)").withCardinality(rhsCardinality.amount)
       .|.argument("a").withCardinality(1)
       .argument("a").withCardinality(lhsCardinality.amount)

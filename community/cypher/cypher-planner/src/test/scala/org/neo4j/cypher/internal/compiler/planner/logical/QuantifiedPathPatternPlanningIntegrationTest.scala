@@ -123,7 +123,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`(a)((n)-[r]-())*(b)`)
+        .repeatTrail(`(a)((n)-[r]-())*(b)`)
         .|.filterExpression(isRepeatTrailUnique("  r@1"))
         .|.expand("(`  n@0`)-[`  r@1`]->(`  UNNAMED0`)")
         .|.argument("  n@0")
@@ -158,7 +158,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan shouldEqual
       planner.subPlanBuilder()
-        .trail(`(a) ((n)-[r]->(m))+ (b)`)
+        .repeatTrail(`(a) ((n)-[r]->(m))+ (b)`)
         .|.filterExpression(isRepeatTrailUnique("  r@2"))
         .|.expandAll("(`  n@1`)-[`  r@2`]->(`  m@3`)")
         .|.filter("any(`  a@4` IN `  n@1`.list WHERE `  n@1`.p > `  a@4`)")
@@ -188,7 +188,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`(u)((n)-[]-(m))*`)
+        .repeatTrail(`(u)((n)-[]-(m))*`)
         .|.filterExpression(isRepeatTrailUnique("anon_1"))
         .|.expand("(n)-[anon_1]->(m)")
         .|.argument("n")
@@ -217,7 +217,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`(u)((n)-[]-(m))*`)
+        .repeatTrail(`(u)((n)-[]-(m))*`)
         .|.filterExpression(isRepeatTrailUnique("anon_1"))
         .|.expand("(n)-[anon_1]->(m)")
         .|.filter("n:User")
@@ -248,7 +248,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[]->(m))*(u)`)
+        .repeatTrail(`((n)-[]->(m))*(u)`)
         .|.filterExpression(isRepeatTrailUnique("anon_1"))
         .|.expand("(m)<-[anon_1]-(n)")
         .|.argument("m")
@@ -278,7 +278,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[]->(m))+`)
+        .repeatTrail(`((n)-[]->(m))+`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expand("(n)-[anon_2]->(m)")
         .|.argument("n")
@@ -308,7 +308,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     )
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[]->(m)){1,}`)
+        .repeatTrail(`((n)-[]->(m)){1,}`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expand("(n)-[anon_2]->(m)")
         .|.argument("n")
@@ -338,7 +338,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`()((n)-[]->(m)){,5}`)
+        .repeatTrail(`()((n)-[]->(m)){,5}`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expand("(n)-[anon_2]->(m)")
         .|.argument("n")
@@ -368,7 +368,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[]->(m)){1,5}`)
+        .repeatTrail(`((n)-[]->(m)){1,5}`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expand("(n)-[anon_2]->(m)")
         .|.argument("n")
@@ -400,7 +400,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[]->(m))+(a)`)
+        .repeatTrail(`((n)-[]->(m))+(a)`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expandAll("(m)<-[anon_2]-(n)")
         .|.argument("m")
@@ -432,7 +432,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       planner.subPlanBuilder()
         .filter("not anon_1 in anon_3")
         .expandAll("(a)-[anon_1]-(b)")
-        .trail(`((n)-[]->(m))+(a)`)
+        .repeatTrail(`((n)-[]->(m))+(a)`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expandAll("(n)-[anon_2]->(m)")
         .|.argument("n")
@@ -462,7 +462,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[r1]->(m)-[r2]->(o))+(a)`)
+        .repeatTrail(`((n)-[r1]->(m)-[r2]->(o))+(a)`)
         .|.filterExpressionOrString("not r2 = r1", isRepeatTrailUnique("r1"))
         .|.expandAll("(m)<-[r1]-(n)")
         .|.filterExpression(isRepeatTrailUnique("r2"))
@@ -499,7 +499,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[r1:R]->(m)-[r2]->(o))+(a)`)
+        .repeatTrail(`((n)-[r1:R]->(m)-[r2]->(o))+(a)`)
         .|.filterExpressionOrString("not r2 = r1", isRepeatTrailUnique("r1"))
         .|.expandAll("(m)<-[r1:R]-(n)")
         .|.filterExpression(isRepeatTrailUnique("r2"))
@@ -536,7 +536,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       planner.subPlanBuilder()
         .filter(disjoint("anon_4", "anon_3", 5))
         .expand("(anon_0)-[anon_4*1..]-(anon_1)")
-        .trail(`(u) ((n)-[]->(m))+`)
+        .repeatTrail(`(u) ((n)-[]->(m))+`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expandAll("(n)-[anon_2]->(m)")
         .|.argument("n")
@@ -570,7 +570,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
         .nodeHashJoin("x")
         .|.expand("(v)-[r2*1..]-(x)", projectedDir = INCOMING)
         .|.nodeByLabelScan("v", "User")
-        .trail(`(u) ((n)-[r]->(m))+ (x)`)
+        .repeatTrail(`(u) ((n)-[r]->(m))+ (x)`)
         .|.filterExpression(isRepeatTrailUnique("r"))
         .|.expandAll("(n)-[r]->(m)")
         .|.argument("n")
@@ -601,7 +601,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan should equal(
       planner.subPlanBuilder()
         .expand("(anon_0)-[anon_3:T*1..]-(anon_1)")
-        .trail(`(u) ((n)-[]->(m))+`)
+        .repeatTrail(`(u) ((n)-[]->(m))+`)
         .|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.expandAll("(n)-[anon_2:R]->(m)")
         .|.argument("n")
@@ -645,13 +645,13 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     val plan = planner.plan(query).stripProduceResults
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[r1:R]->(m)-[r2]->(o))+`)
+        .repeatTrail(`((n)-[r1:R]->(m)-[r2]->(o))+`)
         .|.filterExpressionOrString("not r2 = r1", isRepeatTrailUnique("r1"))
         .|.expandAll("(m)<-[r1:R]-(n)")
         .|.filterExpression(isRepeatTrailUnique("r2"))
         .|.expandAll("(o)<-[r2]-(m)")
         .|.argument("o")
-        .trail(`((a)-[r3:T]-(b)<-[r4]-(c))+`)
+        .repeatTrail(`((a)-[r3:T]-(b)<-[r4]-(c))+`)
         .|.filterExpressionOrString("not r4 = r3", isRepeatTrailUnique("r3"))
         .|.expandAll("(b)-[r3:T]-(a)")
         .|.filterExpression(isRepeatTrailUnique("r4"))
@@ -699,13 +699,13 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan should equal(
       planner.subPlanBuilder()
         .apply()
-        .|.trail(`((n)-[r1:R]->(m)-[r2]->(o))+`)
+        .|.repeatTrail(`((n)-[r1:R]->(m)-[r2]->(o))+`)
         .|.|.filterExpressionOrString("not r2 = r1", isRepeatTrailUnique("r1"))
         .|.|.expandAll("(m)<-[r1:R]-(n)")
         .|.|.filterExpression(isRepeatTrailUnique("r2"))
         .|.|.expandAll("(o)<-[r2]-(m)")
         .|.|.argument("o")
-        .|.trail(`((a)-[r3:T]-(b)<-[r4]-(c))+`)
+        .|.repeatTrail(`((a)-[r3:T]-(b)<-[r4]-(c))+`)
         .|.|.filterExpressionOrString("not r4 = r3", isRepeatTrailUnique("r3"))
         .|.|.expandAll("(b)-[r3:T]-(a)")
         .|.|.filterExpression(isRepeatTrailUnique("r4"))
@@ -753,13 +753,13 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     val plan = planner.plan(query).stripProduceResults
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[r1:R]->(m)-[r2]->(o))+`)
+        .repeatTrail(`((n)-[r1:R]->(m)-[r2]->(o))+`)
         .|.filterExpression(isRepeatTrailUnique("r1"))
         .|.expandAll("(m)<-[r1:R]-(n)")
         .|.filterExpression(isRepeatTrailUnique("r2"))
         .|.expandAll("(o)<-[r2:S]-(m)")
         .|.argument("o")
-        .trail(`((a)-[r3:T]-(b)<-[r4]-(c))+`)
+        .repeatTrail(`((a)-[r3:T]-(b)<-[r4]-(c))+`)
         .|.filterExpression(isRepeatTrailUnique("r3"))
         .|.expandAll("(b)-[r3:T]-(a)")
         .|.filterExpression(isRepeatTrailUnique("r4"))
@@ -791,7 +791,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[]->(m))+`)
+        .repeatTrail(`((n)-[]->(m))+`)
         .|.filterExpressionOrString("n.prop > m.prop", isRepeatTrailUnique("anon_2"))
         .|.expandAll("(n)-[anon_2]->(m)")
         .|.argument("n")
@@ -823,7 +823,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan should equal(
       planner.subPlanBuilder()
         .apply()
-        .|.trail(`((n)-[]->(m))+`)
+        .|.repeatTrail(`((n)-[]->(m))+`)
         .|.|.filterExpression(isRepeatTrailUnique("anon_2"))
         .|.|.expandAll("(n)-[anon_2]->(m)")
         .|.|.filter("n.prop > prop")
@@ -865,7 +865,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan should equal(
       planner.subPlanBuilder()
         .filter("anon_0 = a")
-        .trail(`((n)-[r]->(m))+`)
+        .repeatTrail(`((n)-[r]->(m))+`)
         .|.filterExpression(
           andsReorderable("cacheNFromStore[n.prop] > cacheN[a.prop]", " cacheNFromStore[n.prop] > cacheN[b.prop]"),
           isRepeatTrailUnique("r")
@@ -905,7 +905,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[r]->(m))+`)
+        .repeatTrail(`((n)-[r]->(m))+`)
         .|.filterExpression(
           andsReorderable(
             "cacheNFromStore[n.prop] > cacheNFromStore[m.prop]",
@@ -941,7 +941,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan should equal(
       planner.subPlanBuilder()
-        .trail(`((n)-[r]->(m))+`)
+        .repeatTrail(`((n)-[r]->(m))+`)
         .|.filterExpressionOrString("not r:REL", "r.prop > 0", isRepeatTrailUnique("r"))
         .|.expandAll("(n)-[r]->(m)")
         .|.filter("n:N", "n:NN", "n.prop = 5", "n.foo > 0")
@@ -971,7 +971,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     )
 
     plan shouldEqual planner.subPlanBuilder()
-      .trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.filterExpressionOrString("r.p = 0", isRepeatTrailUnique("r"))
       .|.expandAll("(n)-[r]->(m)")
       .|.argument("n")
@@ -998,7 +998,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     )
 
     plan shouldEqual planner.subPlanBuilder()
-      .trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.filterExpressionOrString("r.p = z.p", isRepeatTrailUnique("r"))
       .|.expandAll("(n)-[r]->(m)")
       .|.argument("n", "z")
@@ -1033,7 +1033,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan shouldEqual planner.subPlanBuilder()
       .apply()
-      .|.trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .|.repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.|.filterExpressionOrString("r.p = x", isRepeatTrailUnique("r"))
       .|.|.expandAll("(n)-[r]->(m)")
       .|.|.argument("n", "x")
@@ -1069,7 +1069,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan shouldEqual planner.subPlanBuilder()
       .filterExpression(predicate)
-      .trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(m)<-[r]-(n)")
       .|.argument("m")
@@ -1105,7 +1105,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan should equal(
       planner.subPlanBuilder()
         .filter("anon_0 = m")
-        .trail(`(n)((n_inner)-[r_inner]->(m_inner))+ (m)`)
+        .repeatTrail(`(n)((n_inner)-[r_inner]->(m_inner))+ (m)`)
         .|.filterExpression(isRepeatTrailUnique("r_inner"))
         .|.expandAll("(n_inner)-[r_inner]->(m_inner)")
         .|.argument("n_inner")
@@ -1270,7 +1270,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     )
 
     plan shouldBe planner.subPlanBuilder()
-      .trail(params)
+      .repeatTrail(params)
       .|.filterExpressionOrString("not r2 = r1", isRepeatTrailUnique("r2"))
       .|.expandAll("(a)-[r2:REL]->(y)")
       .|.filterExpression(isRepeatTrailUnique("r1"))
@@ -1309,7 +1309,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     )
 
     plan shouldBe planner.subPlanBuilder()
-      .trail(params)
+      .repeatTrail(params)
       .|.filterExpression(isRepeatTrailUnique("anon_2"))
       .|.expandAll("(a)<-[anon_2]-(anon_3)")
       .|.filter("a:A", "a.prop > 0")
@@ -1347,7 +1347,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     )
 
     plan shouldBe planner.subPlanBuilder()
-      .trail(params)
+      .repeatTrail(params)
       .|.filterExpression(isRepeatTrailUnique("anon_3"))
       .|.expandAll("(a)-[anon_3]->(anon_2)")
       .|.filter("a:A", "a.prop > 0")
@@ -1389,7 +1389,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan shouldBe planner.subPlanBuilder()
       .filter("c:C")
-      .trail(trailParameters)
+      .repeatTrail(trailParameters)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(x)-[r:R]->(y)")
       .|.argument("x")
@@ -1473,13 +1473,13 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan shouldBe planner.subPlanBuilder()
       .filter("a:A", "a:N")
-      .trail(n_r1_m_trail)
+      .repeatTrail(n_r1_m_trail)
       .|.filterExpressionOrString("n:N", isRepeatTrailUnique("r1"))
       .|.expandAll("(m)<-[r1:REL]-(n)")
       .|.filter("m:M")
       .|.argument("m")
       .filter("b:B", "b:Q")
-      .trail(p_r2_q_trail)
+      .repeatTrail(p_r2_q_trail)
       .|.filterExpressionOrString("q:Q", isRepeatTrailUnique("r2"))
       .|.expandAll("(p)-[r2:REL]->(q)")
       .|.filter("p:P")
@@ -1593,7 +1593,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan shouldEqual planner.subPlanBuilder()
       .create(createNode("c", "C"))
       .filter("end:B")
-      .trail(`(start)((a)-[r]->(b))*(end)`)
+      .repeatTrail(`(start)((a)-[r]->(b))*(end)`)
       .|.filterExpressionOrString("b:B", isRepeatTrailUnique("r"))
       .|.expandAll("(a)-[r]->(b)")
       .|.filter("a:A")
@@ -1660,7 +1660,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       .apply()
       .|.optional("x")
       .|.filter("end:B")
-      .|.trail(`(start)((a)-[r]->(b))*(end)`)
+      .|.repeatTrail(`(start)((a)-[r]->(b))*(end)`)
       .|.|.filterExpressionOrString("NOT r2 = r1", isRepeatTrailUnique("r2"), "c:B")
       .|.|.expandAll("(b)-[r2]->(c)")
       .|.|.filterExpressionOrString(isRepeatTrailUnique("r1"), "b:B")
@@ -1754,7 +1754,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       )
 
     plan shouldEqual planner.subPlanBuilder()
-      .trail(`(a)((b)-[r]->()){2,3}(c)`)
+      .repeatTrail(`(a)((b)-[r]->()){2,3}(c)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(b)-[r]->(anon_0)")
       .|.argument("b")
@@ -1784,7 +1784,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       )
 
     plan shouldEqual planner.subPlanBuilder()
-      .trail(`(a)(()-[r]->(b)){2,3}(c)`)
+      .repeatTrail(`(a)(()-[r]->(b)){2,3}(c)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(anon_0)-[r]->(b)")
       .|.argument("anon_0")
@@ -1814,7 +1814,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       )
 
     plan shouldEqual planner.subPlanBuilder()
-      .trail(`(a)(()-[r]->(b)){2,3}(c)`)
+      .repeatTrail(`(a)(()-[r]->(b)){2,3}(c)`)
       .|.filterExpressionOrString("not anon_2 = r", isRepeatTrailUnique("anon_2"))
       .|.expandAll("(anon_1)-[anon_2]->(b)")
       .|.filterExpression(isRepeatTrailUnique("r"))
@@ -1859,7 +1859,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       )
 
     plan shouldEqual planner.subPlanBuilder()
-      .trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(n)-[r]->(m)")
       .|.filter("1 = true")
@@ -1891,7 +1891,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     plan shouldEqual planner.subPlanBuilder()
       .apply()
-      .|.trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .|.repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.|.filterExpression(isRepeatTrailUnique("r"))
       .|.|.expandAll("(n)-[r]->(m)")
       .|.|.filter("cacheN[z.prop] = true")
@@ -1925,7 +1925,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       )
 
     plan shouldEqual planner.subPlanBuilder()
-      .trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(n)-[r]->(m)")
       .|.filter("n.p = 1")
@@ -2264,7 +2264,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       .|.expand("(c)-[anon_0*1..]->(d)")
       .|.allNodeScan("c")
       .filter("size(r) >= 1")
-      .trail(`(a) ((n)-[r]->(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]->(m))+ (b)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(n)-[r]->(m)")
       .|.argument("n")
@@ -2298,7 +2298,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       .filter("r = anon_0")
       .expand("(b)-[anon_0*0..]-(d)")
       .filter("size(r) >= 0")
-      .trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(n)-[r]-(m)")
       .|.argument("n")
@@ -2334,7 +2334,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       .|.expand("(a)-[anon_0*0..]-(b)")
       .|.allNodeScan("a")
       .filter("size(r) >= 0")
-      .trail(`(a) ((n)-[r]-(m))+ (b)`)
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`)
       .|.filterExpression(isRepeatTrailUnique("r"))
       .|.expandAll("(n)-[r]-(m)")
       .|.argument("n")
@@ -2362,7 +2362,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     )
     plan shouldEqual planner.subPlanBuilder()
       .apply()
-      .|.trail(trailParameters)
+      .|.repeatTrail(trailParameters)
       .|.|.filterExpression(isRepeatTrailUnique("r"))
       .|.|.semiApply()
       .|.|.|.expandInto("(m)-[mzRel]-(z)")
@@ -2420,7 +2420,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
         .produceResults("`count(*)`")
         .aggregation(Seq(), Seq("count(*) AS `count(*)`"))
         .filter("d IN h", "all(anon_0 IN range(0, size(c) - 1) WHERE c[anon_0] IN h)")
-        .trail(TrailParameters(
+        .repeatTrail(TrailParameters(
           1,
           Unlimited,
           "d",
@@ -2437,7 +2437,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
         .|.filterExpression(isRepeatTrailUnique("s"))
         .|.expandAll("(g)-[s]-(h)")
         .|.argument("g")
-        .trail(TrailParameters(
+        .repeatTrail(TrailParameters(
           1,
           Unlimited,
           "a",
@@ -2484,7 +2484,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
           "cacheNFromStore[a.prop] = cacheNFromStore[d.prop]",
           "all(anon_3 IN range(0, size(c) - 1) WHERE (c[anon_3]).prop = cacheNFromStore[a.prop])"
         )
-        .trail(TrailParameters(
+        .repeatTrail(TrailParameters(
           1,
           Unlimited,
           "d",
@@ -2540,7 +2540,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     plan shouldEqual planner.subPlanBuilder()
       .filter("all(anon_0 IN range(0, size(r) - 1) WHERE (r[anon_0]).x > cacheN[a.y])")
       .cartesianProduct()
-      .|.trail(trailParameters)
+      .|.repeatTrail(trailParameters)
       .|.|.filterExpression(isRepeatTrailUnique("r"))
       .|.|.expandAll("(c)-[r]->(d)")
       .|.|.argument("c")
@@ -2605,7 +2605,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
     val expected = planner.subPlanBuilder()
       .filterExpression(allInPredicate)
       .cartesianProduct()
-      .|.trail(trailParameters)
+      .|.repeatTrail(trailParameters)
       .|.|.filterExpression(isRepeatTrailUnique("  r@1"))
       .|.|.expandAll("(`  c@0`)-[`  r@1`]->(`  d@2`)")
       .|.|.argument("  c@0")
@@ -2665,7 +2665,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     val expected = planner.subPlanBuilder()
       .produceResults("start", "end", "b", "c")
-      .trail(trailParameters)
+      .repeatTrail(trailParameters)
       .|.filterExpression(isRepeatTrailUnique("p"))
       .|.semiApply()
       .|.|.filter("x.prop > cacheR[p.prop]")
@@ -2867,7 +2867,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     val expected = planner.subPlanBuilder()
       .orderedDistinct(Seq("e"), "e AS e")
-      .trail(trailParameters)
+      .repeatTrail(trailParameters)
       .|.filterExpression(isRepeatTrailUnique("anon_1"))
       .|.expandAll("(n)-[anon_1:R]-(anon_0)")
       .|.filter("NOT n.name = 'Foo'")
@@ -2917,7 +2917,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
 
     val expected = planner.subPlanBuilder()
       .distinct("e AS e")
-      .trail(trailParameters)
+      .repeatTrail(trailParameters)
       .|.filterExpression(isRepeatTrailUnique("anon_0"))
       .|.expandAll("(n)-[anon_0:R]-(anon_1)")
       .|.filter("NOT n.name = 'Foo'")
@@ -3089,7 +3089,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       builder.planBuilder()
         .produceResults("n1", "n2", "r")
         .filter("n2:A")
-        .trail(trailParameters)
+        .repeatTrail(trailParameters)
         .|.filterExpressionOrString(isRepeatTrailUnique("r"), "inner2:A")
         .|.expandAll("(inner1)-[r:R]->(inner2)")
         .|.filter("inner1:A")
@@ -3139,7 +3139,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       builder.planBuilder()
         .produceResults("n1", "n2", "r")
         .filter("anon_0 = n2")
-        .trail(trailParameters)
+        .repeatTrail(trailParameters)
         .|.filterExpressionOrString(isRepeatTrailUnique("r"), "inner2:A")
         .|.expandAll("(inner1)-[r:R]->(inner2)")
         .|.filter("inner1:A")
@@ -3191,7 +3191,7 @@ class QuantifiedPathPatternPlanningIntegrationTest extends CypherFunSuite with L
       builder.planBuilder()
         .produceResults("n1", "n2", "r")
         .filter("n2:A")
-        .trail(trailParameters)
+        .repeatTrail(trailParameters)
         .|.filterExpressionOrString(isRepeatTrailUnique("r"), "inner2:A")
         .|.expandAll("(inner1)-[r:R]->(inner2)")
         .|.filter("inner1:A")

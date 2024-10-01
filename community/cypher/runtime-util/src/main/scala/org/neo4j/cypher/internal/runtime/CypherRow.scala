@@ -26,6 +26,7 @@ import org.neo4j.memory.HeapEstimator
 import org.neo4j.memory.HeapEstimator.shallowSizeOfInstance
 import org.neo4j.memory.HeapEstimator.shallowSizeOfObjectArray
 import org.neo4j.memory.Measurable
+import org.neo4j.util.CalledFromGeneratedCode
 import org.neo4j.values.AnyValue
 import org.neo4j.values.AnyValueWriter
 import org.neo4j.values.Equality
@@ -37,7 +38,8 @@ import org.neo4j.values.virtual.VirtualNodeValue
 import org.neo4j.values.virtual.VirtualRelationshipValue
 
 import scala.collection.mutable
-import scala.runtime.ScalaRunTime
+import scala.reflect.ClassTag
+import scala.util.hashing.MurmurHash3
 
 object CypherRow {
   def empty: CypherRow = apply()
@@ -51,21 +53,45 @@ object CypherRow {
   def apply(m: mutable.Map[String, AnyValue] = MutableMaps.empty): MapCypherRow = new MapCypherRow(m, null)
 }
 
-case class ResourceLinenumber(filename: String, linenumber: Long, last: Boolean = false) extends AnyValue {
-  override protected def equalTo(other: Any): Boolean = ScalaRunTime.equals(other)
-  override protected def computeHash(): Int = ScalaRunTime._hashCode(ResourceLinenumber.this)
+case class RuntimeMetadataValue(value: Measurable) extends AnyValue {
   override def writeTo[E <: Exception](writer: AnyValueWriter[E]): Unit = throw new UnsupportedOperationException()
   override def ternaryEquals(other: AnyValue): Equality = throw new UnsupportedOperationException()
   override def map[T](mapper: ValueMapper[T]): T = throw new UnsupportedOperationException()
-  override def getTypeName: String = "ResourceLinenumber"
-
-  override def estimatedHeapUsage(): Long =
-    ResourceLinenumber.SHALLOW_SIZE // NOTE: The filename string is expected to be repeated so we do not count it here
   override def valueRepresentation(): ValueRepresentation = ValueRepresentation.UNKNOWN
+  override protected def computeHash(): Int = MurmurHash3.productHash(this)
+
+  override protected def equalTo(other: Any): Boolean = other match {
+    case RuntimeMetadataValue(otherValue) => value == otherValue
+    case _                                => false
+  }
+  override def getTypeName: String = "RuntimeMetadataValue"
+  override def estimatedHeapUsage(): Long = RuntimeMetadataValue.SHALLOW_SIZE + value.estimatedHeapUsage()
+}
+
+object RuntimeMetadataValue {
+  final val SHALLOW_SIZE: Long = HeapEstimator.shallowSizeOfInstance(classOf[RuntimeMetadataValue])
+
+  def extract[A](value: AnyValue)(implicit ct: ClassTag[A]): A =
+    value match {
+      case RuntimeMetadataValue(value: A) => value
+      case RuntimeMetadataValue(value) => throw new IllegalStateException(
+          s"Runtime metadata value extraction failed; expected ${ct.runtimeClass.getSimpleName}, found ${value.getClass.getSimpleName}."
+        )
+      case _ =>
+        throw new IllegalStateException(s"Runtime metadata value extraction failed; value was ${value.getTypeName}")
+    }
+}
+
+case class ResourceLinenumber(filename: String, linenumber: Long, last: Boolean = false) extends Measurable {
+  def estimatedHeapUsage(): Long = ResourceLinenumber.SHALLOW_SIZE
 }
 
 object ResourceLinenumber {
   final val SHALLOW_SIZE: Long = HeapEstimator.shallowSizeOfInstance(classOf[ResourceLinenumber])
+
+  @CalledFromGeneratedCode
+  def fromMetadata(value: AnyValue): ResourceLinenumber =
+    RuntimeMetadataValue.extract[ResourceLinenumber](value)
 }
 
 trait CypherRow extends ReadWriteRow with Measurable {

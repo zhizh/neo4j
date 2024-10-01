@@ -670,7 +670,7 @@ object LogicalPlanToPlanBuilderString {
       case SelectOrAntiSemiApply(_, _, predicate) => wrapInQuotations(expressionStringifier(predicate))
       case LetSelectOrAntiSemiApply(_, _, idName, predicate) =>
         wrapInQuotationsAndMkString(Seq(idName.name, expressionStringifier(predicate)))
-      case Trail(
+      case RepeatTrail(
           _,
           _,
           repetition,

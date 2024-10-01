@@ -140,6 +140,7 @@ import org.neo4j.cypher.internal.runtime.spec.tests.RelationshipLockingUniqueInd
 import org.neo4j.cypher.internal.runtime.spec.tests.RelationshipTypeScanTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RemoveDynamicLabelsTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RemoveLabelsTestBase
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RightOuterHashJoinTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RollupApplyTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RunQueryAtTestBase
@@ -172,7 +173,6 @@ import org.neo4j.cypher.internal.runtime.spec.tests.SubtractionLabelScanTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.Top1WithTiesTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.TopTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.TrailProfileRowsTestBase
-import org.neo4j.cypher.internal.runtime.spec.tests.TrailTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.TransactionApplyTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.TransactionForeachDbHitsTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.TransactionForeachMemoryManagementTestBase
@@ -433,8 +433,8 @@ class InterpretedRelationshipTypeScanTest
 class InterpretedUnionRelationshipTypeTest
     extends UnionRelationshipTypeTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 
-class InterpretedTrailTest
-    extends TrailTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
+class InterpretedRepeatTrailTest
+    extends RepeatTrailTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
     with OrderedTrailTestBase[CommunityRuntimeContext]
 
 //UPDATING

@@ -39,9 +39,9 @@ import org.neo4j.cypher.internal.logical.plans.Expand.ExpandAll
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpandInto
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpansionMode
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.Selection
 import org.neo4j.cypher.internal.logical.plans.Selection.LabelAndRelTypeInfo
-import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.VarExpand
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
@@ -95,7 +95,7 @@ case class TrailToVarExpandRewriter(
 ) extends Rewriter with TopDownMergeableRewriter {
 
   private def createVarLengthExpand(
-    trail: Trail,
+    trail: RepeatTrail,
     expand: Expand,
     predicates: Seq[Expression],
     quantifier: VarPatternLength,
@@ -167,7 +167,7 @@ case class TrailToVarExpandRewriter(
   override def apply(input: AnyRef): AnyRef = instance.apply(input)
 
   private def createVarExpand(
-    trail: Trail,
+    trail: RepeatTrail,
     trailExpand: Expand,
     trailQuantifier: VarPatternLength,
     inlinedPredicates: InlinedPredicates,
@@ -206,7 +206,7 @@ case class TrailToVarExpandRewriter(
    * previously bound relationship variables that are not provably disjoint.
    */
   private def maybeAddRelUniquenessPredicates(
-    trail: Trail,
+    trail: RepeatTrail,
     varExpandRel: LogicalVariable,
     source: LogicalPlan
   ): LogicalPlan = {
@@ -226,7 +226,7 @@ case class TrailToVarExpandRewriter(
    * See [[maybeAddRelUniquenessPredicates()]].
    */
   private def maybeAddGroupRelUniquenessPredicates(
-    trail: Trail,
+    trail: RepeatTrail,
     varExpandRel: LogicalVariable,
     source: LogicalPlan
   ): LogicalPlan =
@@ -277,9 +277,9 @@ object TrailToVarExpandRewriter {
   object RewritableTrailToVarLengthExpand {
 
     def unapply(plan: LogicalPlan)
-      : Option[(Trail, Expand, Seq[Expression], VarPatternLength, Option[VariableGrouping])] = {
+      : Option[(RepeatTrail, Expand, Seq[Expression], VarPatternLength, Option[VariableGrouping])] = {
       plan match {
-        case trail @ Trail(
+        case trail @ RepeatTrail(
             _,
             RewritableTrailRhs(
               expand,

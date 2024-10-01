@@ -38,10 +38,10 @@ import org.neo4j.cypher.internal.logical.plans.LogicalPlans
 import org.neo4j.cypher.internal.logical.plans.OrderedUnion
 import org.neo4j.cypher.internal.logical.plans.PathPropagatingBFS
 import org.neo4j.cypher.internal.logical.plans.RepeatOptions
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.SingleFromRightLogicalPlan
 import org.neo4j.cypher.internal.logical.plans.SubqueryForeach
-import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
 import org.neo4j.cypher.internal.logical.plans.TriadicSelection
@@ -260,7 +260,7 @@ object CandidateListFinder {
                   _: BidirectionalRepeatTrail |
                   _: PathPropagatingBFS |
                   _: RollUpApply |
-                  _: Trail |
+                  _: RepeatTrail |
                   _: TriadicSelection =>
                   assertHasReadOnlyRHS(plan)
                 case _: ForeachApply =>

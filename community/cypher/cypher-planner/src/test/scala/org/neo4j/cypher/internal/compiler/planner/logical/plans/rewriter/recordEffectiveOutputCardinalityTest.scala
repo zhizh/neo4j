@@ -342,7 +342,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
     )
 
     val initial = new LogicalPlanBuilder(false)
-      .trail(trailParameters).withCardinality(20)
+      .repeatTrail(trailParameters).withCardinality(20)
       .|.expandAll("(n)-[r]->(m)").withCardinality(expandCardinality)
       .|.argument("n").withCardinality(1)
       .allNodeScan("u").withCardinality(lhsCardinality)
@@ -353,7 +353,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
     val expectedRHS = (0 until upperBound).map(Math.pow(expandCardinality, _)).sum * lhsCardinality
     // THEN
     val expected = new LogicalPlanBuilder(false)
-      .trail(trailParameters).withEffectiveCardinality(20)
+      .repeatTrail(trailParameters).withEffectiveCardinality(20)
       .|.expandAll("(n)-[r]->(m)").withEffectiveCardinality(expandCardinality * expectedRHS)
       .|.argument("n").withEffectiveCardinality(expectedRHS)
       .allNodeScan("u").withEffectiveCardinality(lhsCardinality)
@@ -385,7 +385,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
     )
 
     val initial = new LogicalPlanBuilder(false)
-      .trail(trailParameters).withCardinality(20)
+      .repeatTrail(trailParameters).withCardinality(20)
       .|.expandAll("(n)-[r]->(m)").withCardinality(expandCardinality)
       .|.argument("n").withCardinality(1)
       .allNodeScan("u").withCardinality(lhsCardinality)
@@ -397,7 +397,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
       (0 until RepetitionCardinalityModel.MAX_VAR_LENGTH).map(Math.pow(expandCardinality, _)).sum * lhsCardinality
     // THEN
     val expected = new LogicalPlanBuilder(false)
-      .trail(trailParameters).withEffectiveCardinality(20)
+      .repeatTrail(trailParameters).withEffectiveCardinality(20)
       .|.expandAll("(n)-[r]->(m)").withEffectiveCardinality(expandCardinality * expectedRHS)
       .|.argument("n").withEffectiveCardinality(expectedRHS)
       .allNodeScan("u").withEffectiveCardinality(lhsCardinality)
@@ -489,7 +489,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
 
     val initial = new LogicalPlanBuilder(false)
       .limit(limitCount).withCardinality(limitCount)
-      .trail(trailParameters).withCardinality(limitCount / reductionFactor)
+      .repeatTrail(trailParameters).withCardinality(limitCount / reductionFactor)
       .|.expandAll("(n)-[r]->(m)").withCardinality(expandCardinality)
       .|.argument("n").withCardinality(1)
       .allNodeScan("u").withCardinality(lhsCardinality)
@@ -502,7 +502,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
     // THEN
     val expected = new LogicalPlanBuilder(false)
       .limit(limitCount).withEffectiveCardinality(limitCount)
-      .trail(trailParameters).withEffectiveCardinality(limitCount)
+      .repeatTrail(trailParameters).withEffectiveCardinality(limitCount)
       .|.expandAll("(n)-[r]->(m)").withEffectiveCardinality(expandCardinality * expectedRHS)
       .|.argument("n").withEffectiveCardinality(expectedRHS)
       .allNodeScan("u").withEffectiveCardinality(expectedLHS)
@@ -542,7 +542,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
 
     val initial = new LogicalPlanBuilder(false)
       .limit(limitCount).withCardinality(limitCount)
-      .trail(trailParameters).withCardinality(trailCardinality)
+      .repeatTrail(trailParameters).withCardinality(trailCardinality)
       .|.expandAll("(n)-[r]->(m)").withCardinality(expandCardinality)
       .|.argument("n").withCardinality(1)
       .allNodeScan("u").withCardinality(lhsCardinality)
@@ -555,7 +555,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
     // THEN
     val expected = new LogicalPlanBuilder(false)
       .limit(limitCount).withEffectiveCardinality(limitCount)
-      .trail(trailParameters).withEffectiveCardinality(trailCardinality * reductionFactor)
+      .repeatTrail(trailParameters).withEffectiveCardinality(trailCardinality * reductionFactor)
       .|.expandAll("(n)-[r]->(m)").withEffectiveCardinality(expandCardinality * expectedRHS)
       .|.argument("n").withEffectiveCardinality(expectedRHS)
       .allNodeScan("u").withEffectiveCardinality(lhsCardinality)
@@ -600,7 +600,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
 
     val initial = new LogicalPlanBuilder(false)
       .limit(limitCount).withCardinality(limitCount)
-      .trail(trailParameters).withCardinality(trailCardinality)
+      .repeatTrail(trailParameters).withCardinality(trailCardinality)
       .|.expandAll("(n)-[r]->(m)").withCardinality(expandCardinality)
       .|.argument("n").withCardinality(1)
       .allNodeScan("u").withCardinality(lhsCardinality)
@@ -615,7 +615,7 @@ class recordEffectiveOutputCardinalityTest extends CypherFunSuite with LogicalPl
     // THEN
     val expected = new LogicalPlanBuilder(false)
       .limit(limitCount).withEffectiveCardinality(limitCount)
-      .trail(trailParameters).withEffectiveCardinality(limitCount)
+      .repeatTrail(trailParameters).withEffectiveCardinality(limitCount)
       .|.expandAll("(n)-[r]->(m)").withEffectiveCardinality(expandCardinality * expectedRHS)
       .|.argument("n").withEffectiveCardinality(expectedRHS)
       .allNodeScan("u").withEffectiveCardinality(1)

@@ -2793,10 +2793,10 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
   )
 
   testPlan(
-    "trail",
+    "repeatTrail",
     new TestPlanBuilder()
       .produceResults("me", "you", "a", "b", "r")
-      .trail(TrailParameters(
+      .repeatTrail(TrailParameters(
         min = 0,
         max = Limited(2),
         start = "me",

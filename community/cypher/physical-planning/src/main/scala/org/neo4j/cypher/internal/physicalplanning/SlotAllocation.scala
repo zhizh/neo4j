@@ -114,6 +114,7 @@ import org.neo4j.cypher.internal.logical.plans.RelationshipIndexLeafPlan
 import org.neo4j.cypher.internal.logical.plans.RelationshipLogicalLeafPlan
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.RunQueryAt
@@ -137,7 +138,6 @@ import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.SubqueryForeach
 import org.neo4j.cypher.internal.logical.plans.Top
 import org.neo4j.cypher.internal.logical.plans.Top1WithTies
-import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
 import org.neo4j.cypher.internal.logical.plans.TriadicBuild
@@ -396,10 +396,10 @@ class SingleQuerySlotAllocator private[physicalplanning] (
             case _                                             => false
           }
           val conditionalApplyPlan = if (isConditionalApplyPlan) current.id else argument.conditionalApplyPlan
-          val trailPlan = if (current.isInstanceOf[Trail]) current.id else argument.trailPlan
+          val trailPlan = if (current.isInstanceOf[RepeatTrail]) current.id else argument.trailPlan
           if (allocateArgumentSlots) {
             current match {
-              case _: Trail =>
+              case _: RepeatTrail =>
                 // Trail requires 2 arguments: one per incoming LHS row (regular ApplyPlan case), and one per RHS invocation (QPP repetition)
                 argumentSlots.newNestedArgument(current.id)
                 argumentSlots.newArgument(current.id)
@@ -1303,7 +1303,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
 
         breakingPolicy.invoke(lp, rhs, argument.slotConfiguration, applyPlans)
 
-      case _: Trail =>
+      case _: RepeatTrail =>
         recordArgument(lp)
         breakingPolicy.invoke(lp, rhs, argument.slotConfiguration, applyPlans)
 
@@ -1334,7 +1334,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
           case _             => lhs.newReference(variableName, true, CTAny)
         }
 
-      case Trail(_, _, _, _, end, innerStart, _, groupNodes, groupRelationships, _, _, _, _) =>
+      case RepeatTrail(_, _, _, _, end, innerStart, _, groupNodes, groupRelationships, _, _, _, _) =>
         // The slot for the per-repetition inner node variable of Trail needs to be available as an argument on the RHS of the Trail
         // so we allocate it on the LHS (even though its value will not be needed after the Trail is done).
         // Additionally, to avoid copying rows emitted by Trail, all Trail slots are allocated on the LHS.

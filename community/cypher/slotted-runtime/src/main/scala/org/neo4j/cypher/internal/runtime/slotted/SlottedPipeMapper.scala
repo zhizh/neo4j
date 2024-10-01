@@ -126,6 +126,7 @@ import org.neo4j.cypher.internal.logical.plans.Prober
 import org.neo4j.cypher.internal.logical.plans.ProduceResult
 import org.neo4j.cypher.internal.logical.plans.Projection
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.SelectOrAntiSemiApply
 import org.neo4j.cypher.internal.logical.plans.SelectOrSemiApply
@@ -147,7 +148,6 @@ import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.SubtractionNodeByLabelsScan
 import org.neo4j.cypher.internal.logical.plans.Top
 import org.neo4j.cypher.internal.logical.plans.Top1WithTies
-import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionConcurrency
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
@@ -292,6 +292,8 @@ import org.neo4j.cypher.internal.runtime.slotted.pipes.OrderedDistinctSlottedPip
 import org.neo4j.cypher.internal.runtime.slotted.pipes.OrderedDistinctSlottedPrimitivePipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.OrderedDistinctSlottedSinglePrimitivePipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.OrderedUnionSlottedPipe
+import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe
+import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.UniqueRelationships
 import org.neo4j.cypher.internal.runtime.slotted.pipes.RollUpApplySlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.SelectOrSemiApplySlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.ShortestPathSlottedPipe
@@ -305,7 +307,6 @@ import org.neo4j.cypher.internal.runtime.slotted.pipes.SlottedSetRelationshipPro
 import org.neo4j.cypher.internal.runtime.slotted.pipes.SortSlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.StatefulShortestPathSlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.SubtractionNodesByLabelsScanSlottedPipe
-import org.neo4j.cypher.internal.runtime.slotted.pipes.TrailSlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.TransactionApplySlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.TransactionForeachSlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.UndirectedAllRelationshipsScanSlottedPipe
@@ -1949,7 +1950,7 @@ class SlottedPipeMapper(
       case AssertSameRelationship(relationship, _, _) =>
         AssertSameRelationshipSlottedPipe(lhs, rhs, relationship.name, slots(relationship))(id = id)
 
-      case Trail(
+      case RepeatTrail(
           _,
           _,
           repetition,
@@ -1966,20 +1967,22 @@ class SlottedPipeMapper(
         ) =>
         val rhsSlots = slotConfigs(rhs.id)
         val lhsSlots = slotConfigs(lhs.id)
-        TrailSlottedPipe(
+        RepeatSlottedPipe(
           lhs,
           rhs,
           repetition,
           slots(start),
           slots.getLongOffsetFor(end),
           rhsSlots.getLongOffsetFor(innerStart),
-          trailStateMetadataSlot = rhsSlots.getMetaDataOffsetFor(SlotAllocation.TRAIL_STATE_METADATA_KEY, id),
           rhsSlots(innerEnd),
           groupNodes.map(n => GroupSlot(rhsSlots(n.singleton), slots(n.group))).toArray,
           groupRelationships.map(r => GroupSlot(rhsSlots(r.singleton), slots(r.group))).toArray,
-          innerRelationships.map(r => rhsSlots(r)).toArray,
-          previouslyBoundRelationships.map(r => lhsSlots(r)).toArray,
-          previouslyBoundRelationshipGroups.map(r => lhsSlots(r)).toArray,
+          UniqueRelationships(
+            rhsSlots.getMetaDataOffsetFor(SlotAllocation.TRAIL_STATE_METADATA_KEY, id),
+            innerRelationships.map(r => rhsSlots(r)).toArray,
+            previouslyBoundRelationships.map(r => lhsSlots(r)).toArray,
+            previouslyBoundRelationshipGroups.map(r => lhsSlots(r)).toArray
+          ),
           slots,
           rhsSlots,
           argumentSize,

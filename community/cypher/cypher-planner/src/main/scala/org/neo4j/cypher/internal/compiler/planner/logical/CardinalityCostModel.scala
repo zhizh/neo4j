@@ -99,6 +99,7 @@ import org.neo4j.cypher.internal.logical.plans.PartitionedScanPlan
 import org.neo4j.cypher.internal.logical.plans.ProcedureCall
 import org.neo4j.cypher.internal.logical.plans.ProjectEndpoints
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.Selection
 import org.neo4j.cypher.internal.logical.plans.SingleFromRightLogicalPlan
@@ -106,7 +107,6 @@ import org.neo4j.cypher.internal.logical.plans.Skip
 import org.neo4j.cypher.internal.logical.plans.Sort
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.SubtractionNodeByLabelsScan
-import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.UndirectedAllRelationshipsScan
 import org.neo4j.cypher.internal.logical.plans.UndirectedRelationshipByElementIdSeek
 import org.neo4j.cypher.internal.logical.plans.UndirectedRelationshipByIdSeek
@@ -281,7 +281,7 @@ case class CardinalityCostModel(executionModel: ExecutionModel, cancellationChec
         val rhsExecutions = batchSize.numBatchesFor(lhsCardinality)
         lhsCost + rhsExecutions * rhsCost
 
-      case t: Trail =>
+      case t: RepeatTrail =>
         val lhsCardinality = effectiveCardinalities.lhs
         val rhsCardinality = effectiveCardinalities.rhs
 
@@ -713,7 +713,7 @@ object CardinalityCostModel {
       // ForeachApply is an ApplyPlan, but only yields LHS rows, therefore we match this before matching ApplyPlan
       (parentWorkReduction, WorkReduction.NoReduction)
 
-    case t: Trail =>
+    case t: RepeatTrail =>
       // Trail is an ApplyPlan, but nestedLoopChildrenWorkReduction makes some assumptions that don't hold for Trail
       trailChildrenWorkReduction(t, parentWorkReduction, cardinalities)
 
@@ -841,7 +841,7 @@ object CardinalityCostModel {
    * which is not true for Trail.
    */
   private def trailChildrenWorkReduction(
-    plan: Trail,
+    plan: RepeatTrail,
     parentWorkReduction: WorkReduction,
     cardinalities: Cardinalities
   ): (WorkReduction, WorkReduction) = {

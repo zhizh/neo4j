@@ -128,6 +128,7 @@ import org.neo4j.cypher.internal.logical.plans.RelationshipIndexLeafPlan
 import org.neo4j.cypher.internal.logical.plans.RelationshipIndexSeekLeafPlan
 import org.neo4j.cypher.internal.logical.plans.RelationshipLogicalLeafPlan
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.SetLabels
@@ -140,7 +141,6 @@ import org.neo4j.cypher.internal.logical.plans.SimulatedExpand
 import org.neo4j.cypher.internal.logical.plans.SimulatedNodeScan
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.SubtractionNodeByLabelsScan
-import org.neo4j.cypher.internal.logical.plans.Trail
 import org.neo4j.cypher.internal.logical.plans.TransactionApply
 import org.neo4j.cypher.internal.logical.plans.TransactionForeach
 import org.neo4j.cypher.internal.logical.plans.TriadicBuild
@@ -546,7 +546,7 @@ object VariableRefRewriter extends Rewriter {
           p.copy(idName = varRef(node))(SameId(p.id))
         case p: StatefulShortestPath =>
           p.copy(sourceNode = varRef(p.sourceNode), targetNode = varRef(p.targetNode))(SameId(p.id))
-        case p @ Trail(_, _, _, start, end, iStart, iEnd, _, _, iRels, pRels, pRelGr, _) =>
+        case p @ RepeatTrail(_, _, _, start, end, iStart, iEnd, _, _, iRels, pRels, pRelGr, _) =>
           p.copy(
             start = varRef(start),
             end = varRef(end),
