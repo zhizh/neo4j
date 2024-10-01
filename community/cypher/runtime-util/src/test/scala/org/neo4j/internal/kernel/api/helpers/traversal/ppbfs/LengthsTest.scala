@@ -23,57 +23,61 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
 class LengthsTest extends CypherFunSuite {
 
-  test("set & get") {
+  test("seen and validated in trail-mode") {
     val lengths = Lengths.trailMode()
-
-    Lengths.Type.values().foreach { lengthType =>
-      lengths.set(1, lengthType)
-      lengths.get(1, lengthType) shouldBe true
-    }
+    lengths.markAsSeen(1)
+    lengths.seenAt(1) shouldBe true
+    lengths.validatedAt(1) shouldBe false
+    lengths.markAsValidated(1)
+    lengths.seenAt(1) shouldBe true
+    lengths.validatedAt(1) shouldBe true
   }
 
-  test("clear") {
-    val lengths = Lengths.trailMode()
-
-    Lengths.Type.values().foreach { lengthType =>
-      lengths.set(1, lengthType)
-      lengths.clear(1, lengthType)
-      lengths.get(1, lengthType) shouldBe false
-    }
+  test("seen and validated in walk-mode") {
+    val lengths = Lengths.walkMode()
+    lengths.markAsSeen(1)
+    lengths.seenAt(1) shouldBe true
+    lengths.validatedAt(1) shouldBe true
+    lengths.markAsValidated(1)
+    lengths.seenAt(1) shouldBe true
+    lengths.validatedAt(1) shouldBe true
   }
 
-  test("next") {
+  test("clearSeen in trail mode") {
     val lengths = Lengths.trailMode()
-
-    Lengths.Type.values().foreach { lengthType =>
-      lengths.next(0, lengthType) shouldBe Lengths.NONE
-
-      lengths.set(1, lengthType)
-      lengths.set(3, lengthType)
-
-      lengths.next(1, lengthType) shouldBe 1
-      lengths.next(2, lengthType) shouldBe 3
-    }
+    lengths.markAsSeen(1)
+    lengths.clearSeen(1)
+    lengths.seenAt(1) shouldBe false
   }
 
-  test("min") {
-    val lengths = Lengths.trailMode()
-
-    Lengths.Type.values().foreach { lengthType =>
-      lengths.set(1, lengthType)
-      lengths.set(3, lengthType)
-
-      lengths.min(lengthType) shouldBe 1
-    }
+  test("clearSeen in walk mode") {
+    val lengths = Lengths.walkMode()
+    lengths.markAsSeen(1)
+    lengths.clearSeen(1)
+    lengths.seenAt(1) shouldBe false
   }
 
-  test("isEmpty") {
+  test("next trail mode") {
     val lengths = Lengths.trailMode()
 
-    Lengths.Type.values().foreach { lengthType =>
-      lengths.isEmpty(lengthType) shouldBe true
-      lengths.set(1, lengthType)
-      lengths.isEmpty(lengthType) shouldBe false
-    }
+    lengths.nextSeen(0) shouldBe Lengths.NONE
+
+    lengths.markAsSeen(1)
+    lengths.markAsSeen(3)
+
+    lengths.nextSeen(1) shouldBe 1
+    lengths.nextSeen(2) shouldBe 3
+  }
+
+  test("next walk mode") {
+    val lengths = Lengths.walkMode()
+
+    lengths.nextSeen(0) shouldBe Lengths.NONE
+
+    lengths.markAsSeen(1)
+    lengths.markAsSeen(3)
+
+    lengths.nextSeen(1) shouldBe 1
+    lengths.nextSeen(2) shouldBe 3
   }
 }

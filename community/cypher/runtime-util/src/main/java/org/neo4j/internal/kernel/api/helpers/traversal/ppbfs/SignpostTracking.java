@@ -183,8 +183,8 @@ public interface SignpostTracking {
                     }
                 }
 
-                if (!signpost.isVerifiedAtLength(sourceLength)) {
-                    signpost.setVerified(sourceLength);
+                if (!signpost.isValidatedAtLength(sourceLength)) {
+                    signpost.validate(sourceLength);
                     if (!signpost.forwardNode.validatedAtLength(sourceLength)) {
                         signpost.forwardNode.setValidatedAtLength(sourceLength, stack.dgLength() - sourceLength);
                     }

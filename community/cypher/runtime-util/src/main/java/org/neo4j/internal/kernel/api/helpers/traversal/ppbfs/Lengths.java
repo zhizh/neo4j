@@ -28,30 +28,19 @@ import org.neo4j.memory.Measurable;
 public interface Lengths extends Measurable {
     int NONE = -1;
 
-    enum Type {
-        Source(0),
-        ConfirmedSource(1);
+    boolean validatedAt(int length);
 
-        private final int offset;
+    boolean seenAt(int length);
 
-        Type(int offset) {
-            this.offset = offset;
-        }
-    }
+    void markAsSeen(int length);
 
-    boolean get(int index, TrailModeLengths.Type type);
+    void markAsValidated(int length);
 
-    void set(int index, TrailModeLengths.Type type);
+    void clearSeen(int index);
 
-    void clear(int index, TrailModeLengths.Type type);
+    int maxSeen();
 
-    int max(TrailModeLengths.Type type);
-
-    int next(int start, TrailModeLengths.Type type);
-
-    int min(TrailModeLengths.Type type);
-
-    boolean isEmpty(TrailModeLengths.Type type);
+    int nextSeen(int start);
 
     boolean isEmpty();
 
@@ -74,36 +63,70 @@ public interface Lengths extends Measurable {
      * <p>
      * Implemented by interleaving multiple indexes into a single bitset, in order to conserve memory (we create many of these).
      */
-    class TrailModeLengths extends BitSet implements Lengths {
+    final class TrailModeLengths extends BitSet implements Lengths {
+        private enum Type {
+            Source(0),
+            ConfirmedSource(1);
+
+            private final int offset;
+
+            Type(int offset) {
+                this.offset = offset;
+            }
+        }
+
         private static final int FACTOR = Type.values().length;
 
         private static final long SHALLOW_SIZE =
                 HeapEstimator.shallowSizeOfInstance(TrailModeLengths.class) + HeapEstimator.sizeOfLongArray(1);
 
-        @Override
-        public boolean get(int index, Type type) {
+        private boolean get(int index, Type type) {
             return get(index * FACTOR + type.offset);
         }
 
         @Override
-        public void set(int index, Type type) {
+        public boolean validatedAt(int length) {
+            return get(length, Type.ConfirmedSource);
+        }
+
+        @Override
+        public boolean seenAt(int length) {
+            return get(length, Type.Source);
+        }
+
+        private void set(int index, Type type) {
             set(index * FACTOR + type.offset);
         }
 
         @Override
-        public void clear(int index, Type type) {
+        public void markAsSeen(int length) {
+            set(length, Type.Source);
+        }
+
+        @Override
+        public void markAsValidated(int length) {
+            set(length, Type.ConfirmedSource);
+        }
+
+        @Override
+        public void clearSeen(int index) {
+            clear(index, Type.Source);
+        }
+
+        private void clear(int index, Type type) {
             clear(index * FACTOR + type.offset);
         }
 
         @Override
-        public int max(Type type) {
-            return stream(type).max().orElse(NONE);
+        public int maxSeen() {
+            return stream(Type.Source).max().orElse(NONE);
         }
 
         @Override
-        public int next(int start, Type type) {
-            for (int i = nextSetBit(start * FACTOR + type.offset); i != -1; i = nextSetBit(i + 1)) {
-                if (i % FACTOR == type.offset) {
+        public int nextSeen(int start) {
+            int offset = Type.Source.offset;
+            for (int i = nextSetBit(start * FACTOR + offset); i != -1; i = nextSetBit(i + 1)) {
+                if (i % FACTOR == offset) {
                     return i / FACTOR;
                 }
             }
@@ -111,23 +134,9 @@ public interface Lengths extends Measurable {
         }
 
         @Override
-        public int min(Type type) {
-            return next(0, type);
-        }
-
-        @Override
-        public boolean isEmpty(Type type) {
-            if (isEmpty()) {
-                return true;
-            }
-
-            return min(type) == NONE;
-        }
-
-        @Override
         public String renderSourceLengths() {
-            return stream(Lengths.Type.Source)
-                    .mapToObj(i -> i + (get(i, Lengths.Type.ConfirmedSource) ? "✓" : "?"))
+            return stream(Type.Source)
+                    .mapToObj(i -> i + (get(i, Type.ConfirmedSource) ? "✓" : "?"))
                     .collect(Collectors.joining(",", "{", "}"));
         }
 
@@ -146,50 +155,46 @@ public interface Lengths extends Measurable {
         }
     }
 
+    /**
+     * As TrailModeLengths but does not track relationship uniqueness
+     */
     class WalkModeLengths extends BitSet implements Lengths {
 
         private static final long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(WalkModeLengths.class);
 
         @Override
-        public boolean get(int index, Type type) {
-            return get(index);
+        public boolean validatedAt(int length) {
+            return get(length);
         }
 
         @Override
-        public void set(int index, Type type) {
-            if (type == Type.ConfirmedSource) {
-                return;
-            }
-            set(index);
-        }
-
-        @Override
-        public void clear(int index, Type type) {
-            if (type == Type.ConfirmedSource) {
-                assert false : "Should not clear ConfirmedSource for NonTrackingLengths";
-                return;
-            }
+        public void clearSeen(int index) {
             clear(index);
         }
 
         @Override
-        public int max(Type type) {
+        public boolean seenAt(int length) {
+            return get(length);
+        }
+
+        @Override
+        public void markAsSeen(int length) {
+            set(length);
+        }
+
+        @Override
+        public void markAsValidated(int length) {
+            assert validatedAt(length);
+        }
+
+        @Override
+        public int maxSeen() {
             return stream().max().orElse(NONE);
         }
 
         @Override
-        public int next(int start, Type type) {
+        public int nextSeen(int start) {
             return nextSetBit(start);
-        }
-
-        @Override
-        public int min(Type type) {
-            return next(0, type);
-        }
-
-        @Override
-        public boolean isEmpty(Type type) {
-            return isEmpty();
         }
 
         @Override

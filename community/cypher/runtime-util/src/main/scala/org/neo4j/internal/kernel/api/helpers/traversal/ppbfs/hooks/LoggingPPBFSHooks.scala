@@ -103,7 +103,7 @@ class LoggingPPBFSHooks(minLevel: Level) extends PPBFSHooks {
     )
   }
 
-  override def setVerified(sourceSignpost: TwoWaySignpost, sourceLength: Int): Unit = {
+  override def setValidated(sourceSignpost: TwoWaySignpost, sourceLength: Int): Unit = {
     log(
       Debug,
       "sourceLength" -> sourceLength,

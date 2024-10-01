@@ -60,7 +60,7 @@ public abstract sealed class TwoWaySignpost implements Measurable {
 
     protected TwoWaySignpost(NodeState prevNode, NodeState forwardNode, int sourceLength, Lengths lengths) {
         this(prevNode, forwardNode, lengths);
-        this.lengths.set(sourceLength, Lengths.Type.Source);
+        this.lengths.markAsSeen(sourceLength);
     }
 
     public static RelSignpost fromRelExpansion(
@@ -154,12 +154,12 @@ public abstract sealed class TwoWaySignpost implements Measurable {
     }
 
     public void addSourceLength(int sourceLength) {
-        this.lengths.set(sourceLength, Lengths.Type.Source);
+        this.lengths.markAsSeen(sourceLength);
         prevNode.globalState.hooks.addSourceLength(this, sourceLength);
     }
 
-    public boolean hasSourceLength(int sourceLength) {
-        return lengths.get(sourceLength, Lengths.Type.Source);
+    public boolean seenAt(int sourceLength) {
+        return lengths.seenAt(sourceLength);
     }
 
     /**
@@ -173,17 +173,17 @@ public abstract sealed class TwoWaySignpost implements Measurable {
 
     public void pruneSourceLength(int sourceLength) {
         prevNode.globalState.hooks.pruneSourceLength(this, sourceLength);
-        this.lengths.clear(sourceLength, Lengths.Type.Source);
+        this.lengths.clearSeen(sourceLength);
         this.forwardNode.synchronizeLengthAfterPrune(sourceLength);
     }
 
-    public void setVerified(int sourceLength) {
-        prevNode.globalState.hooks.setVerified(this, sourceLength);
-        this.lengths.set(sourceLength, Lengths.Type.ConfirmedSource);
+    public void validate(int sourceLength) {
+        prevNode.globalState.hooks.setValidated(this, sourceLength);
+        this.lengths.markAsValidated(sourceLength);
     }
 
-    public boolean isVerifiedAtLength(int sourceLength) {
-        return lengths.get(sourceLength, Lengths.Type.ConfirmedSource);
+    public boolean isValidatedAtLength(int sourceLength) {
+        return lengths.validatedAt(sourceLength);
     }
 
     /** A signpost that points across a relationship traversal */

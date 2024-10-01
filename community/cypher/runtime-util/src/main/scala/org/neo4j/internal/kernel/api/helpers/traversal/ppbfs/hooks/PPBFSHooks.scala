@@ -85,7 +85,7 @@ abstract class PPBFSHooks {
 
   // Signpost
   def pruneSourceLength(sourceSignpost: TwoWaySignpost, lengthFromSource: Int): Unit = {}
-  def setVerified(sourceSignpost: TwoWaySignpost, lengthFromSource: Int): Unit = {}
+  def setValidated(sourceSignpost: TwoWaySignpost, lengthFromSource: Int): Unit = {}
   def addSourceLength(signpost: TwoWaySignpost, sourceLength: Int): Unit = {}
 
   // BFSExpander

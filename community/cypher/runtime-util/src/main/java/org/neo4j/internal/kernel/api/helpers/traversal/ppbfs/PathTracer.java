@@ -104,7 +104,7 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
         }
 
         int sourceLength = stack.lengthFromSource();
-        if (!popped.isVerifiedAtLength(sourceLength) && !stack.isProtectedFromPruning()) {
+        if (!popped.isValidatedAtLength(sourceLength) && !stack.isProtectedFromPruning()) {
             popped.pruneSourceLength(sourceLength);
         }
     }

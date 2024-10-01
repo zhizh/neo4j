@@ -99,7 +99,7 @@ public final class NodeState implements AutoCloseable, Measurable {
 
     public int nextSignpostIndexForLength(int currentIndex, int lengthFromSource) {
         for (int i = currentIndex + 1; i < sourceSignposts.size(); i++) {
-            if (sourceSignposts.get(i).hasSourceLength(lengthFromSource)) {
+            if (sourceSignposts.get(i).seenAt(lengthFromSource)) {
                 return i;
             }
         }
@@ -118,18 +118,17 @@ public final class NodeState implements AutoCloseable, Measurable {
         //   returned index is greater than the value of currentIndex being passed to nextSignpostIndexForLength.
 
         for (var sourceSignpost : sourceSignposts) {
-            if (sourceSignpost.hasSourceLength(lengthFromSource)) {
+            if (sourceSignpost.seenAt(lengthFromSource)) {
                 return;
             }
         }
 
-        assert !lengths.get(lengthFromSource, Lengths.Type.ConfirmedSource)
-                : "We should never remove validated length states";
-        lengths.clear(lengthFromSource, Lengths.Type.Source);
+        assert !lengths.validatedAt(lengthFromSource) : "We should never remove validated length states";
+        lengths.clearSeen(lengthFromSource);
     }
 
     public boolean validatedAtLength(int lengthFromSource) {
-        return lengths.get(lengthFromSource, Lengths.Type.ConfirmedSource);
+        return lengths.validatedAt(lengthFromSource);
     }
 
     @Override
@@ -156,9 +155,9 @@ public final class NodeState implements AutoCloseable, Measurable {
 
         globalState.hooks.addSourceSignpost(sourceSignpost, sourceLength);
         if (sourceLength != -1) {
-            if (!lengths.get(sourceLength, Lengths.Type.Source)) {
+            if (!lengths.seenAt(sourceLength)) {
                 // Never seen the node at this depth before
-                lengths.set(sourceLength, Lengths.Type.Source);
+                lengths.markAsSeen(sourceLength);
 
                 int minTargetDistance = minTargetDistance();
                 if (minTargetDistance != TwoWaySignpost.NO_TARGET_DISTANCE
@@ -171,7 +170,7 @@ public final class NodeState implements AutoCloseable, Measurable {
                     globalState.addTarget(this);
                 }
             } else {
-                assert sourceLength == lengths.max(Lengths.Type.Source)
+                assert sourceLength == lengths.maxSeen()
                         : "A node should only be seen by the BFS at increasingly deeper levels.";
             }
         }
@@ -180,9 +179,9 @@ public final class NodeState implements AutoCloseable, Measurable {
     }
 
     public void newPropagatedSourceLength(int sourceLength, int targetLength) {
-        if (!lengths.get(sourceLength, Lengths.Type.Source)) {
+        if (!lengths.seenAt(sourceLength)) {
             // Never seen the node at this depth before
-            lengths.set(sourceLength, Lengths.Type.Source);
+            lengths.markAsSeen(sourceLength);
 
             if (hasMinDistToTarget(targetLength)) {
                 globalState.schedule(this, sourceLength, targetLength, GlobalState.ScheduleSource.Propagated);
@@ -224,12 +223,12 @@ public final class NodeState implements AutoCloseable, Measurable {
         if (!hasMinDistToTarget(targetLength)) {
             // First time we find a trail to a target of length `targetLength`
 
-            for (int l = lengths.next(0, Lengths.Type.Source); l != -1; l = lengths.next(l + 1, Lengths.Type.Source)) {
+            for (int l = lengths.nextSeen(0); l != -1; l = lengths.nextSeen(l + 1)) {
 
                 // Register for propagation for validated non-shortest lengthStates if not shortestDistToATarget,
                 // or all non-shortest lengthStates if shortestDistToATarget
 
-                if ((firstTrace || lengths.get(l, Lengths.Type.ConfirmedSource))
+                if ((firstTrace || lengths.validatedAt(l))
                         && (l > sourceDistance || phase == PGPathPropagatingBFS.Phase.Expansion)) {
 
                     var depth = globalState.depth();
@@ -272,10 +271,10 @@ public final class NodeState implements AutoCloseable, Measurable {
         globalState.hooks.validateSourceLength(this, lengthFromSource, tracedLengthToTarget);
 
         Preconditions.checkState(
-                !lengths.get(lengthFromSource, Lengths.Type.ConfirmedSource),
+                !lengths.validatedAt(lengthFromSource),
                 "Shouldn't validate the same length from source more than once");
 
-        lengths.set(lengthFromSource, Lengths.Type.ConfirmedSource);
+        lengths.markAsValidated(lengthFromSource);
         if (!hasAnyMinDistToTarget()) {
             return;
         }
