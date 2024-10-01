@@ -418,7 +418,7 @@ object LogicalPlanToPlanBuilderString {
           reverseGroupVariableProjections.toString,
           lengthBounds.min.toString,
           lengthBounds.max.toString,
-          matchMode.toString
+          objectName(matchMode)
         ).mkString(s"\n${indent}", s",\n${indent}", "")
       case PruningVarExpand(_, from, dir, types, to, minLength, maxLength, nodePredicates, relationshipPredicates) =>
         val (dirStrA, dirStrB) = arrows(dir)

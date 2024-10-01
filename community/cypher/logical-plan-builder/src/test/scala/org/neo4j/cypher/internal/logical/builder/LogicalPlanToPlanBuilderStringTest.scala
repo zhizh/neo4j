@@ -2995,6 +2995,7 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
             |import org.neo4j.cypher.internal.util.UpperBound.Unlimited
             |import org.neo4j.graphdb.schema.IndexType
             |import org.neo4j.cypher.internal.logical.plans.FindShortestPaths._
+            |import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode._
             |""".stripMargin
         )
         interpreter.bind("result", "Array[AnyRef]", res)
