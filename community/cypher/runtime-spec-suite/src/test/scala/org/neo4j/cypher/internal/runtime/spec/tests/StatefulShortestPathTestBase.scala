@@ -3374,47 +3374,12 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x1,
-        pathReference(Array(x1.getId), Array[Long]())
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x2,
-        pathReference(Array(x2.getId), Array[Long]())
-      ),
-      Array[Object](
-        x3,
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        RepeatTrailTestBase.listOf(),
-        x3,
-        pathReference(Array(x3.getId), Array[Long]())
-      ),
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
+      shortestRow(Seq(x1)),
+      shortestRow(Seq(x2)),
+      shortestRow(Seq(x3)),
+      shortestRow(Seq(x1, x2), Seq(y1)),
+      shortestRow(Seq(x2, x3), Seq(y2)),
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -3469,23 +3434,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
+      shortestRow(Seq(x1, x2), Seq(y1)),
+      shortestRow(Seq(x2, x3), Seq(y2)),
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(expected, listInAnyOrder = true)
@@ -3540,23 +3491,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
+      shortestRow(Seq(x1, x2), Seq(y1)),
+      shortestRow(Seq(x2, x3), Seq(y2)),
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(expected, listInAnyOrder = true)
@@ -3613,23 +3550,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
+      shortestRow(Seq(x1, x2), Seq(y1)),
+      shortestRow(Seq(x2, x3), Seq(y2)),
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(expected, listInAnyOrder = true)
@@ -3686,37 +3609,12 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      Array[Object](
-        x1,
-        RepeatTrailTestBase.listOf(x1),
-        RepeatTrailTestBase.listOf(y1),
-        RepeatTrailTestBase.listOf(x2),
-        x2,
-        pathReference(Array(x1.getId, x2.getId), Array(y1.getId))
-      ),
-      Array[Object](
-        x2,
-        RepeatTrailTestBase.listOf(x2),
-        RepeatTrailTestBase.listOf(y2),
-        RepeatTrailTestBase.listOf(x3),
-        x3,
-        pathReference(Array(x2.getId, x3.getId), Array(y2.getId))
-      ),
-      row(Seq(x1, x2, x3), Seq(y1, y2))
+      shortestRow(Seq(x1, x2), Seq(y1)),
+      shortestRow(Seq(x2, x3), Seq(y2)),
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(expected, listInAnyOrder = true)
-  }
-
-  private def row(nodes: Seq[Node], rels: Seq[Relationship] = Seq.empty): Array[Object] = {
-    Array[Object](
-      nodes.head,
-      RepeatTrailTestBase.listOf(nodes.take(nodes.size - 1): _*),
-      RepeatTrailTestBase.listOf(rels: _*),
-      RepeatTrailTestBase.listOf(nodes.drop(1): _*),
-      nodes.last,
-      pathReference(nodes.map(_.getId).toArray, rels.map(_.getId).toArray)
-    )
   }
 
   test("undirected * quantified path pattern") {
@@ -3789,17 +3687,17 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       case TraversalMatchMode.Trail =>
         val expected = Seq(
           // size 0
-          row(Seq(x1)),
-          row(Seq(x2)),
-          row(Seq(x3)),
+          shortestRow(Seq(x1)),
+          shortestRow(Seq(x2)),
+          shortestRow(Seq(x3)),
           // size 1
-          row(Seq(x1, x2), Seq(y1)),
-          row(Seq(x2, x1), Seq(y1)),
-          row(Seq(x2, x3), Seq(y2)),
-          row(Seq(x3, x2), Seq(y2)),
+          shortestRow(Seq(x1, x2), Seq(y1)),
+          shortestRow(Seq(x2, x1), Seq(y1)),
+          shortestRow(Seq(x2, x3), Seq(y2)),
+          shortestRow(Seq(x3, x2), Seq(y2)),
           // size 2
-          row(Seq(x1, x2, x3), Seq(y1, y2)),
-          row(Seq(x3, x2, x1), Seq(y2, y1))
+          shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+          shortestRow(Seq(x3, x2, x1), Seq(y2, y1))
         )
 
         runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -3876,17 +3774,17 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       case TraversalMatchMode.Trail =>
         val expected = Seq(
           // size 0
-          row(Seq(x1)),
-          row(Seq(x2)),
-          row(Seq(x3)),
+          shortestRow(Seq(x1)),
+          shortestRow(Seq(x2)),
+          shortestRow(Seq(x3)),
           // size 1
-          row(Seq(x1, x2), Seq(y1)),
-          row(Seq(x2, x1), Seq(y1)),
-          row(Seq(x2, x3), Seq(y2)),
-          row(Seq(x3, x2), Seq(y2)),
+          shortestRow(Seq(x1, x2), Seq(y1)),
+          shortestRow(Seq(x2, x1), Seq(y1)),
+          shortestRow(Seq(x2, x3), Seq(y2)),
+          shortestRow(Seq(x3, x2), Seq(y2)),
           // size 2
-          row(Seq(x1, x2, x3), Seq(y1, y2)),
-          row(Seq(x3, x2, x1), Seq(y2, y1))
+          shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+          shortestRow(Seq(x3, x2, x1), Seq(y2, y1))
         )
 
         runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -3965,17 +3863,17 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       case TraversalMatchMode.Trail =>
         val expected = Seq(
           // size 0
-          row(Seq(x1)),
-          row(Seq(x2)),
-          row(Seq(x3)),
+          shortestRow(Seq(x1)),
+          shortestRow(Seq(x2)),
+          shortestRow(Seq(x3)),
           // size 1
-          row(Seq(x1, x2), Seq(y1)),
-          row(Seq(x2, x1), Seq(y1)),
-          row(Seq(x2, x3), Seq(y2)),
-          row(Seq(x3, x2), Seq(y2)),
+          shortestRow(Seq(x1, x2), Seq(y1)),
+          shortestRow(Seq(x2, x1), Seq(y1)),
+          shortestRow(Seq(x2, x3), Seq(y2)),
+          shortestRow(Seq(x3, x2), Seq(y2)),
           // size 2
-          row(Seq(x1, x2, x3), Seq(y1, y2)),
-          row(Seq(x3, x2, x1), Seq(y2, y1))
+          shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+          shortestRow(Seq(x3, x2, x1), Seq(y2, y1))
         )
 
         runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -4053,17 +3951,17 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       case TraversalMatchMode.Trail =>
         val expected = Seq(
           // size 0
-          row(Seq(x1)),
-          row(Seq(x2)),
-          row(Seq(x3)),
+          shortestRow(Seq(x1)),
+          shortestRow(Seq(x2)),
+          shortestRow(Seq(x3)),
           // size 1
-          row(Seq(x1, x2), Seq(y1)),
-          row(Seq(x2, x1), Seq(y1)),
-          row(Seq(x2, x3), Seq(y2)),
-          row(Seq(x3, x2), Seq(y2)),
+          shortestRow(Seq(x1, x2), Seq(y1)),
+          shortestRow(Seq(x2, x1), Seq(y1)),
+          shortestRow(Seq(x2, x3), Seq(y2)),
+          shortestRow(Seq(x3, x2), Seq(y2)),
           // size 2
-          row(Seq(x1, x2, x3), Seq(y1, y2)),
-          row(Seq(x3, x2, x1), Seq(y2, y1))
+          shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+          shortestRow(Seq(x3, x2, x1), Seq(y2, y1))
         )
 
         runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -4259,11 +4157,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      row(Seq(x1, x2, x3), Seq(y1, y2)),
-      row(Seq(x2, x3, x4), Seq(y2, y3)),
-      row(Seq(x3, x4, x5), Seq(y3, y4)),
-      row(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
-      row(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+      shortestRow(Seq(x2, x3, x4), Seq(y2, y3)),
+      shortestRow(Seq(x3, x4, x5), Seq(y3, y4)),
+      shortestRow(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
+      shortestRow(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -4338,11 +4236,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      row(Seq(x1, x2, x3), Seq(y1, y2)),
-      row(Seq(x2, x3, x4), Seq(y2, y3)),
-      row(Seq(x3, x4, x5), Seq(y3, y4)),
-      row(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
-      row(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+      shortestRow(Seq(x2, x3, x4), Seq(y2, y3)),
+      shortestRow(Seq(x3, x4, x5), Seq(y3, y4)),
+      shortestRow(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
+      shortestRow(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -4419,11 +4317,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      row(Seq(x1, x2, x3), Seq(y1, y2)),
-      row(Seq(x2, x3, x4), Seq(y2, y3)),
-      row(Seq(x3, x4, x5), Seq(y3, y4)),
-      row(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
-      row(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+      shortestRow(Seq(x2, x3, x4), Seq(y2, y3)),
+      shortestRow(Seq(x3, x4, x5), Seq(y3, y4)),
+      shortestRow(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
+      shortestRow(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -4500,11 +4398,11 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // then
     val expected = Seq(
-      row(Seq(x1, x2, x3), Seq(y1, y2)),
-      row(Seq(x2, x3, x4), Seq(y2, y3)),
-      row(Seq(x3, x4, x5), Seq(y3, y4)),
-      row(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
-      row(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
+      shortestRow(Seq(x1, x2, x3), Seq(y1, y2)),
+      shortestRow(Seq(x2, x3, x4), Seq(y2, y3)),
+      shortestRow(Seq(x3, x4, x5), Seq(y3, y4)),
+      shortestRow(Seq(x1, x2, x3, x4), Seq(y1, y2, y3)),
+      shortestRow(Seq(x2, x3, x4, x5), Seq(y2, y3, y4))
     )
 
     runtimeResult should beColumns(retVars: _*).withRows(oneToOneSortedPaths("p", expected))
@@ -7890,7 +7788,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val retVars = Seq("l")
     // We must restrict lengths in WALK mode
     val (minLength, maxLength) = traversalMatchMode match {
-      case TraversalMatchMode.Walk  => (15, Some(15))
+      case TraversalMatchMode.Walk  => (0, Some(15))
       case TraversalMatchMode.Trail => (0, None)
     }
 
@@ -9220,6 +9118,17 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         )
     }
     runtimeResult should beColumns(retVars: _*).withRows(expected)
+  }
+
+  private def shortestRow(nodes: Seq[Node], rels: Seq[Relationship] = Seq.empty): Array[Object] = {
+    Array[Object](
+      nodes.head,
+      RepeatTrailTestBase.listOf(nodes.take(nodes.size - 1): _*),
+      RepeatTrailTestBase.listOf(rels: _*),
+      RepeatTrailTestBase.listOf(nodes.drop(1): _*),
+      nodes.last,
+      pathReference(nodes.map(_.getId).toArray, rels.map(_.getId).toArray)
+    )
   }
 }
 
