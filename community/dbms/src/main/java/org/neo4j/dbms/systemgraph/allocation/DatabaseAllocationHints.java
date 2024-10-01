@@ -22,7 +22,6 @@ package org.neo4j.dbms.systemgraph.allocation;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,7 +36,7 @@ import org.neo4j.values.storable.Values;
 import org.neo4j.values.virtual.MapValue;
 import org.neo4j.values.virtual.MapValueBuilder;
 
-public final class DatabaseAllocationHints {
+public record DatabaseAllocationHints(Set<Hint<?>> hints) {
     public static DatabaseAllocationHints EMPTY = new DatabaseAllocationHints(Set.of());
 
     public static DatabaseAllocationHints DEFAULT =
@@ -49,12 +48,6 @@ public final class DatabaseAllocationHints {
     public static Set<String> VALID_HINT_KEYS = Arrays.stream(Hint.class.getPermittedSubclasses())
             .map(DatabaseAllocationHints::key)
             .collect(Collectors.toSet());
-
-    private final Set<Hint<?>> hints;
-
-    private DatabaseAllocationHints(Set<Hint<?>> hints) {
-        this.hints = hints;
-    }
 
     public static DatabaseAllocationHints createFromInput(MapValue providedHints) {
         var hints = new HashSet<Hint<?>>();
@@ -93,7 +86,7 @@ public final class DatabaseAllocationHints {
     /**
      * Throws {@link IllegalArgumentException} if the provided key and value do not combine to form a valid {@link Hint}. Otherwise, does nothing.
      *
-     * @param key a string key provided within the allocationHints OPTION for CREATE and ALTER DATABASE commands
+     * @param key   a string key provided within the allocationHints OPTION for CREATE and ALTER DATABASE commands
      * @param value a Cypher value provided within the allocationHints OPTION for CREATE and ALTER DATABASE commands
      */
     public static void validate(String key, AnyValue value) {
@@ -179,10 +172,6 @@ public final class DatabaseAllocationHints {
         }
     }
 
-    public Set<Hint<?>> hints() {
-        return hints;
-    }
-
     public <U, T extends Hint<U>> Optional<U> hintValue(Class<T> clazz) {
         return hints.stream()
                 .filter(hint -> hint.getClass().equals(clazz))
@@ -217,24 +206,6 @@ public final class DatabaseAllocationHints {
                 node.setProperty(key, hint.getValue());
             }
         });
-    }
-
-    @Override
-    public String toString() {
-        return "DatabaseAllocationHints{hints=" + hints + '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        DatabaseAllocationHints that = (DatabaseAllocationHints) o;
-        return Objects.equals(hints, that.hints);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(hints);
     }
 
     public sealed interface Hint<T> permits DatabaseWeight {
