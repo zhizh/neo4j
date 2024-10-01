@@ -119,6 +119,10 @@ public class CodeCompletionCore {
     private int tokenStartIndex = 0;
     private int statesProcessed = 0;
 
+    // A mapping of rule index to token stream position to end token positions.
+    // A rule which has been visited before with the same input position will always produce the same output positions.
+    private final Map<Integer, Map<Integer, Set<Integer>>> shortcutMap = new HashMap<>();
+
     private final CandidatesCollection candidates =
             new CandidatesCollection(); // The collected candidates (rules and tokens).
 
@@ -152,6 +156,7 @@ public class CodeCompletionCore {
      * speed up the retrieval process but might miss some candidates (if they are outside of the given context).
      */
     public CandidatesCollection collectCandidates(int caretTokenIndex, ParserRuleContext context) {
+        this.shortcutMap.clear();
         this.candidates.rules.clear();
         this.candidates.tokens.clear();
         this.statesProcessed = 0;
@@ -343,6 +348,17 @@ public class CodeCompletionCore {
      */
     private Set<Integer> processRule(
             ATNState startState, int tokenIndex, LinkedList<RuleWithStartToken> callStack, String indentation) {
+        // Start with rule specific handling before going into the ATN walk.
+        // Check first if we've taken this path with the same input before.
+        Map<Integer, Set<Integer>> positionMap = this.shortcutMap.get(startState.ruleIndex);
+        if (positionMap == null) {
+            positionMap = new HashMap<>();
+            this.shortcutMap.put(startState.ruleIndex, positionMap);
+        } else {
+            if (positionMap.containsKey(tokenIndex)) {
+                return positionMap.get(tokenIndex);
+            }
+        }
 
         Set<Integer> result = new HashSet<>();
 
@@ -535,6 +551,9 @@ public class CodeCompletionCore {
         }
 
         callStack.removeLast();
+
+        // Cache the result, for later lookup to avoid duplicate walks.
+        positionMap.put(tokenIndex, result);
 
         return result;
     }
