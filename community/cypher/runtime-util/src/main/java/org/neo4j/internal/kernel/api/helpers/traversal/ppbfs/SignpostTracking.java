@@ -25,17 +25,17 @@ import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
 import org.neo4j.memory.MemoryTracker;
 
 public interface SignpostTracking {
-    boolean isProtectedFromPruning(int size);
+    boolean isProtectedFromPruning(SignpostStack stack);
 
-    boolean shouldExitEarly(SignpostStack stack);
+    boolean canAbandonTraceBranch(SignpostStack stack);
 
-    void set(TwoWaySignpost signpost, SignpostStack stack);
+    void onPushed(TwoWaySignpost signpost, SignpostStack stack);
+
+    void onPopped(TwoWaySignpost signpost, SignpostStack stack);
 
     boolean validate(SignpostStack stack);
 
-    void popSignpost(TwoWaySignpost signpost, SignpostStack stack);
-
-    boolean onNextSignpost(SignpostStack stack);
+    boolean isValid(SignpostStack stack);
 
     void clear();
 
@@ -49,17 +49,17 @@ public interface SignpostTracking {
 
     SignpostTracking NO_TRACKING = new SignpostTracking() {
         @Override
-        public boolean isProtectedFromPruning(int size) {
+        public boolean isProtectedFromPruning(SignpostStack stack) {
             return false;
         }
 
         @Override
-        public boolean shouldExitEarly(SignpostStack stack) {
+        public boolean canAbandonTraceBranch(SignpostStack stack) {
             return false;
         }
 
         @Override
-        public void set(TwoWaySignpost signpost, SignpostStack stack) {
+        public void onPushed(TwoWaySignpost signpost, SignpostStack stack) {
             // do nothing
         }
 
@@ -69,12 +69,12 @@ public interface SignpostTracking {
         }
 
         @Override
-        public void popSignpost(TwoWaySignpost signpost, SignpostStack stack) {
+        public void onPopped(TwoWaySignpost signpost, SignpostStack stack) {
             // do nothing
         }
 
         @Override
-        public boolean onNextSignpost(SignpostStack stack) {
+        public boolean isValid(SignpostStack stack) {
             return true;
         }
 
@@ -97,8 +97,8 @@ public interface SignpostTracking {
         }
 
         @Override
-        public boolean isProtectedFromPruning(int size) {
-            return protectFromPruning.get(size);
+        public boolean isProtectedFromPruning(SignpostStack stack) {
+            return protectFromPruning.get(stack.size());
         }
 
         /** this function allows us to abandon a trace branch early. if we have detected a duplicate relationship then
@@ -109,7 +109,7 @@ public interface SignpostTracking {
          * node.
          * */
         @Override
-        public boolean shouldExitEarly(SignpostStack stack) {
+        public boolean canAbandonTraceBranch(SignpostStack stack) {
             int dup = distanceToDuplicate(stack.headSignpost());
 
             if (dup == 0) {
@@ -132,8 +132,9 @@ public interface SignpostTracking {
         }
 
         @Override
-        public void set(TwoWaySignpost signpost, SignpostStack stack) {
+        public void onPushed(TwoWaySignpost signpost, SignpostStack stack) {
             int size = stack.size();
+            this.protectFromPruning.set(size - 1, false);
             targetTrails.set(size, targetTrails.get(size - 1) && distanceToDuplicate(stack.headSignpost()) == 0);
             if (signpost instanceof TwoWaySignpost.RelSignpost rel) {
                 var depths = this.relationshipPresenceAtDepth.get(rel.relId);
@@ -164,10 +165,6 @@ public interface SignpostTracking {
                 TwoWaySignpost signpost = stack.signpost(i);
                 sourceLength += signpost.dataGraphLength();
                 if (signpost instanceof TwoWaySignpost.RelSignpost rel) {
-
-                    // idx       2      1      0
-                    // 7    (s)-[0]-()-[1]-()-[0]-(t)
-                    // 11   (s)-[1]-()-[0]-()-[1]-(t)
                     var bitset = relationshipPresenceAtDepth.get(rel.relId);
                     assert bitset.get(i);
                     if (bitset.length() > i + 1) {
@@ -197,7 +194,7 @@ public interface SignpostTracking {
         }
 
         @Override
-        public void popSignpost(TwoWaySignpost signpost, SignpostStack stack) {
+        public void onPopped(TwoWaySignpost signpost, SignpostStack stack) {
             if (signpost instanceof TwoWaySignpost.RelSignpost rel) {
                 var depths = relationshipPresenceAtDepth.get(rel.relId);
                 depths.clear(stack.size());
@@ -262,10 +259,8 @@ public interface SignpostTracking {
         }
 
         @Override
-        public boolean onNextSignpost(SignpostStack stack) {
-            int size = stack.size();
-            this.protectFromPruning.set(size - 1, false);
-            return this.targetTrails.get(size);
+        public boolean isValid(SignpostStack stack) {
+            return this.targetTrails.get(stack.size());
         }
 
         @Override

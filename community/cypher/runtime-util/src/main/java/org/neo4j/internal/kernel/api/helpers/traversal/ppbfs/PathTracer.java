@@ -127,11 +127,11 @@ public final class PathTracer<Row> extends PrefetchingIterator<Row> {
                 popAndPrune();
             } else {
                 var sourceSignpost = stack.headSignpost();
-                if (stack.onNextSignpost() && !sourceSignpost.hasBeenTraced()) {
+                if (stack.isValid() && !sourceSignpost.hasBeenTraced()) {
                     sourceSignpost.setMinTargetDistance(stack.lengthToTarget(), PGPathPropagatingBFS.Phase.Tracing);
                 }
 
-                if (stack.shouldExitEarly()) {
+                if (stack.canAbandonTraceBranch()) {
                     hooks.skippingDuplicateRelationship(stack);
                     stack.pop();
                     // the order of these predicates is important since validate has side effects:

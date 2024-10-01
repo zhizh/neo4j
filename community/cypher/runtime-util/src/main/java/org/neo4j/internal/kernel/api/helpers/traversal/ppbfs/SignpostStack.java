@@ -67,7 +67,7 @@ public class SignpostStack {
     }
 
     public boolean isProtectedFromPruning() {
-        return signpostTracking.isProtectedFromPruning(size());
+        return signpostTracking.isProtectedFromPruning(this);
     }
     /**
      * Remove NodeState/TwoWaySignpost references, allowing them to be garbage collected.
@@ -179,7 +179,7 @@ public class SignpostStack {
         dgLengthToTarget += signpost.dataGraphLength();
         nodeSourceSignpostIndices.set(nodeSourceSignpostIndices.size() - 1, nextIndex);
         nodeSourceSignpostIndices.add(-1);
-        signpostTracking.set(signpost, this);
+        signpostTracking.onPushed(signpost, this);
         hooks.activateSignpost(lengthFromSource(), signpost);
 
         return true;
@@ -200,18 +200,18 @@ public class SignpostStack {
         }
 
         var signpost = activeSignposts.removeLast();
-        signpostTracking.popSignpost(signpost, this);
+        signpostTracking.onPopped(signpost, this);
         dgLengthToTarget -= signpost.dataGraphLength();
 
         hooks.deactivateSignpost(lengthFromSource(), signpost);
         return signpost;
     }
 
-    public boolean onNextSignpost() {
-        return signpostTracking.onNextSignpost(this);
+    public boolean isValid() {
+        return signpostTracking.isValid(this);
     }
 
-    public boolean shouldExitEarly() {
-        return signpostTracking.shouldExitEarly(this);
+    public boolean canAbandonTraceBranch() {
+        return signpostTracking.canAbandonTraceBranch(this);
     }
 }
