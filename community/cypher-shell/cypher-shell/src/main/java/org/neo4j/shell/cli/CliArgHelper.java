@@ -329,7 +329,8 @@ public class CliArgHelper {
 
         parser.addArgument("--enable-autocompletions")
                 .dest("enable-autocompletions")
-                .help("Whether to enable Cypher autocompletions inside the CLI, which are disabled by default")
+                .help(
+                        "Whether to enable Cypher autocompletions inside the CLI. Completions can only be enabled for neo4j 5 and later.")
                 .action(Arguments.storeTrue());
 
         parser.addArgument("--format")

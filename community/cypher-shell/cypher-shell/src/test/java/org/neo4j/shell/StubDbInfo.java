@@ -23,8 +23,16 @@ import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.parameter.ParameterService;
 
 public class StubDbInfo extends DbInfo {
-    public StubDbInfo(ParameterService parameterService) {
+    public boolean completionsEnabled;
+
+    public StubDbInfo(ParameterService parameterService, boolean completionsEnabled) {
         super(parameterService);
+        this.completionsEnabled = completionsEnabled;
+    }
+
+    @Override
+    public boolean completionsEnabled() {
+        return this.completionsEnabled;
     }
 
     @Override

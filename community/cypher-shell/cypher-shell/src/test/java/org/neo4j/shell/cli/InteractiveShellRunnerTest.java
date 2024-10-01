@@ -528,7 +528,7 @@ class InteractiveShellRunnerTest {
         Printer printer = new AnsiPrinter(Format.VERBOSE, new PrintStream(output), new PrintStream(error));
 
         CompletionEngine mockedCompletionEngine = mock(CompletionEngine.class);
-        var dbInfo = new StubDbInfo(mock(ParameterService.class));
+        var dbInfo = new StubDbInfo(mock(ParameterService.class), false);
 
         var in = new ByteArrayInputStream(input.getBytes(UTF_8));
         var terminal = terminalBuilder()
@@ -536,7 +536,7 @@ class InteractiveShellRunnerTest {
                 .streams(in, output)
                 .interactive(true)
                 .logger(printer)
-                .build(dbInfo, mockedCompletionEngine, false);
+                .build(dbInfo, mockedCompletionEngine);
         OfflineTestShell offlineTestShell =
                 new OfflineTestShell(printer, mockedBoltStateHandler, dbInfo, mockedPrettyPrinter);
         CommandHelper commandHelper =
@@ -662,14 +662,14 @@ class InteractiveShellRunnerTest {
     private CypherShellTerminal testTerminal(String input) {
         var in = new ByteArrayInputStream(input.getBytes(UTF_8));
         CompletionEngine mockedCompletionEngine = mock(CompletionEngine.class);
-        var dbInfo = new StubDbInfo(mock(ParameterService.class));
+        var dbInfo = new StubDbInfo(mock(ParameterService.class), false);
 
         return terminalBuilder()
                 .dumb()
                 .streams(in, out)
                 .interactive(true)
                 .logger(printer)
-                .build(dbInfo, mockedCompletionEngine, false);
+                .build(dbInfo, mockedCompletionEngine);
     }
 
     private static class FakeInterruptableShell extends CypherShell {

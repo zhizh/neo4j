@@ -22,6 +22,7 @@ package org.neo4j.shell.completions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.neo4j.shell.parameter.ParameterService;
 
 public abstract class DbInfo implements AutoCloseable {
@@ -45,6 +46,8 @@ public abstract class DbInfo implements AutoCloseable {
 
     public volatile List<String> functions = List.of();
 
+    Optional<Boolean> versionCompatibleWithCompletions = Optional.empty();
+
     public Map<String, CompletionEngine.ParameterType> parameters() {
         Map<String, CompletionEngine.ParameterType> parameters = new HashMap<>();
         parameterService.parameters().forEach((key, value) -> parameters.put(key, parameterType(value)));
@@ -65,6 +68,7 @@ public abstract class DbInfo implements AutoCloseable {
         propertyKeys = List.of();
         procedures = List.of();
         functions = List.of();
+        versionCompatibleWithCompletions = Optional.empty();
     }
 
     private CompletionEngine.ParameterType parameterType(org.neo4j.driver.Value value) {
@@ -76,6 +80,8 @@ public abstract class DbInfo implements AutoCloseable {
             return CompletionEngine.ParameterType.ANY;
         }
     }
+
+    public abstract boolean completionsEnabled();
 
     public abstract void resumePolling();
 

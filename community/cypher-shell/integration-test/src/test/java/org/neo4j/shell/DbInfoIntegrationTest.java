@@ -91,9 +91,8 @@ class DbInfoIntegrationTest extends TestHarness {
         });
     }
 
-    // TODO Auto completions are not accurate for older versions, should we disable it completely?
     @Test
-    void fillsInInformationInDbInfoVersion4() throws Exception {
+    void doesNotFillDbInfoInOlderVersions() throws Exception {
         assumeVersionBefore("5.0.0");
         var testBuilder = (TestBuilder) buildTest();
         testBuilder
@@ -103,17 +102,20 @@ class DbInfoIntegrationTest extends TestHarness {
                 .assertSuccessAndConnected();
         final var dbInfo = testBuilder.dbInfo;
 
-        awaitUntilAsserted(() -> {
-            assertThat(dbInfo.labels).contains("A", "B", "C");
-            assertThat(dbInfo.propertyKeys).contains("name");
-            assertThat(dbInfo.functions).contains("abs");
-            assertThat(dbInfo.procedures).contains("dbms.info");
-            assertThat(dbInfo.aliasNames).isEmpty(); // 4 do not support aliases
-            assertThat(dbInfo.roleNames).contains("PUBLIC");
-            assertThat(dbInfo.databaseNames).isEmpty(); // Polling query do not work in 4
-            assertThat(dbInfo.userNames).contains(USER, "foo");
-            assertThat(dbInfo.parameters()).containsKey("x");
-        });
+        assertNever(
+                () -> dbInfo,
+                db -> {
+                    return dbInfo.labels.contains("A")
+                            || dbInfo.propertyKeys.contains("name")
+                            || dbInfo.functions.contains("abs")
+                            || dbInfo.procedures.contains("dbms.info")
+                            || dbInfo.aliasNames.contains("nacho")
+                            || dbInfo.roleNames.contains("PUBLIC")
+                            || dbInfo.databaseNames.contains("neo4j")
+                            || dbInfo.userNames.contains("foo");
+                },
+                30,
+                SECONDS);
     }
 
     @Test

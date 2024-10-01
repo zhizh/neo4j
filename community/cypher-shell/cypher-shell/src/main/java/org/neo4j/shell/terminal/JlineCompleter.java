@@ -40,13 +40,10 @@ import org.neo4j.shell.terminal.StatementJlineParser.CypherCompletion;
 public class JlineCompleter implements Completer {
     private final CommandCompleter commandCompleter;
     private final CypherCompleter cypherCompleter;
-    private final boolean enableCypherCompletion;
 
-    public JlineCompleter(
-            CommandFactoryHelper commands, CompletionEngine completionEngine, boolean enableCypherCompletion) {
+    public JlineCompleter(CommandFactoryHelper commands, CompletionEngine completionEngine) {
         this.commandCompleter = CommandCompleter.from(commands);
         this.cypherCompleter = new CypherCompleter(completionEngine);
-        this.enableCypherCompletion = enableCypherCompletion;
     }
 
     @Override
@@ -58,12 +55,12 @@ public class JlineCompleter implements Completer {
         try {
             if (line instanceof BlankCompletion) {
                 candidates.addAll(commandCompleter.complete());
-                if (enableCypherCompletion) {
+                if (cypherCompleter.completionsEnabled()) {
                     cypherCompleter.completeBlank().forEach(candidates::add);
                 }
             } else if (line instanceof CommandCompletion) {
                 candidates.addAll(commandCompleter.complete());
-            } else if (enableCypherCompletion && line instanceof CypherCompletion cypher) {
+            } else if (cypherCompleter.completionsEnabled() && line instanceof CypherCompletion cypher) {
                 cypherCompleter.complete(cypher).forEach(candidates::add);
             }
         } catch (Exception e) {
@@ -83,6 +80,10 @@ public class JlineCompleter implements Completer {
     }
 
     private record CypherCompleter(CompletionEngine completionEngine) {
+        public boolean completionsEnabled() {
+            return completionEngine.completionsEnabled();
+        }
+
         Stream<Suggestion> complete(CypherCompletion cypher) throws IOException {
             return concat(completions(queryUntilCompletionWord(cypher), cypher.word()));
         }

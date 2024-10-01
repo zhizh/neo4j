@@ -67,16 +67,16 @@ public class Main implements AutoCloseable {
         this.printer = new AnsiPrinter(Format.VERBOSE, System.out, System.err);
         this.args = args;
         var boltStateHandler = new BoltStateHandler(shouldBeInteractive(args, isInteractive), args.getAccessMode());
-        var enabledCompletions = args.getEnableAutocompletions();
+        var completionsEnabledByConfig = args.getEnableAutocompletions();
         this.parameters = ParameterService.create(boltStateHandler);
-        var dbInfo = new DbInfoImpl(parameters, boltStateHandler, enabledCompletions);
+        var dbInfo = new DbInfoImpl(parameters, boltStateHandler, completionsEnabledByConfig);
         CompletionEngine completionEngine = new CompletionEngine(dbInfo);
         this.terminal = terminalBuilder()
                 .interactive(isInteractive)
                 .logger(printer)
                 .parameters(parameters)
                 .idleTimeout(args.getIdleTimeout(), args.getIdleTimeoutDelay())
-                .build(dbInfo, completionEngine, enabledCompletions);
+                .build(dbInfo, completionEngine);
         this.shell = new CypherShell(
                 printer,
                 boltStateHandler,

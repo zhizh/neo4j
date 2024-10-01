@@ -174,6 +174,7 @@ public class CypherShell implements StatementExecuter, Connector, TransactionHan
 
     @Override
     public void connect(String user, String password, String database) throws CommandException {
+        dbInfo.cleanDbInfo();
         boltStateHandler.connect(user, password, database);
     }
 
@@ -296,7 +297,11 @@ public class CypherShell implements StatementExecuter, Connector, TransactionHan
 
     @Override
     public void disconnect() {
-        dbInfo.stopPolling();
+        try {
+            dbInfo.close();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         boltStateHandler.disconnect();
     }
 

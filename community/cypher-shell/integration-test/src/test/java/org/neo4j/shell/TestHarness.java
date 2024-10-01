@@ -105,9 +105,9 @@ public class TestHarness {
             if (this.parameters == null) {
                 this.parameters = ParameterService.create(boltStateHandler);
             }
-            var enableCompletions = args.getEnableAutocompletions();
+            var completionsEnabledByConfig = args.getEnableAutocompletions();
             if (this.dbInfo == null) {
-                this.dbInfo = new DbInfoImpl(parameters, boltStateHandler, enableCompletions);
+                this.dbInfo = new DbInfoImpl(parameters, boltStateHandler, completionsEnabledByConfig);
             }
             var completionEngine = new CompletionEngine(dbInfo);
 
@@ -118,7 +118,7 @@ public class TestHarness {
                     .logger(logger);
 
             terminalBuilder = hardcodeTerminalInput ? terminalBuilder.streams(in, outPrintStream) : terminalBuilder;
-            this.terminal = terminalBuilder.build(dbInfo, completionEngine, enableCompletions);
+            this.terminal = terminalBuilder.build(dbInfo, completionEngine);
 
             Logger.setupLogging(args);
             this.main = new Main(

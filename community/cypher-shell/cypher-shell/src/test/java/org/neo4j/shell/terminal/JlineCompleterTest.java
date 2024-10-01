@@ -37,7 +37,6 @@ import org.neo4j.shell.StubDbInfo;
 import org.neo4j.shell.TransactionHandler;
 import org.neo4j.shell.commands.CommandHelper;
 import org.neo4j.shell.completions.CompletionEngine;
-import org.neo4j.shell.completions.DbInfo;
 import org.neo4j.shell.completions.SuggestionType;
 import org.neo4j.shell.parameter.ParameterService;
 import org.neo4j.shell.parameter.ParameterService.Parameter;
@@ -49,7 +48,7 @@ class JlineCompleterTest {
     private ParameterService parameters;
     private JlineCompleter completer;
     private StatementJlineParser parser;
-    private DbInfo dbInfo;
+    private StubDbInfo dbInfo;
     private CompletionEngine completionEngine;
     private final LineReader lineReader = mock(LineReader.class);
     private final CommandHelper.CommandFactoryHelper commandHelper = new CommandHelper.CommandFactoryHelper();
@@ -140,13 +139,13 @@ class JlineCompleterTest {
         return new Completion(completion, completion, SuggestionType.VALUE.name, null);
     }
 
-    public DbInfo dbInfoStub() {
+    public StubDbInfo dbInfoStub() {
         parameters.setParameters(List.of(new Parameter("intParam", Values.value(1L))));
         parameters.setParameters(List.of(new Parameter("otherIntParam", Values.value(2L))));
         parameters.setParameters(List.of(new Parameter("mapParam", Values.value(Map.of("a", 1)))));
         parameters.setParameters(List.of(new Parameter("stringParam", Values.value("some name"))));
 
-        dbInfo = new StubDbInfo(parameters);
+        dbInfo = new StubDbInfo(parameters, true);
         dbInfo.procedures = List.of("foo.bar", "dbms.info", "somethingElse", "foo.info", "db.info");
         dbInfo.functions = List.of("a.b", "xx.yy.fna", "xx.yy.fnb");
         dbInfo.labels = List.of("Actor", "Airport", "Dog", "Gym", "Window", "Wedding");
@@ -166,7 +165,7 @@ class JlineCompleterTest {
         parameters = ParameterService.create(transactionHandler);
         dbInfo = dbInfoStub();
         completionEngine = new CompletionEngine(dbInfo);
-        completer = new JlineCompleter(new CommandHelper.CommandFactoryHelper(), completionEngine, true);
+        completer = new JlineCompleter(new CommandHelper.CommandFactoryHelper(), completionEngine);
         parser = new StatementJlineParser(new ShellStatementParser());
         parser.setEnableStatementParsing(true);
     }
@@ -356,9 +355,11 @@ class JlineCompleterTest {
 
     @Test
     void canDisableCompletions() {
-        completer = new JlineCompleter(new CommandHelper.CommandFactoryHelper(), completionEngine, false);
+        dbInfo.completionsEnabled = false;
+        completer = new JlineCompleter(new CommandHelper.CommandFactoryHelper(), completionEngine);
         assertThat(complete("M")).doesNotContain(keyword("MATCH"));
-        completer = new JlineCompleter(new CommandHelper.CommandFactoryHelper(), completionEngine, true);
+        dbInfo.completionsEnabled = true;
+        completer = new JlineCompleter(new CommandHelper.CommandFactoryHelper(), completionEngine);
         assertThat(complete("M")).contains(keyword("MATCH"));
     }
 

@@ -55,7 +55,6 @@ public class CypherShellTerminalBuilder {
     private boolean dumb;
     private ParameterService parameters;
     private Supplier<SimplePrompt> simplePromptSupplier = SimplePrompt::defaultPrompt;
-    private boolean enableCypherCompletion = true;
     private Duration idleTimeout;
     private Duration idleDelay;
 
@@ -102,14 +101,8 @@ public class CypherShellTerminalBuilder {
         return this;
     }
 
-    public CypherShellTerminalBuilder enableCypherCompletion(boolean enable) {
-        this.enableCypherCompletion = enable;
-        return this;
-    }
-
-    public CypherShellTerminal build(DbInfo dbInfo, CompletionEngine completionEngine, boolean enableCompletions) {
+    public CypherShellTerminal build(DbInfo dbInfo, CompletionEngine completionEngine) {
         assert printer != null;
-        this.enableCypherCompletion = enableCompletions;
 
         try {
             return isInteractive ? buildJlineBasedTerminal(dbInfo, completionEngine) : nonInteractiveTerminal();
@@ -149,7 +142,7 @@ public class CypherShellTerminalBuilder {
         var reader = LineReaderBuilder.builder()
                 .terminal(jLineTerminal.build())
                 .parser(new StatementJlineParser(new ShellStatementParser()))
-                .completer(new JlineCompleter(new CommandFactoryHelper(), completionEngine, enableCypherCompletion))
+                .completer(new JlineCompleter(new CommandFactoryHelper(), completionEngine))
                 .history(new DefaultHistory()) // The default history is in-memory until we set history file variable
                 .expander(new JlineTerminal.EmptyExpander())
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true) // Disable '!' history expansion

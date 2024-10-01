@@ -225,14 +225,14 @@ public class AssertableMain {
             var args = parseArgs();
             var logger = new AnsiPrinter(Format.VERBOSE, outPrintStream, errPrintStream);
             CompletionEngine mockedCompletionEngine = mock(CompletionEngine.class);
-            var dbInfo = new StubDbInfo(mock(ParameterService.class));
+            var dbInfo = new StubDbInfo(mock(ParameterService.class), false);
             var terminal = terminalBuilder()
                     .dumb()
                     .streams(in, outPrintStream)
                     .simplePromptSupplier(() -> new TestSimplePrompt(in, new PrintWriter(out)))
                     .interactive(!args.getNonInteractive())
                     .logger(logger)
-                    .build(dbInfo, mockedCompletionEngine, false);
+                    .build(dbInfo, mockedCompletionEngine);
             var main = new Main(args, logger, shell, parameters, isOutputInteractive, runnerFactory, terminal);
             var exitCode = main.startShell();
 

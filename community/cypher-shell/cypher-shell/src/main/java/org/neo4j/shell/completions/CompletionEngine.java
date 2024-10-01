@@ -592,4 +592,8 @@ public class CompletionEngine {
 
         return result;
     }
+
+    public boolean completionsEnabled() {
+        return dbInfo.completionsEnabled();
+    }
 }
