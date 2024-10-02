@@ -47,6 +47,38 @@ case class CachedProperties(entries: Map[LogicalVariable, CachedProperties.Entry
     CachedProperties(entries.fuse(other.entries)(_ union _))
   }
 
+  /**
+   * Caches only common properties for a given variable.
+   * For example if this is ((x)->(x,CTNode,(foo,bar)),(y)->(y,CTNode,(baz))) and other is ((x)->(x,CTNode,(foo)),(z)->(y,CTNode,(baz)))
+   * then the output would be ((x)->(x,CTNode,(foo)),(y)->(y,CTNode,(baz)),(z)->(y,CTNode,(baz)))
+   *
+   * @param other - the cached properties to intersect
+   * @return the common properties.
+   */
+  def intersectProperties(other: CachedProperties): CachedProperties = {
+    val updatedEntries =
+      (this.entries.keySet ++ other.entries.keySet).foldLeft(Map.empty[LogicalVariable, CachedProperties.Entry]) {
+        case (acc, cachedVariable: LogicalVariable) =>
+          (this.entries.get(cachedVariable), other.entries.get(cachedVariable)) match {
+            case (Some(thisCachedEntry), Some(otherCachedEntry)) => thisCachedEntry.intersect(otherCachedEntry)
+                .map(commonEntries => acc + (cachedVariable -> commonEntries))
+                .getOrElse(acc)
+            case (Some(thisCachedEntry), None)  => acc + (cachedVariable -> thisCachedEntry)
+            case (None, Some(otherCachedEntry)) => acc + (cachedVariable -> otherCachedEntry)
+            case _                              => acc
+          }
+      }
+    CachedProperties(updatedEntries)
+  }
+
+  /**
+   * Caches only common entries.
+   * For example if this is ((x)->(x,CTNode,(foo,bar)),(y)->(y,CTNode,(baz))) and other is ((x)->(x,CTNode,(foo)),(z)->(y,CTNode,(baz)))
+   * then the output would be ((x)->(x,CTNode,(foo)))
+   *
+   * @param other - the cached properties to intersect
+   * @return the common entries.
+   */
   def intersect(other: CachedProperties): CachedProperties = {
     val commonProperties = this.entries.foldLeft(Map.empty[LogicalVariable, Entry]) {
       case (acc, (logicalVariable, entry)) if other.entries.contains(logicalVariable) =>

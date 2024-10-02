@@ -36,9 +36,11 @@ import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
 import org.neo4j.cypher.internal.logical.builder.TestNFABuilder
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpandInto
+import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
 import org.neo4j.cypher.internal.logical.plans.FindShortestPaths.AllowSameNode
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
+import org.neo4j.cypher.internal.planner.spi.DatabaseMode
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
@@ -64,6 +66,11 @@ class StatefulShortestToFindShortestIntegrationTest extends CypherFunSuite with 
 
   private val planner = plannerBase
     // For the rewrite to trigger, we need an INTO plan
+    .withSetting(GraphDatabaseInternalSettings.stateful_shortest_planning_mode, INTO_ONLY)
+    .build()
+
+  private val plannerForShardedDatabases = plannerBase
+    .setDatabaseMode(DatabaseMode.SHARDED)
     .withSetting(GraphDatabaseInternalSettings.stateful_shortest_planning_mode, INTO_ONLY)
     .build()
 
@@ -961,6 +968,137 @@ class StatefulShortestToFindShortestIntegrationTest extends CypherFunSuite with 
         .allNodeScan("s")
         .build()
     )(SymmetricalLogicalPlanEquality)
+  }
+
+  /*
+   * SHARDED DATABASES MODE
+   */
+  test(
+    "Shortest should not be rewritten to legacy shortest if predicates use properties"
+  ) {
+    val query =
+      s"""
+         |MATCH (s), (t)
+         |WITH * SKIP 1
+         |MATCH ANY SHORTEST (s)((a)-[r:R]->(b) WHERE a.prop <> b.prop)*(t)
+         |RETURN r
+         |""".stripMargin
+    val plan = plannerForShardedDatabases.plan(query).stripProduceResults
+
+    plan should equal(
+      plannerForShardedDatabases.subPlanBuilder()
+        .statefulShortestPath(
+          "s",
+          "t",
+          "SHORTEST 1 (s) ((`a`)-[`r`]->(`b`)){0, } (t)",
+          None,
+          Set(),
+          Set(("r", "r")),
+          Set(),
+          Set(),
+          StatefulShortestPath.Selector.Shortest(1),
+          new TestNFABuilder(0, "s")
+            .addTransition(0, 1, "(s) (a)")
+            .addTransition(0, 3, "(s) (t)")
+            .addTransition(1, 2, "(a)-[r:R WHERE NOT startNode(r).prop = endNode(r).prop]->(b)")
+            .addTransition(2, 1, "(b) (a)")
+            .addTransition(2, 3, "(b) (t)")
+            .setFinalState(3)
+            .build(),
+          ExpandInto,
+          false,
+          0,
+          None
+        )
+        .skip(1)
+        .cartesianProduct()
+        .|.allNodeScan("t")
+        .allNodeScan("s")
+        .build()
+    )(SymmetricalLogicalPlanEquality)
+  }
+
+  test("Shortest should be rewritten to legacy shortest for simple QPP for sharded databases") {
+    val query =
+      s"""
+         |MATCH ANY SHORTEST ((a)-[r:R]->*(b) WHERE all(x IN r WHERE endNode(x):User))
+         |RETURN *
+         |""".stripMargin
+    val plan = plannerForShardedDatabases.plan(query).stripProduceResults
+    plan should equal(plannerForShardedDatabases.subPlanBuilder()
+      .shortestPathExpr(
+        "(a)-[r:R*0..]->(b)",
+        pathName = Some("anon_1"),
+        nodePredicates = Seq(),
+        relationshipPredicates = Seq(VariablePredicate(v"anon_0", hasLabels(endNode("anon_0"), "User"))),
+        sameNodeMode = AllowSameNode
+      )
+      .cartesianProduct()
+      .|.allNodeScan("a")
+      .allNodeScan("b")
+      .build())(SymmetricalLogicalPlanEquality)
+  }
+
+  test(
+    "Shortest should not be rewritten to legacy shortest for varLength patterns with properties for sharded databases"
+  ) {
+    val query =
+      s"""
+         |MATCH ANY SHORTEST ((a)-[r*]->(b) WHERE all(x IN r WHERE x.prop > 5))
+         |RETURN *
+         |""".stripMargin
+    val plan = plannerForShardedDatabases.plan(query).stripProduceResults
+    plan should equal(plannerForShardedDatabases.subPlanBuilder()
+      .statefulShortestPath(
+        "a",
+        "b",
+        "SHORTEST 1 (a)-[r*]->(b)",
+        Some("all(x IN r WHERE x.prop > 5)"),
+        Set(),
+        Set(("r", "r")),
+        Set(),
+        Set(),
+        StatefulShortestPath.Selector.Shortest(1),
+        new TestNFABuilder(0, "a")
+          .addTransition(0, 1, "(a) (anon_0)")
+          .addTransition(1, 2, "(anon_0)-[r]->(anon_1)")
+          .addTransition(2, 2, "(anon_1)-[r]->(anon_1)")
+          .addTransition(2, 3, "(anon_1) (b)")
+          .setFinalState(3)
+          .build(),
+        ExpandInto,
+        false,
+        1,
+        None
+      )
+      .cartesianProduct()
+      .|.allNodeScan("b")
+      .allNodeScan("a")
+      .build())(SymmetricalLogicalPlanEquality)
+  }
+
+  test("Shortest should be rewritten to legacy shortest for simple varLength pattern for sharded databases") {
+    val query =
+      s"""
+         |MATCH p = ANY SHORTEST (a:User)-[r*]->(b:User)
+         |RETURN *
+         |""".stripMargin
+    val plan = plannerForShardedDatabases.plan(query).stripProduceResults
+    val expected = plannerForShardedDatabases.subPlanBuilder()
+      .projection(Map("p" -> multiOutgoingRelationshipPath("a", "r", "b")))
+      .shortestPath(
+        "(a)-[r*1..]->(b)",
+        pathName = Some("anon_0"),
+        nodePredicates = Seq(),
+        relationshipPredicates = Seq(),
+        sameNodeMode = AllowSameNode
+      )
+      .cartesianProduct()
+      .|.nodeByLabelScan("b", "User")
+      .nodeByLabelScan("a", "User")
+      .build()
+
+    plan should equal(expected)(SymmetricalLogicalPlanEquality)
   }
 
   def multiOutgoingRelationshipPath(fromNode: String, relationships: String, toNode: String): PathExpression = {

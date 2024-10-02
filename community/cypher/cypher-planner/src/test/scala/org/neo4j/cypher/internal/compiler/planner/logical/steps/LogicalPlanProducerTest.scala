@@ -29,8 +29,10 @@ import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.FunctionName
 import org.neo4j.cypher.internal.expressions.LogicalVariable
+import org.neo4j.cypher.internal.expressions.NODE_TYPE
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.SemanticDirection
+import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.expressions.functions.Collect
 import org.neo4j.cypher.internal.frontend.phases.ProcedureReadOnlyAccess
 import org.neo4j.cypher.internal.frontend.phases.ProcedureReadWriteAccess
@@ -40,12 +42,16 @@ import org.neo4j.cypher.internal.frontend.phases.ResolvedCall
 import org.neo4j.cypher.internal.ir.CreateNode
 import org.neo4j.cypher.internal.ir.CreatePattern
 import org.neo4j.cypher.internal.ir.DeleteExpression
+import org.neo4j.cypher.internal.ir.ExhaustivePathPattern
 import org.neo4j.cypher.internal.ir.ForeachPattern
+import org.neo4j.cypher.internal.ir.NoHeaders
 import org.neo4j.cypher.internal.ir.NodeBinding
 import org.neo4j.cypher.internal.ir.PatternRelationship
 import org.neo4j.cypher.internal.ir.QuantifiedPathPattern
 import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.ir.RemoveLabelPattern
+import org.neo4j.cypher.internal.ir.Selections
+import org.neo4j.cypher.internal.ir.SelectivePathPattern
 import org.neo4j.cypher.internal.ir.SetLabelPattern
 import org.neo4j.cypher.internal.ir.SetNodePropertiesFromMapPattern
 import org.neo4j.cypher.internal.ir.SetNodePropertyPattern
@@ -53,15 +59,22 @@ import org.neo4j.cypher.internal.ir.SetPropertiesFromMapPattern
 import org.neo4j.cypher.internal.ir.SetPropertyPattern
 import org.neo4j.cypher.internal.ir.SetRelationshipPropertiesFromMapPattern
 import org.neo4j.cypher.internal.ir.SetRelationshipPropertyPattern
+import org.neo4j.cypher.internal.ir.ShortestRelationshipPattern
 import org.neo4j.cypher.internal.ir.SimplePatternLength
 import org.neo4j.cypher.internal.ir.SinglePlannerQuery
+import org.neo4j.cypher.internal.ir.VarPatternLength
 import org.neo4j.cypher.internal.ir.ordering.InterestingOrder
 import org.neo4j.cypher.internal.ir.ordering.RequiredOrderCandidate
+import org.neo4j.cypher.internal.logical.builder.TestNFABuilder
 import org.neo4j.cypher.internal.logical.plans.Ascending
 import org.neo4j.cypher.internal.logical.plans.AtMostOneRow
+import org.neo4j.cypher.internal.logical.plans.CachedProperties
 import org.neo4j.cypher.internal.logical.plans.DistinctColumns
+import org.neo4j.cypher.internal.logical.plans.Expand.ExpandAll
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
+import org.neo4j.cypher.internal.logical.plans.NFA.PathLength
 import org.neo4j.cypher.internal.logical.plans.NotDistinct
+import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath.Selector.Shortest
 import org.neo4j.cypher.internal.logical.plans.ordering.DefaultProvidedOrderFactory
 import org.neo4j.cypher.internal.logical.plans.ordering.ProvidedOrder
 import org.neo4j.cypher.internal.logical.plans.ordering.ProvidedOrderFactory
@@ -1068,6 +1081,16 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
     )
   }
 
+  test("RemoteBatchProperties should retain provided order") {
+    shouldRetainProvidedOrder(ctx =>
+      ctx.producer.planRemoteBatchProperties(
+        ctx.lhs,
+        Set(cachedNodeProp("x", "bar")),
+        ctx.context
+      )
+    )
+  }
+
   case class PlanCreationContext(
     producer: LogicalPlanProducer,
     context: LogicalPlanningContext,
@@ -1097,7 +1120,13 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
     }
   }
 
-  private def getPlan(context: LogicalPlanningContext, createPlan: PlanCreationContext => LogicalPlan) = {
+  private def getPlan(context: LogicalPlanningContext, createPlan: PlanCreationContext => LogicalPlan) =
+    createPlan(buildPlanCreationContext(context))
+
+  private def buildPlanCreationContext(
+    context: LogicalPlanningContext,
+    useProvidedOrder: Boolean = false
+  ): PlanCreationContext = {
     val lpp = LogicalPlanProducer(context.cardinality, context.staticComponents.planningAttributes, idGen)
     val lhs = fakeLogicalPlanFor(context.staticComponents.planningAttributes, "x", "y")
     val providedOrder = DefaultProvidedOrderFactory.asc(v"y").asc(v"x")
@@ -1105,7 +1134,13 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
 
     val rhs = fakeLogicalPlanFor(context.staticComponents.planningAttributes, "a")
     val rhsWithUpdate = lpp.planSetLabel(rhs, SetLabelPattern(v"n", Seq(labelName("N")), Seq.empty), context)
-    createPlan(PlanCreationContext(lpp, context, lhs, rhsWithUpdate, rhs))
+
+    if (useProvidedOrder) {
+      val initialOrder = DefaultProvidedOrderFactory.asc(v"x")
+      context.staticComponents.planningAttributes.providedOrders.set(lhs.id, initialOrder)
+      context.staticComponents.planningAttributes.providedOrders.set(rhs.id, initialOrder)
+    }
+    PlanCreationContext(lpp, context, lhs, rhsWithUpdate, rhs)
   }
 
   test("should mark leveraged order in plans and their origin") {
@@ -1396,5 +1431,1034 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
       context.staticComponents.planningAttributes.leveragedOrders.get(p1.id) // observe leveraged order
       lpp.planOrderedDistinct(p1, fooToX, Seq(varX), fooToX, context) // should not crash
     }
+  }
+
+  test("should retain previously cached properties for planAllNodesScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planAllNodesScan(v"x", Set(v"x"), ctx.context)
+    )
+  }
+
+  test("should retain previously cached properties for planAllRelationshipsScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planAllRelationshipsScan(
+        v"x",
+        mockPatternRelationship(v"x"),
+        mockPatternRelationship(v"x"),
+        Seq.empty,
+        Set(v"x"),
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planRelationshipByTypeScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planRelationshipByTypeScan(
+        v"x",
+        relTypeName("foo"),
+        mockPatternRelationship(v"x"),
+        mockPatternRelationship(v"x"),
+        Seq.empty,
+        None,
+        Set(v"x"),
+        ProvidedOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planUnionRelationshipByTypeScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planUnionRelationshipByTypeScan(
+        v"x",
+        Seq(relTypeName("foo"), relTypeName("bar")),
+        mockPatternRelationship(v"x"),
+        mockPatternRelationship(v"x"),
+        Seq.empty,
+        Seq.empty,
+        Set(v"x"),
+        ProvidedOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planNodeByLabelScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planNodeByLabelScan(
+        v"x",
+        labelName("foo"),
+        Seq.empty,
+        None,
+        Set(v"x"),
+        ProvidedOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planUnionNodeByLabelsScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planUnionNodeByLabelsScan(
+        v"x",
+        Seq(labelName("foo"), labelName("bar")),
+        Seq.empty,
+        Seq.empty,
+        Set(v"x"),
+        ProvidedOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planIntersectNodeByLabelsScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planIntersectNodeByLabelsScan(
+        v"x",
+        Seq(labelName("foo"), labelName("bar")),
+        Seq.empty,
+        Seq.empty,
+        Set(v"x"),
+        ProvidedOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planSubtractionNodeByLabelsScan") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planSubtractionNodeByLabelsScan(
+        v"x",
+        Seq(labelName("foo")),
+        Seq(labelName("bar")),
+        Seq.empty,
+        Seq.empty,
+        Set(v"x"),
+        ProvidedOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planQueryArgument") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planQueryArgument(
+        ctx.context.staticComponents.planningAttributes.solveds.get(ctx.lhs.id).asSinglePlannerQuery.queryGraph,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planArgument") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planArgument(
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planCountStoreNodeAggregation") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planCountStoreNodeAggregation(
+        ctx.context.staticComponents.planningAttributes.solveds.get(ctx.lhs.id).asSinglePlannerQuery,
+        v"x",
+        List.empty,
+        Set.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should retain previously cached properties for planCountStoreRelationshipAggregation") {
+    shouldUsePreviouslyCachedProperties((ctx: PlanCreationContext) =>
+      ctx.producer.planCountStoreRelationshipAggregation(
+        ctx.context.staticComponents.planningAttributes.solveds.get(ctx.lhs.id).asSinglePlannerQuery,
+        v"x",
+        None,
+        Seq.empty,
+        None,
+        Set.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from rhs for planApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planApply(ctx.lhs, ctx.rhsWithoutUpdate, ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planSubquery") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSubquery(
+        ctx.lhs,
+        ctx.rhsWithoutUpdate,
+        ctx.context,
+        correlated = false,
+        yielding = false,
+        None,
+        optional = false
+      )
+    )
+  }
+
+  test("should propagate cached properties from rhs for planTailApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planTailApply(ctx.lhs, ctx.rhsWithoutUpdate, ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planOptional") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planOptional(ctx.rhsWithoutUpdate, Set(v"x"), ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planOptionalMatch") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planOptionalMatch(
+        ctx.rhsWithoutUpdate,
+        Set(v"x"),
+        ctx.context,
+        ctx.context.staticComponents.planningAttributes.solveds.get(
+          ctx.rhsWithoutUpdate.id
+        ).asSinglePlannerQuery.queryGraph
+      )
+    )
+  }
+
+  test("should propagate cached properties from rhs for planLetAntiSemiApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planLetAntiSemiApply(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planLetSemiApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planLetSemiApply(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planAntiSemiApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planAntiSemiApply(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planSemiApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSemiApply(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planSemiApplyInHorizon") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSemiApplyInHorizon(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planAntiSemiApplyInHorizon") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planAntiSemiApplyInHorizon(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planEmptyProjection") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planEmptyProjection(ctx.rhsWithoutUpdate, ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planTriadicSelection") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planTriadicSelection(
+        positivePredicate = true,
+        ctx.lhs,
+        v"x",
+        v"y",
+        v"z",
+        ctx.rhsWithoutUpdate,
+        hasLabels("y", "foo"),
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from rhs for planConditionalApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planConditionalApply(ctx.lhs, ctx.rhsWithoutUpdate, Seq(v"a"), ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from rhs for planAntiConditionalApply") {
+    shouldUseCachedPropertiesFromRHS((ctx: PlanCreationContext) =>
+      ctx.producer.planAntiConditionalApply(ctx.lhs, ctx.rhsWithoutUpdate, Seq(v"a"), ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from lhs for planSimpleExpand") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSimpleExpand(ctx.lhs, v"x", v"y", mockPatternRelationship(v"x"), ExpandAll, ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from lhs for planVarExpand") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planVarExpand(
+        ctx.lhs,
+        v"x",
+        v"y",
+        mockPatternRelationship(v"x").copy(length = VarPatternLength(1, None)),
+        ListSet.empty,
+        ListSet.empty,
+        ListSet.empty,
+        ExpandAll,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planSelectOrAntiSemiApply") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSelectOrAntiSemiApply(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from lhs for planLetSelectOrAntiSemiApply") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planLetSelectOrAntiSemiApply(
+        ctx.lhs,
+        ctx.rhsWithoutUpdate,
+        v"x",
+        propGreaterThan("x", "prop", 42),
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planSelectOrSemiApply") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSelectOrSemiApply(ctx.lhs, ctx.rhsWithoutUpdate, v"x", ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from lhs for planLetSelectOrSemiApply") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planLetSelectOrSemiApply(
+        ctx.lhs,
+        ctx.rhsWithoutUpdate,
+        v"x",
+        propGreaterThan("x", "prop", 42),
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for updateSolvedForSortedItems") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.updateSolvedForSortedItems(
+        ctx.lhs,
+        InterestingOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planSkip") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSkip(ctx.lhs, literalInt(1), InterestingOrder.empty, ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from lhs for planLimit") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planLimit(ctx.lhs, literalInt(1), literalInt(2), InterestingOrder.empty, ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from lhs for planExhaustiveLimit") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planExhaustiveLimit(ctx.lhs, literalInt(1), literalInt(2), InterestingOrder.empty, ctx.context)
+    )
+  }
+
+  test("should propagate cached properties from lhs for planSkipAndLimit") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSkipAndLimit(
+        ctx.lhs,
+        literalInt(1),
+        literalInt(2),
+        InterestingOrder.empty,
+        ctx.context,
+        useExhaustiveLimit = false
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planLimitForAggregation") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planLimitForAggregation(
+        ctx.lhs,
+        Map(v"x" -> hasLabels("x", "foo")),
+        Map.empty,
+        InterestingOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planSort") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planSort(
+        ctx.lhs,
+        Seq.empty,
+        Seq.empty,
+        InterestingOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planTop") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planTop(
+        ctx.lhs,
+        literalInt(42),
+        Seq.empty,
+        Seq.empty,
+        InterestingOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planTop1WithTies") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planTop1WithTies(
+        ctx.lhs,
+        Seq.empty,
+        Seq.empty,
+        InterestingOrder.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planPartialSort") {
+    shouldUseCachedPropertiesFromLHS(
+      (ctx: PlanCreationContext) =>
+        ctx.producer.planPartialSort(
+          ctx.lhs,
+          Seq(Ascending(v"x")),
+          Seq(Ascending(v"y")),
+          DefaultProvidedOrderFactory.asc(v"y").columns,
+          InterestingOrder.empty,
+          ctx.context
+        ),
+      useProvidedOrder = true
+    )
+  }
+
+  test("should propagate cached properties from lhs for planShortestRelationships") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planShortestRelationship(
+        ctx.lhs,
+        ShortestRelationshipPattern(
+          None,
+          rel = PatternRelationship(
+            v"x",
+            boundaryNodes = (v"r", v"s"),
+            dir = OUTGOING,
+            types = Seq.empty,
+            length = VarPatternLength(1, None)
+          ),
+          single = false
+        )(null),
+        nodePredicates = Set.empty,
+        relPredicates = Set.empty,
+        pathPredicates = Set.empty,
+        solvedPredicates = Set.empty,
+        withFallBack = false,
+        disallowSameNode = true,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planStatefulShortest") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planStatefulShortest(
+        ctx.lhs,
+        startNode = v"x",
+        endNode = v"y",
+        nfa = new TestNFABuilder(0, "x")
+          .addTransition(0, 1, "(x)-[r_expr]->(y)")
+          .setFinalState(1)
+          .build(),
+        mode = ExpandAll,
+        nonInlinedPreFilters = None,
+        nodeVariableGroupings = Set.empty,
+        relationshipVariableGroupings = Set.empty,
+        singletonNodeVariables = Set.empty,
+        singletonRelationshipVariables = Set.empty,
+        selector = Shortest(3),
+        solvedExpressionAsString = "",
+        solvedSpp = SelectivePathPattern(
+          pathPattern = ExhaustivePathPattern.NodeConnections(NonEmptyList(PatternRelationship(
+            v"x",
+            (v"foo", v"start"),
+            SemanticDirection.OUTGOING,
+            Seq.empty,
+            SimplePatternLength
+          ))),
+          selections = Selections.from(List(
+            unique(v"r")
+          )),
+          selector = SelectivePathPattern.Selector.Shortest(1)
+        ),
+        solvedPredicates = Seq.empty,
+        reverseGroupVariableProjections = false,
+        hints = Set.empty,
+        context = ctx.context,
+        pathLength = PathLength.none
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planProjectEndpoints") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planProjectEndpoints(
+        ctx.lhs,
+        v"x",
+        startInScope = false,
+        v"y",
+        endInScope = false,
+        PatternRelationship(
+          v"x",
+          (v"foo", v"start"),
+          SemanticDirection.OUTGOING,
+          Seq.empty,
+          SimplePatternLength
+        ),
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planProjectionForUnionMapping") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planProjectionForUnionMapping(
+        ctx.lhs,
+        Map.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planDistinct") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planDistinct(
+        ctx.lhs,
+        Map.empty,
+        Map.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planOrderedDistinct") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planOrderedDistinct(
+        ctx.lhs,
+        Map.empty,
+        Seq.empty,
+        Map.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should propagate cached properties from lhs for planEager") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planEager(
+        ctx.lhs,
+        ctx.context,
+        ListSet.empty
+      )
+    )
+  }
+
+  test("should reset cached properties for planInputApply") {
+    shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
+      ctx.producer.planInputApply(ctx.lhs, ctx.rhsWithUpdate, Seq(v"x"), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planLoadCSV") {
+    shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
+      ctx.producer.planLoadCSV(ctx.lhs, v"x", literal("foo"), NoHeaders, None, ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planInput") {
+    shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
+      ctx.producer.planInput(Seq(v"x"), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planCreate") {
+    shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
+      ctx.producer.planCreate(ctx.lhs, CreatePattern(Seq(CreateNode(v"n", Set(), None))), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planMerge") {
+    shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
+      ctx.producer.planMerge(
+        ctx.lhs,
+        Seq(CreateNode(v"n", Set(), None)),
+        Seq.empty,
+        Seq(SetNodePropertyPattern(v"x", PropertyKeyName("p")(pos), literalInt(1))),
+        Seq.empty,
+        Set.empty,
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planProcedureCall withUpdates") {
+    shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
+      ctx.producer.planProcedureCall(
+        ctx.lhs,
+        ResolvedCall(
+          signature = ProcedureSignature(
+            name = QualifiedName(namespace = Seq.empty, name = "foo"),
+            inputSignature = IndexedSeq.empty,
+            outputSignature = Option.empty,
+            deprecationInfo = Option.empty,
+            accessMode = ProcedureReadWriteAccess,
+            id = 42
+          ),
+          callArguments = Seq.empty,
+          callResults = IndexedSeq.empty
+        )(InputPosition.NONE),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planProcedureCall without updates") {
+    shouldUseCachedPropertiesFromLHS((ctx: PlanCreationContext) =>
+      ctx.producer.planProcedureCall(
+        ctx.lhs,
+        ResolvedCall(
+          signature = ProcedureSignature(
+            name = QualifiedName(namespace = Seq.empty, name = "foo"),
+            inputSignature = IndexedSeq.empty,
+            outputSignature = Option.empty,
+            deprecationInfo = Option.empty,
+            accessMode = ProcedureReadOnlyAccess,
+            id = 42
+          ),
+          callArguments = Seq.empty,
+          callResults = IndexedSeq.empty
+        )(InputPosition.NONE),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planProcedureCall planDeleteNode") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planDeleteNode(ctx.lhs, DeleteExpression(v"n", false), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planDeleteRelationships") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planDeleteRelationship(ctx.lhs, DeleteExpression(v"r", false), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planDeletePath") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planDeletePath(ctx.lhs, DeleteExpression(v"p", false), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planDeleteExpression") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planDeleteExpression(ctx.lhs, DeleteExpression(v"x", false), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planSetLabel") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planSetLabel(ctx.lhs, SetLabelPattern(v"n", Seq(labelName("N")), Seq.empty), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planRemoveLabel") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planRemoveLabel(ctx.lhs, RemoveLabelPattern(v"n", Seq(labelName("N")), Seq.empty), ctx.context)
+    )
+  }
+
+  test("should reset cached properties for planSetProperty") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planSetProperty(
+        ctx.lhs,
+        SetPropertyPattern(v"x", PropertyKeyName("p")(pos), literalInt(1)),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planProcedureCall planSetPropertiesFromMap") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planSetPropertiesFromMap(
+        ctx.lhs,
+        SetPropertiesFromMapPattern(v"x", mapOfInt("p" -> 1), false),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planSetNodeProperty") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planSetNodeProperty(
+        ctx.lhs,
+        SetNodePropertyPattern(v"x", PropertyKeyName("p")(pos), literalInt(1)),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planSetNodePropertiesFromMap") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planSetNodePropertiesFromMap(
+        ctx.lhs,
+        SetNodePropertiesFromMapPattern(v"x", mapOfInt("p" -> 1), false),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planSetRelationshipProperty") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planSetRelationshipProperty(
+        ctx.lhs,
+        SetRelationshipPropertyPattern(v"x", PropertyKeyName("p")(pos), literalInt(1)),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planSetRelationshipPropertiesFromMap") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planSetRelationshipPropertiesFromMap(
+        ctx.lhs,
+        SetRelationshipPropertiesFromMapPattern(v"r", mapOfInt("p" -> 1), false),
+        ctx.context
+      )
+    )
+  }
+
+  test("should reset cached properties for planForeachApply") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planForeachApply(
+        ctx.lhs,
+        ctx.rhsWithoutUpdate,
+        ForeachPattern(v"x", v"x", SinglePlannerQuery.empty),
+        ctx.context,
+        v"x"
+      )
+    )
+  }
+
+  test("should reset cached properties for planForeach") {
+    shouldResetCachedPropertiesToEmpty(ctx =>
+      ctx.producer.planForeach(
+        ctx.lhs,
+        ForeachPattern(v"x", v"x", SinglePlannerQuery.empty),
+        ctx.context,
+        v"x",
+        Seq.empty
+      )
+    )
+  }
+
+  test("should only cache common variables and properties for planNodeHashJoin") {
+    shouldIntersectCachedEntries(ctx =>
+      ctx.producer.planNodeHashJoin(Set.empty, ctx.lhs, ctx.rhsWithoutUpdate, Set.empty, ctx.context)
+    )
+  }
+
+  test("should only cache common variables and properties for planAssertSameNode") {
+    shouldIntersectCachedEntries(ctx =>
+      ctx.producer.planAssertSameNode(v"x", ctx.lhs, ctx.rhsWithoutUpdate, ctx.context)
+    )
+  }
+
+  test("should only cache common variables and properties for planAssertSameRelationship") {
+    shouldIntersectCachedEntries(ctx =>
+      ctx.producer.planAssertSameRelationship(mockPatternRelationship(v"x"), ctx.lhs, ctx.rhsWithoutUpdate, ctx.context)
+    )
+  }
+
+  test("should only cache common variables and properties for planLeftOuterHashJoin") {
+    shouldIntersectCachedEntries(ctx =>
+      ctx.producer.planLeftOuterHashJoin(Set.empty, ctx.lhs, ctx.rhsWithoutUpdate, Set.empty, ctx.context)
+    )
+  }
+
+  test("should only cache common variables and properties for planRightOuterHashJoin") {
+    shouldIntersectCachedEntries(ctx =>
+      ctx.producer.planRightOuterHashJoin(Set.empty, ctx.lhs, ctx.rhsWithoutUpdate, Set.empty, ctx.context)
+    )
+  }
+
+  test("should only cache common variables and properties for planOrderedUnion") {
+    shouldIntersectCachedEntries(
+      ctx =>
+        ctx.producer.planOrderedUnion(ctx.lhs, ctx.rhsWithoutUpdate, List.empty, Seq(Ascending(v"x")), ctx.context),
+      useProvidedOrder = true
+    )
+  }
+
+  test(
+    "should propagate common properties for planUnion and propagate cached properties from lhs for planDistinctForUnion"
+  ) {
+    new givenConfig().withLogicalPlanningContext { (_, context) =>
+      val planCreationContext = buildPlanCreationContext(context)
+
+      letRHSPlanHaveTheCachedProperties(
+        context,
+        planCreationContext,
+        CachedProperties(Map(v"x" -> CachedProperties.Entry(
+          v"x",
+          NODE_TYPE,
+          Set(propertyKeyName("foo"), propertyKeyName("bar"))
+        )))
+      )
+
+      letLHSPlanHaveTheCachedProperties(
+        context,
+        planCreationContext,
+        CachedProperties(Map(
+          v"x" -> CachedProperties.Entry(v"x", NODE_TYPE, Set(propertyKeyName("foo"))),
+          v"y" -> CachedProperties.Entry(v"y", NODE_TYPE, Set(propertyKeyName("foo")))
+        ))
+      )
+
+      val union = planCreationContext.producer.planUnion(
+        planCreationContext.lhs,
+        planCreationContext.rhsWithoutUpdate,
+        List.empty,
+        planCreationContext.context
+      )
+      val expectedCachedProperties =
+        CachedProperties(Map(v"x" -> CachedProperties.Entry(v"x", NODE_TYPE, Set(propertyKeyName("foo")))))
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(union.id) should equal(
+        expectedCachedProperties
+      )
+
+      val distinctForUnion = planCreationContext.producer.planDistinctForUnion(
+        union,
+        planCreationContext.context
+      )
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(distinctForUnion.id) should equal(
+        expectedCachedProperties
+      )
+    }
+  }
+
+  test("should only cache common properties for a given variable for planCartesianProduct") {
+    shouldIntersectCachedProperties(ctx =>
+      ctx.producer.planCartesianProduct(ctx.lhs, ctx.rhsWithoutUpdate, ctx.context)
+    )
+  }
+
+  test("should only cache common properties for a given variable for planValueHashJoin") {
+    shouldIntersectCachedProperties(ctx =>
+      ctx.producer.planValueHashJoin(
+        ctx.lhs,
+        ctx.rhsWithoutUpdate,
+        equals(prop("x", "foo"), prop("y", "foo")),
+        equals(prop("x", "foo"), prop("y", "foo")),
+        ctx.context
+      )
+    )
+  }
+
+  private def mockCachedProperties =
+    CachedProperties(Map(v"x" -> CachedProperties.Entry(v"x", NODE_TYPE, Set(propertyKeyName("foo")))))
+
+  private def propertyKeyName(name: String): PropertyKeyName = PropertyKeyName(name)(InputPosition.NONE)
+
+  private def mockPatternRelationship(variable: LogicalVariable): PatternRelationship = PatternRelationship(
+    variable,
+    (v"n", v"m"),
+    SemanticDirection.OUTGOING,
+    Nil,
+    SimplePatternLength
+  )
+
+  private def shouldUsePreviouslyCachedProperties(createPlan: PlanCreationContext => LogicalPlan) = {
+    new givenConfig().withLogicalPlanningContext { (_, context) =>
+      val contextToUse = contextWithPreviouslyCachedProperties(context)
+      val result = getPlan(contextToUse, createPlan)
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(result.id) should equal(
+        contextToUse.plannerState.previouslyCachedProperties
+      )
+    }
+  }
+
+  private def contextWithPreviouslyCachedProperties(context: LogicalPlanningContext) = {
+    context.copy(plannerState =
+      context.plannerState.copy(previouslyCachedProperties =
+        mockCachedProperties
+      )
+    )
+  }
+
+  private def shouldUseCachedPropertiesFromRHS(createPlan: PlanCreationContext => LogicalPlan) = {
+    new givenConfig().withLogicalPlanningContext { (_, context) =>
+      val planCreationContext = buildPlanCreationContext(context)
+      letRHSPlanHaveTheCachedProperties(context, planCreationContext, mockCachedProperties)
+
+      val result = createPlan(planCreationContext)
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(result.id) should equal(
+        context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(
+          planCreationContext.rhsWithoutUpdate.id
+        )
+      )
+    }
+  }
+
+  private def shouldUseCachedPropertiesFromLHS(
+    createPlan: PlanCreationContext => LogicalPlan,
+    useProvidedOrder: Boolean = false
+  ) = {
+    new givenConfig().withLogicalPlanningContext { (_, context) =>
+      val planCreationContext = buildPlanCreationContext(context, useProvidedOrder)
+      letLHSPlanHaveTheCachedProperties(context, planCreationContext, mockCachedProperties)
+
+      val result = createPlan(planCreationContext)
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(result.id) should equal(
+        context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(
+          planCreationContext.lhs.id
+        )
+      )
+    }
+  }
+
+  private def shouldResetCachedPropertiesToEmpty(createPlan: PlanCreationContext => LogicalPlan) = {
+    new givenConfig().withLogicalPlanningContext { (_, context) =>
+      val contextToUse = contextWithPreviouslyCachedProperties(context)
+      val planCreationContext = buildPlanCreationContext(contextToUse)
+      letRHSPlanHaveTheCachedProperties(contextToUse, planCreationContext, mockCachedProperties)
+      letLHSPlanHaveTheCachedProperties(contextToUse, planCreationContext, mockCachedProperties)
+      val result = getPlan(contextToUse, createPlan)
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(result.id) should equal(
+        CachedProperties.empty
+      )
+    }
+  }
+
+  private def shouldIntersectCachedEntries(
+    createPlan: PlanCreationContext => LogicalPlan,
+    useProvidedOrder: Boolean = false
+  ) = {
+    new givenConfig().withLogicalPlanningContext { (_, context) =>
+      val planCreationContext = buildPlanCreationContext(context, useProvidedOrder)
+
+      letRHSPlanHaveTheCachedProperties(
+        context,
+        planCreationContext,
+        CachedProperties(Map(v"x" -> CachedProperties.Entry(
+          v"x",
+          NODE_TYPE,
+          Set(propertyKeyName("foo"), propertyKeyName("bar"))
+        )))
+      )
+
+      letLHSPlanHaveTheCachedProperties(
+        context,
+        planCreationContext,
+        CachedProperties(Map(
+          v"x" -> CachedProperties.Entry(v"x", NODE_TYPE, Set(propertyKeyName("foo"))),
+          v"y" -> CachedProperties.Entry(v"y", NODE_TYPE, Set(propertyKeyName("foo")))
+        ))
+      )
+
+      val result = createPlan(planCreationContext)
+
+      val expectedCachedProperties =
+        CachedProperties(Map(v"x" -> CachedProperties.Entry(v"x", NODE_TYPE, Set(propertyKeyName("foo")))))
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(result.id) should equal(
+        expectedCachedProperties
+      )
+    }
+  }
+
+  private def shouldIntersectCachedProperties(createPlan: PlanCreationContext => LogicalPlan) = {
+    new givenConfig().withLogicalPlanningContext { (_, context) =>
+      val planCreationContext = buildPlanCreationContext(context)
+
+      letRHSPlanHaveTheCachedProperties(
+        context,
+        planCreationContext,
+        CachedProperties(Map(v"x" -> CachedProperties.Entry(
+          v"x",
+          NODE_TYPE,
+          Set(propertyKeyName("foo"), propertyKeyName("bar"))
+        )))
+      )
+
+      letLHSPlanHaveTheCachedProperties(
+        context,
+        planCreationContext,
+        CachedProperties(Map(
+          v"x" -> CachedProperties.Entry(v"x", NODE_TYPE, Set(propertyKeyName("foo"))),
+          v"y" -> CachedProperties.Entry(v"y", NODE_TYPE, Set(propertyKeyName("foo")))
+        ))
+      )
+
+      val result = createPlan(planCreationContext)
+
+      val expectedCachedProperties =
+        CachedProperties(Map(
+          v"x" -> CachedProperties.Entry(v"x", NODE_TYPE, Set(propertyKeyName("foo"))),
+          v"y" -> CachedProperties.Entry(v"y", NODE_TYPE, Set(propertyKeyName("foo")))
+        ))
+      context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(result.id) should equal(
+        expectedCachedProperties
+      )
+    }
+  }
+
+  private def letLHSPlanHaveTheCachedProperties(
+    context: LogicalPlanningContext,
+    planCreationContext: PlanCreationContext,
+    cp: CachedProperties
+  ): Unit = {
+    context.staticComponents.planningAttributes.cachedPropertiesPerPlan.set(
+      planCreationContext.lhs.id,
+      cp
+    )
+  }
+
+  private def letRHSPlanHaveTheCachedProperties(
+    context: LogicalPlanningContext,
+    planCreationContext: PlanCreationContext,
+    cachedProperties: CachedProperties
+  ): Unit = {
+    context.staticComponents.planningAttributes.cachedPropertiesPerPlan.set(
+      planCreationContext.rhsWithoutUpdate.id,
+      cachedProperties
+    )
   }
 }

@@ -26,6 +26,7 @@ import org.neo4j.cypher.internal.compiler.planner.logical.idp.extractQPPPredicat
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.NodePattern
+import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.Range
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.RelationshipChain
@@ -77,7 +78,8 @@ import scala.collection.Set
  */
 case class StatefulShortestToFindShortestRewriter(
   solveds: Solveds,
-  anonymousVariableNameGenerator: AnonymousVariableNameGenerator
+  anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
+  isShardedDabase: Boolean = false
 ) extends Rewriter with TopDownMergeableRewriter {
 
   override val innerRewriter: Rewriter = Rewriter.lift {
@@ -185,7 +187,11 @@ case class StatefulShortestToFindShortestRewriter(
       pr.length.asInstanceOf[VarPatternLength]
     )
     // 3.0 predicates needs to be inlineable in a legacy find shortest plan
-    if ((nodePredicates ++ relationshipPredicates).size == withoutUniqueness(spp.selections.flatPredicates).size) {
+    if (
+      (nodePredicates ++ relationshipPredicates).size == withoutUniqueness(
+        spp.selections.flatPredicates
+      ).size && !requiresPropertyAccessFromShards((nodePredicates ++ relationshipPredicates).map(_.predicate))
+    ) {
       Some(FindShortestPaths(
         statefulShortestPath.source,
         shortestRelPattern,
@@ -199,6 +205,15 @@ case class StatefulShortestToFindShortestRewriter(
       None
     }
   }
+
+  private def requiresPropertyAccessFromShards(predicates: Iterable[Expression]): Boolean = {
+    isShardedDabase && predicates.exists(requiresPropertyAccess)
+  }
+
+  private def requiresPropertyAccess(expr: Expression): Boolean =
+    expr.folder.treeExists {
+      case _: Property => true
+    }
 
   private def getRange(qpp: QuantifiedPathPattern): Option[Some[Range]] = {
     val pos = InputPosition.NONE
@@ -242,6 +257,7 @@ case class StatefulShortestToFindShortestRewriter(
       nodePredicates.size + relationshipPredicates.size == withoutUniqueness(
         spp.selections.flatPredicates
       ).size && qpp.relationshipVariableGroupings.size == 1
+      && !requiresPropertyAccessFromShards(nodePredicates ++ relationshipPredicates.map(_.predicate))
     ) {
       val innerRelationshipVariable = qpp.relationshipVariableGroupings.head.singleton
       convertToInlinedPredicates(

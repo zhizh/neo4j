@@ -188,7 +188,13 @@ case object SelectPatternPredicates extends SelectionCandidateGenerator {
       context.staticComponents.planningAttributes.solveds.get(lhs.id).asSinglePlannerQuery.allLabelInfo
         // We only retain the relevant label infos to get more cache hits.
         .view.filterKeys(arguments).toMap
-    context.staticComponents.queryGraphSolver.planInnerOfExistsSubquery(subquery, labelInfo, context)
+    context.staticComponents.queryGraphSolver.planInnerOfExistsSubquery(
+      subquery,
+      labelInfo,
+      context.withModifiedPlannerState(_.withPreviouslyCachedProperties(
+        context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(lhs.id)
+      ))
+    )
   }
 
   def onePredicate(expressions: Set[Expression]): Expression =

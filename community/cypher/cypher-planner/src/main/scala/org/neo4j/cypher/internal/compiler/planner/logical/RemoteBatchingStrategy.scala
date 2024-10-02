@@ -92,6 +92,13 @@ sealed trait RemoteBatchingStrategy {
     context: LogicalPlanningContext,
     orderToLeverage: Seq[Expression]
   ): RemoteBatchingResult
+
+  def planBatchPropertiesForExpression(
+    queryGraph: QueryGraph,
+    input: LogicalPlan,
+    context: LogicalPlanningContext,
+    expression: Expression
+  ): (Expression, LogicalPlan)
 }
 
 case class RemoteBatchingResult(
@@ -130,17 +137,9 @@ object RemoteBatchingStrategy {
       context: LogicalPlanningContext,
       predicatesToSolve: Set[Expression]
     ): RemoteBatchingResult = {
-      // we compute not only the predicates that will be solved by this selection
-      val predicatesToBeSolvedLater =
-        queryGraph.selections.flatPredicatesSet
-          .filterNot(context.staticComponents.planningAttributes.solveds.get(
-            input.id
-          ).asSinglePlannerQuery.queryGraph.selections.contains(_))
-          .filter(expr => expr.dependencies.intersect(input.availableSymbols).nonEmpty)
-      val accessedPropertiesForPredicates =
-        PropertyAccessHelper.findPropertyAccesses(predicatesToBeSolvedLater.toSeq)
-      val accessedProperties =
-        accessedPropertiesForPredicates ++ context.plannerState.contextualPropertyAccess.interestingOrder ++ context.plannerState.contextualPropertyAccess.horizon
+      val accessedProperties = accessedPropertiesForPredicates(queryGraph, input, context) ++
+        context.plannerState.contextualPropertyAccess.interestingOrder ++
+        context.plannerState.contextualPropertyAccess.horizon
 
       val rewriter = cachedPropertiesRewriter(input, context)
       val rewrittenSelections = predicatesToSolve.map(_.endoRewrite(rewriter))
@@ -260,6 +259,20 @@ object RemoteBatchingStrategy {
       )
     }
 
+    override def planBatchPropertiesForExpression(
+      queryGraph: QueryGraph,
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      expression: Expression
+    ): (Expression, LogicalPlan) = {
+      val accessedProperties = accessedPropertiesForPredicates(queryGraph, input, context) ++
+        context.plannerState.contextualPropertyAccess.interestingOrder ++
+        context.plannerState.contextualPropertyAccess.horizon
+      val rewriter = cachedPropertiesRewriter(input, context)
+      val rewrittenExpr = expression.endoRewrite(rewriter)
+      (rewrittenExpr, planBatchProperties(input, context, accessedProperties, Seq(rewrittenExpr)))
+    }
+
     private def shouldGetPropertyValue(
       propertyPredicate: IndexCompatiblePredicate,
       propsAccessForPredsMap: PropertyAccessInPredicates,
@@ -300,6 +313,26 @@ object RemoteBatchingStrategy {
       }
     }
 
+    private def accessedPropertiesForPredicates(
+      queryGraph: QueryGraph,
+      input: LogicalPlan,
+      context: LogicalPlanningContext
+    ): Set[PropertyAccess] = {
+      val previouslySolvedPredicates = context.staticComponents
+        .planningAttributes.solveds
+        .get(input.id)
+        .asSinglePlannerQuery.queryGraph
+        .selections
+        .flatPredicatesSet
+
+      // we compute not only the predicates that will be solved by this selection
+      val predicatesToBeSolvedLater =
+        queryGraph.selections.flatPredicatesSet
+          .diff(previouslySolvedPredicates)
+          .filter(expr => expr.dependencies.intersect(input.availableSymbols).nonEmpty)
+      PropertyAccessHelper.findPropertyAccesses(predicatesToBeSolvedLater.toSeq)
+    }
+
     private def cachedPropertiesRewriter(
       inputPlan: LogicalPlan,
       context: LogicalPlanningContext
@@ -308,7 +341,8 @@ object RemoteBatchingStrategy {
         context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(inputPlan.id)
       bottomUp.apply(
         rewriter = Rewriter.lift {
-          case property @ Property(logicalVariable: LogicalVariable, propertyKeyName) =>
+          case property @ Property(logicalVariable: LogicalVariable, propertyKeyName)
+            if inputPlan.availableSymbols.contains(logicalVariable) =>
             alreadyCachedProperties.entries.get(logicalVariable) match {
               case Some(entry) =>
                 CachedProperty(
@@ -458,6 +492,13 @@ object RemoteBatchingStrategy {
       ),
       plan = input
     )
+
+    override def planBatchPropertiesForExpression(
+      queryGraph: QueryGraph,
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      expression: Expression
+    ): (Expression, LogicalPlan) = (expression, input)
 
   }
 }

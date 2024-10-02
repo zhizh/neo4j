@@ -56,6 +56,7 @@ import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
 import org.neo4j.cypher.internal.logical.plans.IndexOrderAscending
 import org.neo4j.cypher.internal.logical.plans.IndexOrderNone
 import org.neo4j.cypher.internal.logical.plans.NestedPlanExistsExpression
+import org.neo4j.cypher.internal.planner.spi.DatabaseMode
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint.From
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint.To
@@ -87,7 +88,7 @@ trait QuantifiedPathPatternPlanningIntegrationTestBase extends CypherFunSuite wi
   private def disjoint(lhs: String, rhs: String, unnamedOffset: Int = 0): String =
     s"NONE(anon_$unnamedOffset IN $lhs WHERE anon_$unnamedOffset IN $rhs)"
 
-  protected def planner = plannerBuilder()
+  private val plannerBase = plannerBuilder()
     .enablePlanningIntersectionScans()
     .setAllNodesCardinality(100)
     .setAllRelationshipsCardinality(40)
@@ -115,6 +116,12 @@ trait QuantifiedPathPatternPlanningIntegrationTestBase extends CypherFunSuite wi
     .setRelationshipCardinality("(:N)-[:R]->()", 10)
     .setRelationshipCardinality("()-[]->(:NNN)", 10)
     .setRelationshipCardinality("(:N)-[]->(:NNN)", 10)
+
+  protected def planner = plannerBase
+    .build()
+
+  private val plannerForShardedDatabases = plannerBase
+    .setDatabaseMode(DatabaseMode.SHARDED)
     .build()
 
   test("should use correctly Namespaced variables") {
@@ -3227,6 +3234,73 @@ trait QuantifiedPathPatternPlanningIntegrationTestBase extends CypherFunSuite wi
       .filter("b = c", "NOT r1 IN r2")
       .expand("(a)-[r2*0..]->(c)", expandMode = ExpandAll, projectedDir = OUTGOING)
       .allRelationshipsScan("(a)-[r1]->(b)")
+      .build()
+  }
+
+  /**
+   * SHARDED DATABASE
+   */
+
+  test(
+    "Should not plan VarExpand instead of Trail on quantified path pattern for property predicates in the sharded mode"
+  ) {
+    val query =
+      """
+        |MATCH (a:User {name: "Foo"}) (()-[:R]->(next) WHERE next.name <> "Foo")* (e)
+        |RETURN DISTINCT e
+        |""".stripMargin
+    val plan = plannerForShardedDatabases.plan(query).stripProduceResults
+
+    plan shouldEqual plannerForShardedDatabases.subPlanBuilder()
+      .distinct("e AS e")
+      .repeatTrail(TrailParameters(
+        0,
+        Unlimited,
+        "a",
+        "e",
+        "anon_0",
+        "next",
+        Set(),
+        Set(),
+        Set("anon_1"),
+        Set(),
+        Set(),
+        reverseGroupVariableProjections = false
+      ))
+      .|.filterExpressionOrString(
+        not(equals(cachedNodeProp("next", "name"), literalString("Foo"))),
+        isRepeatTrailUnique("anon_1")
+      )
+      .|.remoteBatchProperties("cacheNFromStore[next.name]")
+      .|.expandAll("(anon_0)-[anon_1:R]->(next)")
+      .|.argument("anon_0")
+      .filter("cacheN[a.name] = 'Foo'")
+      .remoteBatchProperties("cacheNFromStore[a.name]")
+      .nodeByLabelScan("a", "User")
+      .build()
+  }
+
+  test(
+    "Should plan VarExpand instead of Trail on quantified path pattern for non-property predicates in the sharded mode"
+  ) {
+    val query =
+      """
+        |MATCH (a:User {name: "Foo"}) (()-->(next) WHERE next:User)* (e)
+        |RETURN DISTINCT e
+        |""".stripMargin
+    val plan = plannerForShardedDatabases.plan(query).stripProduceResults
+
+    plan shouldEqual plannerForShardedDatabases.subPlanBuilder()
+      .distinct("e AS e")
+      .bfsPruningVarExpandExpr(
+        "(a)-[*0..]->(e)",
+        nodePredicates = Seq(),
+        relationshipPredicates = Seq(VariablePredicate(v"anon_0", hasLabels(endNode("anon_0"), "User"))),
+        mode = ExpandAll
+      )
+      .filter("cacheN[a.name] = 'Foo'")
+      .remoteBatchProperties("cacheNFromStore[a.name]")
+      .nodeByLabelScan("a", "User", IndexOrderNone)
       .build()
   }
 }

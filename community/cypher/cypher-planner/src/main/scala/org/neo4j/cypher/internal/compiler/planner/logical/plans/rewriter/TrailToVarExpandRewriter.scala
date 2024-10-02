@@ -93,7 +93,8 @@ case class TrailToVarExpandRewriter(
   labelAndRelTypeInfos: LabelAndRelTypeInfos,
   otherAttributes: Attributes[LogicalPlan],
   anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
-  isBlockFormat: Boolean
+  isBlockFormat: Boolean,
+  isShardedDabase: Boolean = false
 ) extends Rewriter with TopDownMergeableRewriter {
 
   private def createVarLengthExpand(
@@ -127,14 +128,16 @@ case class TrailToVarExpandRewriter(
 
   override val innerRewriter: Rewriter = Rewriter.lift {
     // Rewrite special cases of Trail into VarLengthExpand(All)
-    case RewritableTrailToVarLengthExpand(trail, expand, inlinablePredicates, quantifier, relationship) =>
+    case RewritableTrailToVarLengthExpand(trail, expand, inlinablePredicates, quantifier, relationship)
+      if !requiresPropertyAccessFromShards(inlinablePredicates) =>
       // Create the VarLengthExpandAll
       createVarLengthExpand(trail, expand, inlinablePredicates, quantifier, relationship, ExpandAll).getOrElse(trail)
     // Rewrite special cases of Filter+Trail into VarLengthExpand(Into)
     case selection @ Selection(
         Ands(Singleton(predicate)),
         RewritableTrailToVarLengthExpand(trail, expand, relationshipPredicates, quantifier, relationship)
-      ) if AnonymousVariableNameGenerator.notNamed(trail.end.name) =>
+      )
+      if AnonymousVariableNameGenerator.notNamed(trail.end.name) && !requiresPropertyAccessFromShards(Seq(predicate)) =>
       // The trail is going to an unnamed variable, let's call it variableX
       val maybeRewrittenPlan = predicate match {
         case Equals(lhs: Variable, rhs: Variable) if lhs == trail.end && trail.availableSymbols.contains(rhs) =>
@@ -163,6 +166,15 @@ case class TrailToVarExpandRewriter(
       }
       maybeRewrittenPlan.getOrElse(selection)
   }
+
+  private def requiresPropertyAccessFromShards(predicates: Iterable[Expression]): Boolean = {
+    isShardedDabase && predicates.exists(requiresPropertyAccess)
+  }
+
+  private def requiresPropertyAccess(expr: Expression): Boolean =
+    expr.folder.treeExists {
+      case _: LogicalProperty => true
+    }
 
   private val instance: Rewriter = topDown(innerRewriter)
 

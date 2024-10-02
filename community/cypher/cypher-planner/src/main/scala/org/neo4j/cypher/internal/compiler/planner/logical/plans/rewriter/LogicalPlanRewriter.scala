@@ -34,6 +34,7 @@ import org.neo4j.cypher.internal.frontend.phases.Phase
 import org.neo4j.cypher.internal.frontend.phases.factories.PlanPipelineTransformerFactory
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.options.CypherEagerAnalyzerOption
+import org.neo4j.cypher.internal.planner.spi.DatabaseMode
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
@@ -74,7 +75,7 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
     anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
     readOnly: Boolean
   ): Rewriter = {
-
+    val isShardedDatabase = context.planContext.databaseMode == DatabaseMode.SHARDED
     // not fusing these allows UnnestApply to do more work
     val dontFuseRewriters: Seq[Rewriter] = Seq(
       Some(ForAllRepetitionsPredicateRewriter(
@@ -85,15 +86,19 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
         context.logicalPlanIdGen
       )),
       Some(RemoveUnusedGroupVariablesRewriter),
-      Option.when(context.config.gpmShortestToLegacyShortestEnabled())(StatefulShortestToFindShortestRewriter(
-        solveds,
-        anonymousVariableNameGenerator
-      )),
+      Option.when(context.config.gpmShortestToLegacyShortestEnabled())(
+        StatefulShortestToFindShortestRewriter(
+          solveds,
+          anonymousVariableNameGenerator,
+          isShardedDatabase
+        )
+      ),
       Some(TrailToVarExpandRewriter(
         labelAndRelTypeInfos,
         otherAttributes.withAlso(solveds, cardinalities, effectiveCardinalities, providedOrders),
         anonymousVariableNameGenerator,
-        isBlockFormat = context.planContext.storageHasPropertyColocation
+        isBlockFormat = context.planContext.storageHasPropertyColocation,
+        isShardedDatabase
       )),
       Some(fuseSelections),
       Some(UnnestApply(

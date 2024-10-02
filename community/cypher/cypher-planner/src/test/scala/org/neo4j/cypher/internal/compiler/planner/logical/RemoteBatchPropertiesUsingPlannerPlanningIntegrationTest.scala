@@ -22,12 +22,19 @@ package org.neo4j.cypher.internal.compiler.planner.logical
 import org.neo4j.configuration.GraphDatabaseInternalSettings
 import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchPropertiesImplementation
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
+import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningIntegrationTestSupport
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
+import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
+import org.neo4j.cypher.internal.logical.builder.TestNFABuilder
 import org.neo4j.cypher.internal.logical.plans.DoNotGetValue
+import org.neo4j.cypher.internal.logical.plans.Expand.ExpandAll
+import org.neo4j.cypher.internal.logical.plans.Expand.ExpandInto
 import org.neo4j.cypher.internal.logical.plans.GetValue
 import org.neo4j.cypher.internal.logical.plans.IndexOrderAscending
+import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.planner.spi.DatabaseMode
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -805,6 +812,114 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
       .build())
   }
 
+  test("should batch properties when finding triadic selections") {
+    val query =
+      """
+        |MATCH (n:Person {firstName: "Dave"})-[:KNOWS]-(friend:Person)-[:KNOWS]-(friendOfFriend:Person)
+        |WHERE NOT (n)-[:KNOWS]-(friendOfFriend)
+        |RETURN n. firstName, n.lastName, friendOfFriend.firstName, friendOfFriend.lastName""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .projection(
+        "cacheN[n.firstName] AS `n. firstName`",
+        "cacheN[n.lastName] AS `n.lastName`",
+        "cacheN[friendOfFriend.firstName] AS `friendOfFriend.firstName`",
+        "cacheN[friendOfFriend.lastName] AS `friendOfFriend.lastName`"
+      )
+      .remoteBatchProperties(
+        "cacheNFromStore[n.lastName]",
+        "cacheNFromStore[friendOfFriend.firstName]",
+        "cacheNFromStore[friendOfFriend.lastName]"
+      )
+      .filter("NOT anon_1 = anon_0", "friendOfFriend:Person")
+      .triadicSelection(positivePredicate = false, "n", "friend", "friendOfFriend")
+      .|.expandAll("(friend)-[anon_1:KNOWS]-(friendOfFriend)")
+      .|.argument("friend", "anon_0")
+      .filter("friend:Person")
+      .expandAll("(n)-[anon_0:KNOWS]-(friend)")
+      .nodeIndexOperator("n:Person(firstName = 'Dave')", getValue = Map("firstName" -> GetValue))
+      .build())
+  }
+
+  test("should batch properties for letSelectOrAntiSemiApply and selectOrSemiApply") {
+    val query =
+      """
+        |MATCH (a:Person)
+        |WHERE  NOT EXISTS { (:Post)-[:POST_HAS_CREATOR]->(n) } OR (a)-[:KNOWS]-(:Person{lastName:"Smith"}) OR a.age > 30
+        |RETURN a.firstName, a.age""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+
+    plan should equal(planner.subPlanBuilder()
+      .projection("cacheN[a.firstName] AS `a.firstName`", "cacheN[a.age] AS `a.age`")
+      .selectOrSemiApply("anon_4")
+      .|.filter("cacheN[anon_3.lastName] = 'Smith'", "anon_3:Person")
+      .|.remoteBatchProperties("cacheNFromStore[anon_3.lastName]")
+      .|.expandAll("(a)-[anon_2:KNOWS]-(anon_3)")
+      .|.argument("a")
+      .letSelectOrAntiSemiApply("anon_4", "cacheN[a.age] > 30")
+      .|.expandAll("(anon_0)-[anon_1:POST_HAS_CREATOR]->(n)")
+      .|.nodeByLabelScan("anon_0", "Post")
+      .remoteBatchProperties("cacheNFromStore[a.firstName]", "cacheNFromStore[a.age]")
+      .nodeByLabelScan("a", "Person")
+      .build())
+  }
+
+  test(
+    "should propagate batch properties with LetSemiApply and SelectOrAntiSemiApply"
+  ) {
+    val query =
+      """
+        |MATCH (a: Person)
+        |WHERE (a {lastName:"Smith"})-[:KNOWS]-(:Person{lastName:"Smyth"}) OR NOT (a {lastName:"Smyth"})-[:KNOWS]-(:Person{lastName:"Smith"})
+        |RETURN a.firstName, a.lastName""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+    plan should equal(
+      planner.subPlanBuilder()
+        .projection("cacheN[a.firstName] AS `a.firstName`", "cacheN[a.lastName] AS `a.lastName`")
+        .remoteBatchProperties("cacheNFromStore[a.firstName]")
+        .selectOrAntiSemiApply("anon_4")
+        .|.filter("cacheN[anon_3.lastName] = 'Smith'", "anon_3:Person")
+        .|.remoteBatchProperties("cacheNFromStore[anon_3.lastName]")
+        .|.expandAll("(a)-[anon_2:KNOWS]-(anon_3)")
+        .|.filter("cacheN[a.lastName] = 'Smyth'")
+        .|.argument("a")
+        .letSemiApply("anon_4")
+        .|.filter("cacheN[anon_1.lastName] = 'Smyth'", "anon_1:Person")
+        .|.remoteBatchProperties("cacheNFromStore[anon_1.lastName]")
+        .|.expandAll("(a)-[anon_0:KNOWS]-(anon_1)")
+        .|.filter("cacheN[a.lastName] = 'Smith'")
+        .|.remoteBatchProperties("cacheNFromStore[a.lastName]")
+        .|.argument("a")
+        .nodeByLabelScan("a", "Person")
+        .build()
+    )
+  }
+
+  test("should propagate cached properties for cartesian products, apply and anti-semi-apply") {
+    val query =
+      """MATCH (a:Person )
+        |MATCH (b:Person {firstName: "John"})
+        |WHERE NOT (b)-[:KNOWS]->(:Person {firstName: "Jon"})
+        |RETURN a.name, b.firstName
+        |""".stripMargin
+    val plan = planner.plan(query).stripProduceResults
+    plan should equal(
+      planner.subPlanBuilder()
+        .projection("cacheN[a.name] AS `a.name`", "cacheN[b.firstName] AS `b.firstName`")
+        .remoteBatchProperties("cacheNFromStore[a.name]")
+        .cartesianProduct()
+        .|.nodeByLabelScan("a", "Person")
+        .antiSemiApply()
+        .|.filter("cacheN[anon_1.firstName] = 'Jon'", "anon_1:Person")
+        .|.remoteBatchProperties("cacheNFromStore[anon_1.firstName]")
+        .|.expandAll("(b)-[anon_0:KNOWS]->(anon_1)")
+        .|.argument("b")
+        .nodeIndexOperator("b:Person(firstName = 'John')", getValue = Map("firstName" -> GetValue))
+        .build()
+    )
+  }
+
   test("optional match with properties from outer matches should fetch batches") {
     val query =
       """
@@ -842,6 +957,159 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
       .remoteBatchProperties("cacheNFromStore[p.firstName]")
       .expandAll("(s)-[anon_0:KNOWS]-(p)")
       .nodeIndexOperator("s:Person(firstName)", getValue = Map("firstName" -> GetValue))
+      .build())
+  }
+
+  test("should batch properties for anti-conditional apply and shortestpath") {
+    val query =
+      """
+        |MATCH p=shortestPath((a:Person{lastName:"Smith"})-[:KNOWS*]-(b:Person{lastName:"Smith"}))
+        |WHERE all(r IN relationships(p) WHERE r.creationDate < $max_creation_date)
+        |AND all(n IN nodes(p) WHERE n.firstName = "John")
+        |AND length(p) > 5
+        |RETURN a.lastName, [n in nodes(p) | n.lastName] as lastNames, b.lastName
+        |""".stripMargin
+
+    planner.plan(query).stripProduceResults should equal(
+      planner.subPlanBuilder()
+        .projection(
+          "cacheN[a.lastName] AS `a.lastName`",
+          "[n IN nodes(p) | n.lastName] AS lastNames",
+          "cacheN[b.lastName] AS `b.lastName`"
+        )
+        .antiConditionalApply("p")
+        .|.top(1, "anon_1 ASC")
+        .|.projection("length(p) AS anon_1")
+        .|.filter("length(p) > 5")
+        .|.projection(Map("p" -> varLengthPathExpression(v"a", v"anon_0", v"b")))
+        .|.expand(
+          "(a)-[anon_0:KNOWS*1..]-(b)",
+          expandMode = ExpandInto,
+          projectedDir = OUTGOING,
+          nodePredicates = Seq(Predicate("n", "n.firstName = 'John'")),
+          relationshipPredicates = Seq(Predicate("r", "r.creationDate < $max_creation_date"))
+        )
+        .|.argument("a", "b")
+        .apply()
+        .|.optional("a", "b")
+        .|.shortestPath(
+          "(a)-[anon_0:KNOWS*1..]-(b)",
+          pathName = Some("p"),
+          nodePredicates = Seq(Predicate("n", "n.firstName = 'John'")),
+          relationshipPredicates = Seq(Predicate("r", "r.creationDate < $max_creation_date")),
+          pathPredicates = Seq("length(p) > 5"),
+          withFallback = true
+        ) // TODO: this shortestPath should eventually be rewritten into a stateful shortest path to allow batching of properties.
+        .|.argument("a", "b")
+        .cartesianProduct()
+        .|.filter("cacheN[b.lastName] = 'Smith'")
+        .|.remoteBatchProperties("cacheNFromStore[b.lastName]")
+        .|.nodeByLabelScan("b", "Person")
+        .filter("cacheN[a.lastName] = 'Smith'")
+        .remoteBatchProperties("cacheNFromStore[a.lastName]")
+        .nodeByLabelScan("a", "Person")
+        .build()
+    )
+  }
+
+  test("should propagate batched properties after a statefulshortestpath") {
+    val query =
+      """
+        |MATCH p=ANY SHORTEST ((a)((:Person{lastName:"Smith"})-[:KNOWS]-(:Person{firstName:"John"}))*(b{lastName:"Smith"}))
+        |WHERE length(p) > 5
+        |RETURN a.lastName, [n in nodes(p) | n.lastName] as lastNames, b.firstName
+        |""".stripMargin
+    planner.plan(query).stripProduceResults should equal(planner.subPlanBuilder()
+      .projection(Map(
+        "a.lastName" -> cachedNodeProp("a", "lastName"),
+        "lastNames" -> listComprehension(
+          v"n",
+          nodes(varLengthPathExpression(v"a", v"anon_3", v"b")),
+          None,
+          Some(prop("n", "lastName"))
+        ),
+        "b.firstName" -> cachedNodeProp("b", "firstName")
+      ))
+      .remoteBatchProperties("cacheNFromStore[a.lastName]")
+      .filterExpression(greaterThan(
+        length(varLengthPathExpression(v"a", v"anon_3", v"b")),
+        literalInt(5)
+      ))
+      .statefulShortestPath(
+        "b",
+        "a",
+        "SHORTEST 1 (a) ((`anon_0`)-[`anon_1`]-(`anon_2`)){0, } (b)",
+        None,
+        Set(),
+        Set(("anon_1", "anon_3")),
+        Set(("a", "a")),
+        Set(),
+        StatefulShortestPath.Selector.Shortest(1),
+        new TestNFABuilder(0, "b")
+          .addTransition(0, 1, "(b) (anon_2 WHERE anon_2.firstName = 'John' AND anon_2:Person)")
+          .addTransition(0, 3, "(b) (a)")
+          .addTransition(1, 2, "(anon_2)-[anon_1:KNOWS]-(anon_0 WHERE anon_0.lastName = 'Smith' AND anon_0:Person)")
+          .addTransition(2, 1, "(anon_0) (anon_2 WHERE anon_2.firstName = 'John' AND anon_2:Person)")
+          .addTransition(2, 3, "(anon_0) (a)")
+          .setFinalState(3)
+          .build(),
+        ExpandAll,
+        reverseGroupVariableProjections = true
+      )
+      .filter("cacheN[b.lastName] = 'Smith'")
+      .remoteBatchProperties("cacheNFromStore[b.lastName]", "cacheNFromStore[b.firstName]")
+      .allNodeScan("b")
+      .build())
+  }
+
+  test("should batch properties for a value hash join") {
+    val query =
+      """
+        | MATCH (al:Message), (a:Person)
+        |    WHERE al.title = a.name
+        |    RETURN al.title, a.name
+        |""".stripMargin
+
+    planner.plan(query).stripProduceResults should equal(planner.subPlanBuilder()
+      .projection("cacheN[al.title] AS `al.title`", "cacheN[a.name] AS `a.name`")
+      .valueHashJoin("cacheN[a.name] = cacheN[al.title]")
+      .|.remoteBatchProperties("cacheNFromStore[al.title]")
+      .|.nodeByLabelScan("al", "Message")
+      .remoteBatchProperties("cacheNFromStore[a.name]")
+      .nodeByLabelScan("a", "Person")
+      .build())
+  }
+
+  test("should not throw an error when fetching remote batch properties between two ordered operators") {
+    val query =
+      """
+        |MATCH (a:Person)
+        |CALL {
+        |  WITH a
+        |  MATCH (a)-[:KNOWS]->(b{name: a.firstName})
+        |  RETURN b
+        |  ORDER BY b.name
+        |  LIMIT 1
+        |}
+        |RETURN a.lastName, b.name
+        |ORDER BY b.name
+        |LIMIT 100
+        |""".stripMargin
+
+    planner.plan(query).stripProduceResults should equal(planner
+      .subPlanBuilder()
+      .projection("cacheN[a.lastName] AS `a.lastName`", "cacheN[b.name] AS `b.name`")
+      .remoteBatchProperties("cacheNFromStore[a.lastName]")
+      .top(100, "`b.name` ASC")
+      .projection("cacheN[b.name] AS `b.name`")
+      .apply()
+      .|.top(1, "`b.name` ASC")
+      .|.projection("cacheN[b.name] AS `b.name`")
+      .|.filter("cacheN[b.name] = cacheN[a.firstName]")
+      .|.remoteBatchProperties("cacheNFromStore[b.name]", "cacheNFromStore[a.firstName]")
+      .|.expandAll("(a)-[anon_0:KNOWS]->(b)")
+      .|.argument("a")
+      .nodeByLabelScan("a", "Person")
       .build())
   }
 }

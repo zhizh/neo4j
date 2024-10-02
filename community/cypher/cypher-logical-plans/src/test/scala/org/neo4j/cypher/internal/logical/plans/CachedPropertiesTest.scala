@@ -248,6 +248,105 @@ class CachedPropertiesTest extends CypherFunSuite {
     cache2.intersect(cache1) shouldEqual cache
   }
 
+  test("properties intersection: should add disjoint variables to cached properties") {
+    // given a cache with node "b" and a cached with node "rel2"
+    val cache1 = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo")))))
+    val cache2 =
+      CachedProperties(Map(v"rel2" -> CachedProperties.Entry(v"rel", RELATIONSHIP_TYPE, Set(propName("foo")))))
+    // when I intersect properties on disjoint values
+    val cache = cache1.intersectProperties(cache2)
+
+    // then it should contain disjoint values
+    cache.entries shouldBe Map(
+      v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo"))),
+      v"rel2" -> CachedProperties.Entry(v"rel", RELATIONSHIP_TYPE, Set(propName("foo")))
+    )
+    // and intersection should be commutative for disjoint variables
+    cache shouldEqual cache2.intersectProperties(cache1)
+  }
+
+  test("properties intersection should be idempotent") {
+    // Give a non-empty cache
+    val cache = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo")))))
+
+    cache.intersectProperties(cache) shouldEqual cache
+  }
+
+  test("properties intersection with an empty set should be itself") {
+    // Give a non-empty cache
+    val cache = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo")))))
+
+    cache.intersectProperties(CachedProperties.empty) shouldEqual cache
+  }
+
+  test("properties intersection: should find common properties for the same variable") {
+    // given two non-empty caches with the same variables
+    val cache1 =
+      CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo"), propName("baz")))))
+    val cache2 =
+      CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("bar"), propName("baz")))))
+
+    // when I do a intersection on the two
+    val cache = cache1.intersectProperties(cache2)
+
+    // then it should filter the common properties
+    cache.entries should contain only (
+      v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("baz")))
+    )
+
+    // should be commutative in this case
+    cache2.intersectProperties(cache1) shouldEqual cache
+  }
+
+  test("intersect properties: should not include variables with no common properties") {
+    // given two non-empty caches with the same variables
+    val cache1 = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo")))))
+    val cache2 = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("bar")))))
+
+    // when I do an intersection on the two
+    val cache = cache1.intersectProperties(cache2)
+
+    // then it should be empty since there are no common properties
+    cache.entries shouldBe empty
+
+    // should be commutative in this case
+    cache2.intersectProperties(cache1) shouldEqual cache
+  }
+
+  test(
+    "intersect properties: should not intersect entries if the original entity is different"
+  ) {
+    // given two non-empty caches with the same variables but conflicting definitions
+    val cache1 = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo")))))
+    val cache2 = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"b", NODE_TYPE, Set(propName("foo")))))
+
+    // when I do an intersection on the two
+    val cache = cache1.intersectProperties(cache2)
+
+    // then it should pick the first entity type
+    cache.entries shouldBe empty
+
+    // should be commutative
+    cache2.intersectProperties(cache1) shouldEqual cache
+  }
+
+  test(
+    "intersect properties: should not intersect entries if the entity type is different"
+  ) {
+    // given two non-empty caches with the same variables but conflicting definitions
+    val cache1 = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo")))))
+    val cache2 = CachedProperties(Map(v"b" -> CachedProperties.Entry(v"a", RELATIONSHIP_TYPE, Set(propName("foo")))))
+
+    // when I do an intersection on the two
+    val cache = cache1.intersectProperties(cache2)
+
+    // then it should pick the first entity type
+    cache.entries shouldBe empty
+
+    // should be commutative
+    cache2.intersectProperties(cache1) shouldEqual cache
+  }
+
   test("rename: should clone existing properties correctly") {
     // given a non-empty caches with the variable a
     val cache = CachedProperties(Map(v"a" -> CachedProperties.Entry(v"a", NODE_TYPE, Set(propName("foo")))))
