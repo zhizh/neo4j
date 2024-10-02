@@ -134,10 +134,7 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
           if (invocation.calledFromUseClause) {
             SemanticCheck.success
           } else {
-            error(
-              "`graph.byName` is only allowed at the first position of a USE clause.",
-              invocation.position
-            )
+            SemanticCheck.error(SemanticError.invalidUseOfGraphFunction("graph.byName", invocation.position))
           }
         }
 
@@ -146,10 +143,7 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
           if (invocation.calledFromUseClause) {
             SemanticCheck.success
           } else {
-            error(
-              "`graph.byElementId` is only allowed at the first position of a USE clause.",
-              invocation.position
-            )
+            SemanticCheck.error(SemanticError.invalidUseOfGraphFunction("graph.byElementId", invocation.position))
           }
         }
 

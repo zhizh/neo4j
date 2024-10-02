@@ -302,22 +302,15 @@ abstract class SingleQueryFragmentExecutor {
             }
         } else {
             if (!useEvaluator.isDatabaseOrAliasInRoot(accessedGraph)) {
-                throw new InvalidSemanticsException(
-                        cantAccessCompositeConstituentsMessage(sessionGraph, accessedGraph));
+                throw InvalidSemanticsException.unsupportedAccessOfCompositeDatabase(
+                        useEvaluator.qualifiedNameString(accessedGraph),
+                        useEvaluator.qualifiedNameString(sessionGraph));
             }
         }
     }
 
     private String cantAccessOutsideCompositeMessage(Catalog.Graph sessionDatabase, Catalog.Graph accessed) {
         return "When connected to a composite database, access is allowed only to its constituents. "
-                + "Attempted to access '%s' while connected to '%s'"
-                        .formatted(
-                                useEvaluator.qualifiedNameString(accessed),
-                                useEvaluator.qualifiedNameString(sessionDatabase));
-    }
-
-    private String cantAccessCompositeConstituentsMessage(Catalog.Graph sessionDatabase, Catalog.Graph accessed) {
-        return "Accessing a composite database and its constituents is only allowed when connected to it. "
                 + "Attempted to access '%s' while connected to '%s'"
                         .formatted(
                                 useEvaluator.qualifiedNameString(accessed),

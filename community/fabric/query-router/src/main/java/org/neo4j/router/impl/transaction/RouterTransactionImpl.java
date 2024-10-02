@@ -484,7 +484,7 @@ public class RouterTransactionImpl implements CompoundTransaction<DatabaseTransa
         }
 
         if (state.get() == State.CLOSED) {
-            throw new QueryRouterException(Status.Statement.ExecutionFailed, closedExceptionMessage.get());
+            throw QueryRouterException.executeQueryInClosedTransaction(closedExceptionMessage.get());
         }
     }
 

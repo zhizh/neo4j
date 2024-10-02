@@ -170,13 +170,10 @@ public class FabricLocalExecutor {
 
         private GraphDatabaseAPI getDatabaseFacade(Location.Local location) {
             try {
-                var facade = dbms.getDatabaseFacade(location.getDatabaseName());
+                var dbName = location.getDatabaseName();
+                var facade = dbms.getDatabaseFacade(dbName);
                 if (!Objects.equals(facade.databaseId().databaseId().uuid(), location.getUuid())) {
-                    throw new FabricException(
-                            Status.Transaction.Outdated,
-                            "The locations associated with the graph name %s have "
-                                    + "changed whilst the transaction was running.",
-                            location.getDatabaseName());
+                    throw FabricException.databaseLocationChanged(dbName);
                 }
                 return facade;
             } catch (UnavailableException e) {

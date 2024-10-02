@@ -333,14 +333,13 @@ public abstract class AbstractCompoundTransaction<Child extends ChildTransaction
         return Optional.ofNullable(terminationMark);
     }
 
-    protected void checkTransactionOpenForStatementExecution() {
+    protected void checkTransactionOpenForStatementExecution() throws FabricException {
         if (state == State.TERMINATED) {
             throw new TransactionTerminatedException(terminationMark.getReason());
         }
 
         if (state == State.CLOSED) {
-            throw new FabricException(
-                    Status.Statement.ExecutionFailed, "Trying to execute query in a closed transaction");
+            throw FabricException.executeQueryInClosedTransaction();
         }
     }
 

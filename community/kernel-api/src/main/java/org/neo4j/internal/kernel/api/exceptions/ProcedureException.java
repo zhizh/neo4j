@@ -20,7 +20,11 @@
 package org.neo4j.internal.kernel.api.exceptions;
 
 import org.neo4j.exceptions.KernelException;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class ProcedureException extends KernelException {
@@ -46,5 +50,20 @@ public class ProcedureException extends KernelException {
     public ProcedureException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Object... parameters) {
         super(gqlStatusObject, statusCode, message, parameters);
+    }
+
+    public static ProcedureException noSuchConstituentGraph(String graphName, String ctxDatabaseName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42002)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N01)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.graph, graphName)
+                        .withParam(GqlParams.StringParam.db, ctxDatabaseName)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureCallFailed,
+                "'%s' is not a constituent of composite database '%s'".formatted(graphName, ctxDatabaseName));
     }
 }

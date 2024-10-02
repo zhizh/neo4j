@@ -22,6 +22,7 @@ package org.neo4j.exceptions;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -31,7 +32,7 @@ public class InvalidSemanticsException extends Neo4jException {
         super(message, cause);
     }
 
-    private InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+    public InvalidSemanticsException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
     }
 
@@ -52,6 +53,24 @@ public class InvalidSemanticsException extends Neo4jException {
                         .build())
                 .build();
         return new InvalidSemanticsException(gql, "Can't mix PROFILE and EXPLAIN");
+    }
+
+    public static InvalidSemanticsException unsupportedAccessOfCompositeDatabase(
+            String accessedGraph, String sessionGraph) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42002)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N04)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.db1, accessedGraph)
+                        .withParam(GqlParams.StringParam.db2, sessionGraph)
+                        .withParam(GqlParams.StringParam.db3, accessedGraph)
+                        .build())
+                .build();
+
+        var legacyMessage = "Accessing a composite database and its constituents is only allowed when connected to it. "
+                + "Attempted to access '%s' while connected to '%s'".formatted(accessedGraph, sessionGraph);
+
+        return new InvalidSemanticsException(gql, legacyMessage);
     }
 
     @Override

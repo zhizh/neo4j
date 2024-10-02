@@ -19,9 +19,13 @@
  */
 package org.neo4j.fabric.executor;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlRuntimeException;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.HasQuery;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -36,7 +40,7 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
         this.queryId = null;
     }
 
-    public FabricException(ErrorGqlStatusObject gqlStatusObject, Status statusCode, Throwable cause) {
+    private FabricException(ErrorGqlStatusObject gqlStatusObject, Status statusCode, Throwable cause) {
         super(gqlStatusObject, ErrorMessageHolder.getOldCauseMessage(cause), cause);
         this.statusCode = statusCode;
         this.queryId = null;
@@ -76,11 +80,34 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
         this.queryId = queryId;
     }
 
-    public FabricException(
+    private FabricException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Throwable cause, Long queryId) {
         super(gqlStatusObject, message, cause);
         this.statusCode = statusCode;
         this.queryId = queryId;
+    }
+
+    public static FabricException databaseLocationChanged(String dbName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N35)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .withParam(GqlParams.StringParam.db, dbName)
+                .build();
+        return new FabricException(
+                gql,
+                Status.Transaction.Outdated,
+                "The locations associated with the graph name %s have " + "changed whilst the transaction was running.",
+                dbName);
+    }
+
+    public static FabricException executeQueryInClosedTransaction() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N07)
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N05)
+                        .withClassification(ErrorClassification.DATABASE_ERROR)
+                        .build())
+                .build();
+        return new FabricException(
+                gql, Status.Statement.ExecutionFailed, "Trying to execute query in a closed transaction");
     }
 
     @Override

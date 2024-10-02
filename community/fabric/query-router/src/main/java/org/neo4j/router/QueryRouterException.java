@@ -19,9 +19,12 @@
  */
 package org.neo4j.router;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
 import org.neo4j.gqlstatus.GqlRuntimeException;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.HasQuery;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -36,7 +39,7 @@ public class QueryRouterException extends GqlRuntimeException implements Status.
         this.queryId = null;
     }
 
-    public QueryRouterException(ErrorGqlStatusObject gqlStatusObject, Status statusCode, Throwable cause) {
+    private QueryRouterException(ErrorGqlStatusObject gqlStatusObject, Status statusCode, Throwable cause) {
         super(gqlStatusObject, ErrorMessageHolder.getOldCauseMessage(cause), cause);
         this.statusCode = statusCode;
         this.queryId = null;
@@ -63,11 +66,21 @@ public class QueryRouterException extends GqlRuntimeException implements Status.
         this.queryId = null;
     }
 
-    public QueryRouterException(
+    private QueryRouterException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
         this.statusCode = statusCode;
         this.queryId = null;
+    }
+
+    public static QueryRouterException executeQueryInClosedTransaction(String legacyMessage) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N07)
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N05)
+                        .withClassification(ErrorClassification.DATABASE_ERROR)
+                        .build())
+                .build();
+        return new QueryRouterException(gql, Status.Statement.ExecutionFailed, legacyMessage);
     }
 
     @Override
