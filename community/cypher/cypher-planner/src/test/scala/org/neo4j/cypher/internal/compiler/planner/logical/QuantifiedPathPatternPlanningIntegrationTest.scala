@@ -3262,7 +3262,7 @@ trait QuantifiedPathPatternBlockSpecificPlanningIntegrationTestBase {
         val plan = planner.plan(query).stripProduceResults
 
         plan shouldEqual planner.subPlanBuilder()
-          .trail(trailParameters)
+          .repeatTrail(trailParameters)
           .|.filterExpressionOrString(filterExpressions: _*)
           .|.expandAll("(n)-[r]->(m)")
           .|.argument("n")
@@ -3291,7 +3291,7 @@ trait QuantifiedPathPatternBlockSpecificPlanningIntegrationTestBase {
           reverseGroupVariableProjections = false
         )
         plan shouldEqual planner.subPlanBuilder()
-          .trail(trailParameters)
+          .repeatTrail(trailParameters)
           .|.filterExpressionOrString(filterExpressions: _*)
           .|.expandAll("(anon_0)-[r]->(anon_1)")
           .|.argument("anon_0")
