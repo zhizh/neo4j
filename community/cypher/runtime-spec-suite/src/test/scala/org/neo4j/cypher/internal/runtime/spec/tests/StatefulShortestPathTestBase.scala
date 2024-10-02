@@ -5295,10 +5295,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // pattern:
     //
-    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
+    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
     //
     // NOTE - The nfa is structured as if the inner quantification was explicitly expanded, but that is tedious
-    // to write, so we simplify it's description with {5}. Even if nested group variables (or really, quantification's)
+    // to write, so we simplify it's description with {4}. Even if nested group variables (or really, quantification's)
     // aren't allowed in cypher, we can collect all row vars into one group here if we want.
 
     val nfa = new TestNFABuilder(0, "s")
@@ -5330,7 +5330,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       .statefulShortestPath(
         "s",
         "t",
-        s"(s) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->() )+ (t: $bottomRightLabel)",
+        s"(s) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->() )+ (t: $bottomRightLabel)",
         None,
         Set(
           "row_1_inner" -> "row",
@@ -5484,10 +5484,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // pattern:
     //
-    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
+    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
     //
     // NOTE - The nfa is structured as if the inner quantification was explicitly expanded, but that is tedious
-    // to write, so we simplify it's description with {5}. Even if nested group variables (or really, quantification's)
+    // to write, so we simplify it's description with {4}. Even if nested group variables (or really, quantification's)
     // aren't allowed in cypher, we can collect all row vars into one group here if we want.
 
     val nfa = new TestNFABuilder(0, "s")
@@ -5519,7 +5519,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       .statefulShortestPath(
         "s",
         "t",
-        s"(s) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->() )+ (t: $bottomRightLabel)",
+        s"(s) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->() )+ (t: $bottomRightLabel)",
         None,
         Set(
           "row_1_inner" -> "row",
@@ -5673,10 +5673,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
 
     // pattern:
     //
-    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
+    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
     //
     // NOTE - The nfa is structured as if the inner quantification was explicitly expanded, but that is tedious
-    // to write, so we simplify it's description with {5}. Even if nested group variables (or really, quantification's)
+    // to write, so we simplify it's description with {4}. Even if nested group variables (or really, quantification's)
     // aren't allowed in cypher, we can collect all row vars into one group here if we want.
 
     val nfa = new TestNFABuilder(0, "s")
@@ -5708,7 +5708,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       .statefulShortestPath(
         "s",
         "t",
-        s"(s) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->() )+ (t)",
+        s"(s) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->() )+ (t)",
         None,
         Set(
           "row_1_inner" -> "row",
@@ -5855,10 +5855,10 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     }
     // pattern:
     //
-    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
+    // (s: $topLeftLabel) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->()? )+ (t: $bottomRightLabel)
     //
     // NOTE - The nfa is structured as if the inner quantification was explicitly expanded, but that is tedious
-    // to write, so we simplify it's description with {5}. Even if nested group variables (or really, quantification's)
+    // to write, so we simplify it's description with {4}. Even if nested group variables (or really, quantification's)
     // aren't allowed in cypher, we can collect all row vars into one group here if we want.
 
     val nfa = new TestNFABuilder(0, "s")
@@ -5890,7 +5890,7 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
       .statefulShortestPath(
         "s",
         "t",
-        s"(s) ( ((row)-[r1:RIGHT]-()){5} (rowEnd)-[r2:DOWN]->() )+ (t)",
+        s"(s) ( ((row)-[r1:RIGHT]-()){4} (rowEnd)-[r2:DOWN]->() )+ (t)",
         None,
         Set(
           "row_1_inner" -> "row",
