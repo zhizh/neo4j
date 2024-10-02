@@ -30,6 +30,7 @@ import static org.neo4j.configuration.SettingConstraints.max;
 import static org.neo4j.configuration.SettingConstraints.min;
 import static org.neo4j.configuration.SettingConstraints.minSize;
 import static org.neo4j.configuration.SettingConstraints.range;
+import static org.neo4j.configuration.SettingConstraints.resolution;
 import static org.neo4j.configuration.SettingImpl.newBuilder;
 import static org.neo4j.configuration.SettingValueParsers.BOOL;
 import static org.neo4j.configuration.SettingValueParsers.BYTE;
@@ -50,6 +51,7 @@ import static org.neo4j.io.ByteUnit.mebiBytes;
 import inet.ipaddr.IPAddressString;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import org.neo4j.annotations.service.ServiceProvider;
@@ -666,12 +668,14 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
     @Description("Set the frequency and offset for reporting index usage statistics.")
     public static final Setting<Duration> index_usage_report_frequency = newBuilder(
                     "internal.dbms.index.usage_report_frequency", DURATION, ofSeconds(10))
+            .addConstraint(resolution(ChronoUnit.SECONDS))
             .build();
 
     @Internal
     @Description("Set the frequency and offset for reporting the total index sizes. Zero means disabled.")
     public static final Setting<Duration> index_total_size_report_frequency = newBuilder(
                     "internal.dbms.index.total_size_report_frequency", DURATION, ofMinutes(10))
+            .addConstraint(resolution(ChronoUnit.SECONDS))
             .build();
 
     @Internal

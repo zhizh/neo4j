@@ -24,6 +24,8 @@ import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -473,5 +475,45 @@ public final class SettingConstraints {
 
     public static SettingConstraint<Long> lessThanOrEqualLong(Setting<Long> other) {
         return lessThanOrEqual(Long::valueOf, other);
+    }
+
+    public static SettingConstraint<Duration> resolution(ChronoUnit resolution) {
+        return new SettingConstraint<>() {
+            @Override
+            public void validate(Duration duration, Configuration config) {
+                if (duration == null) {
+                    throw new IllegalArgumentException("can not be null");
+                }
+
+                if (duration.truncatedTo(resolution).compareTo(duration) != 0) {
+                    throw new IllegalArgumentException("minimum allowed resolution is %s but was %s"
+                            .formatted(resolution, resolutionOf(duration)));
+                }
+            }
+
+            @Override
+            public String getDescription() {
+                return "has minimum resolution of " + resolution;
+            }
+
+            private static ChronoUnit resolutionOf(Duration duration) {
+                if (duration.toNanosPart() % 1000 > 0) { // Duration::toNanosPart is all nanos within the second
+                    return ChronoUnit.NANOS;
+                } else if ((duration.toNanosPart() / 1000) % 1000 > 0) { // no Duration::toMicrosPart
+                    return ChronoUnit.MICROS;
+                } else if (duration.toMillisPart() > 0) {
+                    return ChronoUnit.MILLIS;
+                } else if (duration.toSecondsPart() > 0) {
+                    return ChronoUnit.SECONDS;
+                } else if (duration.toMinutesPart() > 0) {
+                    return ChronoUnit.MINUTES;
+                } else if (duration.toHoursPart() > 0) {
+                    return ChronoUnit.HOURS;
+                } else if (duration.toDaysPart() > 0) {
+                    return ChronoUnit.DAYS;
+                }
+                throw new IllegalArgumentException("cannot resolve the resolution of " + duration);
+            }
+        };
     }
 }

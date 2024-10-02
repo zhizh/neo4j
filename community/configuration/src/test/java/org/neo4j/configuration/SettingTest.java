@@ -21,6 +21,8 @@ package org.neo4j.configuration;
 
 import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,6 +42,7 @@ import static org.neo4j.configuration.SettingConstraints.max;
 import static org.neo4j.configuration.SettingConstraints.min;
 import static org.neo4j.configuration.SettingConstraints.noDuplicates;
 import static org.neo4j.configuration.SettingConstraints.range;
+import static org.neo4j.configuration.SettingConstraints.resolution;
 import static org.neo4j.configuration.SettingValueParsers.BOOL;
 import static org.neo4j.configuration.SettingValueParsers.BYTES;
 import static org.neo4j.configuration.SettingValueParsers.CIDR_IP;
@@ -71,12 +74,14 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -882,6 +887,69 @@ class SettingTest {
                 settingBuilder("setting.child", parser).setDependency(parent).build();
 
         assertEquals(expectedDescription, child.description());
+    }
+
+    @Test
+    void testResolutionConstraint() {
+        final var nanos = resolutionSetting(ChronoUnit.NANOS);
+        assertValidResolution(nanos, 1, ChronoUnit.MINUTES);
+        assertValidResolution(nanos, 1, ChronoUnit.SECONDS);
+        assertValidResolution(nanos, 1, ChronoUnit.NANOS);
+
+        final var micros = resolutionSetting(ChronoUnit.MICROS);
+        assertValidResolution(micros, 1, ChronoUnit.MINUTES);
+        assertValidResolution(micros, 1, ChronoUnit.SECONDS);
+        assertValidResolution(micros, 1, ChronoUnit.MICROS);
+        assertValidResolution(micros, 1000, ChronoUnit.NANOS);
+        assertInvalidResolution(micros, 999, ChronoUnit.NANOS, ChronoUnit.NANOS, ChronoUnit.MICROS);
+
+        final var millis = resolutionSetting(ChronoUnit.MILLIS);
+        assertValidResolution(millis, 1, ChronoUnit.MINUTES);
+        assertValidResolution(millis, 1, ChronoUnit.SECONDS);
+        assertValidResolution(millis, 1, ChronoUnit.MILLIS);
+        assertInvalidResolution(millis, 999, ChronoUnit.MICROS, ChronoUnit.MICROS, ChronoUnit.MILLIS);
+        assertValidResolution(millis, 1000, ChronoUnit.MICROS);
+        assertInvalidResolution(millis, 1001, ChronoUnit.MICROS, ChronoUnit.MICROS, ChronoUnit.MILLIS);
+
+        final var seconds = resolutionSetting(ChronoUnit.SECONDS);
+        assertValidResolution(seconds, 1, ChronoUnit.MINUTES);
+        assertValidResolution(seconds, 1, ChronoUnit.SECONDS);
+        assertInvalidResolution(seconds, 999, ChronoUnit.MILLIS, ChronoUnit.MILLIS, ChronoUnit.SECONDS);
+        assertValidResolution(seconds, 1000, ChronoUnit.MILLIS);
+        assertInvalidResolution(seconds, 1001, ChronoUnit.MILLIS, ChronoUnit.MILLIS, ChronoUnit.SECONDS);
+
+        final var minutes = resolutionSetting(ChronoUnit.MINUTES);
+        assertValidResolution(minutes, 1, ChronoUnit.HOURS);
+        assertValidResolution(minutes, 1, ChronoUnit.MINUTES);
+        assertInvalidResolution(minutes, 59, ChronoUnit.SECONDS, ChronoUnit.SECONDS, ChronoUnit.MINUTES);
+        assertValidResolution(minutes, 60, ChronoUnit.SECONDS);
+        assertInvalidResolution(minutes, 61, ChronoUnit.SECONDS, ChronoUnit.SECONDS, ChronoUnit.MINUTES);
+    }
+
+    private static SettingImpl<Duration> resolutionSetting(ChronoUnit resolution) {
+        return (SettingImpl<Duration>)
+                settingBuilder("resolution." + resolution.name().toLowerCase(Locale.ROOT), DURATION)
+                        .addConstraint(resolution(resolution))
+                        .build();
+    }
+
+    private static void assertValidResolution(SettingImpl<Duration> resolutionSetting, long value, ChronoUnit unit) {
+        assertThatNoException().isThrownBy(() -> resolutionSetting.validate(Duration.of(value, unit), EMPTY));
+    }
+
+    private static void assertInvalidResolution(
+            SettingImpl<Duration> resolutionSetting,
+            long value,
+            ChronoUnit unit,
+            ChronoUnit actualResolution,
+            ChronoUnit expectedResolution) {
+        assertThatThrownBy(() -> resolutionSetting.validate(Duration.of(value, unit), EMPTY))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContainingAll(
+                        "minimum allowed resolution is",
+                        expectedResolution.toString(),
+                        "but was",
+                        actualResolution.toString());
     }
 
     private static <T> SettingBuilder<T> settingBuilder(String name, SettingValueParser<T> parser) {
