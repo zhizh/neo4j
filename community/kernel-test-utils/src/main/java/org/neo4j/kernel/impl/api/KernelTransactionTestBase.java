@@ -275,6 +275,7 @@ class KernelTransactionTestBase {
                 LatestVersions.LATEST_KERNEL_VERSION_PROVIDER,
                 serverIdentity,
                 enrichmentStrategy,
+                new KernelTransactionsStateBehaviour(storageEngine, enrichmentStrategy),
                 mock(DatabaseHealth.class),
                 NullLogProvider.getInstance(),
                 validatorFactory,

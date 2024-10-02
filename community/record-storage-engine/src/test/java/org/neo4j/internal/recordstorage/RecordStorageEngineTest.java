@@ -50,6 +50,7 @@ import org.mockito.InOrder;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.exceptions.UnderlyingStorageException;
 import org.neo4j.internal.helpers.collection.Visitor;
+import org.neo4j.internal.recordstorage.indexcommand.IndexUpdateCommand;
 import org.neo4j.io.fs.EphemeralFileSystemAbstraction;
 import org.neo4j.io.layout.recordstorage.RecordDatabaseLayout;
 import org.neo4j.io.pagecache.PageCache;
@@ -322,6 +323,11 @@ class RecordStorageEngineTest {
                 @Override
                 public boolean visitGroupDegreeCommand(Command.GroupDegreeCommand command) throws IOException {
                     return transactionApplier.visitGroupDegreeCommand(command);
+                }
+
+                @Override
+                public boolean visitIndexUpdateCommand(IndexUpdateCommand command) throws IOException {
+                    return transactionApplier.visitIndexUpdateCommand(command);
                 }
 
                 @Override

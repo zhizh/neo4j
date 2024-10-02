@@ -20,6 +20,7 @@
 package org.neo4j.internal.recordstorage;
 
 import java.io.IOException;
+import org.neo4j.internal.recordstorage.indexcommand.IndexUpdateCommand;
 import org.neo4j.storageengine.api.StorageCommand;
 
 /**
@@ -109,6 +110,11 @@ public class TransactionApplierFacade implements TransactionApplier {
 
     @Override
     public boolean visitGroupDegreeCommand(Command.GroupDegreeCommand command) throws IOException {
+        return visit(command);
+    }
+
+    @Override
+    public boolean visitIndexUpdateCommand(IndexUpdateCommand command) throws IOException {
         return visit(command);
     }
 }

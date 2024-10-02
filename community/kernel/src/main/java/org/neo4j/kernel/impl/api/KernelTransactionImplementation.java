@@ -176,6 +176,7 @@ import org.neo4j.storageengine.api.cursor.StoreCursors;
 import org.neo4j.storageengine.api.enrichment.ApplyEnrichmentStrategy;
 import org.neo4j.storageengine.api.enrichment.CaptureMode;
 import org.neo4j.storageengine.api.enrichment.EnrichmentMode;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 import org.neo4j.storageengine.api.txstate.TxStateVisitor;
 import org.neo4j.storageengine.api.txstate.TxStateVisitor.Decorator;
 import org.neo4j.storageengine.api.txstate.validation.TransactionValidator;
@@ -236,6 +237,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private final DatabaseReadOnlyChecker readOnlyDatabaseChecker;
     private final TransactionIdGenerator transactionIdGenerator;
     private final ApplyEnrichmentStrategy enrichmentStrategy;
+    private TransactionStateBehaviour transactionStateBehaviour;
     private final DatabaseHealth databaseHealth;
     private final SecurityAuthorizationHandler securityAuthorizationHandler;
 
@@ -340,6 +342,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             KernelVersionProvider kernelVersionProvider,
             ServerIdentity serverIdentity,
             ApplyEnrichmentStrategy enrichmentStrategy,
+            TransactionStateBehaviour transactionStateBehaviour,
             DatabaseHealth databaseHealth,
             LogProvider logProvider,
             TransactionValidatorFactory transactionValidatorFactory,
@@ -368,6 +371,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.kernelVersionProvider = kernelVersionProvider;
         this.serverIdentity = serverIdentity;
         this.enrichmentStrategy = enrichmentStrategy;
+        this.transactionStateBehaviour = transactionStateBehaviour;
         this.namedDatabaseId = namedDatabaseId;
         this.storageEngine = storageEngine;
         this.pool = pool;
@@ -439,7 +443,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.operations = new Operations(
                 kernelRead,
                 storageReader,
-                new IndexTxStateUpdater(storageReader, indexingService, this),
+                new IndexTxStateUpdater(storageReader, indexingService, this, transactionStateBehaviour),
                 commandCreationContext,
                 dbmsRuntimeVersionProvider,
                 kernelVersionProvider,
@@ -453,7 +457,8 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
                 indexingService,
                 config,
                 memoryTracker,
-                accessModeProvider);
+                accessModeProvider,
+                transactionStateBehaviour);
         this.traceProvider = getTraceProvider(config);
         this.initializationTrace = NONE;
         this.transactionHeapBytesLimit = config.get(memory_transaction_max_size);
@@ -893,8 +898,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             txState = new TxState(
                     collectionsFactory,
                     memoryTracker,
-                    () -> enrichmentStrategy.check() != EnrichmentMode.OFF
-                            || storageEngine.transactionStateBehaviour().keepMetaDataForDeletedRelationship(),
+                    transactionStateBehaviour,
                     enrichmentStrategy,
                     txStateWriter,
                     transactionEvent);

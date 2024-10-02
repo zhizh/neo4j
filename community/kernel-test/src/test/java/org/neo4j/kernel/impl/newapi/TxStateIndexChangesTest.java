@@ -69,7 +69,6 @@ import org.neo4j.collection.factory.OnHeapCollectionsFactory;
 import org.neo4j.internal.kernel.api.PropertyIndexQuery;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexOrder;
-import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.kernel.api.schema.index.TestIndexDescriptorFactory;
 import org.neo4j.kernel.impl.newapi.TxStateIndexChanges.AddedAndRemoved;
 import org.neo4j.kernel.impl.newapi.TxStateIndexChanges.AddedWithValuesAndRemoved;
@@ -1210,10 +1209,10 @@ class TxStateIndexChangesTest {
 
         ReadableTransactionState build() {
             final ReadableTransactionState mock = Mockito.mock(ReadableTransactionState.class);
-            doReturn(new UnmodifiableMap<>(updates)).when(mock).getIndexUpdates(any(SchemaDescriptor.class));
+            doReturn(new UnmodifiableMap<>(updates)).when(mock).getIndexUpdates(any(IndexDescriptor.class));
             final TreeMap<ValueTuple, MutableLongDiffSets> sortedMap = new TreeMap<>(ValueTuple.COMPARATOR);
             sortedMap.putAll(updates);
-            doReturn(sortedMap).when(mock).getSortedIndexUpdates(any(SchemaDescriptor.class));
+            doReturn(sortedMap).when(mock).getSortedIndexUpdates(any(IndexDescriptor.class));
             return mock;
         }
     }

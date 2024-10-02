@@ -300,7 +300,7 @@ abstract class TxStateTest {
     @Test
     void shouldComputeIndexUpdatesOnUninitializedTxState() {
         // WHEN
-        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getIndexUpdates(indexOn_1_1.schema());
+        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getIndexUpdates(indexOn_1_1);
 
         // THEN
         assertNull(diffSets);
@@ -309,7 +309,7 @@ abstract class TxStateTest {
     @Test
     void shouldComputeSortedIndexUpdatesOnUninitializedTxState() {
         // WHEN
-        NavigableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getSortedIndexUpdates(indexOn_1_1.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getSortedIndexUpdates(indexOn_1_1);
 
         // THEN
         assertNull(diffSets);
@@ -321,7 +321,7 @@ abstract class TxStateTest {
         addNodesToIndex(indexOn_2_1).withDefaultStringProperties(42L);
 
         // WHEN
-        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getIndexUpdates(indexOn_1_1.schema());
+        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getIndexUpdates(indexOn_1_1);
 
         // THEN
         assertNull(diffSets);
@@ -333,7 +333,7 @@ abstract class TxStateTest {
         addNodesToIndex(indexOn_2_1).withDefaultStringProperties(42L);
 
         // WHEN
-        NavigableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getSortedIndexUpdates(indexOn_1_1.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getSortedIndexUpdates(indexOn_1_1);
 
         // THEN
         assertNull(diffSets);
@@ -347,7 +347,7 @@ abstract class TxStateTest {
         addNodesToIndex(indexOn_1_1).withDefaultStringProperties(41L);
 
         // WHEN
-        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getIndexUpdates(indexOn_1_1.schema());
+        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getIndexUpdates(indexOn_1_1);
 
         // THEN
         assertNotNull(diffSets);
@@ -364,7 +364,7 @@ abstract class TxStateTest {
         addNodesToIndex(indexOn_1_1).withDefaultStringProperties(41L);
 
         // WHEN
-        NavigableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getSortedIndexUpdates(indexOn_1_1.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> diffSets = state.getSortedIndexUpdates(indexOn_1_1);
 
         TreeMap<ValueTuple, LongDiffSets> expected = sortedAddedNodesDiffSets(42, 41, 43);
         // THEN
@@ -384,7 +384,7 @@ abstract class TxStateTest {
         // THEN
         SchemaDescriptor schema = indexOn_1_1.schema();
         int[] labels = schema.getEntityTokenIds();
-        assertEquals(schema.entityType(), EntityType.NODE);
+        assertEquals(EntityType.NODE, schema.entityType());
         assertEquals(1, labels.length);
         assertEquals(asSet(indexOn_1_1), state.indexDiffSetsByLabel(labels[0]).getAdded());
     }
@@ -995,10 +995,7 @@ abstract class TxStateTest {
         // Or schema updates for that matter. We only do these to speed up the transaction state filtering of schema
         // index query results.
         state.indexDoUpdateEntry(
-                indexOn_1_1.schema(),
-                0,
-                ValueTuple.of(Values.booleanValue(true)),
-                ValueTuple.of(Values.booleanValue(false)));
+                indexOn_1_1, 0, ValueTuple.of(Values.booleanValue(true)), ValueTuple.of(Values.booleanValue(false)));
         assertThat(state.getDataRevision()).isEqualTo(0L);
         assertFalse(state.hasDataChanges());
     }
@@ -1093,7 +1090,17 @@ abstract class TxStateTest {
         TxState state = new TxState(
                 collectionsFactory,
                 memoryTracker,
-                () -> keepDeletedRelationshipMetaData,
+                new TransactionStateBehaviour() {
+                    @Override
+                    public boolean keepMetaDataForDeletedRelationship() {
+                        return keepDeletedRelationshipMetaData;
+                    }
+
+                    @Override
+                    public boolean useIndexCommands() {
+                        return false;
+                    }
+                },
                 ApplyEnrichmentStrategy.NO_ENRICHMENT,
                 ChunkedTransactionSink.EMPTY,
                 TransactionEvent.NULL);
@@ -1567,7 +1574,7 @@ abstract class TxStateTest {
                     state.nodeDoAddLabel(labelIds[0], nodeId);
                     Value valueAfter = Values.of(entry.other());
                     state.nodeDoAddProperty(nodeId, propertyKeyIds[0], valueAfter);
-                    state.indexDoUpdateEntry(schema, nodeId, null, ValueTuple.of(valueAfter));
+                    state.indexDoUpdateEntry(descriptor, nodeId, null, ValueTuple.of(valueAfter));
                 }
             }
         };

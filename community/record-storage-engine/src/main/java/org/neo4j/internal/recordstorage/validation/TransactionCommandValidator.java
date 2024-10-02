@@ -41,6 +41,7 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.recordstorage.Command;
 import org.neo4j.internal.recordstorage.CommandVisitor;
+import org.neo4j.internal.recordstorage.indexcommand.IndexUpdateCommand;
 import org.neo4j.io.pagecache.PageCursor;
 import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.io.pagecache.context.VersionContext;
@@ -215,6 +216,11 @@ public class TransactionCommandValidator implements CommandVisitor, TransactionV
 
     @Override
     public boolean visitGroupDegreeCommand(Command.GroupDegreeCommand command) {
+        return false;
+    }
+
+    @Override
+    public boolean visitIndexUpdateCommand(IndexUpdateCommand command) {
         return false;
     }
 

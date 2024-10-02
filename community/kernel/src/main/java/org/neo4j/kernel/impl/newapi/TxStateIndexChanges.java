@@ -97,7 +97,7 @@ class TxStateIndexChanges {
 
     static AddedAndRemoved indexUpdatesForSeek(
             ReadableTransactionState txState, IndexDescriptor descriptor, ValueTuple values) {
-        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> updates = txState.getIndexUpdates(descriptor.schema());
+        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> updates = txState.getIndexUpdates(descriptor);
         if (updates != null) {
             LongDiffSets indexUpdatesForSeek = updates.get(values);
             return indexUpdatesForSeek == null
@@ -110,7 +110,7 @@ class TxStateIndexChanges {
 
     static AddedWithValuesAndRemoved indexUpdatesWithValuesForSeek(
             ReadableTransactionState txState, IndexDescriptor descriptor, ValueTuple values) {
-        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> updates = txState.getIndexUpdates(descriptor.schema());
+        UnmodifiableMap<ValueTuple, ? extends LongDiffSets> updates = txState.getIndexUpdates(descriptor);
         if (updates != null) {
             LongDiffSets indexUpdatesForSeek = updates.get(values);
             if (indexUpdatesForSeek == null) {
@@ -134,8 +134,7 @@ class TxStateIndexChanges {
             Value[] equalityPrefix,
             PropertyIndexQuery.RangePredicate<?> predicate,
             IndexOrder indexOrder) {
-        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates =
-                txState.getSortedIndexUpdates(descriptor.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates = txState.getSortedIndexUpdates(descriptor);
         if (sortedUpdates == null) {
             return EMPTY_ADDED_AND_REMOVED;
         }
@@ -173,8 +172,7 @@ class TxStateIndexChanges {
             Value[] equalityPrefix,
             PropertyIndexQuery.RangePredicate<?> predicate,
             IndexOrder indexOrder) {
-        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates =
-                txState.getSortedIndexUpdates(descriptor.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates = txState.getSortedIndexUpdates(descriptor);
         if (sortedUpdates == null) {
             return EMPTY_ADDED_AND_REMOVED_WITH_VALUES;
         }
@@ -215,8 +213,7 @@ class TxStateIndexChanges {
             IndexDescriptor descriptor,
             Value[] equalityPrefix,
             PropertyIndexQuery.BoundingBoxPredicate predicate) {
-        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates =
-                txState.getSortedIndexUpdates(descriptor.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates = txState.getSortedIndexUpdates(descriptor);
         if (sortedUpdates == null) {
             return EMPTY_ADDED_AND_REMOVED;
         }
@@ -249,8 +246,7 @@ class TxStateIndexChanges {
             IndexDescriptor descriptor,
             Value[] equalityPrefix,
             PropertyIndexQuery.BoundingBoxPredicate predicate) {
-        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates =
-                txState.getSortedIndexUpdates(descriptor.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates = txState.getSortedIndexUpdates(descriptor);
         if (sortedUpdates == null) {
             return EMPTY_ADDED_AND_REMOVED_WITH_VALUES;
         }
@@ -288,8 +284,7 @@ class TxStateIndexChanges {
             Value[] equalityPrefix,
             TextValue prefix,
             IndexOrder indexOrder) {
-        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates =
-                txState.getSortedIndexUpdates(descriptor.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates = txState.getSortedIndexUpdates(descriptor);
         if (sortedUpdates == null) {
             return EMPTY_ADDED_AND_REMOVED;
         }
@@ -321,8 +316,7 @@ class TxStateIndexChanges {
             Value[] equalityPrefix,
             TextValue prefix,
             IndexOrder indexOrder) {
-        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates =
-                txState.getSortedIndexUpdates(descriptor.schema());
+        NavigableMap<ValueTuple, ? extends LongDiffSets> sortedUpdates = txState.getSortedIndexUpdates(descriptor);
         if (sortedUpdates == null) {
             return EMPTY_ADDED_AND_REMOVED_WITH_VALUES;
         }
@@ -407,8 +401,8 @@ class TxStateIndexChanges {
     private static Map<ValueTuple, ? extends LongDiffSets> getUpdates(
             ReadableTransactionState txState, IndexDescriptor descriptor, IndexOrder indexOrder) {
         return indexOrder == IndexOrder.NONE
-                ? txState.getIndexUpdates(descriptor.schema())
-                : txState.getSortedIndexUpdates(descriptor.schema());
+                ? txState.getIndexUpdates(descriptor)
+                : txState.getSortedIndexUpdates(descriptor);
     }
 
     private static ValueTuple getCompositeValueTuple(

@@ -43,6 +43,7 @@ import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.schema.index.TestIndexDescriptorFactory;
 import org.neo4j.storageengine.api.PropertySelection;
 import org.neo4j.values.storable.Value;
+import org.neo4j.values.storable.ValueTuple;
 import org.neo4j.values.storable.Values;
 
 public class RelationshipIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
@@ -128,9 +129,14 @@ public class RelationshipIndexTxStateUpdaterTest extends IndexTxStateUpdaterTest
         indexTxUpdater.onPropertyAdd(relationship, propertyCursor, TYPE_ID, NEW_PROP_ID, PROPS, Values.of("newHi"));
 
         // THEN
-        verifyIndexUpdate(indexOn_new.schema(), REL_ID, null, values("newHi"));
-        verifyIndexUpdate(indexOn_1_new.schema(), REL_ID, null, values("hi1", "newHi"));
-        verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), isNull(), any());
+        verifyIndexUpdate(indexOn_new, REL_ID, null, values("newHi"));
+        if (getTransactionStateBehaviour().useIndexCommands()) {
+            verifyIndexUpdate(
+                    indexOn_1_new, REL_ID, ValueTuple.of(Values.of("hi1"), Values.NO_VALUE), values("hi1", "newHi"));
+        } else {
+            verifyIndexUpdate(indexOn_1_new, REL_ID, null, values("hi1", "newHi"));
+        }
+        verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), any(), any());
     }
 
     @Test
@@ -139,8 +145,8 @@ public class RelationshipIndexTxStateUpdaterTest extends IndexTxStateUpdaterTest
         indexTxUpdater.onPropertyRemove(relationship, propertyCursor, TYPE_ID, PROP_ID_2, PROPS, Values.of("hi2"));
 
         // THEN
-        verifyIndexUpdate(indexOn_2.schema(), REL_ID, values("hi2"), null);
-        verifyIndexUpdate(indexOn_2_3.schema(), REL_ID, values("hi2", "hi3"), null);
+        verifyIndexUpdate(indexOn_2, REL_ID, values("hi2"), null);
+        verifyIndexUpdate(indexOn_2_3, REL_ID, values("hi2", "hi3"), null);
         verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), any(), isNull());
     }
 
@@ -151,8 +157,8 @@ public class RelationshipIndexTxStateUpdaterTest extends IndexTxStateUpdaterTest
                 relationship, propertyCursor, TYPE_ID, PROP_ID_2, PROPS, Values.of("hi2"), Values.of("new2"));
 
         // THEN
-        verifyIndexUpdate(indexOn_2.schema(), REL_ID, values("hi2"), values("new2"));
-        verifyIndexUpdate(indexOn_2_3.schema(), REL_ID, values("hi2", "hi3"), values("new2", "hi3"));
+        verifyIndexUpdate(indexOn_2, REL_ID, values("hi2"), values("new2"));
+        verifyIndexUpdate(indexOn_2_3, REL_ID, values("hi2", "hi3"), values("new2", "hi3"));
         verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), any(), any());
     }
 }

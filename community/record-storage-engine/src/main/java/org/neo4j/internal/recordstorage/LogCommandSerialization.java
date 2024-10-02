@@ -20,6 +20,7 @@
 package org.neo4j.internal.recordstorage;
 
 import java.io.IOException;
+import org.neo4j.internal.recordstorage.indexcommand.IndexUpdateCommand;
 import org.neo4j.io.fs.ReadableChannel;
 import org.neo4j.io.fs.WritableChannel;
 import org.neo4j.kernel.impl.transaction.log.LogPositionAwareChannel;
@@ -56,6 +57,8 @@ public abstract class LogCommandSerialization extends BaseCommandReader {
             case NeoCommandType.META_DATA_COMMAND -> readMetaDataCommand(channel);
             case NeoCommandType.UPDATE_GROUP_DEGREE_COMMAND -> readGroupDegreeCommand(channel);
             case NeoCommandType.ENRICHMENT_COMMAND -> readEnrichmentCommand(channel);
+
+            case NeoCommandType.INDEX_UPDATE_COMMAND -> readIndexUpdateCommand(channel);
 
                 // legacy indexes
             case NeoCommandType.INDEX_DEFINE_COMMAND -> readIndexDefineCommand(channel);
@@ -141,6 +144,10 @@ public abstract class LogCommandSerialization extends BaseCommandReader {
     }
 
     protected Command readNodeCommand(ReadableChannel channel) throws IOException {
+        throw unsupportedInThisVersionException();
+    }
+
+    protected Command readIndexUpdateCommand(ReadableChannel channel) throws IOException {
         throw unsupportedInThisVersionException();
     }
 
@@ -254,6 +261,10 @@ public abstract class LogCommandSerialization extends BaseCommandReader {
     }
 
     public void writeMetaDataCommand(WritableChannel channel, Command.MetaDataCommand command) throws IOException {
+        throw unsupportedInThisVersionException();
+    }
+
+    public void writeIndexUpdateCommand(WritableChannel channel, IndexUpdateCommand command) throws IOException {
         throw unsupportedInThisVersionException();
     }
 

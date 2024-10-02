@@ -65,6 +65,8 @@ import org.neo4j.internal.kernel.api.exceptions.schema.CreateConstraintFailureEx
 import org.neo4j.internal.recordstorage.Command.RecordEnrichmentCommand;
 import org.neo4j.internal.recordstorage.NeoStoresDiagnostics.NeoStoreIdUsage;
 import org.neo4j.internal.recordstorage.NeoStoresDiagnostics.NeoStoreRecords;
+import org.neo4j.internal.recordstorage.indexcommand.IndexRecordState;
+import org.neo4j.internal.recordstorage.indexcommand.TransactionToIndexUpdateVisitor;
 import org.neo4j.internal.recordstorage.validation.TransactionCommandValidatorFactory;
 import org.neo4j.internal.schema.IndexConfigCompleter;
 import org.neo4j.internal.schema.SchemaCache;
@@ -124,6 +126,7 @@ import org.neo4j.storageengine.api.enrichment.Enrichment;
 import org.neo4j.storageengine.api.enrichment.EnrichmentCommand;
 import org.neo4j.storageengine.api.txstate.ReadableTransactionState;
 import org.neo4j.storageengine.api.txstate.TransactionCountingStateVisitor;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 import org.neo4j.storageengine.api.txstate.TxStateVisitor;
 import org.neo4j.storageengine.api.txstate.TxStateVisitor.Decorator;
 import org.neo4j.storageengine.api.txstate.validation.TransactionValidatorFactory;
@@ -131,12 +134,16 @@ import org.neo4j.storageengine.util.IdGeneratorUpdatesWorkSync;
 import org.neo4j.storageengine.util.IdUpdateListener;
 import org.neo4j.storageengine.util.IndexUpdatesWorkSync;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.util.FeatureToggles;
 import org.neo4j.util.VisibleForTesting;
 
 public class RecordStorageEngine implements StorageEngine, Lifecycle {
     private static final String STORAGE_ENGINE_START_TAG = "storageEngineStart";
     private static final String SCHEMA_CACHE_START_TAG = "schemaCacheStart";
     private static final String TOKENS_INIT_TAG = "tokensInitialisation";
+
+    private static final boolean INDEX_COMMANDS =
+            FeatureToggles.flag(RecordStorageEngine.class, "indexCommands", false);
 
     private final NeoStores neoStores;
     private final RecordDatabaseLayout databaseLayout;
@@ -169,6 +176,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
     private final RecordStorageIndexingBehaviour indexingBehaviour;
     private final RecordStorageCostCharacteristics costCharacteristics;
     private final boolean multiVersion;
+    private final TransactionStateBehaviour txStateBehaviour;
 
     // installed later
     private IndexUpdateListener indexUpdateListener;
@@ -210,6 +218,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
         this.otherMemoryTracker = otherMemoryTracker;
         this.kernelVersionRepository = kernelVersionRepository;
         this.lockVerificationFactory = lockVerificationFactory;
+
         this.neoStores = new StoreFactory(
                         databaseLayout,
                         config,
@@ -231,6 +240,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
                 neoStores.getRelationshipStore().getRecordsPerPage());
         this.costCharacteristics = new RecordStorageCostCharacteristics();
         this.multiVersion = neoStores.getOpenOptions().contains(PageCacheOpenOptions.MULTI_VERSIONED);
+        txStateBehaviour = new RecordTransactionStateBehaviour(useIndexCommands());
         try {
             schemaRuleAccess = SchemaRuleAccess.getSchemaRuleAccess(neoStores.getSchemaStore(), tokenHolders);
             schemaCache = new SchemaCache(constraintSemantics, indexConfigCompleter, indexingBehaviour);
@@ -312,7 +322,12 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
         }
         if (mode.needsAuxiliaryStores()) {
             // Schema index application
-            appliers.add(new IndexTransactionApplierFactory(mode, indexUpdateListener));
+            if (useIndexCommands()) {
+                appliers.add(new IndexCommandTransactionApplierFactory(
+                        indexUpdateListener, indexUpdatesSync, schemaCache, mode));
+            } else {
+                appliers.add(new IndexTransactionApplierFactory(mode, indexUpdateListener));
+            }
         }
         return new TransactionApplierFactoryChain(
                 idUpdateListenerFunction, appliers.toArray(TransactionApplierFactory[]::new));
@@ -411,6 +426,10 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
         return multiVersion;
     }
 
+    private boolean useIndexCommands() {
+        return isMultiVersionedFormat() || INDEX_COMMANDS;
+    }
+
     @Override
     public StoreCursors createStorageCursors(CursorContext cursorContext) {
         return new CachedStoreCursors(neoStores, cursorContext);
@@ -481,13 +500,22 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
                 memoryTracker);
         CountsRecordState countsRecordState = new CountsRecordState(serialization);
         txStateVisitor = additionalTxStateVisitor.apply(txStateVisitor);
+        RecordState indexRecordState = RecordState.EMPTY_RECORD_STATE;
+        if (useIndexCommands()) {
+            var commandState = new IndexRecordState(serialization);
+            txStateVisitor = new TransactionToIndexUpdateVisitor(
+                    txStateVisitor, commandState, storageReader, txState, cursorContext, storeCursors, memoryTracker);
+            indexRecordState = commandState;
+        }
         txStateVisitor = new TransactionCountingStateVisitor(
                 txStateVisitor, storageReader, txState, countsRecordState, cursorContext, storeCursors, memoryTracker);
         try (TxStateVisitor visitor = txStateVisitor) {
             txState.accept(visitor);
         }
+
         // Convert record state into commands
         recordState.extractCommands(commands, memoryTracker);
+        indexRecordState.extractCommands(commands, memoryTracker);
         countsRecordState.extractCommands(commands, memoryTracker);
 
         // Verify sufficient locks
@@ -566,6 +594,13 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
 
     private BatchContext createBatchContext(
             TransactionApplierFactoryChain batchApplier, StorageEngineTransaction initialBatch) {
+        if (useIndexCommands()) {
+            return new IndexlessBatchContext(
+                    indexUpdateListener,
+                    batchApplier.getIdUpdateListener(idGeneratorWorkSyncs, initialBatch.cursorContext()),
+                    otherMemoryTracker);
+        }
+
         return new BatchContextImpl(
                 indexUpdateListener,
                 indexUpdatesSync,
@@ -739,6 +774,11 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
     }
 
     @Override
+    public TransactionStateBehaviour transactionStateBehaviour() {
+        return txStateBehaviour;
+    }
+
+    @Override
     public StorageEngineCostCharacteristics costCharacteristics() {
         return costCharacteristics;
     }
@@ -793,6 +833,13 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
         public long lastCommittedTxId() {
             TransactionIdStore txIdStore = metadataProvider();
             return txIdStore.getLastCommittedTransactionId();
+        }
+    }
+
+    private record RecordTransactionStateBehaviour(boolean useIndexCommands) implements TransactionStateBehaviour {
+        @Override
+        public boolean keepMetaDataForDeletedRelationship() {
+            return false;
         }
     }
 }

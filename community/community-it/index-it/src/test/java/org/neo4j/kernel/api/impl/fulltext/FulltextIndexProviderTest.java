@@ -156,15 +156,15 @@ class FulltextIndexProviderTest {
     private int propIdHo;
     private String firstNodeId;
     private String firstRelationshipId;
+    private final Label hejLabel = label("hej");
+    private final Label haLabel = label("ha");
+    private final Label heLabel = label("he");
+    private final RelationshipType hejType = RelationshipType.withName("hej");
 
     @BeforeEach
     void prepDB() {
-        Label hej = label("hej");
-        Label ha = label("ha");
-        Label he = label("he");
-        RelationshipType hejType = RelationshipType.withName("hej");
         try (Transaction transaction = db.beginTx()) {
-            node1 = transaction.createNode(hej, ha, he);
+            node1 = transaction.createNode(hejLabel, haLabel, heLabel);
             node1.setProperty("hej", "value");
             node1.setProperty("ha", "value1");
             node1.setProperty("he", "value2");
@@ -183,9 +183,9 @@ class FulltextIndexProviderTest {
 
         try (Transaction tx = db.beginTx()) {
             TokenRead tokenRead = tokenRead(tx);
-            labelIdHej = tokenRead.nodeLabel(hej.name());
-            labelIdHa = tokenRead.nodeLabel(ha.name());
-            labelIdHe = tokenRead.nodeLabel(he.name());
+            labelIdHej = tokenRead.nodeLabel(hejLabel.name());
+            labelIdHa = tokenRead.nodeLabel(haLabel.name());
+            labelIdHe = tokenRead.nodeLabel(heLabel.name());
             propIdHej = tokenRead.propertyKey("hej");
             propIdHa = tokenRead.propertyKey("ha");
             propIdHe = tokenRead.propertyKey("he");
@@ -256,8 +256,7 @@ class FulltextIndexProviderTest {
 
     @Test
     void createAndQueryFulltextIndex() throws Exception {
-        IndexDescriptor indexReference;
-        indexReference = createIndex(
+        var indexReference = createIndex(
                 new int[] {labelIdHej, labelIdHa, labelIdHe}, new int[] {propIdHej, propIdHa, propIdHe, propIdHo});
         await(indexReference);
         String thirdNodeId = createTheThirdNode();
@@ -876,7 +875,7 @@ class FulltextIndexProviderTest {
     private String createTheThirdNode() {
         String nodeId;
         try (Transaction transaction = db.beginTx()) {
-            Node hej = transaction.createNode(label("hej"));
+            Node hej = transaction.createNode(hejLabel);
             nodeId = hej.getElementId();
             hej.setProperty("hej", "villa");
             hej.setProperty("ho", "value3");

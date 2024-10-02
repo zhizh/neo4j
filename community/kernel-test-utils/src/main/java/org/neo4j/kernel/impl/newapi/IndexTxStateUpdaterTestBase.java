@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.neo4j.storageengine.api.txstate.TransactionStateBehaviour.DEFAULT_BEHAVIOUR;
 
 import java.util.HashSet;
 import java.util.List;
@@ -41,6 +42,7 @@ import org.neo4j.kernel.impl.api.index.IndexProxy;
 import org.neo4j.kernel.impl.api.index.IndexingService;
 import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.storageengine.api.StorageReader;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 import org.neo4j.values.storable.ValueTuple;
 
 public class IndexTxStateUpdaterTestBase {
@@ -56,6 +58,7 @@ public class IndexTxStateUpdaterTestBase {
 
     StubPropertyCursor propertyCursor = new StubPropertyCursor();
     StorageReader storageReader = mock(StorageReader.class);
+    private TransactionStateBehaviour transactionStateBehaviour;
 
     void setUp(List<IndexDescriptor> indexes) throws IndexNotFoundKernelException {
         txState = mock(TransactionState.class);
@@ -100,14 +103,20 @@ public class IndexTxStateUpdaterTestBase {
 
         TxStateHolder txStateHolder = mock(TxStateHolder.class);
         when(txStateHolder.txState()).thenReturn(txState);
-        indexTxUpdater = new IndexTxStateUpdater(storageReader, indexingService, txStateHolder);
+        transactionStateBehaviour = DEFAULT_BEHAVIOUR;
+        indexTxUpdater =
+                new IndexTxStateUpdater(storageReader, indexingService, txStateHolder, transactionStateBehaviour);
+    }
+
+    public TransactionStateBehaviour getTransactionStateBehaviour() {
+        return transactionStateBehaviour;
     }
 
     static ValueTuple values(Object... values) {
         return ValueTuple.of(values);
     }
 
-    void verifyIndexUpdate(SchemaDescriptor schema, long entityId, ValueTuple before, ValueTuple after) {
-        verify(txState).indexDoUpdateEntry(eq(schema), eq(entityId), eq(before), eq(after));
+    void verifyIndexUpdate(IndexDescriptor indexDescriptor, long entityId, ValueTuple before, ValueTuple after) {
+        verify(txState).indexDoUpdateEntry(eq(indexDescriptor), eq(entityId), eq(before), eq(after));
     }
 }

@@ -22,7 +22,6 @@ package org.neo4j.kernel.api.txstate;
 import org.neo4j.internal.kernel.api.Upgrade;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.IndexDescriptor;
-import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.constraints.IndexBackedConstraintDescriptor;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.txstate.ReadableTransactionState;
@@ -93,7 +92,7 @@ public interface TransactionState extends ReadableTransactionState {
 
     void constraintDoDrop(ConstraintDescriptor constraint);
 
-    void indexDoUpdateEntry(SchemaDescriptor descriptor, long nodeId, ValueTuple before, ValueTuple after);
+    void indexDoUpdateEntry(IndexDescriptor descriptor, long nodeId, ValueTuple before, ValueTuple after);
 
     // Upgrade
     void kernelDoUpgrade(Upgrade.KernelUpgrade kernelUpgrade);

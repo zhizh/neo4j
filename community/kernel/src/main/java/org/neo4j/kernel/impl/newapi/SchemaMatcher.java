@@ -23,8 +23,10 @@ import static org.neo4j.collection.PrimitiveArrays.contains;
 
 import java.util.Iterator;
 import org.neo4j.function.ThrowingConsumer;
+import org.neo4j.internal.schema.FulltextSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptorSupplier;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 
 /**
  * This class holds functionality to match {@link SchemaDescriptor} to entities.
@@ -47,6 +49,7 @@ public class SchemaMatcher {
      * @param schemaSuppliers The suppliers to match
      * @param specialPropertyId This property id will always count as a match for the descriptor, regardless of
      * whether the entity has this property or not
+     * @param stateBehaviour transaction state behaviour flags
      * @param callback The action to take on match
      * @throws EXCEPTION This exception is propagated from the action
      */
@@ -54,14 +57,20 @@ public class SchemaMatcher {
             Iterator<SUPPLIER> schemaSuppliers,
             int specialPropertyId,
             int[] existingPropertyIds,
+            TransactionStateBehaviour stateBehaviour,
             ThrowingConsumer<SUPPLIER, EXCEPTION> callback)
             throws EXCEPTION {
         while (schemaSuppliers.hasNext()) {
             SUPPLIER schemaSupplier = schemaSuppliers.next();
             SchemaDescriptor schema = schemaSupplier.schema();
-
-            if (entityHasSchemaProperties(existingPropertyIds, schema.getPropertyIds(), specialPropertyId)) {
-                callback.accept(schemaSupplier);
+            if (stateBehaviour.useIndexCommands() && schema.isSchemaDescriptorType(FulltextSchemaDescriptor.class)) {
+                if (contains(schema.getPropertyIds(), specialPropertyId) || specialPropertyId < 0) {
+                    callback.accept(schemaSupplier);
+                }
+            } else {
+                if (entityHasSchemaProperties(existingPropertyIds, schema.getPropertyIds(), specialPropertyId)) {
+                    callback.accept(schemaSupplier);
+                }
             }
         }
     }

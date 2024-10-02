@@ -28,6 +28,7 @@ import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationExcep
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.storageengine.api.StorageProperty;
+import org.neo4j.values.storable.ValueTuple;
 
 /**
  * A visitor for visiting the changes that have been made in a transaction.
@@ -58,6 +59,8 @@ public interface TxStateVisitor extends AutoCloseable {
     void visitCreatedPropertyKeyToken(long id, String name, boolean internal);
 
     void visitCreatedRelationshipTypeToken(long id, String name, boolean internal);
+
+    void visitValueIndexUpdate(IndexDescriptor descriptor, long entityId, ValueTuple values, EntityChange entityChange);
 
     void visitKernelUpgrade(Upgrade.KernelUpgrade kernelUpgrade);
 
@@ -106,6 +109,10 @@ public interface TxStateVisitor extends AutoCloseable {
         public void visitCreatedRelationshipTypeToken(long id, String name, boolean internal) {}
 
         @Override
+        public void visitValueIndexUpdate(
+                IndexDescriptor descriptor, long entityIdId, ValueTuple values, EntityChange entityChange) {}
+
+        @Override
         public void visitKernelUpgrade(Upgrade.KernelUpgrade kernelUpgrade) {}
 
         @Override
@@ -136,6 +143,12 @@ public interface TxStateVisitor extends AutoCloseable {
         public void visitRelationshipModifications(RelationshipModifications modifications)
                 throws ConstraintValidationException {
             actual.visitRelationshipModifications(modifications);
+        }
+
+        @Override
+        public void visitValueIndexUpdate(
+                IndexDescriptor descriptor, long entityId, ValueTuple values, EntityChange entityChange) {
+            actual.visitValueIndexUpdate(descriptor, entityId, values, entityChange);
         }
 
         @Override

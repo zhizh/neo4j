@@ -30,9 +30,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.neo4j.internal.recordstorage.Command.NodeCountsCommand;
 import org.neo4j.internal.recordstorage.Command.RelationshipCountsCommand;
+import org.neo4j.internal.recordstorage.indexcommand.TokenIndexUpdateCommand;
+import org.neo4j.internal.recordstorage.indexcommand.ValueIndexUpdateCommand;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.internal.schema.SchemaDescriptors;
@@ -50,7 +53,10 @@ import org.neo4j.kernel.impl.store.record.SchemaRecord;
 import org.neo4j.kernel.impl.transaction.log.InMemoryClosableChannel;
 import org.neo4j.storageengine.api.RelationshipDirection;
 import org.neo4j.storageengine.api.StorageCommand;
+import org.neo4j.storageengine.api.UpdateMode;
 import org.neo4j.test.LatestVersions;
+import org.neo4j.values.storable.Value;
+import org.neo4j.values.storable.Values;
 
 /**
  * At any point, a power outage may stop us from writing to the log, which means that, at any point, all our commands
@@ -63,7 +69,8 @@ class LogTruncationTest {
     /** Stores all known commands, and an arbitrary set of different permutations for them */
     private final Map<Class<?>, Command[]> permutations = new HashMap<>();
 
-    {
+    @BeforeEach
+    void setUp() {
         NeoStoreRecord after = new NeoStoreRecord();
         after.setNextProp(42);
         permutations.put(Command.NodeCommand.class, new Command[] {
@@ -127,6 +134,16 @@ class LogTruncationTest {
 
         // CDC - empty permutation as the read/write behaviour is different for enrichment commands
         permutations.put(Command.RecordEnrichmentCommand.class, new Command[0]);
+
+        permutations.put(TokenIndexUpdateCommand.class, new Command[] {
+            new TokenIndexUpdateCommand(serialization, UpdateMode.ADDED, 1, 2, new int[] {1}, new int[] {2})
+        });
+        permutations.put(ValueIndexUpdateCommand.class, new Command[] {
+            new ValueIndexUpdateCommand(
+                    serialization, UpdateMode.ADDED, 1, 2, new Value[] {Values.intValue(5)}, new Value[] {
+                        Values.intValue(7)
+                    })
+        });
     }
 
     @Test

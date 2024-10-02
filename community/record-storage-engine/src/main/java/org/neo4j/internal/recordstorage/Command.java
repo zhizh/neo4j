@@ -140,7 +140,7 @@ public abstract class Command implements StorageCommand {
 
     public abstract boolean handle(CommandVisitor handler) throws IOException;
 
-    void lockForRecovery(LockService lockService, LockGroup lockGroup, TransactionApplicationMode mode) {
+    public void lockForRecovery(LockService lockService, LockGroup lockGroup, TransactionApplicationMode mode) {
         // most commands does not need this locking
     }
 
@@ -199,7 +199,7 @@ public abstract class Command implements StorageCommand {
         }
 
         @Override
-        void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
+        public void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
             locks.add(lockService.acquireNodeLock(getKey(), LockType.EXCLUSIVE));
             for (DynamicRecord dynamicLabelRecord : record(mode).getDynamicLabelRecords()) {
                 locks.add(lockService.acquireCustomLock(
@@ -231,7 +231,7 @@ public abstract class Command implements StorageCommand {
         }
 
         @Override
-        void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
+        public void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
             locks.add(lockService.acquireRelationshipLock(getKey(), LockType.EXCLUSIVE));
         }
     }
@@ -255,7 +255,7 @@ public abstract class Command implements StorageCommand {
         }
 
         @Override
-        void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
+        public void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
             locks.add(lockService.acquireNodeLock(after.getOwningNode(), LockType.EXCLUSIVE));
             if (getMode() == Mode.CREATE || getMode() == Mode.DELETE) {
                 // This lock on the property guards for reuse of this property
@@ -319,7 +319,7 @@ public abstract class Command implements StorageCommand {
         }
 
         @Override
-        void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
+        public void lockForRecovery(LockService lockService, LockGroup locks, TransactionApplicationMode mode) {
             if (after.isNodeSet()) {
                 locks.add(lockService.acquireNodeLock(getNodeId(), LockType.EXCLUSIVE));
             } else if (after.isRelSet()) {

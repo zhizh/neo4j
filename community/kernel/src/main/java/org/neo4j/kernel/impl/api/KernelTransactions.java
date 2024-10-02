@@ -96,6 +96,7 @@ import org.neo4j.storageengine.api.StorageEngine;
 import org.neo4j.storageengine.api.TransactionId;
 import org.neo4j.storageengine.api.TransactionIdStore;
 import org.neo4j.storageengine.api.enrichment.ApplyEnrichmentStrategy;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 import org.neo4j.storageengine.api.txstate.validation.TransactionValidatorFactory;
 import org.neo4j.time.SystemNanoClock;
 import org.neo4j.token.TokenHolders;
@@ -173,6 +174,7 @@ public class KernelTransactions extends LifecycleAdapter
     private final TopologyGraphDbmsModel.HostedOnMode mode;
     private final DatabaseSerialGuard databaseSerialGuard;
     private final SpdKernelTransactionDecorator spdKernelTransactionDecorator;
+    private final TransactionStateBehaviour transactionStateBehaviour;
     private ScopedMemoryPool transactionMemoryPool;
 
     /**
@@ -270,6 +272,7 @@ public class KernelTransactions extends LifecycleAdapter
                 activeTransactionCounter,
                 config);
         this.enrichmentStrategy = this.databaseDependencies.resolveDependency(ApplyEnrichmentStrategy.class);
+        this.transactionStateBehaviour = new KernelTransactionsStateBehaviour(storageEngine, enrichmentStrategy);
         this.securityLog = this.databaseDependencies.resolveDependency(AbstractSecurityLog.class);
         this.databaseSerialGuard = multiVersioned ? new MultiVersionDatabaseSerialGuard(allTransactions) : EMPTY_GUARD;
         this.spdKernelTransactionDecorator = spdKernelTransactionDecorator;
@@ -574,6 +577,7 @@ public class KernelTransactions extends LifecycleAdapter
                     kernelVersionProvider,
                     serverIdentity,
                     enrichmentStrategy,
+                    transactionStateBehaviour,
                     databaseHealth,
                     internalLogProvider,
                     transactionValidatorFactory,

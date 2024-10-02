@@ -20,7 +20,17 @@
 package org.neo4j.storageengine.api.txstate;
 
 public interface TransactionStateBehaviour {
-    TransactionStateBehaviour DEFAULT_BEHAVIOUR = () -> false;
+    TransactionStateBehaviour DEFAULT_BEHAVIOUR = new TransactionStateBehaviour() {
+        @Override
+        public boolean keepMetaDataForDeletedRelationship() {
+            return false;
+        }
+
+        @Override
+        public boolean useIndexCommands() {
+            return false;
+        }
+    };
 
     /**
      * @return whether or not meta data about relationships is kept for deleted relationships.
@@ -28,4 +38,9 @@ public interface TransactionStateBehaviour {
      * not having to look up that information during commit.
      */
     boolean keepMetaDataForDeletedRelationship();
+
+    /**
+     * @return whether or not transaction state use index commands
+     */
+    boolean useIndexCommands();
 }

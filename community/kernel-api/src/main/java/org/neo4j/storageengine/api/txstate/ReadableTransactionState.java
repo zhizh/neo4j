@@ -125,7 +125,7 @@ public interface ReadableTransactionState {
      * A readonly view of all index updates for the provided schema. Returns {@code null}, if the index
      * updates for this schema have not been initialized.
      */
-    UnmodifiableMap<ValueTuple, ? extends LongDiffSets> getIndexUpdates(SchemaDescriptor schema);
+    UnmodifiableMap<ValueTuple, ? extends LongDiffSets> getIndexUpdates(IndexDescriptor descriptor);
 
     /**
      * A readonly view of all index updates for the provided schema, in sorted order. The returned
@@ -134,7 +134,7 @@ public interface ReadableTransactionState {
      * Ensure sorted index updates for a given index. This is needed for range query support and
      * ay involve converting the existing hash map first.
      */
-    NavigableMap<ValueTuple, ? extends LongDiffSets> getSortedIndexUpdates(SchemaDescriptor descriptor);
+    NavigableMap<ValueTuple, ? extends LongDiffSets> getSortedIndexUpdates(IndexDescriptor descriptor);
 
     // OTHER
 

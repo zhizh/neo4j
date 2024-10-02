@@ -42,6 +42,7 @@ import org.neo4j.internal.kernel.api.helpers.StubNodeCursor;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.schema.index.TestIndexDescriptorFactory;
 import org.neo4j.values.storable.Value;
+import org.neo4j.values.storable.ValueTuple;
 import org.neo4j.values.storable.Values;
 
 class NodeIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
@@ -76,8 +77,8 @@ class NodeIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
     @Test
     void shouldNotUpdateIndexesOnChangedIrrelevantLabel() {
         // WHEN
-        indexTxUpdater.onLabelChange(node, propertyCursor, ADDED_LABEL, Collections.emptyList());
-        indexTxUpdater.onLabelChange(node, propertyCursor, REMOVED_LABEL, Collections.emptyList());
+        indexTxUpdater.onLabelChange(node, propertyCursor, ADDED_LABEL, 0, Collections.emptyList());
+        indexTxUpdater.onLabelChange(node, propertyCursor, REMOVED_LABEL, 0, Collections.emptyList());
 
         // THEN
         verify(txState, never()).indexDoUpdateEntry(any(), anyInt(), any(), any());
@@ -90,11 +91,12 @@ class NodeIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
                 node,
                 propertyCursor,
                 ADDED_LABEL,
+                LABEL_ID_1,
                 storageReader.valueIndexesGetRelated(new int[] {LABEL_ID_1}, PROPS, NODE));
 
         // THEN
-        verifyIndexUpdate(indexOn1_1.schema(), node.nodeReference(), null, values("hi1"));
-        verifyIndexUpdate(uniqueOn1_2.schema(), node.nodeReference(), null, values("hi2"));
+        verifyIndexUpdate(indexOn1_1, node.nodeReference(), null, values("hi1"));
+        verifyIndexUpdate(uniqueOn1_2, node.nodeReference(), null, values("hi2"));
         verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), isNull(), any());
     }
 
@@ -105,10 +107,11 @@ class NodeIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
                 node,
                 propertyCursor,
                 REMOVED_LABEL,
+                LABEL_ID_2,
                 storageReader.valueIndexesGetRelated(new int[] {LABEL_ID_2}, PROPS, NODE));
 
         // THEN
-        verifyIndexUpdate(uniqueOn2_2_3.schema(), node.nodeReference(), values("hi2", "hi3"), null);
+        verifyIndexUpdate(uniqueOn2_2_3, node.nodeReference(), values("hi2", "hi3"), null);
         verify(txState).indexDoUpdateEntry(any(), anyLong(), any(), isNull());
     }
 
@@ -138,9 +141,17 @@ class NodeIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
         indexTxUpdater.onPropertyAdd(node, propertyCursor, node.labels().all(), NEW_PROP_ID, PROPS, Values.of("newHi"));
 
         // THEN
-        verifyIndexUpdate(indexOn2_new.schema(), node.nodeReference(), null, values("newHi"));
-        verifyIndexUpdate(indexOn1_1_new.schema(), node.nodeReference(), null, values("hi1", "newHi"));
-        verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), isNull(), any());
+        verifyIndexUpdate(indexOn2_new, node.nodeReference(), null, values("newHi"));
+        if (getTransactionStateBehaviour().useIndexCommands()) {
+            verifyIndexUpdate(
+                    indexOn1_1_new,
+                    node.nodeReference(),
+                    ValueTuple.of(Values.of("hi1"), Values.NO_VALUE),
+                    values("hi1", "newHi"));
+        } else {
+            verifyIndexUpdate(indexOn1_1_new, node.nodeReference(), null, values("hi1", "newHi"));
+        }
+        verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), any(), any());
     }
 
     @Test
@@ -149,8 +160,8 @@ class NodeIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
         indexTxUpdater.onPropertyRemove(node, propertyCursor, node.labels().all(), PROP_ID_2, PROPS, Values.of("hi2"));
 
         // THEN
-        verifyIndexUpdate(uniqueOn1_2.schema(), node.nodeReference(), values("hi2"), null);
-        verifyIndexUpdate(uniqueOn2_2_3.schema(), node.nodeReference(), values("hi2", "hi3"), null);
+        verifyIndexUpdate(uniqueOn1_2, node.nodeReference(), values("hi2"), null);
+        verifyIndexUpdate(uniqueOn2_2_3, node.nodeReference(), values("hi2", "hi3"), null);
         verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), any(), isNull());
     }
 
@@ -161,8 +172,8 @@ class NodeIndexTxStateUpdaterTest extends IndexTxStateUpdaterTestBase {
                 node, propertyCursor, node.labels().all(), PROP_ID_2, PROPS, Values.of("hi2"), Values.of("new2"));
 
         // THEN
-        verifyIndexUpdate(uniqueOn1_2.schema(), node.nodeReference(), values("hi2"), values("new2"));
-        verifyIndexUpdate(uniqueOn2_2_3.schema(), node.nodeReference(), values("hi2", "hi3"), values("new2", "hi3"));
+        verifyIndexUpdate(uniqueOn1_2, node.nodeReference(), values("hi2"), values("new2"));
+        verifyIndexUpdate(uniqueOn2_2_3, node.nodeReference(), values("hi2", "hi3"), values("new2", "hi3"));
         verify(txState, times(2)).indexDoUpdateEntry(any(), anyLong(), any(), any());
     }
 }

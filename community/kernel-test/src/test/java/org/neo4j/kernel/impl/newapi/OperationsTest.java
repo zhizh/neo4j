@@ -95,7 +95,6 @@ import org.neo4j.kernel.impl.api.index.stats.IndexStatisticsStore;
 import org.neo4j.kernel.impl.api.state.ConstraintIndexCreator;
 import org.neo4j.kernel.impl.api.state.TxState;
 import org.neo4j.kernel.impl.constraints.ConstraintSemantics;
-import org.neo4j.kernel.impl.factory.GraphDatabaseFacade;
 import org.neo4j.kernel.impl.locking.LockManager;
 import org.neo4j.lock.LockTracer;
 import org.neo4j.lock.ResourceType;
@@ -109,6 +108,7 @@ import org.neo4j.storageengine.api.StorageLocks;
 import org.neo4j.storageengine.api.StorageReader;
 import org.neo4j.storageengine.api.StorageSchemaReader;
 import org.neo4j.storageengine.api.cursor.StoreCursors;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 import org.neo4j.test.LatestVersions;
 import org.neo4j.token.TokenHolders;
 import org.neo4j.token.api.NamedToken;
@@ -181,7 +181,6 @@ abstract class OperationsTest {
         when(engine.newReader()).thenReturn(storageReader);
         when(engine.createStorageCursors(any())).thenReturn(storeCursors);
         indexingService = mock(IndexingService.class);
-        var facade = mock(GraphDatabaseFacade.class);
         storageLocks = mock(StorageLocks.class);
         tokenHolders = mockedTokenHolders();
         var kernelToken = new KernelToken(storageReader, creationContext, transaction, tokenHolders);
@@ -257,7 +256,8 @@ abstract class OperationsTest {
                 Config.defaults(Map.of(
                         GraphDatabaseInternalSettings.relationship_endpoint_and_label_coexistence_constraints, true)),
                 INSTANCE,
-                () -> Static.FULL);
+                () -> Static.FULL,
+                TransactionStateBehaviour.DEFAULT_BEHAVIOUR);
         operations.initialize(NULL_CONTEXT);
 
         this.order = inOrder(locks, txState, storageReader, storageReaderSnapshot, creationContext, storageLocks);

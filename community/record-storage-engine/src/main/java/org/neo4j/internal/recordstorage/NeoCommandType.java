@@ -60,5 +60,7 @@ public interface NeoCommandType {
     byte CREATE_REL_COMMAND = (byte) 26;
     byte DELETE_REL_COMMAND = (byte) 27;
 
+    byte INDEX_UPDATE_COMMAND = (byte) 28;
+
     byte ENRICHMENT_COMMAND = EnrichmentCommand.COMMAND_CODE;
 }

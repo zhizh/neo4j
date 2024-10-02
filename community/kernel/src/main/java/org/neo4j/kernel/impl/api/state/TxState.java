@@ -26,6 +26,8 @@ import static org.neo4j.collection.diffset.TrackableDiffSets.newRemovalsCounting
 import static org.neo4j.collection.trackable.HeapTrackingCollections.newLongObjectMap;
 import static org.neo4j.collection.trackable.HeapTrackingCollections.newMap;
 import static org.neo4j.kernel.impl.api.state.TokenState.createTokenState;
+import static org.neo4j.storageengine.api.txstate.EntityChange.ADDED;
+import static org.neo4j.storageengine.api.txstate.EntityChange.REMOVED;
 import static org.neo4j.storageengine.api.txstate.RelationshipModifications.idsAsBatch;
 import static org.neo4j.values.storable.Values.NO_VALUE;
 
@@ -117,7 +119,7 @@ public class TxState implements TransactionState {
 
     private MutableMap<IndexBackedConstraintDescriptor, IndexDescriptor> createdConstraintIndexesByConstraint;
 
-    private MutableMap<SchemaDescriptor, Map<ValueTuple, MutableLongDiffSets>> indexUpdates;
+    private MutableMap<IndexDescriptor, Map<ValueTuple, MutableLongDiffSets>> indexUpdates;
     private Upgrade.KernelUpgrade upgrade;
     private final ScopedMemoryTracker stateMemoryTracker;
     private final TransactionStateBehaviour behaviour;
@@ -257,6 +259,17 @@ public class TxState implements TransactionState {
         if (createdRelationshipTypeTokens != null) {
             createdRelationshipTypeTokens.forEachKeyValue(
                     (id, token) -> visitor.visitCreatedRelationshipTypeToken(id, token.name, token.internal));
+        }
+
+        if (behaviour.useIndexCommands() && indexUpdates != null) {
+            indexUpdates.forEachKeyValue((indexDescriptor, changes) -> changes.forEach((values, entityChanges) -> {
+                entityChanges
+                        .getAdded()
+                        .forEach(entityId -> visitor.visitValueIndexUpdate(indexDescriptor, entityId, values, ADDED));
+                entityChanges
+                        .getRemoved()
+                        .forEach(entityId -> visitor.visitValueIndexUpdate(indexDescriptor, entityId, values, REMOVED));
+            }));
         }
 
         if (upgrade != null) {
@@ -794,11 +807,11 @@ public class TxState implements TransactionState {
     }
 
     @Override
-    public UnmodifiableMap<ValueTuple, ? extends LongDiffSets> getIndexUpdates(SchemaDescriptor schema) {
+    public UnmodifiableMap<ValueTuple, ? extends LongDiffSets> getIndexUpdates(IndexDescriptor indexDescriptor) {
         if (indexUpdates == null) {
             return null;
         }
-        Map<ValueTuple, MutableLongDiffSets> updates = indexUpdates.get(schema);
+        Map<ValueTuple, MutableLongDiffSets> updates = indexUpdates.get(indexDescriptor);
         if (updates == null) {
             return null;
         }
@@ -807,7 +820,7 @@ public class TxState implements TransactionState {
     }
 
     @Override
-    public NavigableMap<ValueTuple, ? extends LongDiffSets> getSortedIndexUpdates(SchemaDescriptor descriptor) {
+    public NavigableMap<ValueTuple, ? extends LongDiffSets> getSortedIndexUpdates(IndexDescriptor descriptor) {
         if (indexUpdates == null) {
             return null;
         }
@@ -828,7 +841,7 @@ public class TxState implements TransactionState {
 
     @Override
     public void indexDoUpdateEntry(
-            SchemaDescriptor descriptor, long entityIdId, ValueTuple propertiesBefore, ValueTuple propertiesAfter) {
+            IndexDescriptor descriptor, long entityIdId, ValueTuple propertiesBefore, ValueTuple propertiesAfter) {
         Map<ValueTuple, MutableLongDiffSets> updates = getOrCreateIndexUpdatesByDescriptor(descriptor);
         if (propertiesBefore != null) {
             MutableLongDiffSets before = getOrCreateIndexUpdatesForSeek(updates, propertiesBefore);
@@ -858,11 +871,11 @@ public class TxState implements TransactionState {
         return updates.computeIfAbsent(values, value -> newMutableLongDiffSets(collectionsFactory, stateMemoryTracker));
     }
 
-    private Map<ValueTuple, MutableLongDiffSets> getOrCreateIndexUpdatesByDescriptor(SchemaDescriptor schema) {
+    private Map<ValueTuple, MutableLongDiffSets> getOrCreateIndexUpdatesByDescriptor(IndexDescriptor indexDescriptor) {
         if (indexUpdates == null) {
             indexUpdates = newMap(stateMemoryTracker);
         }
-        return indexUpdates.getIfAbsentPut(schema, () -> newMap(stateMemoryTracker));
+        return indexUpdates.getIfAbsentPut(indexDescriptor, () -> newMap(stateMemoryTracker));
     }
 
     private Map<IndexBackedConstraintDescriptor, IndexDescriptor> createdConstraintIndexesByConstraint() {

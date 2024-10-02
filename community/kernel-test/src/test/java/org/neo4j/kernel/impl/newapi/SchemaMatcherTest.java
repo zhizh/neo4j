@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.neo4j.internal.helpers.collection.Iterators.iterator;
 import static org.neo4j.kernel.api.schema.index.TestIndexDescriptorFactory.forLabel;
 import static org.neo4j.kernel.api.schema.index.TestIndexDescriptorFactory.forRelType;
+import static org.neo4j.storageengine.api.txstate.TransactionStateBehaviour.DEFAULT_BEHAVIOUR;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,7 +51,7 @@ abstract class SchemaMatcherTest {
     void shouldMatchOnSingleProperty() {
         // when
         List<IndexDescriptor> matched = new ArrayList<>();
-        SchemaMatcher.onMatchingSchema(iterator(index1), unIndexedPropId, props, matched::add);
+        SchemaMatcher.onMatchingSchema(iterator(index1), unIndexedPropId, props, DEFAULT_BEHAVIOUR, matched::add);
 
         // then
         assertThat(matched).containsExactly(index1);
@@ -60,7 +61,7 @@ abstract class SchemaMatcherTest {
     void shouldMatchOnTwoProperties() {
         // when
         List<IndexDescriptor> matched = new ArrayList<>();
-        SchemaMatcher.onMatchingSchema(iterator(index1_2), unIndexedPropId, props, matched::add);
+        SchemaMatcher.onMatchingSchema(iterator(index1_2), unIndexedPropId, props, DEFAULT_BEHAVIOUR, matched::add);
 
         // then
         assertThat(matched).containsExactly(index1_2);
@@ -70,7 +71,8 @@ abstract class SchemaMatcherTest {
     void shouldNotMatchIfEntityIsMissingProperty() {
         // when
         List<IndexDescriptor> matched = new ArrayList<>();
-        SchemaMatcher.onMatchingSchema(iterator(indexWithMissingProperty), unIndexedPropId, props, matched::add);
+        SchemaMatcher.onMatchingSchema(
+                iterator(indexWithMissingProperty), unIndexedPropId, props, DEFAULT_BEHAVIOUR, matched::add);
 
         // then
         assertThat(matched).isEmpty();
@@ -80,7 +82,8 @@ abstract class SchemaMatcherTest {
     void shouldMatchOnSpecialProperty() {
         // when
         List<IndexDescriptor> matched = new ArrayList<>();
-        SchemaMatcher.onMatchingSchema(iterator(indexOnSpecialProperty), specialPropId, props, matched::add);
+        SchemaMatcher.onMatchingSchema(
+                iterator(indexOnSpecialProperty), specialPropId, props, DEFAULT_BEHAVIOUR, matched::add);
 
         // then
         assertThat(matched).containsExactly(indexOnSpecialProperty);
@@ -93,7 +96,7 @@ abstract class SchemaMatcherTest {
 
         // when
         final List<IndexDescriptor> matched = new ArrayList<>();
-        SchemaMatcher.onMatchingSchema(indexes.iterator(), unIndexedPropId, props, matched::add);
+        SchemaMatcher.onMatchingSchema(indexes.iterator(), unIndexedPropId, props, DEFAULT_BEHAVIOUR, matched::add);
 
         // then
         assertThat(matched).isEqualTo(indexes);

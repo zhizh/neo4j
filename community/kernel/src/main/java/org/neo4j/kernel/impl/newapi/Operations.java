@@ -164,6 +164,7 @@ import org.neo4j.storageengine.api.PropertySelection;
 import org.neo4j.storageengine.api.RelationshipIdAllocator;
 import org.neo4j.storageengine.api.StorageLocks;
 import org.neo4j.storageengine.api.StorageReader;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 import org.neo4j.token.api.TokenConstants;
 import org.neo4j.values.storable.Value;
 
@@ -194,6 +195,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
     private final boolean additionLockVerification;
     private final boolean dependentConstraintsEnabled;
     private final boolean relationshipEndpointAndLabelCoexistenceConstraintsEnabled;
+    private final TransactionStateBehaviour transactionStateBehaviour;
     private DefaultNodeCursor nodeCursor;
     private DefaultNodeCursor restrictedNodeCursor;
     private DefaultPropertyCursor propertyCursor;
@@ -219,7 +221,8 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             IndexingProvidersService indexProviders,
             Config config,
             MemoryTracker memoryTracker,
-            AccessModeProvider accessModeProvider) {
+            AccessModeProvider accessModeProvider,
+            TransactionStateBehaviour transactionStateBehaviour) {
         this.storageReader = storageReader;
         this.commandCreationContext = commandCreationContext;
         this.dbmsRuntimeVersionProvider = dbmsRuntimeVersionProvider;
@@ -240,6 +243,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         this.dependentConstraintsEnabled = config.get(GraphDatabaseInternalSettings.dependent_constraints_enabled);
         this.relationshipEndpointAndLabelCoexistenceConstraintsEnabled =
                 config.get(GraphDatabaseInternalSettings.relationship_endpoint_and_label_coexistence_constraints);
+        this.transactionStateBehaviour = transactionStateBehaviour;
     }
 
     public void initialize(CursorContext cursorContext) {
@@ -487,6 +491,9 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         ktx.securityAuthorizationHandler()
                 .assertAllowsDeleteRelationship(
                         ktx.securityContext(), token::relationshipTypeGetName, relationshipCursor.type());
+        if (transactionStateBehaviour.useIndexCommands()) {
+            updater.onDeleteUncreated(relationshipCursor, propertyCursor);
+        }
         txState.relationshipDoDelete(relationship, relationshipCursor.type(), sourceNode, targetNode);
         return true;
     }
@@ -519,7 +526,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             throws UniquePropertyValueValidationException, UnableToValidateConstraintException {
         Collection<IndexDescriptor> indexes = checkConstraintsAndGetIndexes(node, nodeLabel);
         ktx.txState().nodeDoAddLabel(nodeLabel, node);
-        updater.onLabelChange(nodeCursor, propertyCursor, ADDED_LABEL, indexes);
+        updater.onLabelChange(nodeCursor, propertyCursor, ADDED_LABEL, nodeLabel, indexes);
     }
 
     private Collection<IndexDescriptor> checkConstraintsAndGetIndexes(long node, int nodeLabel)
@@ -629,6 +636,9 @@ public class Operations implements Write, SchemaWrite, Upgrade {
 
             ktx.securityAuthorizationHandler()
                     .assertAllowsDeleteNode(ktx.securityContext(), token::labelGetName, nodeCursor::labels);
+            if (transactionStateBehaviour.useIndexCommands()) {
+                updater.onDeleteUncreated(nodeCursor, propertyCursor);
+            }
             ktx.txState().nodeDoDelete(node);
             return true;
         }
@@ -943,6 +953,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                     nodeCursor,
                     propertyCursor,
                     REMOVED_LABEL,
+                    labelId,
                     storageReader.valueIndexesGetRelated(new int[] {labelId}, existingPropertyKeyIds, NODE));
         }
         return true;
@@ -1089,6 +1100,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                 uniquenessConstraints.iterator(),
                 TokenConstants.ANY_PROPERTY_KEY,
                 afterPropertyKeyIds,
+                transactionStateBehaviour,
                 constraint -> validateNoExistingNodeWithExactValues(
                         constraint,
                         storageReader.indexGetForName(constraint.getName()),
@@ -1112,6 +1124,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                                 nodeCursor,
                                 propertyCursor,
                                 REMOVED_LABEL,
+                                removedLabelId,
                                 storageReader.valueIndexesGetRelated(
                                         new int[] {removedLabelId}, existingPropertyKeyIds, NODE));
                     }
@@ -1164,6 +1177,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                                 nodeCursor,
                                 propertyCursor,
                                 ADDED_LABEL,
+                                addedLabelId,
                                 storageReader.valueIndexesGetRelated(
                                         new int[] {addedLabelId}, existingPropertyKeyIds, NODE));
                     }
@@ -1280,6 +1294,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                     uniquenessConstraints.iterator(),
                     TokenConstants.ANY_PROPERTY_KEY,
                     afterPropertyKeyIds,
+                    transactionStateBehaviour,
                     constraint -> validateNoExistingRelWithExactValues(
                             constraint,
                             storageReader.indexGetForName(constraint.getName()),
@@ -1407,6 +1422,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                 uniquenessConstraints.iterator(),
                 propertyKey,
                 existingPropertyKeyIds,
+                transactionStateBehaviour,
                 constraint -> validateNoExistingNodeWithExactValues(
                         constraint,
                         storageReader.indexGetForName(constraint.getName()),
@@ -1423,6 +1439,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                 uniquenessConstraints.iterator(),
                 propertyKey,
                 existingPropertyKeyIds,
+                transactionStateBehaviour,
                 constraint -> validateNoExistingRelWithExactValues(
                         constraint,
                         storageReader.indexGetForName(constraint.getName()),

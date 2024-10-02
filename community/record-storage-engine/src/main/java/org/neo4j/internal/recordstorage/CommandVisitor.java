@@ -32,6 +32,7 @@ import org.neo4j.internal.recordstorage.Command.RelationshipCountsCommand;
 import org.neo4j.internal.recordstorage.Command.RelationshipGroupCommand;
 import org.neo4j.internal.recordstorage.Command.RelationshipTypeTokenCommand;
 import org.neo4j.internal.recordstorage.Command.SchemaRuleCommand;
+import org.neo4j.internal.recordstorage.indexcommand.IndexUpdateCommand;
 
 /**
  * An interface for dealing with commands, either reading or writing them. See also {@link TransactionApplier}. The
@@ -62,6 +63,8 @@ public interface CommandVisitor {
     boolean visitMetaDataCommand(MetaDataCommand command) throws IOException;
 
     boolean visitGroupDegreeCommand(GroupDegreeCommand command) throws IOException;
+
+    boolean visitIndexUpdateCommand(IndexUpdateCommand command) throws IOException;
 
     /**
      * An empty implementation of a {@link CommandVisitor}. Allows you to implement only the methods you are
@@ -120,12 +123,17 @@ public interface CommandVisitor {
         }
 
         @Override
-        public boolean visitMetaDataCommand(MetaDataCommand command) throws IOException {
+        public boolean visitMetaDataCommand(MetaDataCommand command) {
             return false;
         }
 
         @Override
         public boolean visitGroupDegreeCommand(GroupDegreeCommand command) {
+            return false;
+        }
+
+        @Override
+        public boolean visitIndexUpdateCommand(IndexUpdateCommand command) {
             return false;
         }
     }

@@ -28,7 +28,11 @@ import org.neo4j.storageengine.api.StorageCommand;
  * Keeper of state that is about to be committed. That state can be {@link #extractCommands(Collection, MemoryTracker) extracted}
  * into a list of {@link Command commands}.
  */
+@FunctionalInterface
 public interface RecordState {
+
+    RecordState EMPTY_RECORD_STATE = (target, memoryTracker) -> {};
+
     /**
      * Extracts this record state in the form of {@link Command commands} into the supplied {@code target} list.
      * @param target list that commands will be added into.

@@ -19,7 +19,9 @@
  */
 package org.neo4j.internal.recordstorage;
 
+import org.neo4j.internal.recordstorage.indexcommand.IndexUpdateCommand;
 import org.neo4j.kernel.impl.store.record.AbstractBaseRecord;
+import org.neo4j.storageengine.api.UpdateMode;
 
 public enum CommandSelector {
     NORMAL {
@@ -32,6 +34,20 @@ public enum CommandSelector {
         <RECORD extends AbstractBaseRecord> RECORD getAfter(Command.BaseCommand<RECORD> command) {
             return command.after;
         }
+
+        @Override
+        <T> T getBefore(IndexUpdateCommand<T> command) {
+            return command.getBefore();
+        }
+
+        @Override
+        <T> T getAfter(IndexUpdateCommand<T> command) {
+            return command.getAfter();
+        }
+
+        <T> UpdateMode mode(IndexUpdateCommand<T> command) {
+            return command.getUpdateMode();
+        }
     },
     REVERSE {
         @Override
@@ -43,9 +59,33 @@ public enum CommandSelector {
         <RECORD extends AbstractBaseRecord> RECORD getAfter(Command.BaseCommand<RECORD> command) {
             return command.before;
         }
+
+        @Override
+        <T> T getBefore(IndexUpdateCommand<T> command) {
+            return command.getAfter();
+        }
+
+        @Override
+        <T> T getAfter(IndexUpdateCommand<T> command) {
+            return command.getBefore();
+        }
+
+        <T> UpdateMode mode(IndexUpdateCommand<T> command) {
+            return switch (command.getUpdateMode()) {
+                case ADDED -> UpdateMode.REMOVED;
+                case REMOVED -> UpdateMode.ADDED;
+                case CHANGED -> UpdateMode.CHANGED;
+            };
+        }
     };
 
     abstract <RECORD extends AbstractBaseRecord> RECORD getBefore(Command.BaseCommand<RECORD> command);
 
     abstract <RECORD extends AbstractBaseRecord> RECORD getAfter(Command.BaseCommand<RECORD> command);
+
+    abstract <T> T getBefore(IndexUpdateCommand<T> command);
+
+    abstract <T> T getAfter(IndexUpdateCommand<T> command);
+
+    abstract <T> UpdateMode mode(IndexUpdateCommand<T> command);
 }

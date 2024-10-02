@@ -17,12 +17,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.log.entry;
+package org.neo4j.internal.recordstorage.idx.value;
 
-import org.neo4j.kernel.KernelVersion;
-
-public class LogEntrySerializationSetVGloriousFuture extends LogEntrySerializationSetV5_25 {
-    LogEntrySerializationSetVGloriousFuture() {
-        super(KernelVersion.GLORIOUS_FUTURE);
-    }
+public enum ValueType {
+    /** You know what this is */
+    BOOLEAN,
+    /** 64-bit signed integer */
+    INTEGER,
+    /** 64-bit floating point number */
+    FLOAT,
+    /** Binary data */
+    BYTES,
+    /** Unicode string */
+    STRING,
+    /** Sequence of zero or more values */
+    ARRAY,
+    POINT_2D,
+    POINT_3D,
+    DATE,
+    TIME,
+    LOCAL_TIME,
+    LOCAL_DATE_TIME,
+    DATE_TIME_WITH_ZONE_OFFSET,
+    DATE_TIME_WITH_ZONE_NAME,
+    DURATION,
+    NULL,
+    /** Undefined type, reserved for future use */
+    RESERVED
 }

@@ -147,6 +147,7 @@ public final class KernelTransactionFactory {
                 kernelVersionProvider,
                 mock(ServerIdentity.class),
                 ApplyEnrichmentStrategy.NO_ENRICHMENT,
+                storageEngine.transactionStateBehaviour(),
                 mock(DatabaseHealth.class),
                 NullLogProvider.getInstance(),
                 TransactionValidatorFactory.EMPTY_VALIDATOR_FACTORY,

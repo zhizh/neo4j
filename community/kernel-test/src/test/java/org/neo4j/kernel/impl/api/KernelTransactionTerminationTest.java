@@ -86,6 +86,7 @@ import org.neo4j.monitoring.DatabaseHealth;
 import org.neo4j.resources.CpuClock;
 import org.neo4j.storageengine.api.StorageEngine;
 import org.neo4j.storageengine.api.enrichment.ApplyEnrichmentStrategy;
+import org.neo4j.storageengine.api.txstate.TransactionStateBehaviour;
 import org.neo4j.storageengine.api.txstate.validation.TransactionValidatorFactory;
 import org.neo4j.test.LatestVersions;
 import org.neo4j.test.Race;
@@ -303,6 +304,7 @@ class KernelTransactionTerminationTest {
                     LatestVersions.LATEST_KERNEL_VERSION_PROVIDER,
                     mock(ServerIdentity.class),
                     ApplyEnrichmentStrategy.NO_ENRICHMENT,
+                    TransactionStateBehaviour.DEFAULT_BEHAVIOUR,
                     mock(DatabaseHealth.class),
                     NullLogProvider.getInstance(),
                     TransactionValidatorFactory.EMPTY_VALIDATOR_FACTORY,
