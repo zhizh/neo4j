@@ -320,16 +320,21 @@ sealed trait ConflictFinder {
           possibleDeleteConflictPlans,
           possibleDeleteConflictPlanSnapshots
         ).iterator
+      if plansThatIntroduceVar.nonEmpty
 
-      // Filter out Delete vs Create conflicts
+      // Filter out direct Delete vs Create conflicts
       readPlans = plansThatIntroduceVar.filter(ptiv => canConflictWithCreateOrDelete(ptiv.plan.value))
-      if readPlans.nonEmpty
+      if readPlans.nonEmpty ||
+        plansThatReferenceVariable // might still have other conflicts left
+          .excl(wpref)
+          .removedAll(plansThatIntroduceVar.map(_.plan))
+          .nonEmpty
 
       deletedEntity <- deletedEntities.iterator
 
       FilterExpressions(_, deletedExpression) =
         filterExpressions(readsAndWrites.reads).getOrElse(deletedEntity, FilterExpressions(Set.empty))
-      if deleteOverlaps(readPlans, Seq(deletedExpression))
+      if deleteOverlaps(plansThatIntroduceVar, Seq(deletedExpression))
 
       // For a ReadWriteConflict we need to place the Eager between the plans that reference the variable and the Delete plan.
       // For a WriteReadConflict we need to place the Eager between the Delete plan and the plan that introduced the variable.

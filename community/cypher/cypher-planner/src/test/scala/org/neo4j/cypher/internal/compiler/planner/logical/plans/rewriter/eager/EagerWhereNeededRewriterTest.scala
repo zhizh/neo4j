@@ -5497,6 +5497,31 @@ class EagerWhereNeededRewriterTest extends CypherFunSuite with LogicalPlanTestOp
     result should equal(plan)
   }
 
+  test("inserts Eager between Create-Projection-Delete node") {
+    val planBuilder = new LogicalPlanBuilder()
+      .produceResults("x")
+      .deleteNode("n")
+      .projection("n.prop + i AS x")
+      .unwind("range(1, 4) AS i")
+      .create(createNodeWithProperties("n", Seq.empty, "{prop: 0}"))
+      .argument()
+
+    val plan = planBuilder.build()
+
+    val result = eagerizePlan(planBuilder, plan)
+    result shouldEqual
+      new LogicalPlanBuilder()
+        .produceResults("x")
+        .deleteNode("n")
+        .eager(ListSet(ReadDeleteConflict("n").withConflict(Conflict(Id(1), Id(2)))))
+        .projection("n.prop + i AS x")
+        .unwind("range(1, 4) AS i")
+        .create(createNodeWithProperties("n", Seq.empty, "{prop: 0}"))
+        .argument()
+        .build()
+
+  }
+
   // Relationship Tests
 
   // Reads
@@ -7268,6 +7293,30 @@ class EagerWhereNeededRewriterTest extends CypherFunSuite with LogicalPlanTestOp
 
     val result = eagerizePlan(planBuilder, plan)
     result should equal(plan)
+  }
+
+  test("inserts Eager between Create-Projection-Delete relationship") {
+    val planBuilder = new LogicalPlanBuilder()
+      .produceResults("x")
+      .deleteRelationship("r")
+      .projection("r.prop + i AS x")
+      .unwind("range(1, 4) AS i")
+      .create(createRelationship("r", "n", "R", "m", properties = Some("{prop: 0}")))
+      .argument()
+
+    val plan = planBuilder.build()
+
+    val result = eagerizePlan(planBuilder, plan)
+    result shouldEqual
+      new LogicalPlanBuilder()
+        .produceResults("x")
+        .deleteRelationship("r")
+        .eager(ListSet(ReadDeleteConflict("r").withConflict(Conflict(Id(1), Id(2)))))
+        .projection("r.prop + i AS x")
+        .unwind("range(1, 4) AS i")
+        .create(createRelationship("r", "n", "R", "m", properties = Some("{prop: 0}")))
+        .argument()
+        .build()
   }
 
   test("Should be eager in Delete/Read conflict with read in NodeHashJoin") {
