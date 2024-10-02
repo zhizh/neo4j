@@ -41,6 +41,9 @@ import org.neo4j.graphdb.Relationship
 import org.neo4j.graphdb.RelationshipType
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.LoggingPPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
+import org.neo4j.kernel.impl.util.ValueUtils
+import org.neo4j.values.SequenceValue
+import org.neo4j.values.virtual.ListValue
 import org.neo4j.values.virtual.PathReference
 import org.neo4j.values.virtual.VirtualPathValue
 import org.neo4j.values.virtual.VirtualValues.pathReference
@@ -5363,33 +5366,92 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val runtimeResult = execute(logicalQuery, runtime)
 
     // then
-    val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
-    val row = RepeatTrailTestBase.listOf(
-      nodes(0),
-      nodes(1),
-      nodes(2),
-      nodes(3),
-      nodes(9),
-      nodes(8),
-      nodes(7),
-      nodes(6),
-      nodes(10),
-      nodes(11),
-      nodes(12),
-      nodes(13),
-      nodes(19),
-      nodes(18),
-      nodes(17),
-      nodes(16),
-      nodes(20),
-      nodes(21),
-      nodes(22),
-      nodes(23)
-    )
     traversalMatchMode match {
       case TraversalMatchMode.Walk =>
+        // It is hard to do a nice assertion for the walk case, but we can assert
+        // on the structure of the solution. A shortest solution will end on the
+        // last node just above the target node (allNodes(19) and then use a final DOWN
+        // to the target.
+        val allNodes = nodes.map(n => ValueUtils.asAnyValue(n))
         runtimeResult should beColumns(retVars: _*).withRows(rowCount(1093))
+        val consumed = consume(runtimeResult).map(_.toIndexedSeq)
+        consumed.toSet should have size 1093
+        consumed.foreach(row => {
+          // ( 0)-( 1)-( 2)-( 3)-( 4)
+          //   |    |    |    |    |
+          // ( 5)-( 6)-( 7)-( 8)-( 9)
+          //   |    |    |    |    |
+          // (10)-(11)-(12)-(13)-(14)
+          //   |    |    |    |    |
+          // (15)-(16)-(17)-(18)-(19)
+          //   |    |    |    |    |
+          // (20)-(21)-(22)-(23)-(24)
+          row(0) should equal(allNodes.head)
+          val rows = row(1).asInstanceOf[ListValue]
+          val rowEnds = row(2).asInstanceOf[SequenceValue]
+          rowEnds.actualSize() should equal(4)
+          rows.actualSize() should equal(16)
+          // First row
+          rows.value(0) should equal(allNodes(0))
+          rows.value(1) should equal(allNodes(1))
+          Some(rows.value(2)) should contain oneOf (allNodes(0), allNodes(2))
+          Some(rows.value(3)) should contain oneOf (allNodes(1), allNodes(3))
+          Some(rowEnds.value(0)) should contain oneOf (allNodes(0), allNodes(2), allNodes(4))
+          // Second row
+          val endIndex1 = allNodes.indexOf(rowEnds.value(0))
+          rows.value(4) should equal(allNodes(endIndex1 + 5))
+          Some(rows.value(5)) should contain oneOf (allNodes(endIndex1 + 4), allNodes(endIndex1 + 6))
+          Some(rows.value(6)) should contain oneOf (allNodes(endIndex1 + 3), allNodes(endIndex1 + 5), allNodes(
+            endIndex1 + 7
+          ))
+          Some(rows.value(7)) should contain oneOf (allNodes(endIndex1 + 2), allNodes(endIndex1 + 4), allNodes(
+            endIndex1 + 6
+          ), allNodes(endIndex1 + 8))
+          Some(rowEnds.value(1)) should contain oneOf (allNodes(5), allNodes(7), allNodes(9))
+          // Third row
+          val endIndex2 = allNodes.indexOf(rowEnds.value(1))
+          rows.value(8) should equal(allNodes(endIndex2 + 5))
+          Some(rows.value(9)) should contain oneOf (allNodes(endIndex2 + 4), allNodes(endIndex2 + 6))
+          Some(rows.value(10)) should contain oneOf (allNodes(endIndex2 + 3), allNodes(endIndex2 + 5), allNodes(
+            endIndex2 + 7
+          ))
+          Some(rows.value(11)) should contain oneOf (allNodes(endIndex2 + 2), allNodes(endIndex2 + 4), allNodes(
+            endIndex2 + 6
+          ), allNodes(endIndex2 + 8))
+          Some(rowEnds.value(2)) should contain oneOf (allNodes(10), allNodes(12), allNodes(14))
+          // Fourth row, for the shortest we need to end up on (19)
+          val endIndex3 = allNodes.indexOf(rowEnds.value(2))
+          rows.value(12) should equal(allNodes(endIndex3 + 5))
+          Some(rows.value(13)) should contain oneOf (allNodes(16), allNodes(18))
+          Some(rows.value(14)) should contain oneOf (allNodes(17), allNodes(19))
+          // To get to 19 in the end we must be at 18 before
+          rows.value(15) should equal(allNodes(18))
+          rowEnds.value(3) should equal(allNodes(19))
+        })
       case TraversalMatchMode.Trail =>
+        val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
+        val row = RepeatTrailTestBase.listOf(
+          nodes(0),
+          nodes(1),
+          nodes(2),
+          nodes(3),
+          nodes(9),
+          nodes(8),
+          nodes(7),
+          nodes(6),
+          nodes(10),
+          nodes(11),
+          nodes(12),
+          nodes(13),
+          nodes(19),
+          nodes(18),
+          nodes(17),
+          nodes(16),
+          nodes(20),
+          nodes(21),
+          nodes(22),
+          nodes(23)
+        )
         val expected = Seq(Array[Object](
           nodes.head,
           row,
@@ -5493,33 +5555,92 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val runtimeResult = execute(logicalQuery, runtime)
 
     // then
-    val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
-    val row = RepeatTrailTestBase.listOf(
-      nodes(0),
-      nodes(1),
-      nodes(2),
-      nodes(3),
-      nodes(9),
-      nodes(8),
-      nodes(7),
-      nodes(6),
-      nodes(10),
-      nodes(11),
-      nodes(12),
-      nodes(13),
-      nodes(19),
-      nodes(18),
-      nodes(17),
-      nodes(16),
-      nodes(20),
-      nodes(21),
-      nodes(22),
-      nodes(23)
-    )
     traversalMatchMode match {
       case TraversalMatchMode.Walk =>
+        // It is hard to do a nice assertion for the walk case, but we can assert
+        // on the structure of the solution. A shortest solution will end on the
+        // last node just above the target node (allNodes(19) and then use a final DOWN
+        // to the target.
+        val allNodes = nodes.map(n => ValueUtils.asAnyValue(n))
         runtimeResult should beColumns(retVars: _*).withRows(rowCount(1093))
+        val consumed = consume(runtimeResult).map(_.toIndexedSeq)
+        consumed.toSet should have size 1093
+        consumed.foreach(row => {
+          // ( 0)-( 1)-( 2)-( 3)-( 4)
+          //   |    |    |    |    |
+          // ( 5)-( 6)-( 7)-( 8)-( 9)
+          //   |    |    |    |    |
+          // (10)-(11)-(12)-(13)-(14)
+          //   |    |    |    |    |
+          // (15)-(16)-(17)-(18)-(19)
+          //   |    |    |    |    |
+          // (20)-(21)-(22)-(23)-(24)
+          row(0) should equal(allNodes.head)
+          val rows = row(1).asInstanceOf[ListValue]
+          val rowEnds = row(2).asInstanceOf[SequenceValue]
+          rowEnds.actualSize() should equal(4)
+          rows.actualSize() should equal(16)
+          // First row
+          rows.value(0) should equal(allNodes(0))
+          rows.value(1) should equal(allNodes(1))
+          Some(rows.value(2)) should contain oneOf (allNodes(0), allNodes(2))
+          Some(rows.value(3)) should contain oneOf (allNodes(1), allNodes(3))
+          Some(rowEnds.value(0)) should contain oneOf (allNodes(0), allNodes(2), allNodes(4))
+          // Second row
+          val endIndex1 = allNodes.indexOf(rowEnds.value(0))
+          rows.value(4) should equal(allNodes(endIndex1 + 5))
+          Some(rows.value(5)) should contain oneOf (allNodes(endIndex1 + 4), allNodes(endIndex1 + 6))
+          Some(rows.value(6)) should contain oneOf (allNodes(endIndex1 + 3), allNodes(endIndex1 + 5), allNodes(
+            endIndex1 + 7
+          ))
+          Some(rows.value(7)) should contain oneOf (allNodes(endIndex1 + 2), allNodes(endIndex1 + 4), allNodes(
+            endIndex1 + 6
+          ), allNodes(endIndex1 + 8))
+          Some(rowEnds.value(1)) should contain oneOf (allNodes(5), allNodes(7), allNodes(9))
+          // Third row
+          val endIndex2 = allNodes.indexOf(rowEnds.value(1))
+          rows.value(8) should equal(allNodes(endIndex2 + 5))
+          Some(rows.value(9)) should contain oneOf (allNodes(endIndex2 + 4), allNodes(endIndex2 + 6))
+          Some(rows.value(10)) should contain oneOf (allNodes(endIndex2 + 3), allNodes(endIndex2 + 5), allNodes(
+            endIndex2 + 7
+          ))
+          Some(rows.value(11)) should contain oneOf (allNodes(endIndex2 + 2), allNodes(endIndex2 + 4), allNodes(
+            endIndex2 + 6
+          ), allNodes(endIndex2 + 8))
+          Some(rowEnds.value(2)) should contain oneOf (allNodes(10), allNodes(12), allNodes(14))
+          // Fourth row, for the shortest we need to end up on (19)
+          val endIndex3 = allNodes.indexOf(rowEnds.value(2))
+          rows.value(12) should equal(allNodes(endIndex3 + 5))
+          Some(rows.value(13)) should contain oneOf (allNodes(16), allNodes(18))
+          Some(rows.value(14)) should contain oneOf (allNodes(17), allNodes(19))
+          // To get to 19 in the end we must be at 18 before
+          rows.value(15) should equal(allNodes(18))
+          rowEnds.value(3) should equal(allNodes(19))
+        })
       case TraversalMatchMode.Trail =>
+        val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
+        val row = RepeatTrailTestBase.listOf(
+          nodes(0),
+          nodes(1),
+          nodes(2),
+          nodes(3),
+          nodes(9),
+          nodes(8),
+          nodes(7),
+          nodes(6),
+          nodes(10),
+          nodes(11),
+          nodes(12),
+          nodes(13),
+          nodes(19),
+          nodes(18),
+          nodes(17),
+          nodes(16),
+          nodes(20),
+          nodes(21),
+          nodes(22),
+          nodes(23)
+        )
         val expected = Seq(Array[Object](
           nodes.head,
           row,
@@ -5618,33 +5739,92 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val runtimeResult = execute(logicalQuery, runtime)
 
     // then
-    val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
-    val row = RepeatTrailTestBase.listOf(
-      nodes(0),
-      nodes(1),
-      nodes(2),
-      nodes(3),
-      nodes(9),
-      nodes(8),
-      nodes(7),
-      nodes(6),
-      nodes(10),
-      nodes(11),
-      nodes(12),
-      nodes(13),
-      nodes(19),
-      nodes(18),
-      nodes(17),
-      nodes(16),
-      nodes(20),
-      nodes(21),
-      nodes(22),
-      nodes(23)
-    )
     traversalMatchMode match {
       case TraversalMatchMode.Walk =>
+        // It is hard to do a nice assertion for the walk case, but we can assert
+        // on the structure of the solution. A shortest solution will end on the
+        // last node just above the target node (allNodes(19) and then use a final DOWN
+        // to the target.
+        val allNodes = nodes.map(n => ValueUtils.asAnyValue(n))
         runtimeResult should beColumns(retVars: _*).withRows(rowCount(1093))
+        val consumed = consume(runtimeResult).map(_.toIndexedSeq)
+        consumed.toSet should have size 1093
+        consumed.foreach(row => {
+          // ( 0)-( 1)-( 2)-( 3)-( 4)
+          //   |    |    |    |    |
+          // ( 5)-( 6)-( 7)-( 8)-( 9)
+          //   |    |    |    |    |
+          // (10)-(11)-(12)-(13)-(14)
+          //   |    |    |    |    |
+          // (15)-(16)-(17)-(18)-(19)
+          //   |    |    |    |    |
+          // (20)-(21)-(22)-(23)-(24)
+          row(0) should equal(allNodes.head)
+          val rows = row(1).asInstanceOf[ListValue]
+          val rowEnds = row(2).asInstanceOf[SequenceValue]
+          rowEnds.actualSize() should equal(4)
+          rows.actualSize() should equal(16)
+          // First row
+          rows.value(0) should equal(allNodes(0))
+          rows.value(1) should equal(allNodes(1))
+          Some(rows.value(2)) should contain oneOf (allNodes(0), allNodes(2))
+          Some(rows.value(3)) should contain oneOf (allNodes(1), allNodes(3))
+          Some(rowEnds.value(0)) should contain oneOf (allNodes(0), allNodes(2), allNodes(4))
+          // Second row
+          val endIndex1 = allNodes.indexOf(rowEnds.value(0))
+          rows.value(4) should equal(allNodes(endIndex1 + 5))
+          Some(rows.value(5)) should contain oneOf (allNodes(endIndex1 + 4), allNodes(endIndex1 + 6))
+          Some(rows.value(6)) should contain oneOf (allNodes(endIndex1 + 3), allNodes(endIndex1 + 5), allNodes(
+            endIndex1 + 7
+          ))
+          Some(rows.value(7)) should contain oneOf (allNodes(endIndex1 + 2), allNodes(endIndex1 + 4), allNodes(
+            endIndex1 + 6
+          ), allNodes(endIndex1 + 8))
+          Some(rowEnds.value(1)) should contain oneOf (allNodes(5), allNodes(7), allNodes(9))
+          // Third row
+          val endIndex2 = allNodes.indexOf(rowEnds.value(1))
+          rows.value(8) should equal(allNodes(endIndex2 + 5))
+          Some(rows.value(9)) should contain oneOf (allNodes(endIndex2 + 4), allNodes(endIndex2 + 6))
+          Some(rows.value(10)) should contain oneOf (allNodes(endIndex2 + 3), allNodes(endIndex2 + 5), allNodes(
+            endIndex2 + 7
+          ))
+          Some(rows.value(11)) should contain oneOf (allNodes(endIndex2 + 2), allNodes(endIndex2 + 4), allNodes(
+            endIndex2 + 6
+          ), allNodes(endIndex2 + 8))
+          Some(rowEnds.value(2)) should contain oneOf (allNodes(10), allNodes(12), allNodes(14))
+          // Fourth row, for the shortest we need to end up on (19)
+          val endIndex3 = allNodes.indexOf(rowEnds.value(2))
+          rows.value(12) should equal(allNodes(endIndex3 + 5))
+          Some(rows.value(13)) should contain oneOf (allNodes(16), allNodes(18))
+          Some(rows.value(14)) should contain oneOf (allNodes(17), allNodes(19))
+          // To get to 19 in the end we must be at 18 before
+          rows.value(15) should equal(allNodes(18))
+          rowEnds.value(3) should equal(allNodes(19))
+        })
       case TraversalMatchMode.Trail =>
+        val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
+        val row = RepeatTrailTestBase.listOf(
+          nodes(0),
+          nodes(1),
+          nodes(2),
+          nodes(3),
+          nodes(9),
+          nodes(8),
+          nodes(7),
+          nodes(6),
+          nodes(10),
+          nodes(11),
+          nodes(12),
+          nodes(13),
+          nodes(19),
+          nodes(18),
+          nodes(17),
+          nodes(16),
+          nodes(20),
+          nodes(21),
+          nodes(22),
+          nodes(23)
+        )
         val expected = Seq(Array[Object](
           nodes.head,
           row,
@@ -5741,34 +5921,92 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
     val runtimeResult = execute(logicalQuery, runtime)
 
     // then
-    val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
-    val row = RepeatTrailTestBase.listOf(
-      nodes(0),
-      nodes(1),
-      nodes(2),
-      nodes(3),
-      nodes(9),
-      nodes(8),
-      nodes(7),
-      nodes(6),
-      nodes(10),
-      nodes(11),
-      nodes(12),
-      nodes(13),
-      nodes(19),
-      nodes(18),
-      nodes(17),
-      nodes(16),
-      nodes(20),
-      nodes(21),
-      nodes(22),
-      nodes(23)
-    )
     traversalMatchMode match {
       case TraversalMatchMode.Walk =>
-        // TODO ....
+        // It is hard to do a nice assertion for the walk case, but we can assert
+        // on the structure of the solution. A shortest solution will end on the
+        // last node just above the target node (allNodes(19) and then use a final DOWN
+        // to the target.
+        val allNodes = nodes.map(n => ValueUtils.asAnyValue(n))
         runtimeResult should beColumns(retVars: _*).withRows(rowCount(1093))
+        val consumed = consume(runtimeResult).map(_.toIndexedSeq)
+        consumed.toSet should have size 1093
+        consumed.foreach(row => {
+          // ( 0)-( 1)-( 2)-( 3)-( 4)
+          //   |    |    |    |    |
+          // ( 5)-( 6)-( 7)-( 8)-( 9)
+          //   |    |    |    |    |
+          // (10)-(11)-(12)-(13)-(14)
+          //   |    |    |    |    |
+          // (15)-(16)-(17)-(18)-(19)
+          //   |    |    |    |    |
+          // (20)-(21)-(22)-(23)-(24)
+          row(0) should equal(allNodes.head)
+          val rows = row(1).asInstanceOf[ListValue]
+          val rowEnds = row(2).asInstanceOf[SequenceValue]
+          rowEnds.actualSize() should equal(4)
+          rows.actualSize() should equal(16)
+          // First row
+          rows.value(0) should equal(allNodes(0))
+          rows.value(1) should equal(allNodes(1))
+          Some(rows.value(2)) should contain oneOf (allNodes(0), allNodes(2))
+          Some(rows.value(3)) should contain oneOf (allNodes(1), allNodes(3))
+          Some(rowEnds.value(0)) should contain oneOf (allNodes(0), allNodes(2), allNodes(4))
+          // Second row
+          val endIndex1 = allNodes.indexOf(rowEnds.value(0))
+          rows.value(4) should equal(allNodes(endIndex1 + 5))
+          Some(rows.value(5)) should contain oneOf (allNodes(endIndex1 + 4), allNodes(endIndex1 + 6))
+          Some(rows.value(6)) should contain oneOf (allNodes(endIndex1 + 3), allNodes(endIndex1 + 5), allNodes(
+            endIndex1 + 7
+          ))
+          Some(rows.value(7)) should contain oneOf (allNodes(endIndex1 + 2), allNodes(endIndex1 + 4), allNodes(
+            endIndex1 + 6
+          ), allNodes(endIndex1 + 8))
+          Some(rowEnds.value(1)) should contain oneOf (allNodes(5), allNodes(7), allNodes(9))
+          // Third row
+          val endIndex2 = allNodes.indexOf(rowEnds.value(1))
+          rows.value(8) should equal(allNodes(endIndex2 + 5))
+          Some(rows.value(9)) should contain oneOf (allNodes(endIndex2 + 4), allNodes(endIndex2 + 6))
+          Some(rows.value(10)) should contain oneOf (allNodes(endIndex2 + 3), allNodes(endIndex2 + 5), allNodes(
+            endIndex2 + 7
+          ))
+          Some(rows.value(11)) should contain oneOf (allNodes(endIndex2 + 2), allNodes(endIndex2 + 4), allNodes(
+            endIndex2 + 6
+          ), allNodes(endIndex2 + 8))
+          Some(rowEnds.value(2)) should contain oneOf (allNodes(10), allNodes(12), allNodes(14))
+          // Fourth row, for the shortest we need to end up on (19)
+          val endIndex3 = allNodes.indexOf(rowEnds.value(2))
+          rows.value(12) should equal(allNodes(endIndex3 + 5))
+          Some(rows.value(13)) should contain oneOf (allNodes(16), allNodes(18))
+          Some(rows.value(14)) should contain oneOf (allNodes(17), allNodes(19))
+          // To get to 19 in the end we must be at 18 before
+          rows.value(15) should equal(allNodes(18))
+          rowEnds.value(3) should equal(allNodes(19))
+        })
       case TraversalMatchMode.Trail =>
+        val rowEnd = RepeatTrailTestBase.listOf(nodes(4), nodes(5), nodes(14), nodes(15))
+        val row = RepeatTrailTestBase.listOf(
+          nodes(0),
+          nodes(1),
+          nodes(2),
+          nodes(3),
+          nodes(9),
+          nodes(8),
+          nodes(7),
+          nodes(6),
+          nodes(10),
+          nodes(11),
+          nodes(12),
+          nodes(13),
+          nodes(19),
+          nodes(18),
+          nodes(17),
+          nodes(16),
+          nodes(20),
+          nodes(21),
+          nodes(22),
+          nodes(23)
+        )
         val expected = Seq(Array[Object](
           nodes.head,
           row,
