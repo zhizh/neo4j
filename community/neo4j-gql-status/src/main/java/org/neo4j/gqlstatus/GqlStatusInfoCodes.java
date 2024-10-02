@@ -2509,6 +2509,16 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
             "invalid inequality operator"),
+    STATUS_42I50(
+            new GqlStatus("42I50"),
+            """
+                    Invalid input { %s }... A { %s } name cannot be longer than { %s }.""",
+            new GqlParams.GqlParam[] {
+                GqlParams.StringParam.input, GqlParams.StringParam.tokenType, GqlParams.NumberParam.value
+            },
+            emptyMap(),
+            Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
+            "token name too long"),
     STATUS_42N00(
             new GqlStatus("42N00"),
             """
