@@ -669,7 +669,7 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
             .build();
 
     @Internal
-    @Description("Set the frequency and offset for reporting the total index sizes.")
+    @Description("Set the frequency and offset for reporting the total index sizes. Zero means disabled.")
     public static final Setting<Duration> index_total_size_report_frequency = newBuilder(
                     "internal.dbms.index.total_size_report_frequency", DURATION, ofMinutes(10))
             .build();

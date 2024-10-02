@@ -152,8 +152,8 @@ public class IndexingService extends LifecycleAdapter implements IndexUpdateList
     private final IndexDropController indexDropController;
     private JobHandle<?> eventuallyConsistentFulltextIndexRefreshJob;
 
-    private volatile JobHandle<?> usageReportJob;
-    private volatile JobHandle<?> totalSizeReportJob;
+    private volatile JobHandle<?> usageReportJob = JobHandle.EMPTY;
+    private volatile JobHandle<?> totalSizeReportJob = JobHandle.EMPTY;
 
     enum State {
         NOT_STARTED,
@@ -352,24 +352,24 @@ public class IndexingService extends LifecycleAdapter implements IndexUpdateList
             awaitOnlineAfterRecovery(proxy);
         });
 
-        final var usageReportFrequencyInSeconds = config.get(GraphDatabaseInternalSettings.index_usage_report_frequency)
-                .toSeconds();
+        final var usageReportFrequency = config.get(GraphDatabaseInternalSettings.index_usage_report_frequency);
         usageReportJob = jobScheduler.scheduleRecurring(
                 Group.STORAGE_MAINTENANCE,
                 this::reportUsageStatistics,
-                usageReportFrequencyInSeconds,
-                usageReportFrequencyInSeconds,
+                usageReportFrequency.toSeconds(),
+                usageReportFrequency.toSeconds(),
                 TimeUnit.SECONDS);
 
-        final var totalSizeReportFrequencyInSeconds = config.get(
-                        GraphDatabaseInternalSettings.index_total_size_report_frequency)
-                .toSeconds();
-        totalSizeReportJob = jobScheduler.scheduleRecurring(
-                Group.FILE_IO_HELPER,
-                this::reportTotalSizeStatistics,
-                totalSizeReportFrequencyInSeconds,
-                totalSizeReportFrequencyInSeconds,
-                TimeUnit.SECONDS);
+        final var totalSizeReportFrequency =
+                config.get(GraphDatabaseInternalSettings.index_total_size_report_frequency);
+        if (!totalSizeReportFrequency.isZero()) {
+            totalSizeReportJob = jobScheduler.scheduleRecurring(
+                    Group.FILE_IO_HELPER,
+                    this::reportTotalSizeStatistics,
+                    totalSizeReportFrequency.toSeconds(),
+                    totalSizeReportFrequency.toSeconds(),
+                    TimeUnit.SECONDS);
+        }
 
         state = State.RUNNING;
 
