@@ -21,17 +21,12 @@ package org.neo4j.bolt.txtracking;
 
 import static org.neo4j.kernel.api.exceptions.Status.Database.DatabaseNotFound;
 import static org.neo4j.kernel.api.exceptions.Status.General.DatabaseUnavailable;
-import static org.neo4j.kernel.api.exceptions.Status.Transaction.BookmarkTimeout;
 import static org.neo4j.storageengine.api.TransactionIdStore.BASE_TX_ID;
 
 import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 import org.neo4j.dbms.api.DatabaseManagementService;
 import org.neo4j.dbms.api.DatabaseNotFoundException;
-import org.neo4j.gqlstatus.ErrorClassification;
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
-import org.neo4j.gqlstatus.GqlParams;
-import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.database.AbstractDatabase;
 import org.neo4j.kernel.database.NamedDatabaseId;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -141,7 +136,8 @@ public class TransactionIdTracker {
             if (isNotAvailable(db)) {
                 throw databaseUnavailable(db, e);
             }
-            throw unreachableDatabaseVersion(db, lastTransactionId, oldestAcceptableTxId, e);
+            throw TransactionIdTrackerException.unreachableDatabaseVersion(
+                    db, lastTransactionId, oldestAcceptableTxId, e);
         }
     }
 
@@ -197,22 +193,7 @@ public class TransactionIdTracker {
 
     private static TransactionIdTrackerException unreachableDatabaseVersion(
             AbstractDatabase db, long lastTransactionId, long oldestAcceptableTxId) {
-        return unreachableDatabaseVersion(db, lastTransactionId, oldestAcceptableTxId, null);
-    }
-
-    private static TransactionIdTrackerException unreachableDatabaseVersion(
-            AbstractDatabase db, long lastTransactionId, long oldestAcceptableTxId, Throwable cause) {
-        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N13)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
-                .withParam(GqlParams.StringParam.db, db.getNamedDatabaseId().name())
-                .withParam(GqlParams.StringParam.transactionId1, String.valueOf(oldestAcceptableTxId))
-                .withParam(GqlParams.StringParam.transactionId2, String.valueOf(lastTransactionId))
-                .build();
-        return new TransactionIdTrackerException(
-                gql,
-                BookmarkTimeout,
-                "Database '" + db.getNamedDatabaseId().name() + "' not up to the requested version: "
-                        + oldestAcceptableTxId + ". " + "Latest database version is " + lastTransactionId,
-                cause);
+        return TransactionIdTrackerException.unreachableDatabaseVersion(
+                db, lastTransactionId, oldestAcceptableTxId, null);
     }
 }

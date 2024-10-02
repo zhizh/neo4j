@@ -88,4 +88,54 @@ public class InvalidArgumentException extends Neo4jException {
                 .build();
         return new InvalidArgumentException(gql, "Timezone and offset do not match: " + matcherGroup);
     }
+
+    public static InvalidArgumentException temporalSelectionConflict(String fieldName, String component) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22007)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N14)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.temporal, fieldName)
+                        .withParam(GqlParams.StringParam.component, component)
+                        .build())
+                .build();
+        throw new InvalidArgumentException(
+                gql, String.format("%s cannot be selected together with %s.", fieldName, component));
+    }
+
+    public static InvalidArgumentException invalidCoordinateNames() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N19)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        return new InvalidArgumentException(
+                gql, "A point must contain either 'x' and 'y' or 'latitude' and 'longitude'");
+    }
+
+    public static InvalidArgumentException pointWithWrongDimensions(int expectedDimension, int actualDimension) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N20)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.NumberParam.dim1, expectedDimension)
+                        .withParam(GqlParams.NumberParam.value, actualDimension)
+                        .withParam(GqlParams.NumberParam.dim2, actualDimension)
+                        .build())
+                .build();
+
+        return new InvalidArgumentException(
+                gql,
+                String.format(
+                        "Cannot create point with %dD coordinate reference system and %d coordinates. "
+                                + "Please consider using equivalent %dD coordinate reference system",
+                        expectedDimension, actualDimension, actualDimension));
+    }
+
+    public static InvalidArgumentException bothAllowedAndDeniedDbs() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N85)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new InvalidArgumentException(gql, "Can't specify both allowed and denied databases");
+    }
 }

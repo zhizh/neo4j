@@ -19,6 +19,7 @@
  */
 package org.neo4j.router;
 
+import org.neo4j.fabric.executor.Location;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
@@ -52,7 +53,7 @@ public class QueryRouterException extends GqlRuntimeException implements Status.
         this.queryId = null;
     }
 
-    public QueryRouterException(
+    private QueryRouterException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Object... parameters) {
         super(gqlStatusObject, String.format(message, parameters));
         this.statusCode = statusCode;
@@ -81,6 +82,19 @@ public class QueryRouterException extends GqlRuntimeException implements Status.
                         .build())
                 .build();
         return new QueryRouterException(gql, Status.Statement.ExecutionFailed, legacyMessage);
+    }
+
+    public static QueryRouterException writeDuringLeaderSwitch(Location attempt, Location current) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N34)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .build();
+        return new QueryRouterException(
+                gql,
+                Status.Transaction.LeaderSwitch,
+                "Could not write to a database due to a cluster leader switch that occurred during the transaction. "
+                        + "Previous leader: %s, Current leader: %s.",
+                current,
+                attempt);
     }
 
     @Override

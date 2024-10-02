@@ -20,10 +20,6 @@
 package org.neo4j.internal.collector;
 
 import java.util.Map;
-import org.neo4j.gqlstatus.ErrorClassification;
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
-import org.neo4j.gqlstatus.GqlParams;
-import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException;
 
 /**
@@ -61,16 +57,7 @@ class DataCollectorOptions {
         Integer parse(Object value) throws InvalidArgumentsException {
             int x = asInteger(value);
             if (x < 0) {
-                var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
-                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N02)
-                                .withParam(GqlParams.StringParam.option, name)
-                                .withParam(GqlParams.NumberParam.value, x)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
-                                .build())
-                        .build();
-                throw new InvalidArgumentsException(
-                        gql, String.format("Option `%s` requires positive integer argument, got `%d`", name, x));
+                throw InvalidArgumentsException.requiresPositiveInteger(name, x);
             }
             return x;
         }

@@ -326,10 +326,7 @@ import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTRelationship
 import org.neo4j.exceptions.CantCompileQueryException
 import org.neo4j.exceptions.InternalException
-import org.neo4j.exceptions.ShortestPathCommonEndNodesForbiddenException
-import org.neo4j.gqlstatus.ErrorClassification
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlStatusInfoCodes
+import org.neo4j.exceptions.ShortestPathCommonEndNodesForbiddenException.shortestPathCommonEndNodes
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
 import org.neo4j.kernel.api.StatementConstants
 import org.neo4j.values.storable.Values.NO_VALUE
@@ -1262,11 +1259,7 @@ class SlottedPipeMapper(
         val (sourceNodeName, targetNodeName) = patternRelationship.boundaryNodes
 
         if (sameNodeMode == DisallowSameNode && sourceNodeName == targetNodeName) {
-          val gql = ErrorGqlStatusObjectImplementation.from(
-            GqlStatusInfoCodes.STATUS_51N23
-          ).withClassification(ErrorClassification.CLIENT_ERROR)
-            .build()
-          throw new ShortestPathCommonEndNodesForbiddenException(gql)
+          throw shortestPathCommonEndNodes()
         }
 
         val pathName = shortestPathPattern.maybePathVar.get // Should always be given anonymous name

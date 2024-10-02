@@ -34,7 +34,7 @@ public class InvalidTemporalArgumentException extends InvalidArgumentException {
         super(gqlStatusObject, message);
     }
 
-    public static InvalidArgumentException namedTimeZoneWithoutDate() {
+    public static InvalidTemporalArgumentException namedTimeZoneWithoutDate() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22007)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N13)
@@ -46,7 +46,7 @@ public class InvalidTemporalArgumentException extends InvalidArgumentException {
                 "Using a named time zone e.g. [UTC] is not valid for a time without a date. Instead, use a specific time zone string e.g. +00:00.");
     }
 
-    public static InvalidArgumentException invalidOffset(String offset) {
-        return new InvalidArgumentException("Not a valid offset: " + offset);
+    public static InvalidTemporalArgumentException invalidOffset(String offset) {
+        return new InvalidTemporalArgumentException("Not a valid offset: " + offset);
     }
 }

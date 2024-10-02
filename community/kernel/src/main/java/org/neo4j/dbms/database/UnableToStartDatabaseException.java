@@ -19,9 +19,16 @@
  */
 package org.neo4j.dbms.database;
 
+import static java.lang.String.format;
+
 import org.neo4j.dbms.api.DatabaseManagementException;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
+import org.neo4j.kernel.database.NamedDatabaseId;
 
 /**
  * An error
@@ -32,7 +39,7 @@ public class UnableToStartDatabaseException extends DatabaseManagementException 
         super(message);
     }
 
-    public UnableToStartDatabaseException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    private UnableToStartDatabaseException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
     }
 
@@ -41,8 +48,18 @@ public class UnableToStartDatabaseException extends DatabaseManagementException 
         super(message, cause);
     }
 
-    public UnableToStartDatabaseException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+    private UnableToStartDatabaseException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
+    }
+
+    public static UnableToStartDatabaseException unableToStartDb(NamedDatabaseId namedDatabaseId, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N40)
+                .withParam(GqlParams.StringParam.db, namedDatabaseId.name())
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .build();
+
+        return new UnableToStartDatabaseException(
+                gql, format("An error occurred! Unable to start `%s`.", namedDatabaseId), cause);
     }
 
     @Override

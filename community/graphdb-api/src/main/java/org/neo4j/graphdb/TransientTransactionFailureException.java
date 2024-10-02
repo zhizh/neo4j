@@ -19,7 +19,12 @@
  */
 package org.neo4j.graphdb;
 
+import static java.lang.String.format;
+
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 /**
@@ -49,11 +54,23 @@ public class TransientTransactionFailureException extends TransientFailureExcept
         this.status = status;
     }
 
-    public TransientTransactionFailureException(
+    protected TransientTransactionFailureException(
             ErrorGqlStatusObject gqlStatusObject, Status status, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
 
         this.status = status;
+    }
+
+    public static TransientTransactionFailureException leaseExpired(
+            String tokenRequest, int currentLeaseId, int requestLeaseId) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N08)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .build();
+
+        var errorMsg = format(
+                "The lease used for %s has expired: [current lease id:%d, token request lease id:%d]",
+                tokenRequest, currentLeaseId, requestLeaseId);
+        return new TransientTransactionFailureException(gql, Status.Transaction.LeaseExpired, errorMsg);
     }
 
     @Override

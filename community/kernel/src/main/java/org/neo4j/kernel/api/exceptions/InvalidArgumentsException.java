@@ -19,8 +19,12 @@
  */
 package org.neo4j.kernel.api.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlException;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 
 public class InvalidArgumentsException extends GqlException implements Status.HasStatus {
     private final Status status;
@@ -43,6 +47,19 @@ public class InvalidArgumentsException extends GqlException implements Status.Ha
     public InvalidArgumentsException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
         this.status = Status.General.InvalidArguments;
+    }
+
+    public static InvalidArgumentsException requiresPositiveInteger(String option, int value) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N02)
+                        .withParam(GqlParams.StringParam.option, option)
+                        .withParam(GqlParams.NumberParam.value, value)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        return new InvalidArgumentsException(
+                gql, String.format("Option `%s` requires positive integer argument, got `%d`", option, value));
     }
 
     @Override

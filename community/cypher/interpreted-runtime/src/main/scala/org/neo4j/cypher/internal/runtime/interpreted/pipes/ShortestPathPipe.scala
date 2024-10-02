@@ -30,10 +30,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.DirectionC
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.True
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.exceptions.InternalException
-import org.neo4j.exceptions.ShortestPathCommonEndNodesForbiddenException
-import org.neo4j.gqlstatus.ErrorClassification
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlStatusInfoCodes
+import org.neo4j.exceptions.ShortestPathCommonEndNodesForbiddenException.shortestPathCommonEndNodes
 import org.neo4j.internal.kernel.api.helpers.traversal.BiDirectionalBFS
 import org.neo4j.values.virtual.VirtualNodeValue
 import org.neo4j.values.virtual.VirtualPathValue
@@ -63,11 +60,7 @@ case class ShortestPathPipe(
     state: QueryState
   ): ClosingIterator[CypherRow] = {
     if (sameNodeMode == DisallowSameNode && sourceNodeName == targetNodeName) {
-      val gql = ErrorGqlStatusObjectImplementation.from(
-        GqlStatusInfoCodes.STATUS_51N23
-      ).withClassification(ErrorClassification.CLIENT_ERROR)
-        .build()
-      throw new ShortestPathCommonEndNodesForbiddenException(gql)
+      throw shortestPathCommonEndNodes()
     } else {
 
       val memoryTracker = state.memoryTrackerForOperatorProvider.memoryTrackerForOperator(id.x)

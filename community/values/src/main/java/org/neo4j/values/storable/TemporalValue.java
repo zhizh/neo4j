@@ -61,11 +61,6 @@ import org.neo4j.exceptions.ArithmeticException;
 import org.neo4j.exceptions.InvalidArgumentException;
 import org.neo4j.exceptions.TemporalParseException;
 import org.neo4j.exceptions.UnsupportedTemporalUnitException;
-import org.neo4j.gqlstatus.ErrorClassification;
-import org.neo4j.gqlstatus.ErrorGqlStatusObject;
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
-import org.neo4j.gqlstatus.GqlParams;
-import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.hashing.HashFunction;
 import org.neo4j.internal.helpers.collection.Pair;
 import org.neo4j.values.AnyValue;
@@ -793,55 +788,30 @@ public abstract class TemporalValue<T extends Temporal, V extends TemporalValue<
             // Nothing to do
         }
 
-        private ErrorGqlStatusObject buildErrorGqlStatusObject(String componentArg, TemporalFields field) {
-            return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22007)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
-                    .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N14)
-                            .withClassification(ErrorClassification.CLIENT_ERROR)
-                            .withParam(GqlParams.StringParam.temporal, field.name())
-                            .withParam(GqlParams.StringParam.component, componentArg)
-                            .build())
-                    .build();
-        }
-
         @Override
         DateTimeBuilder assign(TemporalFields field, AnyValue value) {
             if (field == TemporalFields.date || field == TemporalFields.time) {
-                var gql = buildErrorGqlStatusObject("datetime or epochSeconds or epochMillis", field);
-                throw new InvalidArgumentException(
-                        gql,
-                        field.name() + " cannot be selected together with datetime or epochSeconds or epochMillis.");
+                throw InvalidArgumentException.temporalSelectionConflict(
+                        field.name(), "datetime or epochSeconds or epochMillis");
             } else if (field == TemporalFields.datetime) {
                 if (epochSeconds != null) {
-                    var gql = buildErrorGqlStatusObject("epochSeconds", field);
-                    throw new InvalidArgumentException(
-                            gql, field.name() + " cannot be selected together with epochSeconds.");
+                    throw InvalidArgumentException.temporalSelectionConflict(field.name(), "epochSeconds");
                 } else if (epochMillis != null) {
-                    var gql = buildErrorGqlStatusObject("epochMillis", field);
-                    throw new InvalidArgumentException(
-                            gql, field.name() + " cannot be selected together with epochMillis.");
+                    throw InvalidArgumentException.temporalSelectionConflict(field.name(), "epochMillis");
                 }
                 datetime = assignment(TemporalFields.datetime, datetime, value);
             } else if (field == TemporalFields.epochSeconds) {
                 if (epochMillis != null) {
-                    var gql = buildErrorGqlStatusObject("epochMillis", field);
-                    throw new InvalidArgumentException(
-                            gql, field.name() + " cannot be selected together with epochMillis.");
+                    throw InvalidArgumentException.temporalSelectionConflict(field.name(), "epochMillis");
                 } else if (datetime != null) {
-                    var gql = buildErrorGqlStatusObject("datetime", field);
-                    throw new InvalidArgumentException(
-                            gql, field.name() + " cannot be selected together with datetime.");
+                    throw InvalidArgumentException.temporalSelectionConflict(field.name(), "datetime");
                 }
                 epochSeconds = assignment(TemporalFields.epochSeconds, epochSeconds, value);
             } else if (field == TemporalFields.epochMillis) {
                 if (epochSeconds != null) {
-                    var gql = buildErrorGqlStatusObject("epochSeconds", field);
-                    throw new InvalidArgumentException(
-                            gql, field.name() + " cannot be selected together with epochSeconds.");
+                    throw InvalidArgumentException.temporalSelectionConflict(field.name(), "epochSeconds");
                 } else if (datetime != null) {
-                    var gql = buildErrorGqlStatusObject("datetime", field);
-                    throw new InvalidArgumentException(
-                            gql, field.name() + " cannot be selected together with datetime.");
+                    throw InvalidArgumentException.temporalSelectionConflict(field.name(), "datetime");
                 }
                 epochMillis = assignment(TemporalFields.epochMillis, epochMillis, value);
             } else {
@@ -861,16 +831,7 @@ public abstract class TemporalValue<T extends Temporal, V extends TemporalValue<
             if (field == TemporalFields.datetime
                     || field == TemporalFields.epochSeconds
                     || field == TemporalFields.epochMillis) {
-                var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22007)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
-                        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N14)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
-                                .withParam(GqlParams.StringParam.temporal, field.name())
-                                .withParam(GqlParams.StringParam.component, "date or time")
-                                .build())
-                        .build();
-                throw new InvalidArgumentException(
-                        gql, field.name() + " cannot be selected together with date or time.");
+                throw InvalidArgumentException.temporalSelectionConflict(field.name(), "date or time");
             } else {
                 return assignToSubBuilders(field, value);
             }

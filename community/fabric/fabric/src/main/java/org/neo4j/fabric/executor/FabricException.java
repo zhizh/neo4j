@@ -19,6 +19,9 @@
  */
 package org.neo4j.fabric.executor;
 
+import static org.neo4j.kernel.api.exceptions.Status.Transaction.InvalidBookmark;
+
+import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
@@ -32,6 +35,8 @@ import org.neo4j.kernel.api.exceptions.Status;
 public class FabricException extends GqlRuntimeException implements Status.HasStatus, HasQuery {
     private final Status statusCode;
     private Long queryId;
+
+    private static final String ROUTING_ENABLED_SETTING = GraphDatabaseSettings.routing_enabled.name();
 
     @Deprecated
     public FabricException(Status statusCode, Throwable cause) {
@@ -53,7 +58,7 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
         this.queryId = null;
     }
 
-    public FabricException(
+    private FabricException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Object... parameters) {
         super(gqlStatusObject, String.format(message, parameters));
         this.statusCode = statusCode;
@@ -67,7 +72,8 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
         this.queryId = null;
     }
 
-    public FabricException(ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Throwable cause) {
+    protected FabricException(
+            ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
         this.statusCode = statusCode;
         this.queryId = null;
@@ -85,6 +91,78 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
         super(gqlStatusObject, message, cause);
         this.statusCode = statusCode;
         this.queryId = queryId;
+    }
+
+    public static FabricException noLeaderAddress(String dbName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N00)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .withParam(GqlParams.StringParam.db, dbName)
+                .build();
+        return new FabricException(
+                gql,
+                Status.Cluster.NotALeader,
+                "Unable to route to database '%s'. Unable to get bolt address of leader.",
+                dbName);
+    }
+
+    public static FabricException sessionDbNotLeader(String dbName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N01)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.db, dbName)
+                .withParam(GqlParams.StringParam.cfgSetting, ROUTING_ENABLED_SETTING)
+                .build();
+        return new FabricException(
+                gql,
+                Status.Cluster.NotALeader,
+                String.format(
+                        """
+                        No longer possible to write to database '%s' on this instance and unable to route write operation to leader. Server-side routing is disabled.
+                        Either connect to the database directly using the driver (or interactively with the :use command),
+                        or enable server-side routing by setting `%s=true`""",
+                        dbName, ROUTING_ENABLED_SETTING),
+                dbName);
+    }
+
+    public static FabricException routingDisabled(String dbName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N02)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.db, dbName)
+                .withParam(GqlParams.StringParam.cfgSetting, ROUTING_ENABLED_SETTING)
+                .build();
+        return new FabricException(
+                gql,
+                Status.Cluster.Routing,
+                String.format(
+                        """
+         Unable to route to database '%s'. Server-side routing is disabled.
+         Either connect to the database directly using the driver (or interactively with the :use command),
+         or enable server-side routing by setting `%s=true`""",
+                        dbName, ROUTING_ENABLED_SETTING),
+                dbName);
+    }
+
+    public static FabricException failedToParseBookmark(Exception exception) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N12)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new FabricException(
+                gql,
+                InvalidBookmark,
+                "Parsing of supplied bookmarks failed with message: " + exception.getMessage(),
+                exception);
+    }
+
+    public static FabricException writeDuringLeaderSwitch(Location attempt, Location current) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N34)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .build();
+        return new FabricException(
+                gql,
+                Status.Transaction.LeaderSwitch,
+                "Could not write to a database due to a cluster leader switch that occurred during the transaction. "
+                        + "Previous leader: %s, Current leader: %s.",
+                current,
+                attempt);
     }
 
     public static FabricException databaseLocationChanged(String dbName) {

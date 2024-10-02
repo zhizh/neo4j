@@ -19,7 +19,10 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class InternalException extends Neo4jException {
@@ -28,7 +31,7 @@ public class InternalException extends Neo4jException {
         super(message, cause);
     }
 
-    public InternalException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+    private InternalException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
     }
 
@@ -37,8 +40,37 @@ public class InternalException extends Neo4jException {
         super(message);
     }
 
-    public InternalException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    protected InternalException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
+    }
+
+    public static InternalException foundNoSolutionForBlock(int blockSize, String blockCandidates, String table) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N24)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new InternalException(
+                gql,
+                String.format(
+                        """
+                                Found no solution for block with size %d,
+                                |%s were the selected candidates from the table %s""",
+                        blockSize, blockCandidates, table));
+    }
+
+    public static InternalException foundNoPlanWithinConstraints(String setting1, String setting2) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N24)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+
+        return new InternalException(
+                gql,
+                String.format(
+                        """
+             Unfortunately, the planner was unable to find a plan within the constraints provided.
+             |Try increasing the config values `%s`
+             |and `%s` to allow
+             |for a larger sub-plan table and longer planning time.""",
+                        setting1, setting2));
     }
 
     @Override

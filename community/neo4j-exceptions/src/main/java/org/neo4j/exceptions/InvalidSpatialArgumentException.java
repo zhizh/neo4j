@@ -31,11 +31,11 @@ import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 public class InvalidSpatialArgumentException extends InvalidArgumentException {
 
     @Deprecated
-    public InvalidSpatialArgumentException(String message) {
+    private InvalidSpatialArgumentException(String message) {
         super(message);
     }
 
-    public InvalidSpatialArgumentException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    private InvalidSpatialArgumentException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
     }
 

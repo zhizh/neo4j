@@ -19,9 +19,16 @@
  */
 package org.neo4j.bolt.txtracking;
 
+import static org.neo4j.kernel.api.exceptions.Status.Transaction.BookmarkTimeout;
+
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlRuntimeException;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
+import org.neo4j.kernel.database.AbstractDatabase;
 
 public class TransactionIdTrackerException extends GqlRuntimeException implements Status.HasStatus {
     private final Status status;
@@ -31,7 +38,7 @@ public class TransactionIdTrackerException extends GqlRuntimeException implement
         this(status, message, null);
     }
 
-    TransactionIdTrackerException(ErrorGqlStatusObject gqlStatusObject, Status status, String message) {
+    private TransactionIdTrackerException(ErrorGqlStatusObject gqlStatusObject, Status status, String message) {
         this(gqlStatusObject, status, message, null);
     }
 
@@ -41,10 +48,26 @@ public class TransactionIdTrackerException extends GqlRuntimeException implement
         this.status = status;
     }
 
-    TransactionIdTrackerException(
+    private TransactionIdTrackerException(
             ErrorGqlStatusObject gqlStatusObject, Status status, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
         this.status = status;
+    }
+
+    public static TransactionIdTrackerException unreachableDatabaseVersion(
+            AbstractDatabase db, long lastTransactionId, long oldestAcceptableTxId, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N13)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .withParam(GqlParams.StringParam.db, db.getNamedDatabaseId().name())
+                .withParam(GqlParams.StringParam.transactionId1, String.valueOf(oldestAcceptableTxId))
+                .withParam(GqlParams.StringParam.transactionId2, String.valueOf(lastTransactionId))
+                .build();
+        return new TransactionIdTrackerException(
+                gql,
+                BookmarkTimeout,
+                "Database '" + db.getNamedDatabaseId().name() + "' not up to the requested version: "
+                        + oldestAcceptableTxId + ". " + "Latest database version is " + lastTransactionId,
+                cause);
     }
 
     @Override

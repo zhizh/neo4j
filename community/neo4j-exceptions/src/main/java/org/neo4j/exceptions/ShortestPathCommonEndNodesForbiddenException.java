@@ -19,7 +19,10 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 
 public class ShortestPathCommonEndNodesForbiddenException extends CypherExecutionException {
     private static final String ERROR_MSG =
@@ -31,12 +34,15 @@ public class ShortestPathCommonEndNodesForbiddenException extends CypherExecutio
                     + "shortestPath between two common nodes, then re-write the query using a standard Cypher variable length pattern\n"
                     + "expression followed by ordering by path length and limiting to one result.";
 
-    @Deprecated
-    public ShortestPathCommonEndNodesForbiddenException() {
-        super(ERROR_MSG);
+    private ShortestPathCommonEndNodesForbiddenException(ErrorGqlStatusObject gqlStatusObject) {
+        super(gqlStatusObject, ERROR_MSG);
     }
 
-    public ShortestPathCommonEndNodesForbiddenException(ErrorGqlStatusObject gqlStatusObject) {
-        super(gqlStatusObject, ERROR_MSG);
+    public static ShortestPathCommonEndNodesForbiddenException shortestPathCommonEndNodes() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N23)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+
+        return new ShortestPathCommonEndNodesForbiddenException(gql);
     }
 }

@@ -31,11 +31,11 @@ import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 public class InvalidCypherOption extends InvalidArgumentException {
 
     @Deprecated
-    public InvalidCypherOption(String message) {
+    private InvalidCypherOption(String message) {
         super(message);
     }
 
-    public InvalidCypherOption(ErrorGqlStatusObject gqlStatusObject, String message) {
+    private InvalidCypherOption(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
     }
 
