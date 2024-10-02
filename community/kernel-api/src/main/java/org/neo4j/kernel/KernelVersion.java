@@ -63,7 +63,7 @@ public enum KernelVersion {
     V5_20((byte) 17), // 5.20. Append index for commands, logs, checkpoint
     V5_22((byte) 18), // 5.22. Checkpoint entry with the earliest not completed position
     V5_23((byte) 19), // 5.23. Introduce quantization for vector index. Also partitions large int arrays in block format
-    V5_25((byte) 20), // 5.25. MVCC index commands schema rules
+    V5_25((byte) 20), // 5.25. MVCC index commands schema rules. Also introduce token length limit.
 
     // An unreleased future version.
     // This version is meant to be used when developing a new feature
@@ -94,7 +94,7 @@ public enum KernelVersion {
     public static final KernelVersion VERSION_CHECKPOINT_NOT_COMPLETED_POSITION_INTRODUCED = V5_22;
     public static final KernelVersion VERSION_VECTOR_QUANTIZATION_AND_HYPER_PARAMS = V5_23;
     public static final KernelVersion VERSION_PARTITIONED_BLOCK_INDEX_RULE_VALUES = V5_23;
-    public static final KernelVersion VERSION_PARTITIONED_BLOCK_TOKENS = GLORIOUS_FUTURE;
+    public static final KernelVersion VERSION_PARTITIONED_BLOCK_TOKENS = V5_25;
 
     // Keep updated each time there is an new schema rule added
     // related to IntegrityValidator
