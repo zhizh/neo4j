@@ -255,16 +255,17 @@ public final class BoltConnectionAssertions
                 })));
     }
 
+    // TODO: enable out-commented parts of this method re-introducing status parameters
     public static Consumer<Map<String, Object>> assertDiagnosticRecord(
             SeverityLevel severityLevel,
             NotificationCategory classification,
             Map<String, Object> statusParameters,
             Map<String, Long> position) {
         return diagnosticRecord -> Assertions.assertThat(diagnosticRecord)
-                .containsOnlyKeys("_severity", "_classification", "_status_parameters", "_position")
+                .containsOnlyKeys("_severity", "_classification", /*"_status_parameters",*/ "_position")
                 .containsEntry("_severity", severityLevel.name())
                 .containsEntry("_classification", classification.name())
-                .containsEntry("_status_parameters", statusParameters)
+                // .containsEntry("_status_parameters", statusParameters)
                 .containsEntry("_position", position);
     }
 

@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.Set;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class DiagnosticRecordTest {
@@ -35,13 +36,10 @@ class DiagnosticRecordTest {
         Map<String, Object> diagnosticRecordMap =
                 new DiagnosticRecord("", ErrorClassification.CLIENT_ERROR, 0, 0, 0, Map.of()).asMap();
         Set<String> expectedKeys = Set.of(
-                "OPERATION",
-                "OPERATION_CODE",
-                "CURRENT_SCHEMA",
-                "_severity",
-                "_classification",
-                "_position",
-                "_status_parameters");
+                "OPERATION", "OPERATION_CODE", "CURRENT_SCHEMA", "_severity", "_classification", "_position" /*,
+                "_status_parameters"*/
+                // TODO: enable this line again when re-introducing status parameters
+                );
 
         assertEquals(expectedKeys, diagnosticRecordMap.keySet());
     }
@@ -69,6 +67,7 @@ class DiagnosticRecordTest {
         assertEquals(3, position.get("column"));
     }
 
+    @Disabled("enable this test again when re-introducing status parameters")
     @Test
     void shouldProduceValidJson() throws JsonProcessingException {
         var params = Map.of("k1", "hello", "k2", 1, "k3", Map.of("innerK1", "innerV1"));
@@ -100,7 +99,8 @@ class DiagnosticRecordTest {
         assertEquals("testSeverity", parsedMap.get("_severity"));
         assertEquals("CLIENT_ERROR", parsedMap.get("_classification"));
         assertEquals(Map.of("line", 2, "column", 3, "offset", 1), parsedMap.get("_position"));
-        assertEquals(params, parsedMap.get("_status_parameters"));
+        // TODO: enable this line again when re-introducing status parameters
+        // assertEquals(params, parsedMap.get("_status_parameters"));
 
         var jsonWithWhitespaces =
                 """

@@ -57,7 +57,8 @@ public class DiagnosticRecord {
         innerDiagnosticRecord.put("_severity", severity);
         innerDiagnosticRecord.put("_classification", String.valueOf(classification));
         innerDiagnosticRecord.put("_position", Map.of("offset", offset, "line", line, "column", column));
-        innerDiagnosticRecord.put("_status_parameters", statusParameters);
+        // TODO: enable this line again when re-introducing status parameters
+        // innerDiagnosticRecord.put("_status_parameters", statusParameters);
     }
 
     public DiagnosticRecord(String severity, GqlClassification classification, int offset, int line, int column) {
@@ -96,11 +97,14 @@ public class DiagnosticRecord {
         _severity.ifPresent((s) -> innerDiagnosticRecord.put("_severity", s));
         _classification.ifPresent((c) -> innerDiagnosticRecord.put("_classification", c));
         _position.ifPresent((p) -> innerDiagnosticRecord.put("_position", p));
-        _status_parameters.ifPresent((sp) -> innerDiagnosticRecord.put("_status_parameters", sp));
+
+        // TODO: enable this line again when re-introducing status parameters
+        // _status_parameters.ifPresent((sp) -> innerDiagnosticRecord.put("_status_parameters", sp));
     }
 
     public void setStatusParameters(Map<String, Object> statusParameters) {
-        innerDiagnosticRecord.put("_status_parameters", statusParameters);
+        // TODO: enable this line again when re-introducing status parameters
+        // innerDiagnosticRecord.put("_status_parameters", statusParameters);
     }
 
     public int hashCode() {
