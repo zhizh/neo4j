@@ -19,16 +19,37 @@
  */
 package org.neo4j.kernel.api.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 
 public class ComponentInjectionException extends ProcedureException {
-    public ComponentInjectionException(Status statusCode, String message, Object... parameters) {
-        super(statusCode, message, parameters);
-    }
-
-    public ComponentInjectionException(
+    private ComponentInjectionException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Object... parameters) {
         super(gqlStatusObject, statusCode, message, parameters);
+    }
+
+    public static ComponentInjectionException unsupportedInjectableComponentType(
+            String procClass, String procField, String procFieldType) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N02)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.procClass, procClass)
+                        .withParam(GqlParams.StringParam.procField, procField)
+                        .withParam(GqlParams.StringParam.procFieldType, procFieldType)
+                        .build())
+                .build();
+        return new ComponentInjectionException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Unable to set up injection for procedure `%s`, the field `%s` "
+                        + "has type `%s` which is not a known injectable component.",
+                procClass,
+                procField,
+                procFieldType);
     }
 }

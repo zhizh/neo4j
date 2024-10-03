@@ -450,39 +450,26 @@ class ProcedureCompiler {
         for (Method m : aggregator.getDeclaredMethods()) {
             if (m.isAnnotationPresent(UserAggregationUpdate.class)) {
                 if (update != null) {
-                    throw new ProcedureException(
-                            Status.Procedure.ProcedureRegistrationFailed,
-                            "Class '%s' contains multiple methods annotated with '@%s'.",
-                            aggregator.getSimpleName(),
-                            UserAggregationUpdate.class.getSimpleName());
+                    throw ProcedureException.duplicatedAnnotatedMethods(
+                            aggregator.getSimpleName(), UserAggregationUpdate.class.getSimpleName());
                 }
                 update = m;
             }
             if (m.isAnnotationPresent(UserAggregationResult.class)) {
                 if (result != null) {
-                    throw new ProcedureException(
-                            Status.Procedure.ProcedureRegistrationFailed,
-                            "Class '%s' contains multiple methods annotated with '@%s'.",
-                            aggregator.getSimpleName(),
-                            UserAggregationResult.class.getSimpleName());
+                    throw ProcedureException.duplicatedAnnotatedMethods(
+                            aggregator.getSimpleName(), UserAggregationResult.class.getSimpleName());
                 }
                 result = m;
             }
         }
         if (result == null || update == null) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Class '%s' must contain methods annotated with both '@%s' as well as '@%s'.",
-                    aggregator.getSimpleName(),
-                    UserAggregationResult.class.getSimpleName(),
-                    UserAggregationUpdate.class.getSimpleName());
+            throw ProcedureException.missingAnnotatedMethods(aggregator.getSimpleName());
         }
         if (update.getReturnType() != void.class) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Update method '%s' in %s has type '%s' but must have return type 'void'.",
-                    update.getName(),
+            throw ProcedureException.methodMustBeVoid(
                     aggregator.getSimpleName(),
+                    update.getName(),
                     update.getReturnType().getSimpleName());
         }
         if (!isPublic(create.getModifiers())) {
@@ -499,11 +486,7 @@ class ProcedureCompiler {
                     aggregator.getSimpleName());
         }
         if (!isPublic(update.getModifiers())) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Aggregation update method '%s' in %s must be public.",
-                    update.getName(),
-                    aggregator.getSimpleName());
+            throw ProcedureException.aggregationMethodNotPublic(aggregator.getSimpleName(), update.getName());
         }
         if (!isPublic(result.getModifiers())) {
             throw new ProcedureException(

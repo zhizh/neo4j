@@ -31,7 +31,6 @@ import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.DefaultParameterValue;
 import org.neo4j.internal.kernel.api.procs.FieldSignature;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Sensitive;
 import org.neo4j.procedure.impl.Cypher5TypeCheckers.DefaultValueConverter;
@@ -57,25 +56,14 @@ class MethodSignatureCompiler {
             Type type = types[i];
 
             if (!param.isAnnotationPresent(Name.class)) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Argument at position %d in method `%s` is missing an `@%s` annotation.%n"
-                                + "Please add the annotation, recompile the class and try again.",
-                        i,
-                        method.getName(),
-                        Name.class.getSimpleName());
+                throw ProcedureException.missingArgumentAnnotation(i, method.getName());
             }
             Name parameter = param.getAnnotation(Name.class);
             String name = parameter.value();
             String description = parameter.description();
 
             if (name.isBlank()) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Argument at position %d in method `%s` is annotated with a name,%n"
-                                + "but the name is empty, please provide a non-empty name for the argument.",
-                        i,
-                        method.getName());
+                throw ProcedureException.missingArgumentName(i, method.getName());
             }
 
             try {
@@ -83,13 +71,7 @@ class MethodSignatureCompiler {
                 Optional<DefaultParameterValue> defaultValue = valueConverter.defaultValue(parameter.defaultValue());
                 // it is not allowed to have holes in default values
                 if (seenDefault && !defaultValue.isPresent()) {
-                    throw new ProcedureException(
-                            Status.Procedure.ProcedureRegistrationFailed,
-                            "Non-default argument at position %d with name %s in method %s follows default argument. "
-                                    + "Add a default value or rearrange arguments so that the non-default values comes first.",
-                            i,
-                            parameter.value(),
-                            method.getName());
+                    throw ProcedureException.invalidOrderingOfDefaultArguments(i, parameter.value(), method.getName());
                 }
 
                 seenDefault = defaultValue.isPresent();
