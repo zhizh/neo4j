@@ -71,8 +71,8 @@ case object combineSetProperty extends StepSequencer.Step with DefaultPostCondit
       while (i < itemsArray.length) {
         val item = itemsArray(i)
         item match {
-          case s @ SetPropertyItem(Property(map, _), _) if i < itemsArray.length - 1 =>
-            val itemsToCombine: mutable.ArrayBuffer[SetPropertyItem] = ArrayBuffer(s)
+          case setPropertyItem @ SetPropertyItem(Property(map, _), _) if i < itemsArray.length - 1 =>
+            val itemsToCombine: mutable.ArrayBuffer[SetPropertyItem] = ArrayBuffer(setPropertyItem)
             while (i + 1 < itemsArray.length && onSameEntity(itemsArray(i + 1), map)) {
               itemsToCombine += itemsArray(i + 1).asInstanceOf[SetPropertyItem]
               i += 1

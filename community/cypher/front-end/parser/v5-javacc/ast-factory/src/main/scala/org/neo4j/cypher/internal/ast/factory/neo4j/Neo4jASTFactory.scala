@@ -837,7 +837,7 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     positions: util.List[InputPosition]
   ): Clause = {
     val patternForMerge: NonPrefixedPatternPart = pattern match {
-      case p: NonPrefixedPatternPart   => p
+      case nonPrefixedPatternPart: NonPrefixedPatternPart => nonPrefixedPatternPart
       case pp: PatternPartWithSelector => throw pathSelectorCannotBeUsedInClauseException("MERGE", pp.selector)
     }
 
@@ -1205,7 +1205,7 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     length: GraphPatternQuantifier
   ): PatternAtom = {
     val nonPrefixedPatternPart: NonPrefixedPatternPart = internalPattern match {
-      case p: NonPrefixedPatternPart => p
+      case nonPrefixedPatternPart: NonPrefixedPatternPart => nonPrefixedPatternPart
       case pp: PatternPartWithSelector =>
         val pathPatternKind = if (length == null) "parenthesized" else "quantified"
         throw pathSelectorNotAllowedWithinPathPatternKindException(pathPatternKind, pp.selector)

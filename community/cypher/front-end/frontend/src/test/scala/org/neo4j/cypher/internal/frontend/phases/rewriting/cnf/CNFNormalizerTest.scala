@@ -194,8 +194,8 @@ class CNFNormalizerTest extends CypherFunSuite with PredicateTestSupport {
           InitialState("", NoPlannerName, new AnonymousVariableNameGenerator()).withStatement(TestStatement(e))
         val finalState = cnfNormalizerTransformer.transform(initialState, new TestContext(monitors))
         val expression = finalState.statement() match {
-          case TestStatement(e) => e
-          case x                => fail(s"Expected TestStatement but was ${x.getClass}")
+          case TestStatement(expression) => expression
+          case x                         => fail(s"Expected TestStatement but was ${x.getClass}")
         }
         expression
       case x => fail(s"Expected Expression but was ${x.getClass}")

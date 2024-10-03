@@ -134,7 +134,7 @@ class RewritableTest extends CypherFunSuite {
       val result = rewrite(
         ast,
         {
-          case a => a
+          case x => x
         }
       )
 
@@ -160,7 +160,7 @@ class RewritableTest extends CypherFunSuite {
       val result = rewrite(
         ast,
         {
-          case a => a
+          case x => x
         }
       )
 
@@ -346,8 +346,8 @@ class RewritableTest extends CypherFunSuite {
 
     val result = grandParent.rewrite(topDownWithParent(
       RewriterWithParent.lift {
-        case (x: Exp, parent) =>
-          assert(parent === parentOf(x))
+        case (x: Exp, p) =>
+          assert(p === parentOf(x))
           x
       },
       cancellation = CancellationChecker.neverCancelled()
@@ -386,7 +386,7 @@ class RewritableTest extends CypherFunSuite {
       val result = bottomUpVariant(
         ast,
         {
-          case a => a
+          case x => x
         }
       )
 
@@ -412,7 +412,7 @@ class RewritableTest extends CypherFunSuite {
       val result = bottomUpVariant(
         ast,
         {
-          case a => a
+          case x => x
         }
       )
 

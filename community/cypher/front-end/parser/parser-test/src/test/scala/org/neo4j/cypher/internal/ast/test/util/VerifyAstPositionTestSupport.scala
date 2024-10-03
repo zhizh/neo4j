@@ -100,8 +100,8 @@ object VerifyAstPositionTestSupport {
             _: SetExactPropertiesFromMapItem => acc => TraverseChildren(acc)
           case returnItems: ReturnItems if returnItems.items.isEmpty => acc => SkipChildren(acc)
           case _: Variable if containsReadAdministratorCommand       => acc => TraverseChildren(acc)
-          case astNode: ASTNode => acc => TraverseChildren(acc :+ (astNode -> astNode.position))
-          case _                => acc => TraverseChildren(acc)
+          case childNode: ASTNode => acc => TraverseChildren(acc :+ (childNode -> childNode.position))
+          case _                  => acc => TraverseChildren(acc)
         }
       }
     }

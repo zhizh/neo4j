@@ -47,7 +47,7 @@ class ListSetTest extends CypherFunSuite with CypherScalaCheckDrivenPropertyChec
     val seq = Seq()
     ListSet.from(seq) should be(empty)
     ListSet() should be(empty)
-    ListSet().iterator should be(empty)
+    ListSet[Any]().iterator should be(empty)
   }
 
   // Tests below are adapted from https://github.com/scala/scala/blob/2.13.x/test/junit/scala/collection/immutable/ListSetTest.scala

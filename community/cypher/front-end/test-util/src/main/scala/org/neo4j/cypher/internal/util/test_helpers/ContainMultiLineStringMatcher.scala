@@ -62,7 +62,7 @@ trait ContainMultiLineStringMatcher {
               // Only looking for '\n' is enough, since even on Windows a line break always _ends with_ '\n'.
               remainingAfterMatch.indexOf('\n') match {
                 case -1 => "" // there was no newline after this matching line
-                case i  => remainingAfterMatch.substring(i + 1)
+                case j  => remainingAfterMatch.substring(j + 1)
               }
           }
           (matcher, nextRemainingActual)

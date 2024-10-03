@@ -54,7 +54,7 @@ class NonEmptyListTest extends CypherFunSuite with CypherScalaCheckDrivenPropert
   }
 
   test("Should convert to NonEmptyList") {
-    Seq().toNonEmptyListOption should equal(None)
+    Seq[Any]().toNonEmptyListOption should equal(None)
     Seq(1).toNonEmptyListOption should equal(Some(Last(1)))
     Seq(1, 2).toNonEmptyListOption should equal(Some(Fby(1, Last(2))))
   }

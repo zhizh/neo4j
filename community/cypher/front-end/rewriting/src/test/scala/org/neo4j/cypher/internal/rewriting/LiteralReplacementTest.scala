@@ -267,7 +267,7 @@ class LiteralReplacementTest extends CypherFunSuite with AstRewritingTestSupport
     assertRewrite(
       "MATCH ({a:['a', 1]})",
       "MATCH ({a:$`  AUTOLIST0`})",
-      Map(autoParameter("  AUTOLIST0", CTList(CTAny), Some(2)) -> Seq("a", 1))
+      Map(autoParameter("  AUTOLIST0", CTList(CTAny), Some(2)) -> Seq[Any]("a", 1))
     )
     assertRewrite(
       "MATCH ({a:[1, 2]})",

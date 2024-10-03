@@ -220,8 +220,8 @@ object LabelExpression {
     // We are breaking the implicit assumption that every ASTNode has a position as second parameter list.
     // That is why, we need to adjust the dup method's behaviour
     override def dup(children: Seq[AnyRef]): Leaf.this.type = children match {
-      case Seq(name, containsIs, _: InputPosition) => super.dup(Seq(name, containsIs))
-      case _                                       => super.dup(children)
+      case Seq(dupName, dupContainsIs, _: InputPosition) => super.dup(Seq(dupName, dupContainsIs))
+      case _                                             => super.dup(children)
     }
   }
 

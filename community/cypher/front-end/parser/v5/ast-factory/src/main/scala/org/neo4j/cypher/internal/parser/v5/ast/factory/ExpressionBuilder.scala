@@ -273,12 +273,12 @@ trait ExpressionBuilder extends Cypher5ParserListener {
   final override def exitParenthesizedPath(ctx: Cypher5Parser.ParenthesizedPathContext): Unit = {
     val p = pos(ctx)
     val pattern = astChild[PatternPart](ctx, 1) match {
-      case p: NonPrefixedPatternPart => p
-      case p: PatternPartWithSelector =>
+      case nonPrefixedPatternPart: NonPrefixedPatternPart => nonPrefixedPatternPart
+      case ps: PatternPartWithSelector =>
         val pathPatternKind = if (ctx.quantifier() == null) "parenthesized" else "quantified"
         throw exceptionFactory.syntaxException(
-          s"Path selectors such as `${p.selector.prettified}` are not supported within $pathPatternKind path patterns.",
-          p.position
+          s"Path selectors such as `${ps.selector.prettified}` are not supported within $pathPatternKind path patterns.",
+          ps.position
         )
     }
     val quantifier = ctx.quantifier()
