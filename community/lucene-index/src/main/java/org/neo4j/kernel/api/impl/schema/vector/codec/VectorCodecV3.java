@@ -19,14 +19,14 @@
  */
 package org.neo4j.kernel.api.impl.schema.vector.codec;
 
-import org.apache.lucene.backward_codecs.lucene99.Lucene99Codec;
 import org.apache.lucene.codecs.KnnVectorsFormat;
+import org.apache.lucene.codecs.lucene912.Lucene912Codec;
 import org.neo4j.kernel.api.impl.schema.vector.VectorIndexConfig;
 
-public class VectorCodecV2 extends Lucene99Codec {
+public class VectorCodecV3 extends Lucene912Codec {
     private final KnnVectorsFormat vectorFormat;
 
-    public VectorCodecV2(VectorIndexConfig config) {
+    public VectorCodecV3(VectorIndexConfig config) {
         super();
         final var dimensions =
                 config.dimensions().orElseGet(() -> config.version().maxDimensions());
