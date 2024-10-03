@@ -20,12 +20,16 @@
 package org.neo4j.internal.recordstorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.kernel.impl.store.record.Record.NULL_REFERENCE;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.kernel.impl.store.record.AbstractBaseRecord;
 import org.neo4j.kernel.impl.store.record.LabelTokenRecord;
 import org.neo4j.kernel.impl.store.record.NodeRecord;
@@ -566,6 +570,26 @@ class LogCommandSerializationV4_2Test {
         assertTrue(reader.read(channel) instanceof Command.RelationshipCommand);
         assertTrue(reader.read(channel) instanceof Command.PropertyKeyTokenCommand);
         assertTrue(reader.read(channel) instanceof Command.PropertyCommand);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {Integer.MIN_VALUE, -1, -2, 1 << 24, Integer.MAX_VALUE})
+    void shouldThrowExceptionOnBadDynamicRecordDataArraySize(int invalidSize) {
+        // GIVEN
+        CommandReader reader = createReader();
+        byte[] bytes = new byte[] {
+            4, 0, 0, 0, 0, 0, -1, -1, -1, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, -1,
+            -1, 35, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        };
+        // corrupt the bytes with an invalid size
+        ByteBuffer.wrap(bytes).putInt(36, invalidSize);
+
+        InMemoryClosableChannel channel = createChannel(bytes);
+
+        // THEN
+        assertThatThrownBy(() -> reader.read(channel))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(invalidSize + " is not valid");
     }
 
     @Test

@@ -49,6 +49,7 @@ import org.neo4j.kernel.impl.store.record.RelationshipRecord;
 import org.neo4j.kernel.impl.store.record.RelationshipTypeTokenRecord;
 import org.neo4j.kernel.impl.store.record.SchemaRecord;
 import org.neo4j.string.UTF8;
+import org.neo4j.util.Preconditions;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.ValueWriter;
 import org.neo4j.values.storable.Values;
@@ -551,8 +552,9 @@ class LogCommandSerializationV4_2 extends LogCommandSerialization {
                 record.setCreated();
             }
             int nrOfBytes = channel.getInt();
-            assert nrOfBytes >= 0 && nrOfBytes < ((1 << 24) - 1)
-                    : nrOfBytes + " is not valid for a number of bytes field of " + "a dynamic record";
+            Preconditions.checkState(
+                    (nrOfBytes >= 0 && nrOfBytes < ((1 << 24) - 1)),
+                    nrOfBytes + " is not valid for a number of bytes field of a dynamic record");
             long nextBlock = channel.getLong();
             assert (nextBlock >= 0 && nextBlock <= (1L << 36 - 1)) || (nextBlock == Record.NO_NEXT_BLOCK.intValue())
                     : nextBlock + " is not valid for a next record field of " + "a dynamic record";
