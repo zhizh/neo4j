@@ -105,7 +105,7 @@ public class TentativeConstraintIndexProxy extends AbstractDelegatingIndexProxy 
 
     @Override
     public ValueIndexReader newValueReader() throws IndexNotFoundKernelException {
-        throw new IndexNotFoundKernelException(getDescriptor() + " is still populating");
+        throw IndexNotFoundKernelException.indexIsStillPopulating(getDescriptor());
     }
 
     @Override

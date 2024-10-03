@@ -21,7 +21,10 @@ package org.neo4j.internal.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.exceptions.KernelException;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -33,9 +36,8 @@ public class IndexNotFoundKernelException extends KernelException {
         this.index = null;
     }
 
-    public IndexNotFoundKernelException(ErrorGqlStatusObject gqlStatusObject, String msg) {
+    private IndexNotFoundKernelException(ErrorGqlStatusObject gqlStatusObject, String msg) {
         super(gqlStatusObject, Status.Schema.IndexNotFound, msg);
-
         this.index = null;
     }
 
@@ -44,10 +46,30 @@ public class IndexNotFoundKernelException extends KernelException {
         this.index = index;
     }
 
-    public IndexNotFoundKernelException(ErrorGqlStatusObject gqlStatusObject, String msg, IndexDescriptor index) {
+    private IndexNotFoundKernelException(ErrorGqlStatusObject gqlStatusObject, String msg, IndexDescriptor index) {
         super(gqlStatusObject, Status.Schema.IndexNotFound, msg);
-
         this.index = index;
+    }
+
+    public static IndexNotFoundKernelException indexIsStillPopulating(String indexPopulationJobDescription) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N63)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .build();
+        return new IndexNotFoundKernelException(gql, "Index is still populating: " + indexPopulationJobDescription);
+    }
+
+    public static IndexNotFoundKernelException indexIsStillPopulating(IndexDescriptor descriptor) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N63)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .build();
+        return new IndexNotFoundKernelException(gql, descriptor + " is still populating");
+    }
+
+    public static IndexNotFoundKernelException indexDroppedWhileSampling() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N64)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new IndexNotFoundKernelException(gql, "Index dropped while sampling.");
     }
 
     @Override

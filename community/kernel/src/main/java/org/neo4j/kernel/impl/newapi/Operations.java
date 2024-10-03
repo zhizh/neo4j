@@ -1974,7 +1974,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             if (constraint.isPropertyTypeConstraint()
                     && constraintWithSameSchema.isPropertyTypeConstraint()
                     && !constraint.equals(constraintWithSameSchema)) {
-                throw new ConflictingConstraintException(constraintWithSameSchema, token);
+                throw ConflictingConstraintException.conflictingConstraint(constraintWithSameSchema, token);
             }
 
             boolean creatingIndexBackedConstraint = constraint.isIndexBackedConstraint();
@@ -2010,11 +2010,11 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         // Check constraints first because some of them will also be backed by indexes
         final ConstraintDescriptor constraintWithSameName = schemaRead.constraintGetForName(name);
         if (constraintWithSameName != null) {
-            throw new ConstraintWithNameAlreadyExistsException(name);
+            throw ConstraintWithNameAlreadyExistsException.duplicatedConstraintName(name);
         }
         final IndexDescriptor indexWithSameName = schemaRead.indexGetForName(name);
         if (indexWithSameName != IndexDescriptor.NO_INDEX) {
-            throw new IndexWithNameAlreadyExistsException(name);
+            throw IndexWithNameAlreadyExistsException.duplicateIndexName(name);
         }
     }
 
@@ -2533,7 +2533,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         exclusiveSchemaNameLock(name);
         ConstraintDescriptor constraint = schemaRead.constraintGetForName(name);
         if (constraint == null) {
-            throw new DropConstraintFailureException(name, new NoSuchConstraintException(name));
+            throw DropConstraintFailureException.constraintDropFailed(name, new NoSuchConstraintException(name));
         }
         constraintDrop(constraint, canDropDependent);
     }
@@ -2547,7 +2547,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         ktx.assertOpen();
 
         if (constraint.graphTypeDependence() == GraphTypeDependence.DEPENDENT && !canDropDependent) {
-            throw new DropConstraintFailureException(
+            throw DropConstraintFailureException.constraintDropFailed(
                     constraint, new IllegalStateException("Cannot drop dependent constraint"));
         }
 
@@ -2555,7 +2555,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         try {
             assertConstraintExists(constraint);
         } catch (NoSuchConstraintException e) {
-            throw new DropConstraintFailureException(constraint, e);
+            throw DropConstraintFailureException.constraintDropFailed(constraint, e);
         }
 
         // Drop it like it's hot

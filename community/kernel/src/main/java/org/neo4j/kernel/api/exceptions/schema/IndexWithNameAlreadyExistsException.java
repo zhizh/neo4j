@@ -19,17 +19,25 @@
  */
 package org.neo4j.kernel.api.exceptions.schema;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class IndexWithNameAlreadyExistsException extends SchemaRuleWithNameAlreadyExistsException {
     private static final String INDEX_NAME_FORMAT = "There already exists an index called '%s'.";
 
-    public IndexWithNameAlreadyExistsException(String schemaName) {
-        super(Status.Schema.IndexWithNameAlreadyExists, String.format(INDEX_NAME_FORMAT, schemaName));
+    private IndexWithNameAlreadyExistsException(ErrorGqlStatusObject gqlStatusObject, String schemaName) {
+        super(gqlStatusObject, Status.Schema.IndexWithNameAlreadyExists, String.format(INDEX_NAME_FORMAT, schemaName));
     }
 
-    public IndexWithNameAlreadyExistsException(ErrorGqlStatusObject gqlStatusObject, String schemaName) {
-        super(gqlStatusObject, Status.Schema.IndexWithNameAlreadyExists, String.format(INDEX_NAME_FORMAT, schemaName));
+    public static IndexWithNameAlreadyExistsException duplicateIndexName(String name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N71)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.idx, name)
+                .build();
+        return new IndexWithNameAlreadyExistsException(gql, name);
     }
 }

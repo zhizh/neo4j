@@ -21,8 +21,13 @@ package org.neo4j.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.exceptions.KernelException;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.exceptions.schema.SchemaKernelException;
+import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptorSupplier;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -30,13 +35,7 @@ public class DropConstraintFailureException extends SchemaKernelException {
     private final SchemaDescriptorSupplier constraint;
     private final String nameOrSchema;
 
-    public DropConstraintFailureException(SchemaDescriptorSupplier constraint, Throwable cause) {
-        super(Status.Schema.ConstraintDropFailed, cause, "Unable to drop constraint: " + cause.getMessage());
-        this.constraint = constraint;
-        this.nameOrSchema = null;
-    }
-
-    public DropConstraintFailureException(
+    private DropConstraintFailureException(
             ErrorGqlStatusObject gqlStatusObject, SchemaDescriptorSupplier constraint, Throwable cause) {
         super(
                 gqlStatusObject,
@@ -48,17 +47,7 @@ public class DropConstraintFailureException extends SchemaKernelException {
         this.nameOrSchema = null;
     }
 
-    public DropConstraintFailureException(String nameOrSchema, Throwable cause) {
-        // nameOrSchema is just 'name' or 'on schema'
-        super(
-                Status.Schema.ConstraintDropFailed,
-                cause,
-                "Unable to drop constraint `" + nameOrSchema + "`: " + cause.getMessage());
-        this.nameOrSchema = nameOrSchema;
-        this.constraint = null;
-    }
-
-    public DropConstraintFailureException(ErrorGqlStatusObject gqlStatusObject, String nameOrSchema, Throwable cause) {
+    private DropConstraintFailureException(ErrorGqlStatusObject gqlStatusObject, String nameOrSchema, Throwable cause) {
         // nameOrSchema is just 'name' or 'on schema'
         super(
                 gqlStatusObject,
@@ -67,6 +56,25 @@ public class DropConstraintFailureException extends SchemaKernelException {
                 "Unable to drop constraint `" + nameOrSchema + "`: " + cause.getMessage());
         this.nameOrSchema = nameOrSchema;
         this.constraint = null;
+    }
+
+    public static DropConstraintFailureException constraintDropFailed(String constraintName, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N12)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.constrDescrOrName, constraintName)
+                .build();
+
+        return new DropConstraintFailureException(gql, constraintName, cause);
+    }
+
+    public static DropConstraintFailureException constraintDropFailed(
+            ConstraintDescriptor constraint, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N12)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.constrDescrOrName, constraint.getName())
+                .build();
+
+        return new DropConstraintFailureException(gql, constraint, cause);
     }
 
     @Override

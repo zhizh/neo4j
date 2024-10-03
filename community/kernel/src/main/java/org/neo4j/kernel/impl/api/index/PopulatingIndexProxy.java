@@ -105,12 +105,12 @@ public class PopulatingIndexProxy implements IndexProxy {
 
     @Override
     public ValueIndexReader newValueReader() throws IndexNotFoundKernelException {
-        throw new IndexNotFoundKernelException("Index is still populating: " + job);
+        throw IndexNotFoundKernelException.indexIsStillPopulating(String.valueOf(job));
     }
 
     @Override
     public TokenIndexReader newTokenReader() throws IndexNotFoundKernelException {
-        throw new IndexNotFoundKernelException("Index is still populating: " + job);
+        throw IndexNotFoundKernelException.indexIsStillPopulating(String.valueOf(job));
     }
 
     @Override

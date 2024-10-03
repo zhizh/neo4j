@@ -80,8 +80,7 @@ abstract class NativeIndexReader<KEY extends NativeIndexKey<KEY>> implements Val
                 return sampler.sample(cursorContext, stopped);
             } catch (UncheckedIOException e) {
                 if (getRootCause(e) instanceof FileIsNotMappedException) {
-                    IndexNotFoundKernelException exception =
-                            new IndexNotFoundKernelException("Index dropped while sampling.");
+                    IndexNotFoundKernelException exception = IndexNotFoundKernelException.indexDroppedWhileSampling();
                     exception.addSuppressed(e);
                     throw exception;
                 }

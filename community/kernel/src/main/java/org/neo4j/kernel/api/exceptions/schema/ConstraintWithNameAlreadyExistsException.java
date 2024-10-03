@@ -19,20 +19,28 @@
  */
 package org.neo4j.kernel.api.exceptions.schema;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class ConstraintWithNameAlreadyExistsException extends SchemaRuleWithNameAlreadyExistsException {
     private static final String CONSTRAINT_NAME_FORMAT = "There already exists a constraint called '%s'.";
 
-    public ConstraintWithNameAlreadyExistsException(String schemaName) {
-        super(Status.Schema.ConstraintWithNameAlreadyExists, String.format(CONSTRAINT_NAME_FORMAT, schemaName));
-    }
-
-    public ConstraintWithNameAlreadyExistsException(ErrorGqlStatusObject gqlStatusObject, String schemaName) {
+    private ConstraintWithNameAlreadyExistsException(ErrorGqlStatusObject gqlStatusObject, String schemaName) {
         super(
                 gqlStatusObject,
                 Status.Schema.ConstraintWithNameAlreadyExists,
                 String.format(CONSTRAINT_NAME_FORMAT, schemaName));
+    }
+
+    public static ConstraintWithNameAlreadyExistsException duplicatedConstraintName(String constraintName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N67)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.constr, constraintName)
+                .build();
+        return new ConstraintWithNameAlreadyExistsException(gql, constraintName);
     }
 }

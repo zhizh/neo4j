@@ -64,7 +64,7 @@ public class LuceneIndexSampler implements IndexSampler {
      */
     static void checkCancellation(CancellationRequest ongoingTask) throws IndexNotFoundKernelException {
         if (ongoingTask.cancellationRequested()) {
-            throw new IndexNotFoundKernelException("Index dropped while sampling.");
+            throw IndexNotFoundKernelException.indexDroppedWhileSampling();
         }
     }
 

@@ -20,7 +20,11 @@
 package org.neo4j.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.exceptions.schema.SchemaKernelException;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -28,16 +32,21 @@ import org.neo4j.kernel.api.exceptions.Status;
 public class ConflictingConstraintException extends SchemaKernelException {
     private static final String CONFLICTING_CONSTRAINT_PREFIX = "Conflicting constraint already exists: ";
 
-    public ConflictingConstraintException(ConstraintDescriptor constraint, TokenNameLookup tokenNameLookup) {
-        super(Status.Schema.ConstraintAlreadyExists, constructUserMessage(tokenNameLookup, constraint));
-    }
-
-    public ConflictingConstraintException(
+    private ConflictingConstraintException(
             ErrorGqlStatusObject gqlStatusObject, ConstraintDescriptor constraint, TokenNameLookup tokenNameLookup) {
         super(
                 gqlStatusObject,
                 Status.Schema.ConstraintAlreadyExists,
                 constructUserMessage(tokenNameLookup, constraint));
+    }
+
+    public static ConflictingConstraintException conflictingConstraint(
+            ConstraintDescriptor constraintWithSameSchema, TokenNameLookup token) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N66)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.constrDescrOrName, constraintWithSameSchema.userDescription(token))
+                .build();
+        return new ConflictingConstraintException(gql, constraintWithSameSchema, token);
     }
 
     private static String constructUserMessage(TokenNameLookup tokenNameLookup, ConstraintDescriptor constraint) {

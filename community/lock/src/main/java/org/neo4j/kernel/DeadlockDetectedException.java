@@ -19,7 +19,10 @@
  */
 package org.neo4j.kernel;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.TransientTransactionFailureException;
 import org.neo4j.kernel.api.exceptions.Status;
 
@@ -27,11 +30,12 @@ import org.neo4j.kernel.api.exceptions.Status;
  * Signals that a deadlock between two or more transactions has been detected.
  */
 public class DeadlockDetectedException extends TransientTransactionFailureException {
+    @Deprecated
     public DeadlockDetectedException(String message) {
         super(Status.Transaction.DeadlockDetected, message);
     }
 
-    public DeadlockDetectedException(ErrorGqlStatusObject gqlStatusObject, String message) {
+    private DeadlockDetectedException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, Status.Transaction.DeadlockDetected, message);
     }
 
@@ -39,7 +43,15 @@ public class DeadlockDetectedException extends TransientTransactionFailureExcept
         super(Status.Transaction.DeadlockDetected, message, cause);
     }
 
-    public DeadlockDetectedException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+    private DeadlockDetectedException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, Status.Transaction.DeadlockDetected, message, cause);
+    }
+
+    public static DeadlockDetectedException deadlockDetected(String legacyMessage) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N05)
+                .withClassification(ErrorClassification.TRANSIENT_ERROR)
+                .build();
+
+        return new DeadlockDetectedException(gql, legacyMessage);
     }
 }

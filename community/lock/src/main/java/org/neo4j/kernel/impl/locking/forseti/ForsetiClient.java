@@ -828,12 +828,12 @@ public class ForsetiClient implements LockManager.Client {
                         var message = String.format(
                                 "%s can't acquire %s %s because it would form this deadlock wait cycle:%n%s",
                                 this, lockType, lockString(type, resourceId), deadlockCycleMessage);
-                        throw new DeadlockDetectedException(message);
+                        throw DeadlockDetectedException.deadlockDetected(message);
                     }
                     // else we tried to find a precise deadlock cycle, but found none - which means that
                     // there was no real deadlock
                 } else {
-                    throw new DeadlockDetectedException(format(
+                    throw DeadlockDetectedException.deadlockDetected(format(
                             "%s can't acquire %s on %s because holders of that lock are waiting for %s.%n Wait list:%s",
                             this, lock, lockString(type, resourceId), this, lock.describeWaitList()));
                 }
@@ -845,7 +845,7 @@ public class ForsetiClient implements LockManager.Client {
                 if (clientCommittingByCurrentThread(client) && isDeadlockReal(lock) != -1) {
                     String message = this + " can't acquire " + lock + " on " + type + "(" + resourceId
                             + "), because we are waiting for " + client + " that is committing on the same thread";
-                    throw new DeadlockDetectedException(message);
+                    throw DeadlockDetectedException.deadlockDetected(message);
                 }
             }
         }
