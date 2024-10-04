@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.neo4j.kernel.database.DatabaseIdHelper;
 import org.neo4j.kernel.database.NamedDatabaseId;
+import org.neo4j.values.DefaultElementIdMapperV1;
 
 class DefaultElementIdMapperTest {
 

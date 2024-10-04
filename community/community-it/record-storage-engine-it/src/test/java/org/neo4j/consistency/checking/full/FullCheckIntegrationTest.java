@@ -193,6 +193,7 @@ import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 import org.neo4j.test.utils.TestDirectory;
 import org.neo4j.token.api.TokenConstants;
 import org.neo4j.util.BitBuffer;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -499,6 +500,7 @@ public class FullCheckIntegrationTest {
                             heapBufferFactory(1024),
                             INSTANCE,
                             tokenNameLookup,
+                            ElementIdMapper.PLACEHOLDER,
                             neoStores.getOpenOptions(),
                             new RecordStorageIndexingBehaviour(
                                     neoStores.getNodeStore().getRecordsPerPage(),

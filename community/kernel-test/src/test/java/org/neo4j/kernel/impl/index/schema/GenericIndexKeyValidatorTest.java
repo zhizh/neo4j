@@ -41,6 +41,7 @@ import org.neo4j.internal.schema.SchemaDescriptors;
 import org.neo4j.test.RandomSupport;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.RandomExtension;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 
 @ExtendWith(RandomExtension.class)
@@ -57,7 +58,8 @@ class GenericIndexKeyValidatorTest {
         // given
         RangeLayout layout = mock(RangeLayout.class);
         doThrow(RuntimeException.class).when(layout).newKey();
-        GenericIndexKeyValidator validator = new GenericIndexKeyValidator(120, descriptor, layout, SIMPLE_NAME_LOOKUP);
+        GenericIndexKeyValidator validator =
+                new GenericIndexKeyValidator(120, descriptor, layout, SIMPLE_NAME_LOOKUP, ElementIdMapper.PLACEHOLDER);
 
         // when
         validator.validate(42, intValue(10), epochDate(100), stringValue("abc"));
@@ -70,7 +72,8 @@ class GenericIndexKeyValidatorTest {
         // given
         RangeLayout layout = mock(RangeLayout.class);
         when(layout.newKey()).thenReturn(new CompositeRangeKey(3));
-        GenericIndexKeyValidator validator = new GenericIndexKeyValidator(48, descriptor, layout, SIMPLE_NAME_LOOKUP);
+        GenericIndexKeyValidator validator =
+                new GenericIndexKeyValidator(48, descriptor, layout, SIMPLE_NAME_LOOKUP, ElementIdMapper.PLACEHOLDER);
 
         // when
         var e = assertThrows(
@@ -86,8 +89,8 @@ class GenericIndexKeyValidatorTest {
         int slots = random.nextInt(1, 6);
         int maxLength = random.nextInt(15, 30) * slots;
         RangeLayout layout = new RangeLayout(slots);
-        GenericIndexKeyValidator validator =
-                new GenericIndexKeyValidator(maxLength, descriptor, layout, SIMPLE_NAME_LOOKUP);
+        GenericIndexKeyValidator validator = new GenericIndexKeyValidator(
+                maxLength, descriptor, layout, SIMPLE_NAME_LOOKUP, ElementIdMapper.PLACEHOLDER);
         RangeKey key = layout.newKey();
 
         for (int i = 0; i < 100; i++) {

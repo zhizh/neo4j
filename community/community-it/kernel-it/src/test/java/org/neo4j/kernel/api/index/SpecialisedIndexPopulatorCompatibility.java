@@ -30,6 +30,7 @@ import static org.neo4j.memory.EmptyMemoryTracker.INSTANCE;
 import org.junit.jupiter.api.Test;
 import org.neo4j.internal.schema.StorageEngineIndexingBehaviour;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
+import org.neo4j.values.ElementIdMapper;
 
 abstract class SpecialisedIndexPopulatorCompatibility
         extends SpecialisedIndexProviderCompatibilityTestSuite.Compatibility {
@@ -50,6 +51,7 @@ abstract class SpecialisedIndexPopulatorCompatibility
                         heapBufferFactory(1024),
                         INSTANCE,
                         tokenNameLookup,
+                        ElementIdMapper.PLACEHOLDER,
                         immutable.empty(),
                         StorageEngineIndexingBehaviour.EMPTY),
                 p -> p.markAsFailed(failure),
@@ -70,6 +72,7 @@ abstract class SpecialisedIndexPopulatorCompatibility
                         heapBufferFactory(1024),
                         INSTANCE,
                         tokenNameLookup,
+                        ElementIdMapper.PLACEHOLDER,
                         immutable.empty(),
                         StorageEngineIndexingBehaviour.EMPTY),
                 p -> {
@@ -95,6 +98,7 @@ abstract class SpecialisedIndexPopulatorCompatibility
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         p.close(false, NULL_CONTEXT);

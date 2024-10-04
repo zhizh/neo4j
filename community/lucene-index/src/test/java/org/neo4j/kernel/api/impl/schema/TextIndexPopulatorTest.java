@@ -66,6 +66,7 @@ import org.neo4j.storageengine.api.IndexEntryUpdate;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.testdirectory.TestDirectoryExtension;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -108,6 +109,7 @@ class TextIndexPopulatorTest {
                 heapBufferFactory(1024),
                 INSTANCE,
                 SIMPLE_TOKEN_LOOKUP,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         indexPopulator.create();

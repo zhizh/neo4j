@@ -37,6 +37,7 @@ import org.neo4j.annotations.documented.ReporterFactory;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.kernel.api.impl.index.DatabaseIndex;
 import org.neo4j.kernel.api.index.ValueIndexReader;
+import org.neo4j.values.ElementIdMapper;
 
 class TextIndexAccessorTest {
     @SuppressWarnings("unchecked")
@@ -51,6 +52,7 @@ class TextIndexAccessorTest {
                 schemaIndex,
                 IndexPrototype.forSchema(forLabel(1, 2)).withName("a").materialise(1),
                 SIMPLE_TOKEN_LOOKUP,
+                ElementIdMapper.PLACEHOLDER,
                 UPDATE_IGNORE_STRATEGY);
     }
 

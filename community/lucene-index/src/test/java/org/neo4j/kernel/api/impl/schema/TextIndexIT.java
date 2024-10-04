@@ -60,6 +60,7 @@ import org.neo4j.storageengine.api.IndexEntryUpdate;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.testdirectory.TestDirectoryExtension;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
 @TestDirectoryExtension
@@ -226,7 +227,8 @@ class TextIndexIT {
                 .build();
         index.create();
         index.open();
-        return new TextIndexAccessor(index, descriptor, SIMPLE_TOKEN_LOOKUP, UPDATE_IGNORE_STRATEGY);
+        return new TextIndexAccessor(
+                index, descriptor, SIMPLE_TOKEN_LOOKUP, ElementIdMapper.PLACEHOLDER, UPDATE_IGNORE_STRATEGY);
     }
 
     private List<String> asFileInsidePartitionNames(ResourceIterator<Path> resources) {

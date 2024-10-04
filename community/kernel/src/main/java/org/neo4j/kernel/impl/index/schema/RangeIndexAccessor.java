@@ -27,10 +27,12 @@ import org.neo4j.index.internal.gbptree.RecoveryCleanupWorkCollector;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.index.IndexValueValidator;
 import org.neo4j.kernel.api.index.ValueIndexReader;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 
 public class RangeIndexAccessor extends NativeIndexAccessor<RangeKey> {
     private final TokenNameLookup tokenNameLookup;
+    private final ElementIdMapper elementIdMapper;
     private IndexValueValidator validator;
 
     RangeIndexAccessor(
@@ -40,16 +42,19 @@ public class RangeIndexAccessor extends NativeIndexAccessor<RangeKey> {
             RecoveryCleanupWorkCollector recoveryCleanupWorkCollector,
             IndexDescriptor descriptor,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly) {
         super(databaseIndexContext, indexFiles, layout, descriptor, openOptions, readOnly);
         this.tokenNameLookup = tokenNameLookup;
+        this.elementIdMapper = elementIdMapper;
         instantiateTree(recoveryCleanupWorkCollector);
     }
 
     @Override
     protected void afterTreeInstantiation(GBPTree<RangeKey, NullValue> tree) {
-        validator = new GenericIndexKeyValidator(tree.keyValueSizeCap(), descriptor, layout, tokenNameLookup);
+        validator = new GenericIndexKeyValidator(
+                tree.keyValueSizeCap(), descriptor, layout, tokenNameLookup, elementIdMapper);
     }
 
     @Override

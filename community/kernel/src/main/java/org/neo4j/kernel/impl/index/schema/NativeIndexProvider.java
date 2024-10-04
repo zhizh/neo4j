@@ -54,6 +54,7 @@ import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.storageengine.migration.StoreMigrationParticipant;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * Base class for native indexes on top of {@link GBPTree}.
@@ -108,6 +109,7 @@ abstract class NativeIndexProvider<KEY extends NativeIndexKey<KEY>, LAYOUT exten
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour) {
         if (databaseIndexContext.readOnlyChecker.isReadOnly()) {
@@ -116,7 +118,14 @@ abstract class NativeIndexProvider<KEY extends NativeIndexKey<KEY>, LAYOUT exten
 
         IndexFiles indexFiles = indexFiles(descriptor);
         return newIndexPopulator(
-                indexFiles, layout(descriptor), descriptor, bufferFactory, memoryTracker, tokenNameLookup, openOptions);
+                indexFiles,
+                layout(descriptor),
+                descriptor,
+                bufferFactory,
+                memoryTracker,
+                tokenNameLookup,
+                elementIdMapper,
+                openOptions);
     }
 
     protected abstract IndexPopulator newIndexPopulator(
@@ -126,6 +135,7 @@ abstract class NativeIndexProvider<KEY extends NativeIndexKey<KEY>, LAYOUT exten
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions);
 
     @Override
@@ -133,11 +143,13 @@ abstract class NativeIndexProvider<KEY extends NativeIndexKey<KEY>, LAYOUT exten
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour) {
         IndexFiles indexFiles = indexFiles(descriptor);
-        return newIndexAccessor(indexFiles, layout(descriptor), descriptor, tokenNameLookup, openOptions, readOnly);
+        return newIndexAccessor(
+                indexFiles, layout(descriptor), descriptor, tokenNameLookup, elementIdMapper, openOptions, readOnly);
     }
 
     protected abstract IndexAccessor newIndexAccessor(
@@ -145,6 +157,7 @@ abstract class NativeIndexProvider<KEY extends NativeIndexKey<KEY>, LAYOUT exten
             LAYOUT layout,
             IndexDescriptor descriptor,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly);
 

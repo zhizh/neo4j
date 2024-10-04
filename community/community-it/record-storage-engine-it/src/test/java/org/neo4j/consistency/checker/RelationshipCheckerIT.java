@@ -61,6 +61,7 @@ import org.neo4j.test.extension.DbmsExtension;
 import org.neo4j.test.extension.ExtensionCallback;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 
 @DbmsExtension(configurationCallback = "configure")
 class RelationshipCheckerIT {
@@ -152,6 +153,7 @@ class RelationshipCheckerIT {
                     (c, m) -> asResourceIterator(indexDescriptors.iterator()),
                     new IndexSamplingConfig(config),
                     tokenHolders,
+                    ElementIdMapper.PLACEHOLDER,
                     contextFactory,
                     storageEngine.getOpenOptions(),
                     storageEngine.indexingBehaviour(),

@@ -17,15 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.api;
+package org.neo4j.values;
 
 import static java.lang.String.format;
 
 import java.util.UUID;
 import org.neo4j.common.EntityType;
 import org.neo4j.kernel.database.NamedDatabaseId;
-import org.neo4j.values.ElementIdDecoderV1;
-import org.neo4j.values.ElementIdMapper;
 
 /**
  * Produces element IDs which includes version, entity type, database ID and the internal storage entity ID.

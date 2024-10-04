@@ -49,6 +49,7 @@ import org.neo4j.kernel.impl.index.schema.config.IndexSpecificSpaceFillingCurveS
 import org.neo4j.kernel.impl.index.schema.config.SpaceFillingCurveSettings;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.util.Preconditions;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.CoordinateReferenceSystem;
 import org.neo4j.values.storable.ValueCategory;
 
@@ -106,6 +107,7 @@ public class PointIndexProvider extends NativeIndexProvider<PointKey, PointLayou
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions) {
         return new PointBlockBasedIndexPopulator(
                 databaseIndexContext,
@@ -128,6 +130,7 @@ public class PointIndexProvider extends NativeIndexProvider<PointKey, PointLayou
             PointLayout layout,
             IndexDescriptor descriptor,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly) {
         return new PointIndexAccessor(

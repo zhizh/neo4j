@@ -29,9 +29,11 @@ import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.io.memory.ByteBufferFactory;
 import org.neo4j.kernel.api.index.IndexValueValidator;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.values.ElementIdMapper;
 
 class RangeBlockBasedIndexPopulator extends BlockBasedIndexPopulator<RangeKey> {
     private final TokenNameLookup tokenNameLookup;
+    private final ElementIdMapper elementIdMapper;
 
     RangeBlockBasedIndexPopulator(
             DatabaseIndexContext databaseIndexContext,
@@ -43,6 +45,7 @@ class RangeBlockBasedIndexPopulator extends BlockBasedIndexPopulator<RangeKey> {
             Config config,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             Monitor monitor,
             ImmutableSet<OpenOption> openOptions) {
         super(
@@ -57,6 +60,7 @@ class RangeBlockBasedIndexPopulator extends BlockBasedIndexPopulator<RangeKey> {
                 monitor,
                 openOptions);
         this.tokenNameLookup = tokenNameLookup;
+        this.elementIdMapper = elementIdMapper;
     }
 
     @Override
@@ -66,6 +70,7 @@ class RangeBlockBasedIndexPopulator extends BlockBasedIndexPopulator<RangeKey> {
 
     @Override
     protected IndexValueValidator instantiateValueValidator() {
-        return new GenericIndexKeyValidator(tree.keyValueSizeCap(), descriptor, layout, tokenNameLookup);
+        return new GenericIndexKeyValidator(
+                tree.keyValueSizeCap(), descriptor, layout, tokenNameLookup, elementIdMapper);
     }
 }

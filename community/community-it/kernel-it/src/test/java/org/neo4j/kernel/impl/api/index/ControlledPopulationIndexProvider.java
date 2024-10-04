@@ -45,6 +45,7 @@ import org.neo4j.kernel.api.index.ValueIndexReader;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.IndexEntryUpdate;
 import org.neo4j.test.Barrier;
+import org.neo4j.values.ElementIdMapper;
 
 public class ControlledPopulationIndexProvider extends BaseTestingIndexProvider {
     private IndexPopulator mockedPopulator = new IndexPopulator.Adapter();
@@ -96,6 +97,7 @@ public class ControlledPopulationIndexProvider extends BaseTestingIndexProvider 
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour) {
         populatorCallCount.incrementAndGet();
@@ -107,6 +109,7 @@ public class ControlledPopulationIndexProvider extends BaseTestingIndexProvider 
             IndexDescriptor indexConfig,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour) {

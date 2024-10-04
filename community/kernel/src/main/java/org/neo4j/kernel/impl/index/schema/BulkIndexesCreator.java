@@ -67,6 +67,7 @@ import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.storageengine.api.ReadableStorageEngine;
 import org.neo4j.time.Clocks;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 
 public class BulkIndexesCreator implements IndexesCreator {
 
@@ -78,6 +79,7 @@ public class BulkIndexesCreator implements IndexesCreator {
     private final MetadataCache metadataCache;
     private final JobScheduler jobScheduler;
     private final TokenHolders tokenHolders;
+    private final ElementIdMapper elementIdMapper;
     private final CursorContextFactory contextFactory;
     private final PageCacheTracer pageCacheTracer;
     private final LogService logService;
@@ -92,6 +94,7 @@ public class BulkIndexesCreator implements IndexesCreator {
         this.metadataCache = context.metadataCache();
         this.jobScheduler = context.jobScheduler();
         this.tokenHolders = context.tokenHolders();
+        this.elementIdMapper = context.elementIdMapper();
         this.contextFactory = context.contextFactory();
         this.pageCacheTracer = context.pageCacheTracer();
         this.logService = context.logService();
@@ -218,6 +221,7 @@ public class BulkIndexesCreator implements IndexesCreator {
                 indexProviderMap,
                 indexStoreViewFactory,
                 tokenHolders,
+                elementIdMapper,
                 List.of(),
                 logService.getInternalLogProvider(),
                 IndexMonitor.NO_MONITOR,

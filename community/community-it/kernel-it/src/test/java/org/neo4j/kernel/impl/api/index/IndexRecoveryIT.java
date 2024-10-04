@@ -98,6 +98,7 @@ import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import org.neo4j.test.extension.EphemeralNeo4jLayoutExtension;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
 @EphemeralNeo4jLayoutExtension
@@ -158,6 +159,7 @@ class IndexRecoveryIT {
                             any(),
                             any(),
                             any(TokenNameLookup.class),
+                            any(ElementIdMapper.class),
                             any(),
                             any()))
                     .thenReturn(indexPopulatorWithControlledCompletionTiming(populationSemaphore));
@@ -183,6 +185,7 @@ class IndexRecoveryIT {
                             any(),
                             any(),
                             any(TokenNameLookup.class),
+                            any(ElementIdMapper.class),
                             any(),
                             any()))
                     .thenReturn(indexPopulatorWithControlledCompletionTiming(recoverySemaphore));
@@ -209,6 +212,7 @@ class IndexRecoveryIT {
                             any(),
                             any(),
                             any(TokenNameLookup.class),
+                            any(ElementIdMapper.class),
                             any(),
                             any());
             verify(mockedIndexProvider, never())
@@ -216,6 +220,7 @@ class IndexRecoveryIT {
                             any(IndexDescriptor.class),
                             any(IndexSamplingConfig.class),
                             any(TokenNameLookup.class),
+                            any(ElementIdMapper.class),
                             any(),
                             any());
             verify(mockedIndexProvider, times(recoveryRequired ? 2 : 1)).getMinimalIndexAccessor(any(), anyBoolean());
@@ -235,6 +240,7 @@ class IndexRecoveryIT {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(new IndexPopulator.Adapter() {
@@ -262,6 +268,7 @@ class IndexRecoveryIT {
                             any(),
                             any(),
                             any(TokenNameLookup.class),
+                            any(ElementIdMapper.class),
                             any(),
                             any());
             var minimalIndexAccessor = mock(MinimalIndexAccessor.class);
@@ -293,6 +300,7 @@ class IndexRecoveryIT {
                             any(),
                             any(),
                             any(TokenNameLookup.class),
+                            any(ElementIdMapper.class),
                             any(),
                             any());
             verify(mockedIndexProvider, never())
@@ -300,6 +308,7 @@ class IndexRecoveryIT {
                             any(IndexDescriptor.class),
                             any(IndexSamplingConfig.class),
                             any(TokenNameLookup.class),
+                            any(ElementIdMapper.class),
                             any(),
                             any());
             // once during recovery and once during startup
@@ -322,6 +331,7 @@ class IndexRecoveryIT {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(populator);
@@ -333,6 +343,7 @@ class IndexRecoveryIT {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(mockedAccessor);
@@ -351,6 +362,7 @@ class IndexRecoveryIT {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(writer);
@@ -372,6 +384,7 @@ class IndexRecoveryIT {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any());
         int onlineAccessorInvocationCount = 3; // once when we create the index, and once when we restart the db
@@ -380,6 +393,7 @@ class IndexRecoveryIT {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any());
         assertEquals(expectedUpdates, writer.batchedUpdates);
@@ -395,6 +409,7 @@ class IndexRecoveryIT {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(indexPopulator);
@@ -403,6 +418,7 @@ class IndexRecoveryIT {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(indexAccessor);
@@ -432,6 +448,7 @@ class IndexRecoveryIT {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any());
         verify(mockedIndexProvider).getMinimalIndexAccessor(any(IndexDescriptor.class), anyBoolean());

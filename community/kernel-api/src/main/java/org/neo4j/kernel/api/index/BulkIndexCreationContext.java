@@ -32,6 +32,7 @@ import org.neo4j.memory.MemoryTracker;
 import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.storageengine.api.ReadableStorageEngine;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * Context container for the dependencies required to perform the bulk creation of indexes
@@ -45,6 +46,7 @@ public record BulkIndexCreationContext(
         MetadataCache metadataCache,
         JobScheduler jobScheduler,
         TokenHolders tokenHolders,
+        ElementIdMapper elementIdMapper,
         CursorContextFactory contextFactory,
         PageCacheTracer pageCacheTracer,
         LogService logService,

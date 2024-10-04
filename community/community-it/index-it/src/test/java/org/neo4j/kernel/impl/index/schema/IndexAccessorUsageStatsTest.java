@@ -87,6 +87,7 @@ import org.neo4j.time.FakeClock;
 import org.neo4j.token.CreatingTokenHolder;
 import org.neo4j.token.ReadOnlyTokenCreator;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.CoordinateReferenceSystem;
 import org.neo4j.values.storable.Values;
 
@@ -288,6 +289,7 @@ public class IndexAccessorUsageStatsTest {
                 heapBufferFactory(1024),
                 EmptyMemoryTracker.INSTANCE,
                 nameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 openOptions,
                 indexingBehaviour);
         try {
@@ -296,7 +298,12 @@ public class IndexAccessorUsageStatsTest {
             populator.close(true, CursorContext.NULL_CONTEXT);
         }
         return provider.getOnlineAccessor(
-                completeDescriptor, samplingConfig, nameLookup, openOptions, indexingBehaviour);
+                completeDescriptor,
+                samplingConfig,
+                nameLookup,
+                ElementIdMapper.PLACEHOLDER,
+                openOptions,
+                indexingBehaviour);
     }
 
     private void tokenQuery(TokenIndexReader reader, FakeClock clock) {

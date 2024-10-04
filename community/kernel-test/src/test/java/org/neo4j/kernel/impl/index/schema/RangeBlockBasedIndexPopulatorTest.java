@@ -26,6 +26,7 @@ import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.internal.schema.IndexType;
 import org.neo4j.io.memory.ByteBufferFactory;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.values.ElementIdMapper;
 
 class RangeBlockBasedIndexPopulatorTest extends GenericBlockBasedIndexPopulatorTest<RangeKey> {
     @Override
@@ -49,6 +50,7 @@ class RangeBlockBasedIndexPopulatorTest extends GenericBlockBasedIndexPopulatorT
                 config,
                 memoryTracker,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 monitor,
                 Sets.immutable.empty());
         populator.create();

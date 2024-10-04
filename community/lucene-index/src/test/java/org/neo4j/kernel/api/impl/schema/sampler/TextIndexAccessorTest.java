@@ -88,6 +88,7 @@ import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.Threading;
 import org.neo4j.test.extension.ThreadingExtension;
 import org.neo4j.util.concurrent.BinaryLatch;
+import org.neo4j.values.ElementIdMapper;
 
 @ExtendWith(ThreadingExtension.class)
 public class TextIndexAccessorTest {
@@ -124,7 +125,8 @@ public class TextIndexAccessorTest {
 
             index.create();
             index.open();
-            return new TextIndexAccessor(index, GENERAL_INDEX, SIMPLE_TOKEN_LOOKUP, UPDATE_IGNORE_STRATEGY);
+            return new TextIndexAccessor(
+                    index, GENERAL_INDEX, SIMPLE_TOKEN_LOOKUP, ElementIdMapper.PLACEHOLDER, UPDATE_IGNORE_STRATEGY);
         }));
     }
 

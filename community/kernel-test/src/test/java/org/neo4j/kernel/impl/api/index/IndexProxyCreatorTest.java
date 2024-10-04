@@ -41,6 +41,7 @@ import org.neo4j.kernel.impl.api.index.stats.IndexStatisticsStore;
 import org.neo4j.kernel.impl.index.DatabaseIndexStats;
 import org.neo4j.logging.InternalLogProvider;
 import org.neo4j.test.InMemoryTokens;
+import org.neo4j.values.ElementIdMapper;
 
 class IndexProxyCreatorTest {
     private final int LABEL_ID = 7;
@@ -122,7 +123,8 @@ class IndexProxyCreatorTest {
         final var provider = mock(IndexProvider.class);
         when(provider.getProviderDescriptor()).thenReturn(PROVIDER_DESCRIPTOR);
         try {
-            when(provider.getOnlineAccessor(any(), any(), any(), any(), any())).thenReturn(mock(IndexAccessor.class));
+            when(provider.getOnlineAccessor(any(), any(), any(), any(ElementIdMapper.class), any(), any()))
+                    .thenReturn(mock(IndexAccessor.class));
         } catch (IOException ignored) {
         }
         return provider;
@@ -135,6 +137,7 @@ class IndexProxyCreatorTest {
                 mock(DatabaseIndexStats.class),
                 new MockIndexProviderMap(provider),
                 new InMemoryTokens(),
+                ElementIdMapper.PLACEHOLDER,
                 mock(InternalLogProvider.class),
                 immutable.empty(),
                 Clock.systemUTC(),

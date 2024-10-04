@@ -92,6 +92,7 @@ import org.neo4j.token.CreatingTokenHolder;
 import org.neo4j.token.ReadOnlyTokenCreator;
 import org.neo4j.token.TokenHolders;
 import org.neo4j.token.api.TokenHolder;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -437,6 +438,7 @@ class FulltextIndexEntryUpdateTest {
                 ByteBufferFactory.heapBufferFactory((int) ByteUnit.kibiBytes(100)),
                 EmptyMemoryTracker.INSTANCE,
                 tokenHolders.lookupWithIds(),
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -456,6 +458,7 @@ class FulltextIndexEntryUpdateTest {
                 index,
                 SAMPLING_CONFIG,
                 tokenHolders.lookupWithIds(),
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
     }

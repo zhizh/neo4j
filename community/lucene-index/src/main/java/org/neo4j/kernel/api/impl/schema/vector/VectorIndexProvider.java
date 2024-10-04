@@ -55,6 +55,7 @@ import org.neo4j.monitoring.Monitors;
 import org.neo4j.scheduler.Group;
 import org.neo4j.scheduler.JobMonitoringParams;
 import org.neo4j.scheduler.JobScheduler;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 
 public class VectorIndexProvider extends AbstractLuceneIndexProvider {
@@ -107,6 +108,7 @@ public class VectorIndexProvider extends AbstractLuceneIndexProvider {
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour) {
         final var vectorIndexConfig =
@@ -136,6 +138,7 @@ public class VectorIndexProvider extends AbstractLuceneIndexProvider {
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour)

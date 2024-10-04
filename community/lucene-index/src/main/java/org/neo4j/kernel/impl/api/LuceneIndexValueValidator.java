@@ -23,6 +23,7 @@ import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.index.IndexValueValidator;
 import org.neo4j.util.Preconditions;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.TextValue;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
@@ -41,11 +42,14 @@ public class LuceneIndexValueValidator implements IndexValueValidator {
 
     private final IndexDescriptor descriptor;
     private final TokenNameLookup tokenNameLookup;
+    private final ElementIdMapper elementIdMapper;
     private final int checkThreshold;
 
-    public LuceneIndexValueValidator(IndexDescriptor descriptor, TokenNameLookup tokenNameLookup) {
+    public LuceneIndexValueValidator(
+            IndexDescriptor descriptor, TokenNameLookup tokenNameLookup, ElementIdMapper elementIdMapper) {
         this.descriptor = descriptor;
         this.tokenNameLookup = tokenNameLookup;
+        this.elementIdMapper = elementIdMapper;
         // This check threshold is for not having to check every value that comes in, only those that may have a chance
         // to exceed the max length.
         // The value 5 comes from a safer 4, which is the number of bytes that a max size UTF-8 code point needs.
@@ -74,7 +78,8 @@ public class LuceneIndexValueValidator implements IndexValueValidator {
 
     private void validateActualLength(long entityId, int length) {
         if (length > MAX_TERM_LENGTH) {
-            IndexValueValidator.throwSizeViolationException(descriptor, tokenNameLookup, entityId, length);
+            IndexValueValidator.throwSizeViolationException(
+                    descriptor, tokenNameLookup, elementIdMapper, entityId, length);
         }
     }
 }

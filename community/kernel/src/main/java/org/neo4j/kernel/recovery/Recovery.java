@@ -148,6 +148,7 @@ import org.neo4j.time.Stopwatch;
 import org.neo4j.token.CreatingTokenHolder;
 import org.neo4j.token.ReadOnlyTokenCreator;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.DefaultElementIdMapperV1;
 
 /**
  * Utility class to perform store recovery or check is recovery is required.
@@ -645,6 +646,7 @@ public final class Recovery {
                 scheduler,
                 indexProviderMap,
                 tokenHolders,
+                new DefaultElementIdMapperV1(namedDatabaseId),
                 logProvider,
                 monitors.newMonitor(IndexMonitor.class),
                 cursorContextFactory,

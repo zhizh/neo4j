@@ -67,6 +67,7 @@ import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.constraints.PropertyTypeSet;
 import org.neo4j.io.IOUtils;
 import org.neo4j.io.fs.FileSystemAbstraction;
+import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.recordstorage.RecordDatabaseLayout;
 import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.PageCacheOpenOptions;
@@ -75,6 +76,7 @@ import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.kernel.api.index.IndexAccessor;
+import org.neo4j.kernel.database.DatabaseIdFactory;
 import org.neo4j.kernel.impl.api.index.IndexProviderMap;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
 import org.neo4j.kernel.impl.index.schema.ConsistencyCheckable;
@@ -87,6 +89,8 @@ import org.neo4j.token.CreatingTokenHolder;
 import org.neo4j.token.ReadOnlyTokenCreator;
 import org.neo4j.token.TokenHolders;
 import org.neo4j.token.api.TokenHolder;
+import org.neo4j.values.DefaultElementIdMapperV1;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * A consistency checker for a {@link RecordStorageEngine}, focused on keeping abstractions to a minimum and having clean and understandable
@@ -162,6 +166,8 @@ public class RecordStorageConsistencyChecker implements AutoCloseable {
             };
         }
         TokenHolders tokenHolders = safeLoadTokens(neoStores, contextFactory, memoryTracker);
+        ElementIdMapper elementIdMapper = makeElementIdMapper(neoStores, databaseLayout, contextFactory);
+
         this.report = new InconsistencyReport(
                 new InconsistencyMessageLogger(
                         reportLog, moreDescriptiveRecordToStrings(neoStores, tokenHolders, memoryTracker)),
@@ -177,7 +183,8 @@ public class RecordStorageConsistencyChecker implements AutoCloseable {
         this.cacheAccess = new DefaultCacheAccess(cacheAccessMemory, Counts.NONE, numberOfThreads);
         this.observedCounts = new CountsState(neoStores, cacheAccess, memoryTracker);
         this.progress = progressFactory.multipleParts("Consistency check");
-        this.indexAccessors = instantiateIndexAccessors(neoStores, indexProviders, tokenHolders, config, memoryTracker);
+        this.indexAccessors = instantiateIndexAccessors(
+                neoStores, indexProviders, tokenHolders, elementIdMapper, config, memoryTracker);
         this.context = new CheckerContext(
                 neoStores,
                 indexAccessors,
@@ -201,6 +208,7 @@ public class RecordStorageConsistencyChecker implements AutoCloseable {
             NeoStores neoStores,
             IndexProviderMap indexProviders,
             TokenHolders tokenHolders,
+            ElementIdMapper elementIdMapper,
             Config config,
             MemoryTracker memoryTracker) {
         SchemaRuleAccess schemaRuleAccess =
@@ -210,6 +218,7 @@ public class RecordStorageConsistencyChecker implements AutoCloseable {
                 new SchemaRulesDescriptors(neoStores, schemaRuleAccess),
                 new IndexSamplingConfig(config),
                 tokenHolders,
+                elementIdMapper,
                 contextFactory,
                 neoStores.getOpenOptions(),
                 new RecordStorageIndexingBehaviour(
@@ -528,6 +537,18 @@ public class RecordStorageConsistencyChecker implements AutoCloseable {
         checkable.consistencyCheck(proxyFactory, contextFactory, context.execution.getNumberOfThreads());
         handler.updateSummary();
         listener.add(1);
+    }
+
+    private static ElementIdMapper makeElementIdMapper(
+            NeoStores neoStores, DatabaseLayout layout, CursorContextFactory contextFactory) {
+        try (var ctx = contextFactory.create("readUUID")) {
+            return neoStores
+                    .getMetaDataStore()
+                    .getDatabaseIdUuid(ctx)
+                    .map(uuid -> (ElementIdMapper)
+                            new DefaultElementIdMapperV1(DatabaseIdFactory.from(layout.getDatabaseName(), uuid)))
+                    .orElse(ElementIdMapper.PLACEHOLDER);
+        }
     }
 
     private static class SchemaRulesDescriptors implements IndexDescriptorProvider {

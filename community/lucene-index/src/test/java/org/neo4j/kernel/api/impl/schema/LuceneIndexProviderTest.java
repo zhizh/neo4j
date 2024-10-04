@@ -62,6 +62,7 @@ import org.neo4j.test.Race;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.testdirectory.TestDirectoryExtension;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.values.ElementIdMapper;
 
 @TestDirectoryExtension
 class LuceneIndexProviderTest {
@@ -96,6 +97,7 @@ class LuceneIndexProviderTest {
                         heapBufferFactory(1024),
                         INSTANCE,
                         SIMPLE_TOKEN_LOOKUP,
+                        ElementIdMapper.PLACEHOLDER,
                         Sets.immutable.empty(),
                         StorageEngineIndexingBehaviour.EMPTY));
     }
@@ -148,6 +150,7 @@ class LuceneIndexProviderTest {
                 bufferFactory,
                 INSTANCE,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         var race = new Race();
@@ -202,6 +205,7 @@ class LuceneIndexProviderTest {
                 descriptor,
                 new IndexSamplingConfig(readOnlyConfig),
                 SIMPLE_TOKEN_LOOKUP,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
     }

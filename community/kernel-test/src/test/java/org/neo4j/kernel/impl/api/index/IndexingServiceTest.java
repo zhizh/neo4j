@@ -188,6 +188,7 @@ import org.neo4j.test.InMemoryTokens;
 import org.neo4j.time.Clocks;
 import org.neo4j.time.FakeClock;
 import org.neo4j.util.concurrent.BinaryLatch;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -447,6 +448,7 @@ class IndexingServiceTest {
                 providerMap,
                 mock(IndexStoreViewFactory.class),
                 nameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 asList(onlineIndex, populatingIndex, failedIndex),
                 internalLogProvider,
                 IndexMonitor.NO_MONITOR,
@@ -501,6 +503,7 @@ class IndexingServiceTest {
                 providerMap,
                 storeViewFactory,
                 nameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 asList(onlineIndex, populatingIndex, failedIndex),
                 internalLogProvider,
                 IndexMonitor.NO_MONITOR,
@@ -736,10 +739,20 @@ class IndexingServiceTest {
                 .thenReturn(updater2);
 
         when(indexProvider.getOnlineAccessor(
-                        eq(index1), any(IndexSamplingConfig.class), any(TokenNameLookup.class), any(), any()))
+                        eq(index1),
+                        any(IndexSamplingConfig.class),
+                        any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
+                        any(),
+                        any()))
                 .thenReturn(accessor1);
         when(indexProvider.getOnlineAccessor(
-                        eq(index2), any(IndexSamplingConfig.class), any(TokenNameLookup.class), any(), any()))
+                        eq(index2),
+                        any(IndexSamplingConfig.class),
+                        any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
+                        any(),
+                        any()))
                 .thenReturn(accessor2);
 
         life.start();
@@ -928,6 +941,7 @@ class IndexingServiceTest {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any());
         verify(indexProvider)
@@ -940,6 +954,7 @@ class IndexingServiceTest {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any());
         verify(indexProvider)
@@ -952,6 +967,7 @@ class IndexingServiceTest {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any());
 
@@ -971,6 +987,7 @@ class IndexingServiceTest {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenThrow(exception);
@@ -1016,6 +1033,7 @@ class IndexingServiceTest {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenThrow(exception);
@@ -1161,6 +1179,7 @@ class IndexingServiceTest {
                 providerMap,
                 mock(IndexStoreViewFactory.class),
                 nameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 indexes,
                 internalLogProvider,
                 IndexMonitor.NO_MONITOR,
@@ -1223,6 +1242,7 @@ class IndexingServiceTest {
                 providerMap,
                 storeViewFactory,
                 nameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 indexes,
                 internalLogProvider,
                 IndexMonitor.NO_MONITOR,
@@ -1330,6 +1350,7 @@ class IndexingServiceTest {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(accessor);
@@ -1568,12 +1589,18 @@ class IndexingServiceTest {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(populator);
         withData().getsProcessedByStoreScanFrom(storeView);
         when(indexProvider.getOnlineAccessor(
-                        eq(index), any(IndexSamplingConfig.class), any(TokenNameLookup.class), any(), any()))
+                        eq(index),
+                        any(IndexSamplingConfig.class),
+                        any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
+                        any(),
+                        any()))
                 .thenThrow(new IllegalStateException("Something unexpectedly wrong with the index here"));
         when(indexProvider.getMinimalIndexAccessor(index, true)).thenReturn(mock(MinimalIndexAccessor.class));
         when(indexProvider.storeMigrationParticipant(
@@ -1612,6 +1639,7 @@ class IndexingServiceTest {
                 providerMap,
                 storeViewFactory,
                 nameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 loop(iterator(index)),
                 internalLogProvider,
                 monitor,
@@ -1635,7 +1663,12 @@ class IndexingServiceTest {
 
         // and when
         when(indexProvider.getOnlineAccessor(
-                        eq(index), any(IndexSamplingConfig.class), any(TokenNameLookup.class), any(), any()))
+                        eq(index),
+                        any(IndexSamplingConfig.class),
+                        any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
+                        any(),
+                        any()))
                 .thenReturn(accessor);
         when(indexProvider.getMinimalIndexAccessor(index, true)).thenReturn(accessor);
         life.start();
@@ -1871,6 +1904,7 @@ class IndexingServiceTest {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(populator);
@@ -1879,6 +1913,7 @@ class IndexingServiceTest {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(accessor);
@@ -1905,6 +1940,7 @@ class IndexingServiceTest {
                 providerMap,
                 storeViewFactory,
                 nameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 loop(iterator(rules)),
                 internalLogProvider,
                 monitor,
@@ -2084,6 +2120,7 @@ class IndexingServiceTest {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(indexAccessor);

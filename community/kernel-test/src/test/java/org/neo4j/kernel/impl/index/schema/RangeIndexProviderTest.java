@@ -45,6 +45,7 @@ import org.neo4j.kernel.api.index.IndexAccessor;
 import org.neo4j.kernel.api.index.IndexUpdater;
 import org.neo4j.kernel.impl.api.index.IndexUpdateMode;
 import org.neo4j.storageengine.api.IndexEntryUpdate;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -83,6 +84,7 @@ class RangeIndexProviderTest extends IndexProviderTests {
                         descriptor,
                         samplingConfig(),
                         tokenNameLookup,
+                        ElementIdMapper.PLACEHOLDER,
                         Sets.immutable.empty(),
                         StorageEngineIndexingBehaviour.EMPTY);
                 IndexUpdater indexUpdater = accessor.newUpdater(IndexUpdateMode.ONLINE, NULL_CONTEXT, false)) {

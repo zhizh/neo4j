@@ -71,6 +71,7 @@ import org.neo4j.kernel.impl.api.index.PhaseTracker;
 import org.neo4j.kernel.impl.api.index.stats.IndexStatisticsStore;
 import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.storageengine.api.IndexEntryUpdate;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -216,6 +217,7 @@ public class OtherAffectedSchemaMonitors implements Supplier<SchemaMonitor>, Clo
                                             descriptor,
                                             indexSamplingConfig,
                                             tokenNameLookup,
+                                            ElementIdMapper.PLACEHOLDER,
                                             openOptions,
                                             indexingBehaviour);
                             var builtIncrementIndex = tempIndexes
@@ -224,6 +226,7 @@ public class OtherAffectedSchemaMonitors implements Supplier<SchemaMonitor>, Clo
                                             descriptor,
                                             indexSamplingConfig,
                                             tokenNameLookup,
+                                            ElementIdMapper.PLACEHOLDER,
                                             openOptions,
                                             indexingBehaviour)) {
                         copiedIncrementIndex.validate(
@@ -254,6 +257,7 @@ public class OtherAffectedSchemaMonitors implements Supplier<SchemaMonitor>, Clo
                                             descriptor,
                                             indexSamplingConfig,
                                             tokenNameLookup,
+                                            ElementIdMapper.PLACEHOLDER,
                                             openOptions,
                                             indexingBehaviour);
                             var builtIncrementIndex = tempIndexes
@@ -262,6 +266,7 @@ public class OtherAffectedSchemaMonitors implements Supplier<SchemaMonitor>, Clo
                                             descriptor,
                                             indexSamplingConfig,
                                             tokenNameLookup,
+                                            ElementIdMapper.PLACEHOLDER,
                                             openOptions,
                                             indexingBehaviour)) {
                         copiedIncrementIndex.insertFrom(
@@ -389,6 +394,7 @@ public class OtherAffectedSchemaMonitors implements Supplier<SchemaMonitor>, Clo
                     bufferFactory,
                     EmptyMemoryTracker.INSTANCE,
                     tokenNameLookup,
+                    ElementIdMapper.PLACEHOLDER,
                     openOptions,
                     indexingBehaviour);
             try {

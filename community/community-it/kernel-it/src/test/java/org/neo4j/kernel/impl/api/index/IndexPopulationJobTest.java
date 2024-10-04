@@ -116,6 +116,7 @@ import org.neo4j.test.OtherThreadExecutor;
 import org.neo4j.test.extension.ImpermanentDbmsExtension;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -853,6 +854,7 @@ class IndexPopulationJobTest {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 storageEngine.getOpenOptions(),
                 storageEngine.indexingBehaviour());
     }

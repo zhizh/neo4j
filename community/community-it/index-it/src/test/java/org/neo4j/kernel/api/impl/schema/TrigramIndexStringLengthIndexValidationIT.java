@@ -50,11 +50,11 @@ public class TrigramIndexStringLengthIndexValidationIT extends StringLengthIndex
     }
 
     @Override
-    protected String expectedPopulationFailureCauseMessage(long indexId, long entityId) {
+    protected String expectedPopulationFailureCauseMessage(long indexId, String elementId) {
         return String.format(
                 "Property value is too large to index, please see index documentation for limitations. "
                         + "Index: Index( id=%d, name='coolName', type='TEXT', "
-                        + "schema=(:LABEL_ONE {largeString}), indexProvider='text-2.0' ), entity id: %d",
-                indexId, entityId);
+                        + "schema=(:LABEL_ONE {largeString}), indexProvider='text-2.0' ), element id: %s",
+                indexId, elementId);
     }
 }

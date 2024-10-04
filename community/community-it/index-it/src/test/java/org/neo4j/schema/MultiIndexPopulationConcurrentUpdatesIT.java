@@ -112,6 +112,7 @@ import org.neo4j.storageengine.api.cursor.StoreCursors;
 import org.neo4j.test.extension.ImpermanentDbmsExtension;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.time.Clocks;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
 // [NodePropertyUpdate[0, prop:0 add:Sweden, labelsBefore:[], labelsAfter:[0]]]
@@ -368,6 +369,7 @@ public class MultiIndexPopulationConcurrentUpdatesIT {
                     providerMap,
                     indexStoreViewFactory,
                     ktx.tokenRead(),
+                    ElementIdMapper.PLACEHOLDER,
                     initialSchemaRulesLoader(storageEngine),
                     nullLogProvider,
                     IndexMonitor.NO_MONITOR,

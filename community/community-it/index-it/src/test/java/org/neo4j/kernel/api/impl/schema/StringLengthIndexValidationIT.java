@@ -84,7 +84,7 @@ public abstract class StringLengthIndexValidationIT {
 
     protected abstract IndexProviderDescriptor getIndexProvider();
 
-    protected abstract String expectedPopulationFailureCauseMessage(long indexId, long entityId);
+    protected abstract String expectedPopulationFailureCauseMessage(long indexId, String elementId);
 
     @BeforeEach
     void setUp() {
@@ -117,10 +117,9 @@ public abstract class StringLengthIndexValidationIT {
     void shouldSuccessfullyWriteAndReadWithinIndexKeySizeLimit() throws KernelException {
         createAndAwaitIndex();
         String propValue = getString(random, singleKeySizeLimit);
-        long expectedNodeId;
 
         // Write
-        expectedNodeId = createNode(propValue);
+        String expectedNodeId = createNode(propValue);
 
         // Read
         assertReadNode(propValue, expectedNodeId);
@@ -129,10 +128,9 @@ public abstract class StringLengthIndexValidationIT {
     @Test
     void shouldSuccessfullyPopulateIndexWithinIndexKeySizeLimit() throws KernelException {
         String propValue = getString(random, singleKeySizeLimit);
-        long expectedNodeId;
 
         // Write
-        expectedNodeId = createNode(propValue);
+        String expectedNodeId = createNode(propValue);
 
         // Populate
         createAndAwaitIndex();
@@ -144,20 +142,19 @@ public abstract class StringLengthIndexValidationIT {
     @Test
     void txMustFailIfExceedingIndexKeySizeLimit() throws KernelException {
         long indexId = createAndAwaitIndex();
-        long nodeId;
 
         // Write
         try (Transaction tx = db.beginTx()) {
             String propValue = getString(random, singleKeySizeLimit + 1);
             Node node = tx.createNode(LABEL_ONE);
-            nodeId = node.getId();
+            String nodeId = node.getElementId();
 
             IllegalArgumentException e =
                     assertThrows(IllegalArgumentException.class, () -> node.setProperty(propKey, propValue));
             assertThat(e.getMessage())
                     .contains(String.format(
                             "Property value is too large to index, please see index documentation for limitations. "
-                                    + "Index: Index( id=%d, name='coolName', type='%s', schema=(:LABEL_ONE {largeString}), indexProvider='%s' ), entity id: %d",
+                                    + "Index: Index( id=%d, name='coolName', type='%s', schema=(:LABEL_ONE {largeString}), indexProvider='%s' ), element id: %s",
                             indexId, getIndexType(), getIndexProvider().name(), nodeId));
         }
     }
@@ -166,7 +163,7 @@ public abstract class StringLengthIndexValidationIT {
     void indexPopulationMustFailIfExceedingIndexKeySizeLimit() throws KernelException {
         // Write
         String propValue = getString(random, singleKeySizeLimit + 1);
-        long nodeId = createNode(propValue);
+        String nodeId = createNode(propValue);
 
         // Create index should be fine
         long indexId = createIndex();
@@ -191,7 +188,7 @@ public abstract class StringLengthIndexValidationIT {
 
         // External update to index while population has not yet finished
         String propValue = getString(random, singleKeySizeLimit);
-        long nodeId = createNode(propValue);
+        String nodeId = createNode(propValue);
 
         // Continue index population
         populationScanFinished.release();
@@ -222,7 +219,7 @@ public abstract class StringLengthIndexValidationIT {
 
         // External update to index while population has not yet finished
         String propValue = getString(random, singleKeySizeLimit + 1);
-        long nodeId = createNode(propValue);
+        String nodeId = createNode(propValue);
 
         // Continue index population
         populationScanFinished.release();
@@ -231,7 +228,7 @@ public abstract class StringLengthIndexValidationIT {
         assertIndexInFailedState(indexId, nodeId);
     }
 
-    public void assertIndexFailToComeOnline(long indexId, long entityId) {
+    public void assertIndexFailToComeOnline(long indexId, String elementId) {
         // Waiting for it to come online should fail
         Exception e = assertThrows(Exception.class, () -> {
             try (Transaction tx = db.beginTx()) {
@@ -247,10 +244,10 @@ public abstract class StringLengthIndexValidationIT {
                                         + "(Index( id=%d, name='coolName', type='%s', schema=(:LABEL_ONE {largeString}), indexProvider='%s' )) "
                                         + "entered a FAILED state.",
                                 indexId, getIndexType(), getIndexProvider().name()),
-                        expectedPopulationFailureCauseMessage(indexId, entityId));
+                        expectedPopulationFailureCauseMessage(indexId, elementId));
     }
 
-    public void assertIndexInFailedState(long indexId, long entityId) {
+    public void assertIndexInFailedState(long indexId, String elementId) {
         // Index should be in failed state
         try (Transaction tx = db.beginTx()) {
             Iterator<IndexDefinition> iterator =
@@ -259,7 +256,7 @@ public abstract class StringLengthIndexValidationIT {
             IndexDefinition next = iterator.next();
             assertEquals(Schema.IndexState.FAILED, tx.schema().getIndexState(next), "state is FAILED");
             assertThat(tx.schema().getIndexFailure(next))
-                    .contains(expectedPopulationFailureCauseMessage(indexId, entityId));
+                    .contains(expectedPopulationFailureCauseMessage(indexId, elementId));
             tx.commit();
         }
     }
@@ -324,22 +321,22 @@ public abstract class StringLengthIndexValidationIT {
         return indexId;
     }
 
-    private long createNode(String propValue) {
-        long expectedNodeId;
+    private String createNode(String propValue) {
+        String expectedNodeId;
         try (Transaction tx = db.beginTx()) {
             Node node = tx.createNode(LABEL_ONE);
             node.setProperty(propKey, propValue);
-            expectedNodeId = node.getId();
+            expectedNodeId = node.getElementId();
             tx.commit();
         }
         return expectedNodeId;
     }
 
-    private void assertReadNode(String propValue, long expectedNodeId) {
+    private void assertReadNode(String propValue, String expectedNodeId) {
         try (Transaction tx = db.beginTx()) {
             Node node = tx.findNode(LABEL_ONE, propKey, propValue);
             Assertions.assertNotNull(node);
-            assertEquals(expectedNodeId, node.getId(), "node id");
+            assertEquals(expectedNodeId, node.getElementId(), "node id");
             tx.commit();
         }
     }

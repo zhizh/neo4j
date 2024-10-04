@@ -85,6 +85,7 @@ import org.neo4j.token.CreatingTokenHolder;
 import org.neo4j.token.TokenHolders;
 import org.neo4j.token.api.NamedToken;
 import org.neo4j.token.api.TokenHolder;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
 @ExtendWith(RandomExtension.class)
@@ -143,6 +144,7 @@ class BulkIndexesCreatorTest {
                         tokenHolder(TokenHolder.TYPE_LABEL),
                         tokenHolder(TokenHolder.TYPE_RELATIONSHIP_TYPE),
                         tokenHolder(TokenHolder.TYPE_PROPERTY_KEY)),
+                ElementIdMapper.PLACEHOLDER,
                 CursorContextFactory.NULL_CONTEXT_FACTORY,
                 PageCacheTracer.NULL,
                 NullLogService.getInstance(),

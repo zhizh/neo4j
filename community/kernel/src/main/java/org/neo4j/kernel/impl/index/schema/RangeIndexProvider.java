@@ -44,6 +44,7 @@ import org.neo4j.kernel.api.index.IndexDirectoryStructure;
 import org.neo4j.kernel.api.index.IndexPopulator;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.util.Preconditions;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.ValueCategory;
 
@@ -141,6 +142,7 @@ public class RangeIndexProvider extends NativeIndexProvider<RangeKey, RangeLayou
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions) {
         return new RangeBlockBasedIndexPopulator(
                 databaseIndexContext,
@@ -152,6 +154,7 @@ public class RangeIndexProvider extends NativeIndexProvider<RangeKey, RangeLayou
                 config,
                 memoryTracker,
                 tokenNameLookup,
+                elementIdMapper,
                 databaseIndexContext.monitors.newMonitor(BlockBasedIndexPopulator.Monitor.class),
                 openOptions);
     }
@@ -162,6 +165,7 @@ public class RangeIndexProvider extends NativeIndexProvider<RangeKey, RangeLayou
             RangeLayout layout,
             IndexDescriptor descriptor,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly) {
         return new RangeIndexAccessor(
@@ -171,6 +175,7 @@ public class RangeIndexProvider extends NativeIndexProvider<RangeKey, RangeLayou
                 recoveryCleanupWorkCollector,
                 descriptor,
                 tokenNameLookup,
+                elementIdMapper,
                 openOptions,
                 readOnly);
     }

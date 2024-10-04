@@ -42,6 +42,7 @@ import org.neo4j.kernel.api.exceptions.index.IndexEntryConflictException;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
 import org.neo4j.kernel.impl.api.index.PhaseTracker;
 import org.neo4j.kernel.impl.index.schema.NodeValueIterator;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.ValueTuple;
 import org.neo4j.values.storable.Values;
@@ -68,6 +69,7 @@ abstract class CompositeIndexPopulatorCompatibility extends PropertyIndexProvide
                             heapBufferFactory(1024),
                             INSTANCE,
                             tokenNameLookup,
+                            ElementIdMapper.PLACEHOLDER,
                             Sets.immutable.empty(),
                             StorageEngineIndexingBehaviour.EMPTY),
                     p -> p.add(
@@ -81,6 +83,7 @@ abstract class CompositeIndexPopulatorCompatibility extends PropertyIndexProvide
                     descriptor,
                     indexSamplingConfig,
                     tokenNameLookup,
+                    ElementIdMapper.PLACEHOLDER,
                     Sets.immutable.empty(),
                     StorageEngineIndexingBehaviour.EMPTY)) {
                 try (ValueIndexReader reader = accessor.newValueReader(NO_USAGE_TRACKING);
@@ -119,6 +122,7 @@ abstract class CompositeIndexPopulatorCompatibility extends PropertyIndexProvide
                             heapBufferFactory(1024),
                             INSTANCE,
                             tokenNameLookup,
+                            ElementIdMapper.PLACEHOLDER,
                             Sets.immutable.empty(),
                             StorageEngineIndexingBehaviour.EMPTY),
                     p -> {
@@ -154,6 +158,7 @@ abstract class CompositeIndexPopulatorCompatibility extends PropertyIndexProvide
                             heapBufferFactory(1024),
                             INSTANCE,
                             tokenNameLookup,
+                            ElementIdMapper.PLACEHOLDER,
                             Sets.immutable.empty(),
                             StorageEngineIndexingBehaviour.EMPTY),
                     p -> {

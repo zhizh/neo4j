@@ -38,6 +38,7 @@ import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.internal.schema.StorageEngineIndexingBehaviour;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 
 class MinimalIndexAccessorCompatibility extends IndexProviderCompatabilityTestBase {
@@ -62,6 +63,7 @@ class MinimalIndexAccessorCompatibility extends IndexProviderCompatabilityTestBa
                     heapBufferFactory(1024),
                     INSTANCE,
                     SIMPLE_NAME_LOOKUP,
+                    ElementIdMapper.PLACEHOLDER,
                     Sets.immutable.empty(),
                     StorageEngineIndexingBehaviour.EMPTY);
             populator.create();

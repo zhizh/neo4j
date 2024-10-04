@@ -86,7 +86,6 @@ import org.neo4j.io.pagecache.context.TransactionIdSnapshotFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
 import org.neo4j.kernel.BinarySupportedKernelVersions;
 import org.neo4j.kernel.KernelVersionProvider;
-import org.neo4j.kernel.api.DefaultElementIdMapperV1;
 import org.neo4j.kernel.api.Kernel;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.SpdKernelTransactionDecorator;
@@ -197,6 +196,7 @@ import org.neo4j.storageengine.api.TransactionIdStore;
 import org.neo4j.storageengine.api.enrichment.ApplyEnrichmentStrategy;
 import org.neo4j.time.SystemNanoClock;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.DefaultElementIdMapperV1;
 import org.neo4j.values.ElementIdMapper;
 
 public class Database extends AbstractDatabase {
@@ -814,6 +814,7 @@ public class Database extends AbstractDatabase {
                 scheduler,
                 indexProviderMap,
                 tokenHolders,
+                elementIdMapper,
                 internalLogProvider,
                 databaseMonitors.newMonitor(IndexMonitor.class),
                 cursorContextFactory,
@@ -839,6 +840,7 @@ public class Database extends AbstractDatabase {
             JobScheduler jobScheduler,
             IndexProviderMap indexProviderMap,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             InternalLogProvider internalLogProvider,
             IndexMonitor indexMonitor,
             CursorContextFactory contextFactory,
@@ -856,6 +858,7 @@ public class Database extends AbstractDatabase {
                 indexProviderMap,
                 indexStoreViewFactory,
                 tokenNameLookup,
+                elementIdMapper,
                 initialSchemaRulesLoader(storageEngine),
                 internalLogProvider,
                 indexMonitor,

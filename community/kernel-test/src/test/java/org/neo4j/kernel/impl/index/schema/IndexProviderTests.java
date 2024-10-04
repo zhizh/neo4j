@@ -65,6 +65,7 @@ import org.neo4j.test.extension.EphemeralNeo4jLayoutExtension;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.pagecache.EphemeralPageCacheExtension;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.values.ElementIdMapper;
 
 @EphemeralPageCacheExtension
 @EphemeralNeo4jLayoutExtension
@@ -177,6 +178,7 @@ abstract class IndexProviderTests {
                         heapBufferFactory(1024),
                         INSTANCE,
                         tokenNameLookup,
+                        ElementIdMapper.PLACEHOLDER,
                         Sets.immutable.empty(),
                         StorageEngineIndexingBehaviour.EMPTY));
     }
@@ -193,6 +195,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -216,6 +219,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         nonFailedPopulator.create();
@@ -227,6 +231,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         failedPopulator.create();
@@ -249,6 +254,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -273,6 +279,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         firstPopulator.create();
@@ -282,6 +289,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         secondPopulator.create();
@@ -311,6 +319,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -352,6 +361,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -374,6 +384,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -397,6 +408,7 @@ abstract class IndexProviderTests {
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();

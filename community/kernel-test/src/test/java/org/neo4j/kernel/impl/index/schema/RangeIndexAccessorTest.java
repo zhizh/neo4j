@@ -46,6 +46,7 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.kernel.api.index.ValueIndexReader;
 import org.neo4j.storageengine.api.ValueIndexEntryUpdate;
 import org.neo4j.storageengine.api.schema.SimpleEntityValueClient;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.CoordinateReferenceSystem;
 import org.neo4j.values.storable.RandomValues;
 import org.neo4j.values.storable.Value;
@@ -69,7 +70,15 @@ class RangeIndexAccessorTest extends GenericNativeIndexAccessorTests<RangeKey> {
                 .withReadOnlyChecker(writable())
                 .build();
         return new RangeIndexAccessor(
-                context, indexFiles, layout, cleanup, INDEX_DESCRIPTOR, tokenNameLookup, Sets.immutable.empty(), false);
+                context,
+                indexFiles,
+                layout,
+                cleanup,
+                INDEX_DESCRIPTOR,
+                tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
+                Sets.immutable.empty(),
+                false);
     }
 
     @Override

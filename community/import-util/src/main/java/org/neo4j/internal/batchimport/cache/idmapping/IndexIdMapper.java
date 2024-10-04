@@ -73,6 +73,7 @@ import org.neo4j.kernel.impl.index.schema.IndexUsageTracking;
 import org.neo4j.kernel.impl.index.schema.NodeValueIterator;
 import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.storageengine.api.IndexEntryUpdate;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
 /**
@@ -135,6 +136,7 @@ public class IndexIdMapper implements IdMapper {
                     bufferFactory,
                     EmptyMemoryTracker.INSTANCE,
                     tokenNameLookup,
+                    ElementIdMapper.PLACEHOLDER,
                     openOptions,
                     indexingBehaviour);
             populator.create();
@@ -223,6 +225,7 @@ public class IndexIdMapper implements IdMapper {
                         populator.descriptor,
                         new IndexSamplingConfig(Config.defaults()),
                         tokenNameLookup,
+                        ElementIdMapper.PLACEHOLDER,
                         openOptions,
                         indexingBehaviour)) {
                     var accessor = accessors.get(entry.getKey());
@@ -252,6 +255,7 @@ public class IndexIdMapper implements IdMapper {
                                 descriptor,
                                 new IndexSamplingConfig(Config.defaults()),
                                 tokenNameLookup,
+                                ElementIdMapper.PLACEHOLDER,
                                 openOptions,
                                 indexingBehaviour);
                         var progress = progressMonitorFactory.singlePart("Prepare ID mapper", numAdded.sum())) {

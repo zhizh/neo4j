@@ -49,7 +49,7 @@ public class TextIndexStringLengthIndexValidationIT extends StringLengthIndexVal
     }
 
     @Override
-    protected String expectedPopulationFailureCauseMessage(long indexId, long entityId) {
+    protected String expectedPopulationFailureCauseMessage(long indexId, String elementId) {
         return "Document contains at least one immense term in field=\"string\" (whose length is longer than the max length 32766), all of which were skipped.";
     }
 }

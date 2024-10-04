@@ -40,6 +40,7 @@ import org.neo4j.kernel.impl.index.schema.DefaultIndexUsageTracking;
 import org.neo4j.kernel.impl.index.schema.IndexUsageTracking;
 import org.neo4j.logging.InternalLogProvider;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * Helper class of {@link IndexingService}. Used mainly as factory of index proxies.
@@ -50,6 +51,7 @@ class IndexProxyCreator {
     private final DatabaseIndexStats indexCounters;
     private final IndexProviderMap providerMap;
     private final TokenNameLookup tokenNameLookup;
+    private final ElementIdMapper elementIdMapper;
     private final InternalLogProvider logProvider;
     private final ImmutableSet<OpenOption> openOptions;
     private final Clock clock;
@@ -61,6 +63,7 @@ class IndexProxyCreator {
             DatabaseIndexStats indexCounters,
             IndexProviderMap providerMap,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             InternalLogProvider logProvider,
             ImmutableSet<OpenOption> openOptions,
             Clock clock,
@@ -70,6 +73,7 @@ class IndexProxyCreator {
         this.indexCounters = indexCounters;
         this.providerMap = providerMap;
         this.tokenNameLookup = tokenNameLookup;
+        this.elementIdMapper = elementIdMapper;
         this.logProvider = logProvider;
         this.openOptions = openOptions;
         this.clock = clock;
@@ -174,7 +178,14 @@ class IndexProxyCreator {
             MemoryTracker memoryTracker) {
         IndexProvider provider = providerMap.lookup(index.getIndexProvider());
         return provider.getPopulator(
-                index, samplingConfig, bufferFactory, memoryTracker, tokenNameLookup, openOptions, indexingBehaviour);
+                index,
+                samplingConfig,
+                bufferFactory,
+                memoryTracker,
+                tokenNameLookup,
+                elementIdMapper,
+                openOptions,
+                indexingBehaviour);
     }
 
     private MinimalIndexAccessor minimalIndexAccessorFromProvider(
@@ -186,7 +197,8 @@ class IndexProxyCreator {
     private IndexAccessor onlineAccessorFromProvider(IndexDescriptor index, IndexSamplingConfig samplingConfig)
             throws IOException {
         IndexProvider provider = providerMap.lookup(index.getIndexProvider());
-        return provider.getOnlineAccessor(index, samplingConfig, tokenNameLookup, openOptions, indexingBehaviour);
+        return provider.getOnlineAccessor(
+                index, samplingConfig, tokenNameLookup, elementIdMapper, openOptions, indexingBehaviour);
     }
 
     private IndexUsageTracking createIndexUsageTracking() {

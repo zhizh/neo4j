@@ -44,4 +44,26 @@ public interface ElementIdMapper {
      * @return the encoded relationship id for the corresponding node id
      */
     String relationshipElementId(long id);
+
+    ElementIdMapper PLACEHOLDER = new ElementIdMapper() {
+        @Override
+        public long nodeId(String id) {
+            return Long.valueOf(id.split("::")[1]);
+        }
+
+        @Override
+        public long relationshipId(String id) {
+            return Long.valueOf(id.split("::")[1]);
+        }
+
+        @Override
+        public String nodeElementId(long id) {
+            return "n::" + String.valueOf(id);
+        }
+
+        @Override
+        public String relationshipElementId(long id) {
+            return "r::" + String.valueOf(id);
+        }
+    };
 }

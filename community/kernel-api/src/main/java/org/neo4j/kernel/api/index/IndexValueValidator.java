@@ -23,6 +23,7 @@ import static java.lang.String.format;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.schema.IndexDescriptor;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 
 public interface IndexValueValidator {
@@ -31,9 +32,18 @@ public interface IndexValueValidator {
     IndexValueValidator NO_VALIDATION = (entityId, values) -> {};
 
     static void throwSizeViolationException(
-            IndexDescriptor descriptor, TokenNameLookup tokenNameLookup, long entityId, int size) {
+            IndexDescriptor descriptor,
+            TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
+            long entityId,
+            int size) {
+        String elementId =
+                switch (descriptor.schema().entityType()) {
+                    case NODE -> elementIdMapper.nodeElementId(entityId);
+                    case RELATIONSHIP -> elementIdMapper.relationshipElementId(entityId);
+                };
         throw new IllegalArgumentException(format(
-                "Property value is too large to index, please see index documentation for limitations. Index: %s, entity id: %d, property size: %d.",
-                descriptor.userDescription(tokenNameLookup), entityId, size));
+                "Property value is too large to index, please see index documentation for limitations. Index: %s, element id: %s, property size: %d.",
+                descriptor.userDescription(tokenNameLookup), elementId, size));
     }
 }

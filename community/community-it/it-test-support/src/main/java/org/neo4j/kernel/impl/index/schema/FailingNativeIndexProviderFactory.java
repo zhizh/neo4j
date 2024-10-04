@@ -44,6 +44,7 @@ import org.neo4j.kernel.impl.api.index.IndexUpdateMode;
 import org.neo4j.kernel.impl.api.index.updater.DelegatingIndexUpdater;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.IndexEntryUpdate;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * Testing utility which takes a fully functional {@link RangeIndexProviderFactory} and turns it into a provider which
@@ -94,6 +95,7 @@ public class FailingNativeIndexProviderFactory extends BuiltInDelegatingIndexPro
                     ByteBufferFactory bufferFactory,
                     MemoryTracker memoryTracker,
                     TokenNameLookup tokenNameLookup,
+                    ElementIdMapper elementIdMapper,
                     ImmutableSet<OpenOption> openOptions,
                     StorageEngineIndexingBehaviour indexingBehaviour) {
                 IndexPopulator actualPopulator = actualProvider.getPopulator(
@@ -102,6 +104,7 @@ public class FailingNativeIndexProviderFactory extends BuiltInDelegatingIndexPro
                         bufferFactory,
                         memoryTracker,
                         tokenNameLookup,
+                        elementIdMapper,
                         openOptions,
                         indexingBehaviour);
                 if (failureTypes.contains(FailureType.POPULATION)) {
@@ -121,12 +124,19 @@ public class FailingNativeIndexProviderFactory extends BuiltInDelegatingIndexPro
                     IndexDescriptor descriptor,
                     IndexSamplingConfig samplingConfig,
                     TokenNameLookup tokenNameLookup,
+                    ElementIdMapper elementIdMapper,
                     ImmutableSet<OpenOption> openOptions,
                     boolean readOnly,
                     StorageEngineIndexingBehaviour indexingBehaviour)
                     throws IOException {
                 IndexAccessor actualAccessor = actualProvider.getOnlineAccessor(
-                        descriptor, samplingConfig, tokenNameLookup, openOptions, readOnly, indexingBehaviour);
+                        descriptor,
+                        samplingConfig,
+                        tokenNameLookup,
+                        elementIdMapper,
+                        openOptions,
+                        readOnly,
+                        indexingBehaviour);
                 return new IndexAccessor.Delegating(actualAccessor) {
                     @Override
                     public IndexUpdater newUpdater(

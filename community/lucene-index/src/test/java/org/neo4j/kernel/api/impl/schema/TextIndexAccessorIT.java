@@ -89,6 +89,7 @@ import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.RandomExtension;
 import org.neo4j.test.extension.testdirectory.TestDirectoryExtension;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.TextValue;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.ValueCategory;
@@ -160,6 +161,7 @@ public class TextIndexAccessorIT {
                 indexDescriptor,
                 samplingConfig,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY)) {
             // when
@@ -187,6 +189,7 @@ public class TextIndexAccessorIT {
                 indexDescriptor,
                 samplingConfig,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY)) {
             assertThrows(
@@ -208,6 +211,7 @@ public class TextIndexAccessorIT {
                 indexDescriptor,
                 samplingConfig,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY)) {
             // when
@@ -231,7 +235,12 @@ public class TextIndexAccessorIT {
         TokenNameLookup tokenNameLookup = mock(TokenNameLookup.class);
         populateWithInitialNodes(descriptor, 0, new LongHashSet());
         try (IndexAccessor accessor = indexProvider.getOnlineAccessor(
-                descriptor, samplingConfig, tokenNameLookup, immutable.empty(), StorageEngineIndexingBehaviour.EMPTY)) {
+                descriptor,
+                samplingConfig,
+                tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
+                immutable.empty(),
+                StorageEngineIndexingBehaviour.EMPTY)) {
             // when
             BitSet expectedEntities = writeRandomThings(accessor, descriptor);
             int expectedCount = expectedEntities.cardinality();
@@ -261,6 +270,7 @@ public class TextIndexAccessorIT {
                 descriptor,
                 samplingConfig,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY)) {
             // when
@@ -288,6 +298,7 @@ public class TextIndexAccessorIT {
                 descriptor,
                 samplingConfig,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY)) {
             // given  an empty index
@@ -314,6 +325,7 @@ public class TextIndexAccessorIT {
                 descriptor,
                 samplingConfig,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY)) {
             // when   an unsupported value type is added
@@ -351,6 +363,7 @@ public class TextIndexAccessorIT {
                 descriptor,
                 samplingConfig,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY)) {
             // given  an empty index
@@ -398,6 +411,7 @@ public class TextIndexAccessorIT {
                 ByteBufferFactory.heapBufferFactory((int) kibiBytes(100)),
                 INSTANCE,
                 mock(TokenNameLookup.class),
+                ElementIdMapper.PLACEHOLDER,
                 immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         Collection<IndexEntryUpdate<IndexDescriptor>> initialData = new ArrayList<>();

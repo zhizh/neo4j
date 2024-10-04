@@ -47,6 +47,7 @@ import org.neo4j.kernel.impl.api.LuceneIndexValueValidator;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.monitoring.Monitors;
+import org.neo4j.values.ElementIdMapper;
 
 public class TrigramIndexProvider extends AbstractTextIndexProvider {
     public static final IndexCapability CAPABILITY = TextIndexCapability.trigram();
@@ -86,6 +87,7 @@ public class TrigramIndexProvider extends AbstractTextIndexProvider {
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour) {
         final var writerConfigBuilder = new IndexWriterConfigBuilder(TextModes.POPULATION, config);
@@ -98,7 +100,7 @@ public class TrigramIndexProvider extends AbstractTextIndexProvider {
         if (luceneIndex.isReadOnly()) {
             throw new UnsupportedOperationException("Can't create populator for read only index");
         }
-        final var validator = valueValidator(descriptor, tokenNameLookup);
+        final var validator = valueValidator(descriptor, tokenNameLookup, elementIdMapper);
         return new TrigramIndexPopulator(luceneIndex, UPDATE_IGNORE_STRATEGY, validator);
     }
 
@@ -107,6 +109,7 @@ public class TrigramIndexProvider extends AbstractTextIndexProvider {
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour)
@@ -117,7 +120,7 @@ public class TrigramIndexProvider extends AbstractTextIndexProvider {
         }
         final var luceneIndex = builder.build();
         luceneIndex.open();
-        final var validator = valueValidator(descriptor, tokenNameLookup);
+        final var validator = valueValidator(descriptor, tokenNameLookup, elementIdMapper);
         return new TrigramIndexAccessor(luceneIndex, descriptor, UPDATE_IGNORE_STRATEGY, validator);
     }
 
@@ -126,7 +129,8 @@ public class TrigramIndexProvider extends AbstractTextIndexProvider {
                 .withIndexStorage(getIndexStorage(descriptor.getId()));
     }
 
-    private LuceneIndexValueValidator valueValidator(IndexDescriptor descriptor, TokenNameLookup tokenNameLookup) {
-        return new LuceneIndexValueValidator(descriptor, tokenNameLookup);
+    private LuceneIndexValueValidator valueValidator(
+            IndexDescriptor descriptor, TokenNameLookup tokenNameLookup, ElementIdMapper elementIdMapper) {
+        return new LuceneIndexValueValidator(descriptor, tokenNameLookup, elementIdMapper);
     }
 }

@@ -45,6 +45,7 @@ import org.neo4j.kernel.api.index.ValueIndexReader;
 import org.neo4j.kernel.impl.api.index.IndexProviderMap;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.values.ElementIdMapper;
 
 public class IndexAccessors implements Closeable {
     private static final String CONSISTENCY_INDEX_ACCESSOR_BUILDER_TAG = "consistencyIndexAccessorBuilder";
@@ -60,6 +61,7 @@ public class IndexAccessors implements Closeable {
             IndexDescriptorProvider indexes,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             CursorContextFactory contextFactory,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour behavior,
@@ -70,6 +72,7 @@ public class IndexAccessors implements Closeable {
                 samplingConfig,
                 null /*we'll use a default below, if this is null*/,
                 tokenNameLookup,
+                elementIdMapper,
                 contextFactory,
                 openOptions,
                 behavior,
@@ -82,6 +85,7 @@ public class IndexAccessors implements Closeable {
             IndexSamplingConfig samplingConfig,
             IndexAccessorLookup accessorLookup,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             CursorContextFactory contextFactory,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour behavior,
@@ -91,7 +95,14 @@ public class IndexAccessors implements Closeable {
             accessorLookup = accessorLookup != null
                     ? accessorLookup
                     : index -> provider(providers, index)
-                            .getOnlineAccessor(index, samplingConfig, tokenNameLookup, openOptions, true, behavior);
+                            .getOnlineAccessor(
+                                    index,
+                                    samplingConfig,
+                                    tokenNameLookup,
+                                    elementIdMapper,
+                                    openOptions,
+                                    true,
+                                    behavior);
             try (var descriptors = descriptorProvider.indexDescriptors(cursorContext, memoryTracker)) {
                 while (descriptors.hasNext()) {
                     try {

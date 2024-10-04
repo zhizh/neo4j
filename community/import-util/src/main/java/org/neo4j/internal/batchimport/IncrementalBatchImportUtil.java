@@ -74,6 +74,7 @@ import org.neo4j.memory.MemoryTracker;
 import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.token.TokenHolders;
 import org.neo4j.util.Preconditions;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * Let's start by just gathering stuff that is common between the (now) two implementations.
@@ -315,6 +316,7 @@ public class IncrementalBatchImportUtil {
                             indexDescriptor,
                             indexSamplingConfig,
                             SchemaUserDescription.TOKEN_ID_NAME_LOOKUP,
+                            ElementIdMapper.PLACEHOLDER,
                             openOptions,
                             indexingBehaviour);
             accessors.put(entry.getKey(), accessor);
@@ -386,6 +388,7 @@ public class IncrementalBatchImportUtil {
                                 index,
                                 new IndexSamplingConfig(Config.defaults()),
                                 incrementalTokenHolders,
+                                ElementIdMapper.PLACEHOLDER,
                                 openOptions,
                                 indexingBehaviour)) {
                     var targetIndex = targetIndexProviders
@@ -394,6 +397,7 @@ public class IncrementalBatchImportUtil {
                                     index,
                                     new IndexSamplingConfig(Config.defaults()),
                                     targetTokenHolders,
+                                    ElementIdMapper.PLACEHOLDER,
                                     openOptions,
                                     indexingBehaviour);
                     try {
@@ -435,6 +439,7 @@ public class IncrementalBatchImportUtil {
                                 indexDescriptor,
                                 new IndexSamplingConfig(dbConfig),
                                 tokenHolders,
+                                ElementIdMapper.PLACEHOLDER,
                                 openOptions,
                                 indexingBehaviour);
                 var context = contextFactory.create("estimate index size")) {

@@ -81,7 +81,7 @@ abstract class GenericBlockBasedIndexPopulatorUpdatesTest<KEY extends GenericKey
                     .hasMessageContaining(
                             "Property value is too large to index, please see index documentation for limitations. Index: Index( id=1, name='index', "
                                     + "type='" + indexType() + "', schema=(:Label1 {property1}), "
-                                    + "indexProvider='Undecided-0' ), entity id: 1, property size: ");
+                                    + "indexProvider='Undecided-0' ), element id: n::1, property size: ");
 
         } finally {
             populator.close(true, NULL_CONTEXT);

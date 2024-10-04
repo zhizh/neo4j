@@ -62,6 +62,7 @@ import org.neo4j.test.extension.DbmsExtension;
 import org.neo4j.test.extension.ExtensionCallback;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 
 @ExtendWith(SoftAssertionsExtension.class)
 @DbmsExtension(configurationCallback = "configure")
@@ -146,6 +147,7 @@ class NodeCheckerIT {
                     (cursorContext, memoryTracker) -> asResourceIterator(indexDescriptors.iterator()),
                     new IndexSamplingConfig(config),
                     tokenHolders,
+                    ElementIdMapper.PLACEHOLDER,
                     contextFactory,
                     storageEngine.getOpenOptions(),
                     storageEngine.indexingBehaviour(),

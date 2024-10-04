@@ -94,6 +94,7 @@ import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.RandomExtension;
 import org.neo4j.test.extension.pagecache.PageCacheExtension;
 import org.neo4j.test.utils.TestDirectory;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.RandomValues;
 import org.neo4j.values.storable.Value;
 
@@ -172,6 +173,7 @@ abstract class IndexPopulationStressTest {
                 heapBufferFactory((int) kibiBytes(40)),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         prevAccessCheck = UnsafeUtil.exchangeNativeAccessCheckEnabled(false);
@@ -213,12 +215,14 @@ abstract class IndexPopulationStressTest {
                         descriptor,
                         samplingConfig,
                         tokenNameLookup,
+                        ElementIdMapper.PLACEHOLDER,
                         Sets.immutable.empty(),
                         StorageEngineIndexingBehaviour.EMPTY);
                 IndexAccessor referenceAccessor = indexProvider.getOnlineAccessor(
                         descriptor2,
                         samplingConfig,
                         tokenNameLookup,
+                        ElementIdMapper.PLACEHOLDER,
                         Sets.immutable.empty(),
                         StorageEngineIndexingBehaviour.EMPTY);
                 var reader = accessor.newValueReader(NO_USAGE_TRACKING);
@@ -335,6 +339,7 @@ abstract class IndexPopulationStressTest {
                 heapBufferFactory((int) kibiBytes(40)),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         referencePopulator.create();

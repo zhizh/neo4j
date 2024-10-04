@@ -44,6 +44,7 @@ import org.neo4j.kernel.lifecycle.LifecycleAdapter;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.storageengine.migration.StoreMigrationParticipant;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * Contract for implementing an index in Neo4j.
@@ -55,7 +56,7 @@ import org.neo4j.storageengine.migration.StoreMigrationParticipant;
  *
  * When an index rule is added, the IndexingService is notified. It will, in turn, ask
  * your {@link IndexProvider} for a
- * {@link #getPopulator(IndexDescriptor, IndexSamplingConfig, ByteBufferFactory, MemoryTracker, TokenNameLookup, ImmutableSet)} batch index writer}.
+ * {@link #getPopulator(IndexDescriptor, IndexSamplingConfig, ByteBufferFactory, MemoryTracker, TokenNameLookup, ElementIdMapper, ImmutableSet)} batch index writer}.
  *
  * A background index job is triggered, and all existing data that applies to the new rule, as well as new data
  * from the "outside", will be inserted using the writer. You are guaranteed that usage of this writer,
@@ -100,7 +101,7 @@ import org.neo4j.storageengine.migration.StoreMigrationParticipant;
  * <h3>Online operation</h3>
  *
  * Once the index is online, the database will move to using the
- * {@link #getOnlineAccessor(IndexDescriptor, IndexSamplingConfig, TokenNameLookup, ImmutableSet) online accessor} to
+ * {@link #getOnlineAccessor(IndexDescriptor, IndexSamplingConfig, TokenNameLookup, ElementIdMapper, ImmutableSet) online accessor} to
  * write to the index.
  */
 public abstract class IndexProvider extends LifecycleAdapter implements IndexConfigCompleter {
@@ -144,6 +145,7 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
                         IndexDescriptor descriptor,
                         IndexSamplingConfig samplingConfig,
                         TokenNameLookup tokenNameLookup,
+                        ElementIdMapper elementIdMapper,
                         ImmutableSet<OpenOption> openOptions,
                         boolean readOnly,
                         StorageEngineIndexingBehaviour indexingBehaviour) {
@@ -163,6 +165,7 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
                         ByteBufferFactory bufferFactory,
                         MemoryTracker memoryTracker,
                         TokenNameLookup tokenNameLookup,
+                        ElementIdMapper elementIdMapper,
                         ImmutableSet<OpenOption> openOptions,
                         StorageEngineIndexingBehaviour indexingBehaviour) {
                     return singlePopulator;
@@ -237,6 +240,7 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour);
 
@@ -247,10 +251,12 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour)
             throws IOException {
-        return getOnlineAccessor(descriptor, samplingConfig, tokenNameLookup, openOptions, false, indexingBehaviour);
+        return getOnlineAccessor(
+                descriptor, samplingConfig, tokenNameLookup, elementIdMapper, openOptions, false, indexingBehaviour);
     }
 
     /**
@@ -260,6 +266,7 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour)
@@ -365,6 +372,7 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
                 ByteBufferFactory bufferFactory,
                 MemoryTracker memoryTracker,
                 TokenNameLookup tokenNameLookup,
+                ElementIdMapper elementIdMapper,
                 ImmutableSet<OpenOption> openOptions,
                 StorageEngineIndexingBehaviour indexingBehaviour) {
             return provider.getPopulator(
@@ -373,6 +381,7 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
                     bufferFactory,
                     memoryTracker,
                     tokenNameLookup,
+                    elementIdMapper,
                     openOptions,
                     indexingBehaviour);
         }
@@ -382,12 +391,19 @@ public abstract class IndexProvider extends LifecycleAdapter implements IndexCon
                 IndexDescriptor descriptor,
                 IndexSamplingConfig samplingConfig,
                 TokenNameLookup tokenNameLookup,
+                ElementIdMapper elementIdMapper,
                 ImmutableSet<OpenOption> openOptions,
                 boolean readOnly,
                 StorageEngineIndexingBehaviour indexingBehaviour)
                 throws IOException {
             return provider.getOnlineAccessor(
-                    descriptor, samplingConfig, tokenNameLookup, openOptions, readOnly, indexingBehaviour);
+                    descriptor,
+                    samplingConfig,
+                    tokenNameLookup,
+                    elementIdMapper,
+                    openOptions,
+                    readOnly,
+                    indexingBehaviour);
         }
 
         @Override

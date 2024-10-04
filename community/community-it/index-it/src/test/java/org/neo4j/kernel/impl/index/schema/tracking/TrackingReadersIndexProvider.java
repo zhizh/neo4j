@@ -28,6 +28,7 @@ import org.neo4j.internal.schema.StorageEngineIndexingBehaviour;
 import org.neo4j.kernel.api.index.IndexAccessor;
 import org.neo4j.kernel.api.index.IndexProvider;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
+import org.neo4j.values.ElementIdMapper;
 
 public class TrackingReadersIndexProvider extends IndexProvider.Delegating {
     private final IndexProvider indexProvider;
@@ -42,11 +43,18 @@ public class TrackingReadersIndexProvider extends IndexProvider.Delegating {
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour)
             throws IOException {
         return new TrackingReadersIndexAccessor(indexProvider.getOnlineAccessor(
-                descriptor, samplingConfig, tokenNameLookup, openOptions, readOnly, indexingBehaviour));
+                descriptor,
+                samplingConfig,
+                tokenNameLookup,
+                elementIdMapper,
+                openOptions,
+                readOnly,
+                indexingBehaviour));
     }
 }

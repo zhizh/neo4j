@@ -127,6 +127,7 @@ import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 import org.neo4j.test.utils.TestDirectory;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -269,6 +270,7 @@ class CheckerTestBase {
                 new IndexSamplingConfig(config),
                 new LookupAccessorsFromRunningDb(indexingService),
                 tokenHolders,
+                ElementIdMapper.PLACEHOLDER,
                 contextFactory,
                 neoStores.getOpenOptions(),
                 new RecordStorageIndexingBehaviour(

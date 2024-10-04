@@ -34,6 +34,7 @@ import org.neo4j.kernel.api.index.ValueIndexReader;
 import org.neo4j.kernel.impl.api.LuceneIndexValueValidator;
 import org.neo4j.kernel.impl.api.index.IndexUpdateMode;
 import org.neo4j.kernel.impl.index.schema.IndexUpdateIgnoreStrategy;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Value;
 
 public class TextIndexAccessor extends AbstractLuceneIndexAccessor<ValueIndexReader, DatabaseIndex<ValueIndexReader>> {
@@ -43,9 +44,10 @@ public class TextIndexAccessor extends AbstractLuceneIndexAccessor<ValueIndexRea
             DatabaseIndex<ValueIndexReader> luceneIndex,
             IndexDescriptor descriptor,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             IndexUpdateIgnoreStrategy ignoreStrategy) {
         super(luceneIndex, descriptor, ignoreStrategy);
-        this.valueValidator = new LuceneIndexValueValidator(descriptor, tokenNameLookup);
+        this.valueValidator = new LuceneIndexValueValidator(descriptor, tokenNameLookup, elementIdMapper);
     }
 
     @Override

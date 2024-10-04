@@ -27,6 +27,7 @@ import org.neo4j.index.internal.gbptree.Layout;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.kernel.api.index.IndexValueValidator;
 import org.neo4j.values.AnyValue;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.SequenceValue;
 import org.neo4j.values.storable.TextArray;
 import org.neo4j.values.storable.TextValue;
@@ -42,16 +43,19 @@ class GenericIndexKeyValidator implements IndexValueValidator {
     private final int maxLength;
     private final Layout<? extends GenericKey<?>, NullValue> layout;
     private final TokenNameLookup tokenNameLookup;
+    private final ElementIdMapper elementIdMapper;
 
     GenericIndexKeyValidator(
             int maxLength,
             IndexDescriptor descriptor,
             Layout<? extends GenericKey<?>, NullValue> layout,
-            TokenNameLookup tokenNameLookup) {
+            TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper) {
         this.maxLength = maxLength;
         this.descriptor = descriptor;
         this.layout = layout;
         this.tokenNameLookup = tokenNameLookup;
+        this.elementIdMapper = elementIdMapper;
     }
 
     @Override
@@ -60,7 +64,8 @@ class GenericIndexKeyValidator implements IndexValueValidator {
         if (worstCaseSize > maxLength) {
             int size = actualLength(values);
             if (size > maxLength) {
-                IndexValueValidator.throwSizeViolationException(descriptor, tokenNameLookup, entityId, size);
+                IndexValueValidator.throwSizeViolationException(
+                        descriptor, tokenNameLookup, elementIdMapper, entityId, size);
             }
         }
     }

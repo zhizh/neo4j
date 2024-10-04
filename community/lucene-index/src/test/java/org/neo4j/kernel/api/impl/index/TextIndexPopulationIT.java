@@ -93,7 +93,7 @@ class TextIndexPopulationIT {
             assertFalse(index.exists());
 
             try (TextIndexAccessor indexAccessor =
-                    new TextIndexAccessor(index, descriptor, SIMPLE_TOKEN_LOOKUP, UPDATE_IGNORE_STRATEGY)) {
+                    new TextIndexAccessor(index, descriptor, SIMPLE_TOKEN_LOOKUP, null, UPDATE_IGNORE_STRATEGY)) {
                 generateUpdates(indexAccessor, affectedNodes);
                 indexAccessor.force(FileFlushEvent.NULL, CursorContext.NULL_CONTEXT);
 

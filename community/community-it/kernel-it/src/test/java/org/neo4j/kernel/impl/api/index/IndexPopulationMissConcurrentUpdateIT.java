@@ -72,6 +72,7 @@ import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import org.neo4j.test.extension.ExtensionCallback;
 import org.neo4j.test.extension.ImpermanentDbmsExtension;
 import org.neo4j.test.extension.Inject;
+import org.neo4j.values.ElementIdMapper;
 
 @ImpermanentDbmsExtension(configurationCallback = "configure")
 public class IndexPopulationMissConcurrentUpdateIT {
@@ -195,6 +196,7 @@ public class IndexPopulationMissConcurrentUpdateIT {
                         ByteBufferFactory bufferFactory,
                         MemoryTracker memoryTracker,
                         TokenNameLookup tokenNameLookup,
+                        ElementIdMapper elementIdMapper,
                         ImmutableSet<OpenOption> openOptions,
                         StorageEngineIndexingBehaviour indexingBehaviour) {
                     return new IndexPopulator.Adapter() {
@@ -244,6 +246,7 @@ public class IndexPopulationMissConcurrentUpdateIT {
                         IndexDescriptor descriptor,
                         IndexSamplingConfig samplingConfig,
                         TokenNameLookup tokenNameLookup,
+                        ElementIdMapper elementIdMapper,
                         ImmutableSet<OpenOption> openOptions,
                         boolean readOnly,
                         StorageEngineIndexingBehaviour indexingBehaviour) {

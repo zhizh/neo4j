@@ -36,6 +36,7 @@ import org.neo4j.kernel.api.index.IndexValueValidator;
 import org.neo4j.test.RandomSupport;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.RandomExtension;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.TextArray;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
@@ -45,7 +46,8 @@ class LuceneIndexValueValidatorTest {
     private static final IndexDescriptor descriptor = IndexPrototype.forSchema(SchemaDescriptors.forLabel(1, 1))
             .withName("test")
             .materialise(1);
-    private static final IndexValueValidator VALIDATOR = new LuceneIndexValueValidator(descriptor, SIMPLE_TOKEN_LOOKUP);
+    private static final IndexValueValidator VALIDATOR =
+            new LuceneIndexValueValidator(descriptor, SIMPLE_TOKEN_LOOKUP, ElementIdMapper.PLACEHOLDER);
     private static final long ENTITY_ID = 42;
 
     @Inject

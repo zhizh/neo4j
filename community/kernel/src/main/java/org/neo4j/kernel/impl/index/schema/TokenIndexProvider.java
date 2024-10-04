@@ -60,6 +60,7 @@ import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.storageengine.migration.StoreMigrationParticipant;
 import org.neo4j.storageengine.migration.TokenIndexMigrator;
 import org.neo4j.util.Preconditions;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.ValueCategory;
 
 public class TokenIndexProvider extends IndexProvider {
@@ -97,6 +98,7 @@ public class TokenIndexProvider extends IndexProvider {
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour) {
         if (databaseIndexContext.readOnlyChecker.isReadOnly()) {
@@ -112,6 +114,7 @@ public class TokenIndexProvider extends IndexProvider {
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour) {

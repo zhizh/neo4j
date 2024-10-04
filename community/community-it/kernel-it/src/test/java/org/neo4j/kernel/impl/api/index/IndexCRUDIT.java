@@ -73,6 +73,7 @@ import org.neo4j.storageengine.api.ValueIndexEntryUpdate;
 import org.neo4j.storageengine.migration.StoreMigrationParticipant;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import org.neo4j.test.extension.EphemeralFileSystemExtension;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
 @ExtendWith(EphemeralFileSystemExtension.class)
@@ -193,6 +194,7 @@ class IndexCRUDIT {
                         any(),
                         any(),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(writer);
@@ -200,6 +202,7 @@ class IndexCRUDIT {
                         any(IndexDescriptor.class),
                         any(IndexSamplingConfig.class),
                         any(TokenNameLookup.class),
+                        any(ElementIdMapper.class),
                         any(),
                         any()))
                 .thenReturn(writer);

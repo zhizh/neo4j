@@ -104,6 +104,7 @@ import org.neo4j.test.extension.ThreadingExtension;
 import org.neo4j.test.extension.pagecache.EphemeralPageCacheExtension;
 import org.neo4j.test.utils.TestDirectory;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.values.ElementIdMapper;
 
 @EphemeralPageCacheExtension
 @ExtendWith(ThreadingExtension.class)
@@ -347,6 +348,7 @@ public class DatabaseCompositeIndexAccessorTest {
                 heapBufferFactory(1024),
                 INSTANCE,
                 SIMPLE_NAME_LOOKUP,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -356,6 +358,7 @@ public class DatabaseCompositeIndexAccessorTest {
                 descriptor,
                 SAMPLING_CONFIG,
                 SIMPLE_NAME_LOOKUP,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
     }

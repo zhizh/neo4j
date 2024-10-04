@@ -84,6 +84,7 @@ import org.neo4j.token.CreatingTokenHolder;
 import org.neo4j.token.TokenHolders;
 import org.neo4j.token.api.NamedToken;
 import org.neo4j.token.api.TokenHolder;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.Values;
 
 @PageCacheExtension
@@ -324,7 +325,12 @@ class IndexIdMapperIT {
                 .materialise(indexId);
         var indexSamplingConfig = new IndexSamplingConfig(Config.defaults());
         var accessor = indexProvider.getOnlineAccessor(
-                descriptor, indexSamplingConfig, tokenHolders, openOptions, indexingBehaviour);
+                descriptor,
+                indexSamplingConfig,
+                tokenHolders,
+                ElementIdMapper.PLACEHOLDER,
+                openOptions,
+                indexingBehaviour);
         try (var updater = accessor.newUpdater(IndexUpdateMode.ONLINE, NULL_CONTEXT, false)) {
             for (var dataEntry : data.entrySet()) {
                 updater.process(IndexEntryUpdate.add(dataEntry.getValue(), descriptor, Values.of(dataEntry.getKey())));

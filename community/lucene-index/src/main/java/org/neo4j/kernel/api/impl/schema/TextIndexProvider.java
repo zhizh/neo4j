@@ -45,6 +45,7 @@ import org.neo4j.kernel.api.index.IndexPopulator;
 import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.monitoring.Monitors;
+import org.neo4j.values.ElementIdMapper;
 
 public class TextIndexProvider extends AbstractTextIndexProvider {
     public static final IndexCapability CAPABILITY = TextIndexCapability.text();
@@ -84,6 +85,7 @@ public class TextIndexProvider extends AbstractTextIndexProvider {
             ByteBufferFactory bufferFactory,
             MemoryTracker memoryTracker,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             StorageEngineIndexingBehaviour indexingBehaviour) {
         final var writerConfigBuilder = new IndexWriterConfigBuilder(TextModes.POPULATION, config);
@@ -105,6 +107,7 @@ public class TextIndexProvider extends AbstractTextIndexProvider {
             IndexDescriptor descriptor,
             IndexSamplingConfig samplingConfig,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             ImmutableSet<OpenOption> openOptions,
             boolean readOnly,
             StorageEngineIndexingBehaviour indexingBehaviour)
@@ -115,7 +118,7 @@ public class TextIndexProvider extends AbstractTextIndexProvider {
         }
         final var index = builder.build();
         index.open();
-        return new TextIndexAccessor(index, descriptor, tokenNameLookup, UPDATE_IGNORE_STRATEGY);
+        return new TextIndexAccessor(index, descriptor, tokenNameLookup, elementIdMapper, UPDATE_IGNORE_STRATEGY);
     }
 
     private TextIndexBuilder builder(IndexDescriptor descriptor, IndexSamplingConfig samplingConfig) {

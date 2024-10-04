@@ -53,6 +53,7 @@ import org.neo4j.kernel.impl.api.index.IndexSamplingConfig;
 import org.neo4j.kernel.impl.api.index.IndexUpdateMode;
 import org.neo4j.storageengine.api.ValueIndexEntryUpdate;
 import org.neo4j.storageengine.api.schema.SimpleEntityValueClient;
+import org.neo4j.values.ElementIdMapper;
 import org.neo4j.values.storable.RandomValues;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.ValueGroup;
@@ -78,6 +79,7 @@ abstract class IndexAccessorCompatibility extends PropertyIndexProviderCompatibi
                 heapBufferFactory(1024),
                 INSTANCE,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
         populator.create();
@@ -86,6 +88,7 @@ abstract class IndexAccessorCompatibility extends PropertyIndexProviderCompatibi
                 descriptor,
                 indexSamplingConfig,
                 tokenNameLookup,
+                ElementIdMapper.PLACEHOLDER,
                 Sets.immutable.empty(),
                 StorageEngineIndexingBehaviour.EMPTY);
     }

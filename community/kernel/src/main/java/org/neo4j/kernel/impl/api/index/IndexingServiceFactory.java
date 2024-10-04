@@ -39,6 +39,7 @@ import org.neo4j.logging.InternalLogProvider;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.storageengine.api.ReadableStorageEngine;
+import org.neo4j.values.ElementIdMapper;
 
 /**
  * Factory to create {@link IndexingService}
@@ -53,6 +54,7 @@ public final class IndexingServiceFactory {
             IndexProviderMap providerMap,
             IndexStoreViewFactory indexStoreViewFactory,
             TokenNameLookup tokenNameLookup,
+            ElementIdMapper elementIdMapper,
             Iterable<IndexDescriptor> indexRules,
             InternalLogProvider internalLogProvider,
             IndexMonitor monitor,
@@ -85,6 +87,7 @@ public final class IndexingServiceFactory {
                 indexCounters,
                 providerMap,
                 tokenNameLookup,
+                elementIdMapper,
                 internalLogProvider,
                 storageEngine.getOpenOptions(),
                 clock,
