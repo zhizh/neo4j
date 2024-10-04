@@ -40,8 +40,9 @@ import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe.emptyLists
 import org.neo4j.cypher.internal.runtime.slotted.SlottedRow
 import org.neo4j.cypher.internal.runtime.slotted.expressions.TrailState
 import org.neo4j.cypher.internal.runtime.slotted.helpers.NullChecker
-import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.UniqueRelationships
-import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.UniquenessConstraint
+import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.TrailModeConstraint
+import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.TraversalModeConstraint
+import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.WalkModeConstraint
 import org.neo4j.cypher.internal.util.Repetition
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.memory.HeapEstimator
@@ -53,7 +54,7 @@ import org.neo4j.values.virtual.VirtualValues
 
 import scala.annotation.tailrec
 
-sealed trait SlottedRepeatState extends Measurable {
+sealed trait SlottedRepeatState {
   val node: Long
   val groupNodes: HeapTrackingArrayList[ListValue]
   val groupRelationships: HeapTrackingArrayList[ListValue]
@@ -62,7 +63,7 @@ sealed trait SlottedRepeatState extends Measurable {
 }
 
 case class SlottedTrailState(
-  constraint: UniqueRelationships,
+  constraint: TrailModeConstraint,
   node: Long,
   groupNodes: HeapTrackingArrayList[ListValue],
   groupRelationships: HeapTrackingArrayList[ListValue],
@@ -85,6 +86,22 @@ object SlottedTrailState {
   final val SHALLOW_SIZE: Long = HeapEstimator.shallowSizeOfInstance(classOf[SlottedTrailState])
 }
 
+case class SlottedWalkState(
+  node: Long,
+  groupNodes: HeapTrackingArrayList[ListValue],
+  groupRelationships: HeapTrackingArrayList[ListValue],
+  iterations: Int,
+  closeGroupsOnClose: Boolean
+) extends SlottedRepeatState {
+
+  def close(): Unit = {
+    if (closeGroupsOnClose) {
+      groupNodes.close()
+      groupRelationships.close()
+    }
+  }
+}
+
 case class RepeatSlottedPipe(
   source: Pipe,
   inner: Pipe,
@@ -95,7 +112,7 @@ case class RepeatSlottedPipe(
   innerEndSlot: Slot,
   groupNodes: Array[GroupSlot],
   groupRelationships: Array[GroupSlot],
-  uniquenessConstraint: UniquenessConstraint,
+  uniquenessConstraint: TraversalModeConstraint,
   slots: SlotConfiguration,
   rhsSlots: SlotConfiguration,
   argumentSize: SlotConfiguration.Size,
@@ -108,7 +125,7 @@ case class RepeatSlottedPipe(
 
   private def createNewState(outerRow: CypherRow, startNode: Long, tracker: MemoryTracker): SlottedRepeatState =
     uniquenessConstraint match {
-      case constraint @ RepeatSlottedPipe.UniqueRelationships(
+      case constraint @ RepeatSlottedPipe.TrailModeConstraint(
           _,
           _,
           previouslyBoundRelationships,
@@ -134,6 +151,16 @@ case class RepeatSlottedPipe(
           emptyGroupNodes,
           emptyGroupRelationships,
           relationshipsSeen,
+          iterations = 1,
+          // empty groups are reused for every argument, so can not be closed until the whole query finishes
+          closeGroupsOnClose = false
+        )
+
+      case WalkModeConstraint =>
+        SlottedWalkState(
+          startNode,
+          emptyGroupNodes,
+          emptyGroupRelationships,
           iterations = 1,
           // empty groups are reused for every argument, so can not be closed until the whole query finishes
           closeGroupsOnClose = false
@@ -175,6 +202,20 @@ case class RepeatSlottedPipe(
           trailState.iterations + 1,
           closeGroupsOnClose = true
         )
+
+      case walkState: SlottedWalkState =>
+        SlottedWalkState(
+          innerEndNode,
+          RepeatSlottedPipe.computeNodeGroupVariables(groupNodes, walkState.groupNodes, row, tracker),
+          RepeatSlottedPipe.computeRelGroupVariables(
+            groupRelationships,
+            walkState.groupRelationships,
+            row,
+            tracker
+          ),
+          walkState.iterations + 1,
+          closeGroupsOnClose = true
+        )
     }
 
   private def filterRow(row: CypherRow, repeatState: SlottedRepeatState): Boolean =
@@ -194,6 +235,7 @@ case class RepeatSlottedPipe(
           i += 1
         }
         relationshipsAreUnique
+      case _: SlottedWalkState => true
     }
 
   override protected def internalCreateResults(
@@ -290,7 +332,8 @@ case class RepeatSlottedPipe(
 
               stackHead match {
                 case t: SlottedTrailState =>
-                  rhsInitialRow.setRefAt(t.constraint.trailStateMetadataSlot, RuntimeMetadataValue(stackHead))
+                  rhsInitialRow.setRefAt(t.constraint.trailStateMetadataSlot, RuntimeMetadataValue(t))
+                case _: SlottedWalkState => ()
               }
 
               val innerState = state.withInitialContext(rhsInitialRow)
@@ -312,14 +355,16 @@ case class RepeatSlottedPipe(
 
 object RepeatSlottedPipe {
 
-  sealed trait UniquenessConstraint
+  sealed trait TraversalModeConstraint
 
-  case class UniqueRelationships(
+  case class TrailModeConstraint(
     trailStateMetadataSlot: Int,
     innerRelationships: Array[Slot],
     previouslyBoundRelationships: Array[Slot],
     previouslyBoundRelationshipGroups: Array[Slot]
-  ) extends UniquenessConstraint
+  ) extends TraversalModeConstraint
+
+  case object WalkModeConstraint extends TraversalModeConstraint
 
   def computeNodeGroupVariables(
     groupNodeSlots: Array[GroupSlot],

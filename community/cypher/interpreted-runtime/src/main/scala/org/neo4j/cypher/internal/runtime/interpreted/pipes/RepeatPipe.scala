@@ -29,8 +29,9 @@ import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.IsNoValue
 import org.neo4j.cypher.internal.runtime.PrefetchingIterator
-import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe.UniqueRelationships
-import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe.UniquenessConstraint
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe.TrailModeConstraint
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe.TraversalModeConstraint
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe.WalkModeConstraint
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.RepeatPipe.emptyLists
 import org.neo4j.cypher.internal.util.Repetition
 import org.neo4j.cypher.internal.util.attribution.Id
@@ -54,13 +55,13 @@ sealed trait LegacyRepeatState {
   def close(): Unit
 }
 
-case class UniqueRelationshipsLegacyRepeatState(
+case class TrailLegacyRepeatState(
   endNode: Long,
   groupNodes: HeapTrackingArrayList[ListValue],
   groupRelationships: HeapTrackingArrayList[ListValue],
   iterations: Int,
   closeGroupsOnClose: Boolean,
-  constraint: UniqueRelationships,
+  constraint: TrailModeConstraint,
   relationshipsSeen: HeapTrackingLongHashSet
 ) extends LegacyRepeatState {
 
@@ -70,6 +71,22 @@ case class UniqueRelationshipsLegacyRepeatState(
       groupRelationships.close()
     }
     relationshipsSeen.close()
+  }
+}
+
+case class WalkLegacyRepeatState(
+  endNode: Long,
+  groupNodes: HeapTrackingArrayList[ListValue],
+  groupRelationships: HeapTrackingArrayList[ListValue],
+  iterations: Int,
+  closeGroupsOnClose: Boolean
+) extends LegacyRepeatState {
+
+  def close(): Unit = {
+    if (closeGroupsOnClose) {
+      groupNodes.close()
+      groupRelationships.close()
+    }
   }
 }
 
@@ -83,7 +100,7 @@ case class RepeatPipe(
   innerEnd: String,
   groupNodes: Set[VariableGrouping],
   groupRelationships: Set[VariableGrouping],
-  uniquenessConstraint: UniquenessConstraint,
+  uniquenessConstraint: TraversalModeConstraint,
   reverseGroupVariableProjections: Boolean
 )(val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
 
@@ -98,7 +115,7 @@ case class RepeatPipe(
     tracker: MemoryTracker
   ): LegacyRepeatState =
     uniquenessConstraint match {
-      case constraint @ RepeatPipe.UniqueRelationships(
+      case constraint @ RepeatPipe.TrailModeConstraint(
           _,
           previouslyBoundRelationships,
           previouslyBoundRelationshipGroups
@@ -115,7 +132,7 @@ case class RepeatPipe(
             relationshipsSeen.add(castOrFail[VirtualRelationshipValue](i.next()).id())
           }
         }
-        UniqueRelationshipsLegacyRepeatState(
+        TrailLegacyRepeatState(
           startNode.id(),
           emptyGroupNodes,
           emptyGroupRelationships,
@@ -123,6 +140,14 @@ case class RepeatPipe(
           closeGroupsOnClose = false,
           constraint,
           relationshipsSeen
+        )
+      case WalkModeConstraint =>
+        WalkLegacyRepeatState(
+          startNode.id(),
+          emptyGroupNodes,
+          emptyGroupRelationships,
+          iterations = 1,
+          closeGroupsOnClose = false
         )
     }
 
@@ -135,7 +160,7 @@ case class RepeatPipe(
     tracker: MemoryTracker
   ): Option[LegacyRepeatState] =
     repeatState match {
-      case trailState: UniqueRelationshipsLegacyRepeatState =>
+      case trailState: TrailLegacyRepeatState =>
         val newSet = HeapTrackingCollections.newLongSet(tracker, trailState.relationshipsSeen)
         val innerRelationshipsArray = trailState.constraint.innerRelationships
 
@@ -148,7 +173,7 @@ case class RepeatPipe(
         }
 
         if (allRelationshipsUnique) {
-          Some(UniqueRelationshipsLegacyRepeatState(
+          Some(TrailLegacyRepeatState(
             innerEndNode.id(),
             newGroupNodes,
             newGroupRels,
@@ -158,11 +183,19 @@ case class RepeatPipe(
             newSet
           ))
         } else None
+      case walkState: WalkLegacyRepeatState =>
+        Some(WalkLegacyRepeatState(
+          innerEndNode.id(),
+          newGroupNodes,
+          newGroupRels,
+          walkState.iterations + 1,
+          closeGroupsOnClose = true
+        ))
     }
 
   private def filterRow(row: CypherRow, repeatState: LegacyRepeatState): Boolean =
     repeatState match {
-      case trailState: UniqueRelationshipsLegacyRepeatState =>
+      case trailState: TrailLegacyRepeatState =>
         val innerRelationshipsArray = trailState.constraint.innerRelationships
         var relationshipsAreUnique = true
         var i = 0
@@ -174,6 +207,8 @@ case class RepeatPipe(
           i += 1
         }
         relationshipsAreUnique
+      case _: WalkLegacyRepeatState =>
+        true
     }
 
   override protected def internalCreateResults(
@@ -298,11 +333,13 @@ object RepeatPipe {
     emptyList
   }
 
-  sealed trait UniquenessConstraint
+  sealed trait TraversalModeConstraint
 
-  case class UniqueRelationships(
+  case class TrailModeConstraint(
     innerRelationships: Array[String],
     previouslyBoundRelationships: Set[String],
     previouslyBoundRelationshipGroups: Set[String]
-  ) extends UniquenessConstraint
+  ) extends TraversalModeConstraint
+
+  case object WalkModeConstraint extends TraversalModeConstraint
 }

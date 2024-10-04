@@ -4136,6 +4136,29 @@ sealed trait PlanWithVariableGroupings extends LogicalPlan {
 }
 
 /**
+ * Base class for repeated pattern expansion.
+ * Used to solve queries like: `(start) [(innerStart)-->(innerEnd)]{i, j} (end)`
+ */
+sealed abstract class Repeat(idGen: IdGen)
+    extends LogicalBinaryPlan(idGen) with ApplyPlan with PlanWithVariableGroupings {
+
+  def repetition: Repetition
+  def start: LogicalVariable
+  def end: LogicalVariable
+  def innerStart: LogicalVariable
+  def innerEnd: LogicalVariable
+  def reverseGroupVariableProjections: Boolean
+
+  override val availableSymbols: Set[LogicalVariable] =
+    left.availableSymbols + end + start ++ nodeVariableGroupings.map(_.group) ++ relationshipVariableGroupings.map(
+      _.group
+    )
+
+  override val distinctness: Distinctness = NotDistinct
+}
+
+/**
+ * Repeated pattern expansion with a unique constraint on relationships.
  * Used to solve queries like: `(start) [(innerStart)-->(innerEnd)]{i, j} (end)`
  *
  * @param left                              source plan
@@ -4170,8 +4193,7 @@ case class RepeatTrail(
   previouslyBoundRelationships: Set[LogicalVariable],
   previouslyBoundRelationshipGroups: Set[LogicalVariable],
   reverseGroupVariableProjections: Boolean
-)(implicit idGen: IdGen)
-    extends LogicalBinaryPlan(idGen) with ApplyPlan with PlanWithVariableGroupings {
+)(implicit idGen: IdGen) extends Repeat(idGen) {
   override def withLhs(newLHS: LogicalPlan)(idGen: IdGen): LogicalBinaryPlan = copy(left = newLHS)(idGen)
   override def withRhs(newRHS: LogicalPlan)(idGen: IdGen): LogicalBinaryPlan = copy(right = newRHS)(idGen)
 
@@ -4184,13 +4206,49 @@ case class RepeatTrail(
     nodeVariableGroupings = nodeVariableGroupings,
     relationshipVariableGroupings = relationshipVariableGroupings
   )(idGen)
+}
 
-  override val availableSymbols: Set[LogicalVariable] =
-    left.availableSymbols + end + start ++ nodeVariableGroupings.map(_.group) ++ relationshipVariableGroupings.map(
-      _.group
-    )
-  override val distinctness: Distinctness = NotDistinct
+/**
+ * Repeated pattern expansion without any unique constraint.
+ * Used to solve queries like: `(start) [(innerStart)-->(innerEnd)]{i, j} (end)`
+ *
+ * @param left                              source plan
+ * @param right                             inner plan to repeat
+ * @param repetition                        how many times to repeat the RHS on each partial result
+ * @param start                             the outside node variable where the quantified pattern
+ *                                          starts. Assumed to be present in the output of `left`.
+ *                                          [[start]] (and for subsequent iterations [[innerEnd]]) is projected to [[innerStart]].
+ * @param end                               the outside node variable where the quantified pattern
+ *                                          ends. Projected in output if present.
+ * @param innerStart                        the node variable where the inner pattern starts
+ * @param innerEnd                          the node variable where the inner pattern ends.
+ *                                          [[innerEnd]] will eventually be projected to [[end]] (if present).
+ * @param nodeVariableGroupings             node variables to aggregate
+ * @param relationshipVariableGroupings     relationship variables to aggregate
+ * @param reverseGroupVariableProjections   if `true` reverse the group variable lists
+ */
+case class RepeatWalk(
+  override val left: LogicalPlan,
+  override val right: LogicalPlan,
+  repetition: Repetition,
+  start: LogicalVariable,
+  end: LogicalVariable,
+  innerStart: LogicalVariable,
+  innerEnd: LogicalVariable,
+  override val nodeVariableGroupings: Set[VariableGrouping],
+  override val relationshipVariableGroupings: Set[VariableGrouping],
+  reverseGroupVariableProjections: Boolean
+)(implicit idGen: IdGen) extends Repeat(idGen) {
+  override def withLhs(newLHS: LogicalPlan)(idGen: IdGen): LogicalBinaryPlan = copy(left = newLHS)(idGen)
+  override def withRhs(newRHS: LogicalPlan)(idGen: IdGen): LogicalBinaryPlan = copy(right = newRHS)(idGen)
 
+  override def withVariableGroupings(
+    nodeVariableGroupings: Set[VariableGrouping],
+    relationshipVariableGroupings: Set[VariableGrouping]
+  )(idGen: IdGen): PlanWithVariableGroupings = copy(
+    nodeVariableGroupings = nodeVariableGroupings,
+    relationshipVariableGroupings = relationshipVariableGroupings
+  )(idGen)
 }
 
 /**

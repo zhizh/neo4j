@@ -337,6 +337,7 @@ import org.neo4j.cypher.internal.logical.plans.RenameServer
 import org.neo4j.cypher.internal.logical.plans.RenameUser
 import org.neo4j.cypher.internal.logical.plans.RepeatOptions
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
+import org.neo4j.cypher.internal.logical.plans.RepeatWalk
 import org.neo4j.cypher.internal.logical.plans.RequireRole
 import org.neo4j.cypher.internal.logical.plans.RevokeDatabaseAction
 import org.neo4j.cypher.internal.logical.plans.RevokeDbmsAction
@@ -8065,6 +8066,64 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
             Set("a")
           )
         ),
+        List(details("(anon_0) (...){0, } (end)")),
+        Set("r", "a", "anon_2", "anon_0", "end")
+      )
+    )
+  }
+
+  test("Repeat(Walk)") {
+    assertGood(
+      attach(
+        RepeatWalk(
+          lhsLP,
+          rhsLP,
+          Repetition(0, Unlimited),
+          varFor("start"),
+          varFor("end"),
+          varFor("  a@1"),
+          varFor("  UNNAMED1"),
+          Set(
+            variableGrouping(varFor("  a@1"), varFor("  a@2")),
+            variableGrouping(varFor("  UNNAMED1"), varFor("  UNNAMED2"))
+          ),
+          Set(variableGrouping(varFor("  r@1"), varFor("  r@2"))),
+          reverseGroupVariableProjections = false
+        ),
+        2345.0
+      ),
+      planDescription(
+        id,
+        "Repeat(Walk)",
+        TwoChildren(lhsPD, rhsPD),
+        List(details("(start) (...){0, } (end)")),
+        Set("r", "a", "anon_2", "start", "end")
+      )
+    )
+
+    assertGood(
+      attach(
+        RepeatWalk(
+          lhsLP,
+          rhsLP,
+          Repetition(0, Unlimited),
+          varFor("  UNNAMED0"),
+          varFor("  end@1"),
+          varFor("  a@1"),
+          varFor("  UNNAMED1"),
+          Set(
+            variableGrouping(varFor("  a@1"), varFor("  a@2")),
+            variableGrouping(varFor("  UNNAMED1"), varFor("  UNNAMED2"))
+          ),
+          Set(variableGrouping(varFor("  r@1"), varFor("  r@2"))),
+          reverseGroupVariableProjections = false
+        ),
+        2345.0
+      ),
+      planDescription(
+        id,
+        "Repeat(Walk)",
+        TwoChildren(lhsPD, rhsPD),
         List(details("(anon_0) (...){0, } (end)")),
         Set("r", "a", "anon_2", "anon_0", "end")
       )

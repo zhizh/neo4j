@@ -127,6 +127,7 @@ import org.neo4j.cypher.internal.logical.plans.ProduceResult
 import org.neo4j.cypher.internal.logical.plans.Projection
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
+import org.neo4j.cypher.internal.logical.plans.RepeatWalk
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.SelectOrAntiSemiApply
 import org.neo4j.cypher.internal.logical.plans.SelectOrSemiApply
@@ -293,7 +294,8 @@ import org.neo4j.cypher.internal.runtime.slotted.pipes.OrderedDistinctSlottedPri
 import org.neo4j.cypher.internal.runtime.slotted.pipes.OrderedDistinctSlottedSinglePrimitivePipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.OrderedUnionSlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe
-import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.UniqueRelationships
+import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.TrailModeConstraint
+import org.neo4j.cypher.internal.runtime.slotted.pipes.RepeatSlottedPipe.WalkModeConstraint
 import org.neo4j.cypher.internal.runtime.slotted.pipes.RollUpApplySlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.SelectOrSemiApplySlottedPipe
 import org.neo4j.cypher.internal.runtime.slotted.pipes.ShortestPathSlottedPipe
@@ -1972,12 +1974,42 @@ class SlottedPipeMapper(
           rhsSlots(innerEnd),
           groupNodes.map(n => GroupSlot(rhsSlots(n.singleton), slots(n.group))).toArray,
           groupRelationships.map(r => GroupSlot(rhsSlots(r.singleton), slots(r.group))).toArray,
-          UniqueRelationships(
+          TrailModeConstraint(
             rhsSlots.getMetaDataOffsetFor(SlotAllocation.TRAIL_STATE_METADATA_KEY, id),
             innerRelationships.map(r => rhsSlots(r)).toArray,
             previouslyBoundRelationships.map(r => lhsSlots(r)).toArray,
             previouslyBoundRelationshipGroups.map(r => lhsSlots(r)).toArray
           ),
+          slots,
+          rhsSlots,
+          argumentSize,
+          reverseGroupVariableProjections
+        )(id = id)
+
+      case RepeatWalk(
+          _,
+          _,
+          repetition,
+          start,
+          end,
+          innerStart,
+          innerEnd,
+          groupNodes,
+          groupRelationships,
+          reverseGroupVariableProjections
+        ) =>
+        val rhsSlots = slotConfigs(rhs.id)
+        RepeatSlottedPipe(
+          lhs,
+          rhs,
+          repetition,
+          slots(start),
+          slots.getLongOffsetFor(end),
+          rhsSlots.getLongOffsetFor(innerStart),
+          rhsSlots(innerEnd),
+          groupNodes.map(n => GroupSlot(rhsSlots(n.singleton), slots(n.group))).toArray,
+          groupRelationships.map(r => GroupSlot(rhsSlots(r.singleton), slots(r.group))).toArray,
+          WalkModeConstraint,
           slots,
           rhsSlots,
           argumentSize,

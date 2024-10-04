@@ -150,6 +150,7 @@ import org.neo4j.cypher.internal.logical.plans.RelationshipCountFromCountStore
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
+import org.neo4j.cypher.internal.logical.plans.RepeatWalk
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.RunQueryAt
@@ -2034,11 +2035,37 @@ case class InterpretedPipeMapper(
           innerEnd.name,
           groupNodes,
           groupRelationships,
-          RepeatPipe.UniqueRelationships(
+          RepeatPipe.TrailModeConstraint(
             innerRelationships.map(_.name).toArray,
             previouslyBoundRelationships.map(_.name),
             previouslyBoundRelationshipGroups.map(_.name)
           ),
+          reverseGroupVariableProjections
+        )(id = id)
+
+      case RepeatWalk(
+          _,
+          _,
+          repetition,
+          start,
+          end,
+          innerStart,
+          innerEnd,
+          groupNodes,
+          groupRelationships,
+          reverseGroupVariableProjections
+        ) =>
+        RepeatPipe(
+          lhs,
+          rhs,
+          repetition,
+          start.name,
+          end.name,
+          innerStart.name,
+          innerEnd.name,
+          groupNodes,
+          groupRelationships,
+          RepeatPipe.WalkModeConstraint,
           reverseGroupVariableProjections
         )(id = id)
 

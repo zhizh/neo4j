@@ -726,6 +726,28 @@ object LogicalPlanToPlanBuilderString {
           previouslyBoundRelationshipGroups,
           reverseGroupVariableProjections
         )
+      case RepeatWalk(
+          _,
+          _,
+          repetition,
+          start,
+          end,
+          innerStart,
+          innerEnd,
+          groupNodes,
+          groupRelationships,
+          reverseGroupVariableProjections
+        ) =>
+        walkParametersString(
+          repetition,
+          start,
+          end,
+          innerStart,
+          innerEnd,
+          groupNodes,
+          groupRelationships,
+          reverseGroupVariableProjections
+        )
 
       case NodeByIdSeek(idName, ids, argumentIds) =>
         val idsString: String = idsStr(ids)
@@ -1597,6 +1619,25 @@ object LogicalPlanToPlanBuilderString {
         reverseGroupVariableProjections
 
     s"TrailParameters($trailParameters)"
+  }
+
+  private def walkParametersString(
+    repetition: Repetition,
+    start: LogicalVariable,
+    end: LogicalVariable,
+    innerStart: LogicalVariable,
+    innerEnd: LogicalVariable,
+    groupNodes: Set[VariableGrouping],
+    groupRelationships: Set[VariableGrouping],
+    reverseGroupVariableProjections: Boolean
+  ) = {
+
+    val parameters =
+      s"""${repetition.min}, ${repetition.max}, "${start.name}", "${end.name}", "${innerStart.name}", "${innerEnd.name}", """ +
+        s"Set(${groupEntitiesString(groupNodes)}), Set(${groupEntitiesString(groupRelationships)}), " +
+        reverseGroupVariableProjections
+
+    s"WalkParameters($parameters)"
   }
 
   private def setPropertiesParam(entity: String, items: Seq[(PropertyKeyName, Expression)]): String = {

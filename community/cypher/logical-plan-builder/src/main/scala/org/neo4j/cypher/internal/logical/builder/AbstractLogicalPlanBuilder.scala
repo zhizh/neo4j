@@ -95,6 +95,7 @@ import org.neo4j.cypher.internal.ir.VarPatternLength
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.disjoinRelTypesToLabelExpression
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.TrailParameters
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.WalkParameters
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.pos
 import org.neo4j.cypher.internal.logical.plans.Aggregation
 import org.neo4j.cypher.internal.logical.plans.AllNodesScan
@@ -217,6 +218,7 @@ import org.neo4j.cypher.internal.logical.plans.RemoteBatchPropertiesWithFilter
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
 import org.neo4j.cypher.internal.logical.plans.RepeatOptions
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
+import org.neo4j.cypher.internal.logical.plans.RepeatWalk
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.RunQueryAt
@@ -3093,6 +3095,32 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
     ))
   }
 
+  def repeatWalk(
+    walkParameters: WalkParameters
+  ): IMPL = {
+    // This one comes in as an argument, so we need to declare it as a node here
+    newNode(varFor(walkParameters.innerStart))
+    // This is the node we "expand-to" , so we need to declare it as a node here
+    newNode(varFor(walkParameters.end))
+
+    appendAtCurrentIndent(BinaryOperator((lhs, rhs) =>
+      RepeatWalk(
+        lhs,
+        rhs,
+        Repetition(walkParameters.min, walkParameters.max),
+        varFor(walkParameters.start),
+        varFor(walkParameters.end),
+        varFor(walkParameters.innerStart),
+        varFor(walkParameters.innerEnd),
+        walkParameters.groupNodes.map { case (inner, outer) => VariableGrouping(varFor(inner), varFor(outer))(pos) },
+        walkParameters.groupRelationships.map { case (inner, outer) =>
+          VariableGrouping(varFor(inner), varFor(outer))(pos)
+        },
+        walkParameters.reverseGroupVariableProjections
+      )(_)
+    ))
+  }
+
   def repeatOptions(): IMPL = {
     appendAtCurrentIndent(BinaryOperator((lhs, rhs) =>
       RepeatOptions(lhs, rhs)(_)
@@ -3299,6 +3327,18 @@ object AbstractLogicalPlanBuilder {
     innerRelationships: Set[String],
     previouslyBoundRelationships: Set[String],
     previouslyBoundRelationshipGroups: Set[String],
+    reverseGroupVariableProjections: Boolean
+  )
+
+  case class WalkParameters(
+    min: Int,
+    max: UpperBound,
+    start: String,
+    end: String,
+    innerStart: String,
+    innerEnd: String,
+    groupNodes: Set[(String, String)],
+    groupRelationships: Set[(String, String)],
     reverseGroupVariableProjections: Boolean
   )
 

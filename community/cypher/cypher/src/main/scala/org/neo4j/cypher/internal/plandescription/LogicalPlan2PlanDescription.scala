@@ -223,6 +223,7 @@ import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
 import org.neo4j.cypher.internal.logical.plans.RepeatOptions
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
+import org.neo4j.cypher.internal.logical.plans.RepeatWalk
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.RunQueryAt
@@ -3052,6 +3053,17 @@ case class LogicalPlan2PlanDescription(
           "RepeatOptions",
           children,
           Seq.empty,
+          variables,
+          withRawCardinalities,
+          withDistinctness
+        )
+
+      case RepeatWalk(_, _, repetition, start, end, _, _, _, _, _) =>
+        PlanDescriptionImpl(
+          id = plan.id,
+          "Repeat(Walk)",
+          children,
+          Seq(Details(repeatDetails(repetition, start, end))),
           variables,
           withRawCardinalities,
           withDistinctness

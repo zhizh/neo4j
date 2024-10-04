@@ -143,6 +143,7 @@ import org.neo4j.cypher.internal.logical.plans.RemoteBatchPropertiesWithFilter
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
 import org.neo4j.cypher.internal.logical.plans.RepeatOptions
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
+import org.neo4j.cypher.internal.logical.plans.RepeatWalk
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.RunQueryAt
@@ -820,6 +821,9 @@ object ReadFinder {
         PlanReads().withCallInTx
 
       case RepeatTrail(_, _, _, _, end, _, _, _, _, _, _, _, _) =>
+        PlanReads().withIntroducedNodeVariable(end)
+
+      case RepeatWalk(_, _, _, _, end, _, _, _, _, _) =>
         PlanReads().withIntroducedNodeVariable(end)
 
       case BidirectionalRepeatTrail(_, _, _, _, _, _, _, _, _, _, _, _, _) |

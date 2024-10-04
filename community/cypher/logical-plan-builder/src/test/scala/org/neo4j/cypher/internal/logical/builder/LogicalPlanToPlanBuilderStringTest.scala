@@ -34,6 +34,7 @@ import org.neo4j.cypher.internal.ir.HasHeaders
 import org.neo4j.cypher.internal.ir.NoHeaders
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.TrailParameters
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.WalkParameters
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.column
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithProperties
@@ -2846,6 +2847,27 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
   )
 
   testPlan(
+    "repeatWalk",
+    new TestPlanBuilder()
+      .produceResults("me", "you", "a", "b", "r")
+      .repeatWalk(WalkParameters(
+        min = 0,
+        max = Limited(2),
+        start = "me",
+        end = "you",
+        innerStart = "a",
+        innerEnd = "b",
+        groupNodes = Set(("a_inner", "a"), ("b_inner", "b")),
+        groupRelationships = Set(("r_inner", "r")),
+        reverseGroupVariableProjections = true
+      ))
+      .|.expandAll("(a_inner)-[r_inner]->(b_inner)")
+      .|.argument("me", "a_inner")
+      .nodeByLabelScan("me", "START", IndexOrderNone)
+      .build()
+  )
+
+  testPlan(
     "simulatedNodeScan",
     new TestPlanBuilder()
       .produceResults("x")
@@ -2952,6 +2974,7 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.removeLabel
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.TrailParameters
+            |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.WalkParameters
             |import org.neo4j.cypher.internal.logical.builder.TestNFABuilder
             |import org.neo4j.cypher.internal.expressions.SemanticDirection.{INCOMING, OUTGOING, BOTH}
             |import org.neo4j.cypher.internal.expressions.LabelName

@@ -116,6 +116,7 @@ import org.neo4j.cypher.internal.runtime.spec.tests.OrderedConditionalApplyTestB
 import org.neo4j.cypher.internal.runtime.spec.tests.OrderedDistinctTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.OrderedTrailTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.OrderedUnionTestBase
+import org.neo4j.cypher.internal.runtime.spec.tests.OrderedWalkTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.PartialSortTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.PartialTop1TestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.PartialTopNTestBase
@@ -141,6 +142,7 @@ import org.neo4j.cypher.internal.runtime.spec.tests.RelationshipTypeScanTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RemoveDynamicLabelsTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RemoveLabelsTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RepeatTrailTestBase
+import org.neo4j.cypher.internal.runtime.spec.tests.RepeatWalkTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RightOuterHashJoinTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RollupApplyTestBase
 import org.neo4j.cypher.internal.runtime.spec.tests.RunQueryAtTestBase
@@ -436,6 +438,10 @@ class InterpretedUnionRelationshipTypeTest
 class InterpretedRepeatTrailTest
     extends RepeatTrailTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
     with OrderedTrailTestBase[CommunityRuntimeContext]
+
+class InterpretedRepeatWalkTest
+    extends RepeatWalkTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
+    with OrderedWalkTestBase[CommunityRuntimeContext]
 
 //UPDATING
 class InterpretedEmptyResultTest extends EmptyResultTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
