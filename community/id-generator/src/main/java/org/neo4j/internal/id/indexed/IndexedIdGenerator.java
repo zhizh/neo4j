@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -304,6 +305,8 @@ public class IndexedIdGenerator implements IdGenerator {
      * the operations are to be treated as normal operations.
      */
     private volatile boolean started;
+
+    private final AtomicBoolean disableContextualMarkers = new AtomicBoolean();
 
     private final boolean readOnly;
     private final IdSlotDistribution slotDistribution;
@@ -621,7 +624,7 @@ public class IndexedIdGenerator implements IdGenerator {
 
     @Override
     public ContextualMarker contextualMarker(CursorContext cursorContext) {
-        if (!allocationEnabled()) {
+        if (!allocationEnabled() || disableContextualMarkers.getAcquire()) {
             throw new IllegalStateException(
                     "This ID generator has allocation disabled, which means it should not need to do contextual updates");
         }
@@ -746,6 +749,15 @@ public class IndexedIdGenerator implements IdGenerator {
         }
 
         started = true;
+    }
+
+    @Override
+    public void stop() {
+        // We no longer allow any new contextual markers (non-transaction-bound writers) to be created.
+        // Read transactions are marked for termination but commiting transactions may still need to write.
+        // The "shutdown" checkpoint on the tree happens after any committing transactions are completed.
+        // This checkpoint will also drain any remaining contextual writers, guaranteeing no more writes.
+        disableContextualMarkers.setRelease(true);
     }
 
     @Override

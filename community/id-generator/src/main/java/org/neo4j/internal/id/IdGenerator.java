@@ -119,6 +119,11 @@ public interface IdGenerator extends IdSequence, Closeable, ConsistencyCheckable
     void start(FreeIds freeIdsForRebuild, CursorContext cursorContext) throws IOException;
 
     /**
+     * Stop the id generator, signaling that no additional updates should happen after this point.
+     */
+    void stop();
+
+    /**
      * Clears internal ID caches. This should only be used in specific scenarios where ID states have changed w/o the cache knowing about it.
      * This method can also enable/disable allocation, which ties into the role this member has.
      * @see #allocationEnabled()
@@ -400,6 +405,11 @@ public interface IdGenerator extends IdSequence, Closeable, ConsistencyCheckable
         @Override
         public void start(FreeIds freeIdsForRebuild, CursorContext cursorContext) throws IOException {
             delegate.start(freeIdsForRebuild, cursorContext);
+        }
+
+        @Override
+        public void stop() {
+            delegate.stop();
         }
 
         @Override

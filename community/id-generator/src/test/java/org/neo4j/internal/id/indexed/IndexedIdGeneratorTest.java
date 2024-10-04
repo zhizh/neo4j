@@ -23,6 +23,7 @@ import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.comparingLong;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.eclipse.collections.api.factory.Sets.immutable;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -41,6 +42,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.neo4j.annotations.documented.ReporterFactories.noopReporterFactory;
+import static org.neo4j.annotations.documented.ReporterFactories.throwingReporterFactory;
 import static org.neo4j.collection.PrimitiveLongCollections.count;
 import static org.neo4j.configuration.GraphDatabaseInternalSettings.strictly_prioritize_id_freelist;
 import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME;
@@ -54,6 +56,7 @@ import static org.neo4j.internal.id.indexed.IndexedIdGenerator.IDS_PER_ENTRY;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.NO_MONITOR;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.SMALL_CACHE_CAPACITY;
 import static org.neo4j.io.pagecache.context.CursorContext.NULL_CONTEXT;
+import static org.neo4j.io.pagecache.context.CursorContextFactory.NULL_CONTEXT_FACTORY;
 import static org.neo4j.io.pagecache.context.FixedVersionContextSupplier.EMPTY_CONTEXT_SUPPLIER;
 import static org.neo4j.test.Race.throwing;
 
@@ -98,6 +101,7 @@ import org.neo4j.collection.PrimitiveLongResourceIterator;
 import org.neo4j.configuration.Config;
 import org.neo4j.function.ThrowingAction;
 import org.neo4j.function.ThrowingSupplier;
+import org.neo4j.index.internal.gbptree.MultiRootGBPTree;
 import org.neo4j.index.internal.gbptree.TreeFileNotFoundException;
 import org.neo4j.internal.helpers.Exceptions;
 import org.neo4j.internal.helpers.progress.ProgressMonitorFactory;
@@ -127,6 +131,7 @@ import org.neo4j.test.extension.RandomExtension;
 import org.neo4j.test.extension.pagecache.PageCacheExtension;
 import org.neo4j.test.utils.TestDirectory;
 import org.neo4j.time.Clocks;
+import org.neo4j.util.concurrent.BinaryLatch;
 
 @PageCacheExtension
 @ExtendWith(RandomExtension.class)
@@ -1252,6 +1257,111 @@ class IndexedIdGeneratorTest {
         }
     }
 
+    @Test
+    void shouldNotAllowNewContextualMarkersAfterStop() throws IOException {
+        open();
+        idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
+        idGenerator.stop();
+        assertThatThrownBy(() -> idGenerator.contextualMarker(NULL_CONTEXT)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void shouldAwaitContextualMarkersToCloseOnCheckpointAfterStop() throws Exception {
+        open();
+        idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
+        IdGenerator.ContextualMarker marker = idGenerator.contextualMarker(NULL_CONTEXT);
+        idGenerator.stop();
+        try (OtherThreadExecutor executor = new OtherThreadExecutor("test")) {
+            Future<Object> future = executor.executeDontWait(() -> {
+                idGenerator.checkpoint(FileFlushEvent.NULL, NULL_CONTEXT);
+                return null;
+            });
+
+            executor.waitUntilWaiting(location -> location.isAt(MultiRootGBPTree.class, "withCheckpointAndWriterLock"));
+            marker.close();
+            future.get();
+        }
+    }
+
+    @Test
+    void shouldNotWriteAfterStopAndCheckpoint() throws Throwable {
+        // Given
+        open();
+        idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
+        try (IdGenerator.TransactionalMarker marker = idGenerator.transactionalMarker(NULL_CONTEXT)) {
+            marker.markDeletedAndFree(idGenerator.nextId(NULL_CONTEXT));
+        }
+        idGenerator.clearCache(true, NULL_CONTEXT);
+
+        // Order of shutdown:
+        // 1. mark all txs as terminated (what for a while but not indefinitely)
+        // 2. wait indefinitely for commit write txs to complete
+        // 3. stop id generator
+        // 4. checkpoint
+        // 5. close
+        // Note: between 4 and 5 any living read tx may still do read operations, e.g try to allocate id.
+
+        // When
+        idGenerator.stop(); // 3.
+        idGenerator.checkpoint(FileFlushEvent.NULL, NULL_CONTEXT); // 4.
+        assertThatThrownBy(() -> idGenerator.nextId(NULL_CONTEXT)).isInstanceOf(IllegalStateException.class);
+        idGenerator.close(); // 5.
+
+        // Then
+        open();
+        assertThat(idGenerator.consistencyCheck(throwingReporterFactory(), NULL_CONTEXT_FACTORY, 1))
+                .isTrue();
+    }
+
+    @Test
+    void shouldNotWriteAfterStopAndCheckpointRace() throws Throwable {
+        // Given
+        open();
+        idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
+
+        MutableLongList ids = LongLists.mutable.empty();
+        for (int i = 0; i < 10000; i++) {
+            ids.add(idGenerator.nextId(NULL_CONTEXT));
+        }
+        try (IdGenerator.TransactionalMarker marker = idGenerator.transactionalMarker(NULL_CONTEXT)) {
+            ids.forEach(id -> {
+                marker.markUsed(id);
+                if (random.nextBoolean()) {
+                    marker.markDeletedAndFree(id);
+                }
+            });
+        }
+
+        // When
+        AtomicBoolean stopped = new AtomicBoolean();
+        Race race = new Race().withEndCondition(stopped::get);
+
+        BinaryLatch waitStart = new BinaryLatch();
+        race.addContestants(10, () -> {
+            try {
+                idGenerator.nextId(NULL_CONTEXT);
+            } catch (IllegalStateException ignored) {
+            }
+            waitStart.release();
+        });
+
+        Race.Async async = race.goAsync();
+        try {
+            waitStart.await();
+            idGenerator.stop();
+            idGenerator.checkpoint(FileFlushEvent.NULL, NULL_CONTEXT);
+        } finally {
+            stopped.set(true);
+        }
+        async.await(1, TimeUnit.MINUTES);
+        idGenerator.close();
+
+        // Then
+        open();
+        assertThat(idGenerator.consistencyCheck(throwingReporterFactory(), NULL_CONTEXT_FACTORY, 1))
+                .isTrue();
+    }
+
     /**
      * A contrived view of how a cluster interacts with an ID generator.
      * There's some notion of lease and leader switches. This should make it possible to trigger
@@ -1476,6 +1586,13 @@ class IndexedIdGeneratorTest {
         public void start(FreeIds freeIdsForRebuild, CursorContext cursorContext) throws IOException {
             for (var member : members) {
                 member.start(freeIdsForRebuild, cursorContext);
+            }
+        }
+
+        @Override
+        public void stop() {
+            for (var member : members) {
+                member.stop();
             }
         }
 

@@ -99,6 +99,11 @@ class ReadOnlyHighIdGenerator implements IdGenerator {
     }
 
     @Override
+    public void stop() {
+        // no-op
+    }
+
+    @Override
     public long nextId(CursorContext ignored) {
         throw new UnsupportedOperationException("Should not be required");
     }

@@ -162,6 +162,11 @@ public class EmptyIdGeneratorFactory implements IdGeneratorFactory {
         }
 
         @Override
+        public void stop() {
+            // nothing
+        }
+
+        @Override
         public void clearCache(boolean allocationEnabled, CursorContext cursorContext) {
             // nothing
         }

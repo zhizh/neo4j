@@ -177,6 +177,7 @@ public class BufferingIdGeneratorFactory extends AbstractBufferingIdGeneratorFac
     @Override
     public void stop() throws Exception {
         maintenance(CursorContext.NULL_CONTEXT);
+        overriddenIdGenerators.forEach((type, generator) -> generator.stop());
         // Don't keep the overridden ones on stop - could be different ones on next start.
         overriddenIdGenerators.clear();
         super.stop();
