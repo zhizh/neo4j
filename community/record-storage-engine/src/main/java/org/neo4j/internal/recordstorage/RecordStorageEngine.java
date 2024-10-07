@@ -20,6 +20,7 @@
 package org.neo4j.internal.recordstorage;
 
 import static java.util.Collections.emptyList;
+import static org.neo4j.configuration.GraphDatabaseInternalSettings.multiversion_index_commands_enabled;
 import static org.neo4j.function.ThrowingAction.executeAll;
 import static org.neo4j.internal.recordstorage.RecordStorageEngineFactory.ID;
 import static org.neo4j.internal.recordstorage.RecordStorageEngineFactory.NAME;
@@ -134,16 +135,12 @@ import org.neo4j.storageengine.util.IdGeneratorUpdatesWorkSync;
 import org.neo4j.storageengine.util.IdUpdateListener;
 import org.neo4j.storageengine.util.IndexUpdatesWorkSync;
 import org.neo4j.token.TokenHolders;
-import org.neo4j.util.FeatureToggles;
 import org.neo4j.util.VisibleForTesting;
 
 public class RecordStorageEngine implements StorageEngine, Lifecycle {
     private static final String STORAGE_ENGINE_START_TAG = "storageEngineStart";
     private static final String SCHEMA_CACHE_START_TAG = "schemaCacheStart";
     private static final String TOKENS_INIT_TAG = "tokensInitialisation";
-
-    private static final boolean INDEX_COMMANDS =
-            FeatureToggles.flag(RecordStorageEngine.class, "indexCommands", false);
 
     private final NeoStores neoStores;
     private final RecordDatabaseLayout databaseLayout;
@@ -427,7 +424,8 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
     }
 
     private boolean useIndexCommands() {
-        return isMultiVersionedFormat() || INDEX_COMMANDS;
+        var multiVersion = isMultiVersionedFormat();
+        return multiVersion && config.get(multiversion_index_commands_enabled);
     }
 
     @Override

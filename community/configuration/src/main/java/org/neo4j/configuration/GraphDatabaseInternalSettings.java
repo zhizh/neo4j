@@ -1527,4 +1527,10 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
     public static final Setting<String> client_provided_router_suffix = newBuilder(
                     "internal.dbms.routing.client_provided_address_suffix", STRING, "endpoints.neo4j.io")
             .build();
+
+    @Internal
+    @Description("Enforce index commands generation.")
+    public static final Setting<Boolean> multiversion_index_commands_enabled = newBuilder(
+                    "internal.db.multiversion.index.commands.enabled", BOOL, true)
+            .build();
 }
