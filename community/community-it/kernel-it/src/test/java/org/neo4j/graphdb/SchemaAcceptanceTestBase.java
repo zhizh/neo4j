@@ -32,7 +32,7 @@ public class SchemaAcceptanceTestBase {
     protected final String propertyKey = "my_property_key";
     protected final String secondPropertyKey = "my_second_property_key";
     protected final String propertyKeyWithBackticks = "``backticked_property_key";
-    protected final Label label = Labels.MY_LABEL;
+    protected final Label label = Label.label("MY_LABEL");
     protected final Label labelWithBackticks = Label.label("``BACKTICK`LABEL`");
     protected final RelationshipType relType = RelationshipType.withName("relType");
 
@@ -99,11 +99,6 @@ public class SchemaAcceptanceTestBase {
             tx.schema().getConstraintByName(nameB);
             tx.commit();
         }
-    }
-
-    protected enum Labels implements Label {
-        MY_LABEL,
-        MY_OTHER_LABEL
     }
 
     protected enum SchemaTxStrategy {

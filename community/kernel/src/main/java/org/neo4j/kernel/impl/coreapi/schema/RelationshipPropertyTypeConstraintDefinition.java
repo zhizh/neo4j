@@ -22,6 +22,7 @@ package org.neo4j.kernel.impl.coreapi.schema;
 import static java.lang.String.format;
 import static org.neo4j.internal.helpers.NameUtil.escapeName;
 
+import java.util.Arrays;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.schema.ConstraintType;
 import org.neo4j.graphdb.schema.PropertyType;
@@ -45,6 +46,38 @@ public class RelationshipPropertyTypeConstraintDefinition extends RelationshipCo
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RelationshipPropertyTypeConstraintDefinition that = (RelationshipPropertyTypeConstraintDefinition) o;
+        return relationshipType.name().equals(that.relationshipType.name())
+                && Arrays.equals(propertyKeys, that.propertyKeys)
+                // We use this here instead of `getPropertyType()` because that one checks
+                // assertInUnterminatedTransaction() and equals/hashCode/toString should still
+                // work after a transaction has been terminated.
+                && constraint
+                        .asPropertyTypeConstraint()
+                        .propertyType()
+                        .equals(that.constraint.asPropertyTypeConstraint().propertyType());
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 31 * relationshipType.name().hashCode();
+        result = 31 * result + Arrays.hashCode(propertyKeys);
+        // We use this here instead of `getPropertyType()` because that one checks
+        // assertInUnterminatedTransaction() and equals/hashCode/toString should still
+        // work after a transaction has been terminated.
+        result = 31 * result
+                + constraint.asPropertyTypeConstraint().propertyType().hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         final String relationshipTypeName = escapeName(relationshipType.name());
         return format(
@@ -52,6 +85,9 @@ public class RelationshipPropertyTypeConstraintDefinition extends RelationshipCo
                 relationshipTypeName.toLowerCase(),
                 relationshipTypeName,
                 propertyText(relationshipTypeName.toLowerCase()),
+                // We use this here instead of `getPropertyType()` because that one checks
+                // assertInUnterminatedTransaction() and equals/hashCode/toString should still
+                // work after a transaction has been terminated.
                 constraint.asPropertyTypeConstraint().propertyType().userDescription());
     }
 
