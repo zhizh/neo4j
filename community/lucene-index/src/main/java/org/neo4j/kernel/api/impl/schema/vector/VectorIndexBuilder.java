@@ -32,7 +32,7 @@ import org.neo4j.kernel.api.impl.index.IndexWriterConfigModes.VectorModes;
 import org.neo4j.kernel.api.impl.index.WritableDatabaseIndex;
 import org.neo4j.kernel.api.impl.index.builder.AbstractLuceneIndexBuilder;
 import org.neo4j.kernel.api.impl.index.partition.WritableIndexPartitionFactory;
-import org.neo4j.kernel.api.impl.schema.vector.codec.VectorCodecV3;
+import org.neo4j.kernel.api.impl.schema.vector.codec.VectorCodecV2;
 
 class VectorIndexBuilder extends AbstractLuceneIndexBuilder<VectorIndexBuilder> {
     private final IndexDescriptor descriptor;
@@ -53,7 +53,7 @@ class VectorIndexBuilder extends AbstractLuceneIndexBuilder<VectorIndexBuilder> 
         this.documentStructure = documentStructure;
         this.config = config;
 
-        final var codec = new VectorCodecV3(vectorIndexConfig);
+        final var codec = new VectorCodecV2(vectorIndexConfig);
         final var writerConfigBuilder = new IndexWriterConfigBuilder(VectorModes.STANDARD, config).withCodec(codec);
         this.writerConfigFactory = writerConfigBuilder::build;
     }

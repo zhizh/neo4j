@@ -43,7 +43,7 @@ import org.neo4j.kernel.api.impl.index.LuceneSettings;
 import org.neo4j.kernel.api.impl.index.storage.DirectoryFactory;
 import org.neo4j.kernel.api.impl.schema.AbstractLuceneIndexProvider;
 import org.neo4j.kernel.api.impl.schema.vector.VectorSimilarityFunctions.LuceneVectorSimilarityFunction;
-import org.neo4j.kernel.api.impl.schema.vector.codec.VectorCodecV3;
+import org.neo4j.kernel.api.impl.schema.vector.codec.VectorCodecV2;
 import org.neo4j.kernel.api.index.IndexAccessor;
 import org.neo4j.kernel.api.index.IndexDirectoryStructure;
 import org.neo4j.kernel.api.index.IndexPopulator;
@@ -115,7 +115,7 @@ public class VectorIndexProvider extends AbstractLuceneIndexProvider {
                 settingsValidator.trustIsValidToVectorIndexConfig(new IndexConfigAccessor(descriptor.getIndexConfig()));
         final var dimensions = vectorIndexConfig.dimensions();
 
-        final var codec = new VectorCodecV3(vectorIndexConfig);
+        final var codec = new VectorCodecV2(vectorIndexConfig);
         final var writerConfigBuilder = new IndexWriterConfigBuilder(VectorModes.POPULATION, config).withCodec(codec);
         final var luceneIndex = VectorIndexBuilder.create(
                         descriptor, vectorIndexConfig, documentStructure, readOnlyChecker, config)
