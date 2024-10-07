@@ -171,4 +171,53 @@ public interface Input extends AutoCloseable {
                 sizeOfRelationshipProperties,
                 numberOfNodeLabels);
     }
+
+    class Delegate implements Input {
+
+        protected final Input delegate;
+
+        public Delegate(Input delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public InputIterable relationships(Collector badCollector) {
+            return delegate.relationships(badCollector);
+        }
+
+        @Override
+        public InputIterable nodes(Collector badCollector) {
+            return delegate.nodes(badCollector);
+        }
+
+        @Override
+        public IdType idType() {
+            return delegate.idType();
+        }
+
+        @Override
+        public ReadableGroups groups() {
+            return delegate.groups();
+        }
+
+        @Override
+        public Estimates validateAndEstimate(PropertySizeCalculator valueSizeCalculator) throws IOException {
+            return delegate.validateAndEstimate(valueSizeCalculator);
+        }
+
+        @Override
+        public Map<String, SchemaDescriptor> referencedNodeSchema(TokenHolders tokenHolders) {
+            return delegate.referencedNodeSchema(tokenHolders);
+        }
+
+        @Override
+        public List<SchemaCommand> schemaCommands() {
+            return delegate.schemaCommands();
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+    }
 }
