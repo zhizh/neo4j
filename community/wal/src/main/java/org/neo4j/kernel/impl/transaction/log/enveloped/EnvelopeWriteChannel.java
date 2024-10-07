@@ -495,12 +495,12 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         // Fill in the header
         final int checksumStartOffset = currentEnvelopeStart + Integer.BYTES;
         buffer.position(checksumStartOffset);
-        assert currentVersion != -1;
+        assert currentVersion != IGNORE_KERNEL_VERSION || type == EnvelopeType.START_OFFSET;
         buffer.put(type.typeValue)
                 .putInt(payloadLength)
                 // START_OFFSET envelopes do not have an index, as they are skipped automatically when reading
                 .putLong(type != EnvelopeType.START_OFFSET ? currentIndex : 0)
-                .put(currentVersion)
+                .put(type != EnvelopeType.START_OFFSET ? currentVersion : IGNORE_KERNEL_VERSION)
                 // START_OFFSET envelopes do not participate in the checksum chain
                 .putInt(type != EnvelopeType.START_OFFSET ? previousChecksum : 0);
 
@@ -606,7 +606,8 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         checkArgument(
                 size < segmentBlockSize - HEADER_SIZE, ERROR_MSG_TEMPLATE_OFFSET_SIZE_TOO_LARGE, segmentBlockSize);
         checkState(
-                currentEnvelopeStart == 0 && channel.position() == segmentBlockSize,
+                (currentEnvelopeStart == 0 || currentEnvelopeStart == segmentBlockSize)
+                        && channel.position() == segmentBlockSize,
                 ERROR_MSG_TEMPLATE_OFFSET_MUST_BE_FIRST_IN_THE_FIRST_SEGMENT);
         checkState(
                 (currentEnvelopeStart + HEADER_SIZE) == buffer.position(),

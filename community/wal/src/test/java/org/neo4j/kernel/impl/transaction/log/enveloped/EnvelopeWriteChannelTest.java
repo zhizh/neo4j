@@ -56,6 +56,7 @@ import org.neo4j.kernel.impl.transaction.log.LogForceWaitEvent;
 import org.neo4j.kernel.impl.transaction.log.LogTracers;
 import org.neo4j.kernel.impl.transaction.log.LogVersionedStoreChannel;
 import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
+import org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.EnvelopeType;
 import org.neo4j.kernel.impl.transaction.log.rotation.CountingLogRotateEvent;
 import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvent;
@@ -1021,29 +1022,30 @@ class EnvelopeWriteChannelTest {
     private static Stream<Arguments> provideStartOffsetParameters() {
         return Stream.of(
                 // segmentSize, offsetFullLength (header + length)
-                Arguments.of(128, 32),
-                Arguments.of(256, 32),
+                Arguments.of(128, 32, 128),
+                Arguments.of(256, 32, 256),
+                // Test with bufferSize other than segmentLength
+                Arguments.of(256, 32, 512),
                 // Minimum START_OFFSET, containing just the size of the header.
-                Arguments.of(128, HEADER_SIZE),
-                Arguments.of(256, HEADER_SIZE),
+                Arguments.of(128, HEADER_SIZE, 128),
+                Arguments.of(256, HEADER_SIZE, 256),
                 // Maximum START_OFFSET, spawning the whole segment but enough space for a small (header + 4 bytes)
                 // envelope after.
-                Arguments.of(128, 128 - HEADER_SIZE - Integer.BYTES),
-                Arguments.of(256, 256 - HEADER_SIZE - Integer.BYTES));
+                Arguments.of(128, 128 - HEADER_SIZE - Integer.BYTES, 128),
+                Arguments.of(256, 256 - HEADER_SIZE - Integer.BYTES, 256));
     }
 
     @ParameterizedTest
     @MethodSource("provideStartOffsetParameters")
-    void writeStartOffsetIntoTheFirstSegment(int segmentSize, int offsetFullLength) throws IOException {
+    void writeStartOffsetIntoTheFirstSegment(int segmentSize, int offsetFullLength, int bufferSize) throws IOException {
         final int mainPayloadValue = random.nextInt();
         final int mainPayloadLength = Integer.BYTES;
 
         final int startOffsetPayloadLength = offsetFullLength - HEADER_SIZE;
 
         final var fileChannel = storeChannel();
-        final var buffer = buffer(segmentSize);
+        final var buffer = buffer(bufferSize);
         try (var channel = writeChannel(fileChannel, segmentSize, buffer)) {
-            channel.putVersion(KERNEL_VERSION); // Version is for the channel, not for a specific envelope.
             assertThat(channel.position())
                     .as("should start writing after header and zeroed first segment")
                     .isEqualTo(segmentSize);
@@ -1053,6 +1055,9 @@ class EnvelopeWriteChannelTest {
             assertThat(channel.position())
                     .as("after inserting start offset position should be at the offset in the segment")
                     .isEqualTo(segmentSize + offsetFullLength);
+
+            // Start offset should be possible to write without version, but needed for the "real" envelopes
+            channel.putVersion(KERNEL_VERSION);
 
             // And we can keep adding envelopes as expected:
             channel.putInt(mainPayloadValue);
@@ -1150,7 +1155,6 @@ class EnvelopeWriteChannelTest {
         final var fileChannel = storeChannel();
         final var buffer = buffer(segmentSize);
         try (var channel = writeChannel(fileChannel, segmentSize, buffer)) {
-            channel.putVersion(KERNEL_VERSION); // Version is for the channel, not for a specific envelope.
             assertThat(channel.position())
                     .as("should start writing after header and zeroed first segment")
                     .isEqualTo(segmentSize);
@@ -1216,7 +1220,6 @@ class EnvelopeWriteChannelTest {
         fileChannel = storeChannel();
         final var buffer = buffer(segmentSize);
         try (var channel = writeChannel(fileChannel, segmentSize, buffer)) {
-            channel.putVersion(KERNEL_VERSION); // Version is for the channel, not for a specific envelope.
             ByteBuffer realBuffer = buffer.getBuffer();
             assertThat(realBuffer.position())
                     .as("buffer is already positioned one header in")
@@ -1262,7 +1265,6 @@ class EnvelopeWriteChannelTest {
         fileChannel = storeChannel();
         final var buffer = buffer(segmentSize);
         try (var channel = writeChannel(fileChannel, segmentSize, buffer)) {
-            channel.putVersion(KERNEL_VERSION); // Version is for the channel, not for a specific envelope.
             ByteBuffer realBuffer = buffer.getBuffer();
             assertThat(realBuffer.position())
                     .as("buffer is already positioned one header in")
@@ -1309,7 +1311,6 @@ class EnvelopeWriteChannelTest {
         fileChannel = storeChannel();
         final var buffer = buffer(segmentSize);
         try (var channel = writeChannel(fileChannel, segmentSize, buffer)) {
-            channel.putVersion(KERNEL_VERSION); // Version is for the channel, not for a specific envelope.
             ByteBuffer realBuffer = buffer.getBuffer();
             assertThat(realBuffer.position())
                     .as("buffer is already positioned one header in")
@@ -1356,7 +1357,6 @@ class EnvelopeWriteChannelTest {
         fileChannel = storeChannel();
         final var buffer = buffer(segmentSize);
         try (var channel = writeChannel(fileChannel, segmentSize, buffer)) {
-            channel.putVersion(KERNEL_VERSION); // Version is for the channel, not for a specific envelope.
             ByteBuffer realBuffer = buffer.getBuffer();
             assertThat(realBuffer.position())
                     .as("buffer is already positioned one header in")
@@ -1404,7 +1404,6 @@ class EnvelopeWriteChannelTest {
         // Buffer as small as the segment size to trigger flushing in directPutAll
         final var buffer = buffer(segmentSize);
         try (var channel = writeChannel(fileChannel, segmentSize, buffer)) {
-            channel.putVersion(KERNEL_VERSION); // Version is for the channel, not for a specific envelope.
             ByteBuffer realBuffer = buffer.getBuffer();
             assertThat(realBuffer.position())
                     .as("buffer is already positioned one header in")
@@ -1695,7 +1694,11 @@ class EnvelopeWriteChannelTest {
 
     private static EnvelopeChunk startOffset(int length) {
         return new EnvelopeChunk(
-                EnvelopeType.START_OFFSET, FIRST_INDEX, expectedStartOffsetChecksum(length), new byte[length]);
+                EnvelopeType.START_OFFSET,
+                FIRST_INDEX,
+                expectedStartOffsetChecksum(length),
+                new byte[length],
+                LogEnvelopeHeader.IGNORE_KERNEL_VERSION);
     }
 
     /**
@@ -1712,7 +1715,7 @@ class EnvelopeWriteChannelTest {
                 .put(EnvelopeType.START_OFFSET.typeValue)
                 .putInt(length)
                 .putLong(0)
-                .put(KERNEL_VERSION)
+                .put(LogEnvelopeHeader.IGNORE_KERNEL_VERSION)
                 .putInt(0); // Previous checksum is 0, as start offset does not participate in checksum chain.
 
         final var checksum = ChecksumWriter.CHECKSUM_FACTORY.get();
