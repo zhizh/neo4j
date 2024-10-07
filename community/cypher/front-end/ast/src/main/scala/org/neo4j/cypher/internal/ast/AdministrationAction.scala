@@ -150,13 +150,28 @@ case object ShowRoleAction extends RoleManagementAction("SHOW ROLE")
 
 case object CreateRoleAction extends RoleManagementAction("CREATE ROLE")
 
+case object CreateImmutableRoleAction extends RoleManagementAction("CREATE IMMUTABLE ROLE")
+    with UnassignableAction
+
 case object DropRoleAction extends RoleManagementAction("DROP ROLE")
+
+case object DropImmutableRoleAction extends RoleManagementAction("DROP IMMUTABLE ROLE")
+    with UnassignableAction
 
 case object RenameRoleAction extends RoleManagementAction("RENAME ROLE")
 
+case object RenameImmutableRoleAction extends RoleManagementAction("RENAME IMMUTABLE ROLE")
+    with UnassignableAction
+
 case object AssignRoleAction extends RoleManagementAction("ASSIGN ROLE")
 
+case object AssignImmutableRoleAction extends RoleManagementAction("ASSIGN IMMUTABLE ROLE")
+    with UnassignableAction
+
 case object RemoveRoleAction extends RoleManagementAction("REMOVE ROLE")
+
+case object RemoveImmutableRoleAction extends RoleManagementAction("REMOVE IMMUTABLE ROLE")
+    with UnassignableAction
 
 abstract class DatabaseManagementAction(override val name: String) extends DbmsAction(name)
 

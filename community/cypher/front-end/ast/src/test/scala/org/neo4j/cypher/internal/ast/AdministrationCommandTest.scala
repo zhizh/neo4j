@@ -78,9 +78,18 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
   test("it should not be possible to administer privileges pertaining to an unassignable action") {
 
     val privilegeManagementActions =
-      Table("PrivilegeManagementActions", AssignImmutablePrivilegeAction, RemoveImmutablePrivilegeAction)
+      Table(
+        "PrivilegeManagementActions",
+        AssignImmutablePrivilegeAction,
+        RemoveImmutablePrivilegeAction,
+        CreateImmutableRoleAction,
+        DropImmutableRoleAction,
+        RenameImmutableRoleAction,
+        AssignImmutableRoleAction,
+        RemoveImmutableRoleAction
+      )
 
-    val grant = (pma: PrivilegeManagementAction) =>
+    val grant = (pma: DbmsAction) =>
       new GrantPrivilege(
         DbmsPrivilege(pma)(p),
         false,
@@ -89,7 +98,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
         Seq(literalString("role1"))
       )(p)
 
-    val deny = (pma: PrivilegeManagementAction) =>
+    val deny = (pma: DbmsAction) =>
       new DenyPrivilege(
         DbmsPrivilege(pma)(p),
         false,
@@ -98,7 +107,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
         Seq(literalString("role1"))
       )(p)
 
-    val revoke = (pma: PrivilegeManagementAction, rt: RevokeType) =>
+    val revoke = (pma: DbmsAction, rt: RevokeType) =>
       new RevokePrivilege(
         DbmsPrivilege(pma)(p),
         false,
