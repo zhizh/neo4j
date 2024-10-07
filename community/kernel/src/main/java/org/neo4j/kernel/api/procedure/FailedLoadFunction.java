@@ -21,7 +21,6 @@ package org.neo4j.kernel.api.procedure;
 
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.values.AnyValue;
 
 public class FailedLoadFunction extends CallableUserFunction.BasicUserFunction {
@@ -31,8 +30,6 @@ public class FailedLoadFunction extends CallableUserFunction.BasicUserFunction {
 
     @Override
     public AnyValue apply(Context ctx, AnyValue[] input) throws ProcedureException {
-        throw new ProcedureException(
-                Status.Procedure.ProcedureRegistrationFailed,
-                signature().description().orElse("Failed to load " + signature().name()));
+        throw ProcedureException.loadFailedSandboxed(signature());
     }
 }

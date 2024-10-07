@@ -158,12 +158,7 @@ class ProcedureCompiler {
         } catch (ProcedureException e) {
             throw e;
         } catch (Exception e) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    e,
-                    "Failed to compile function defined in `%s`: %s",
-                    fcnDefinition.getSimpleName(),
-                    e.getMessage());
+            throw ProcedureException.compilationFailed("function", fcnDefinition.getName(), e);
         }
     }
 
@@ -204,12 +199,7 @@ class ProcedureCompiler {
         } catch (ProcedureException e) {
             throw e;
         } catch (Exception e) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    e,
-                    "Failed to compile function defined in `%s`: %s",
-                    fcnDefinition.getSimpleName(),
-                    e.getMessage());
+            throw ProcedureException.compilationFailed("function", fcnDefinition.getSimpleName(), e);
         }
     }
 
@@ -251,12 +241,7 @@ class ProcedureCompiler {
         } catch (ProcedureException e) {
             throw e;
         } catch (Exception e) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    e,
-                    "Failed to compile procedure defined in `%s`: %s",
-                    procDefinition.getSimpleName(),
-                    e.getMessage());
+            throw ProcedureException.compilationFailed("procedure", procDefinition.getSimpleName(), e);
         }
     }
 

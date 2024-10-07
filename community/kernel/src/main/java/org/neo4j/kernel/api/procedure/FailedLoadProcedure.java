@@ -23,9 +23,10 @@ import org.neo4j.collection.ResourceRawIterator;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
 import org.neo4j.kernel.api.ResourceMonitor;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.values.AnyValue;
 
+// this is currently only used once with a very specific message from description. maybe message should be passed in
+// fully
 public class FailedLoadProcedure extends CallableProcedure.BasicProcedure {
     public FailedLoadProcedure(ProcedureSignature signature) {
         super(signature);
@@ -34,8 +35,6 @@ public class FailedLoadProcedure extends CallableProcedure.BasicProcedure {
     @Override
     public ResourceRawIterator<AnyValue[], ProcedureException> apply(
             Context ctx, AnyValue[] input, ResourceMonitor resourceMonitor) throws ProcedureException {
-        throw new ProcedureException(
-                Status.Procedure.ProcedureRegistrationFailed,
-                signature().description().orElse("Failed to load " + signature().name()));
+        throw ProcedureException.loadFailedSandboxed(signature());
     }
 }

@@ -39,7 +39,7 @@ import org.neo4j.procedure.UnsupportedDatabaseTypes;
  * Note: These constructors are used by APOC-extended, and a gradual deprecation strategy should therefore be used.
  * </p>
  */
-public class ProcedureSignature {
+public class ProcedureSignature implements DescribedSignature {
     public static final List<FieldSignature> VOID = unmodifiableList(new ArrayList<>());
     private final QualifiedName name;
     private final List<FieldSignature> inputSignature;

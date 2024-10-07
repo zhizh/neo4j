@@ -37,7 +37,7 @@ import org.neo4j.kernel.api.QueryLanguage;
  * Note: These constructors are used by APOC-extended, and a gradual deprecation strategy should therefore be used.
  * </p>
  */
-public final class UserFunctionSignature {
+public final class UserFunctionSignature implements DescribedSignature {
     private final QualifiedName name;
     private final List<FieldSignature> inputSignature;
     private final Neo4jTypes.AnyType type;

@@ -17,19 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.api.procedure;
+package org.neo4j.internal.kernel.api.procs;
 
-import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
-import org.neo4j.internal.kernel.api.procs.UserAggregator;
-import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
+import java.util.Optional;
 
-public class FailedLoadAggregatedFunction extends CallableUserAggregationFunction.BasicUserAggregationFunction {
-    public FailedLoadAggregatedFunction(UserFunctionSignature signature) {
-        super(signature);
-    }
+public interface DescribedSignature {
+    QualifiedName name();
 
-    @Override
-    public UserAggregator create(Context ctx) throws ProcedureException {
-        throw ProcedureException.loadFailedSandboxed(signature());
-    }
+    Optional<String> description();
 }

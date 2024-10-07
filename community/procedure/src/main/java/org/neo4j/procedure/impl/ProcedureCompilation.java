@@ -20,7 +20,6 @@
 package org.neo4j.procedure.impl;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 import static org.neo4j.codegen.CodeGenerator.generateCode;
 import static org.neo4j.codegen.Expression.arrayLoad;
 import static org.neo4j.codegen.Expression.box;
@@ -277,12 +276,8 @@ public final class ProcedureCompilation {
 
             return (CallableUserFunction) clazz.getConstructor().newInstance();
         } catch (Throwable e) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    e,
-                    "Failed to compile function defined in `%s`: %s",
-                    methodToCall.getDeclaringClass().getSimpleName(),
-                    e.getMessage());
+            throw ProcedureException.compilationFailed(
+                    "function", methodToCall.getDeclaringClass().getSimpleName(), e);
         }
     }
 
@@ -376,12 +371,8 @@ public final class ProcedureCompilation {
             setAllStaticFields(signature, fieldSetters, clazz);
             return (CallableProcedure) clazz.getConstructor().newInstance();
         } catch (Throwable e) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    e,
-                    "Failed to compile procedure defined in `%s`: %s",
-                    methodToCall.getDeclaringClass().getSimpleName(),
-                    e.getMessage());
+            throw ProcedureException.compilationFailed(
+                    "procedure", methodToCall.getDeclaringClass().getSimpleName(), e);
         }
     }
 
@@ -510,12 +501,8 @@ public final class ProcedureCompilation {
             return (CallableUserAggregationFunction)
                     clazz.getConstructor(UserFunctionSignature.class).newInstance(signature);
         } catch (Throwable e) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    e,
-                    "Failed to compile function defined in `%s`: %s",
-                    create.getDeclaringClass().getSimpleName(),
-                    e.getMessage());
+            throw ProcedureException.compilationFailed(
+                    "function", create.getDeclaringClass().getSimpleName(), e);
         }
     }
 
@@ -533,13 +520,7 @@ public final class ProcedureCompilation {
             return new ProcedureException(
                     ((Status.HasStatus) throwable).status(), throwable, throwable.getMessage(), throwable);
         } else {
-            Throwable cause = getRootCause(throwable);
-            return new ProcedureException(
-                    Status.Procedure.ProcedureCallFailed,
-                    throwable,
-                    "Failed to invoke %s: %s",
-                    typeAndName,
-                    "Caused by: " + (cause != null ? cause : throwable));
+            return ProcedureException.invocationFailed(typeAndName, throwable);
         }
     }
 

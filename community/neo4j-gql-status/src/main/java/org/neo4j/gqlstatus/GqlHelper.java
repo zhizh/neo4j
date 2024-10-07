@@ -32,6 +32,60 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject get22N69_52N02(String idxDescrOrName, String proc) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N69)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.idxDescrOrName, idxDescrOrName)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.proc, proc)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject get50N16(String sig, String msg) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N16)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.sig, sig)
+                .withParam(GqlParams.StringParam.msg, msg)
+                .build();
+    }
+
+    public static ErrorGqlStatusObject get50N17(String sig) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N17)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.sig, sig)
+                .build();
+    }
+
+    public static ErrorGqlStatusObject get51N00_50N00(String msgTitle, String msg) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.msgTitle, msgTitle)
+                        .withParam(GqlParams.StringParam.msg, msg)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject get51N00_50N18(String procClass, String msg) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N18)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.procClass, procClass)
+                        .withParam(GqlParams.StringParam.msg, msg)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject get51N00() {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+    }
+
     public static ErrorGqlStatusObject getGql52N02_52N11(String procedure) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02)
                 .withParam(GqlParams.StringParam.proc, procedure)

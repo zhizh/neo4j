@@ -34,7 +34,6 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.extension.ExtensionFactory;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.util.VisibleForTesting;
@@ -181,13 +180,7 @@ class ProcedureClassLoader extends URLClassLoader {
 
         // Collect exceptions and throw them as a unit
         if (!exceptions.isEmpty()) {
-            var exc = new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Failed to register procedures for the following reasons:");
-            for (var exception : exceptions) {
-                exc.addSuppressed(exception);
-            }
-            throw exc;
+            throw ProcedureException.surpressedRegisterFailed(exceptions);
         }
 
         return entries;

@@ -3441,6 +3441,30 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.GENERAL_PROCESSING_EXCEPTION,
             "unsupported index operation"),
+    STATUS_50N16(
+            new GqlStatus("50N16"),
+            """
+            Failed to invoke procedure/function { %s } caused by: { %s }.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.sig, GqlParams.StringParam.msg},
+            emptyMap(),
+            Condition.GENERAL_PROCESSING_EXCEPTION,
+            "procedure invocation failed"),
+    STATUS_50N17(
+            new GqlStatus("50N17"),
+            """
+            { %s } is unavailable because it is sandboxed. Sandboxing is controlled by the dbms.security.procedures.unrestricted setting. Only un-restrict procedures you can trust with access to database internals.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.sig},
+            emptyMap(),
+            Condition.GENERAL_PROCESSING_EXCEPTION,
+            "procedure invocation failed"),
+    STATUS_50N18(
+            new GqlStatus("50N18"),
+            """
+            Failed to compile procedure/function defined in { %s }: { %s }""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.procClass, GqlParams.StringParam.msg},
+            emptyMap(),
+            Condition.GENERAL_PROCESSING_EXCEPTION,
+            "procedure compilation failed"),
     STATUS_50N21(
             new GqlStatus("50N21"),
             """
@@ -3460,7 +3484,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_51N00(
             new GqlStatus("51N00"),
             """
-                    Failed to register procedure.""",
+                    Failed to register procedure/function.""",
             new GqlParams.GqlParam[] {},
             emptyMap(),
             Condition.SYSTEM_CONFIGURATION_OR_OPERATION_EXCEPTION,

@@ -19,13 +19,18 @@
  */
 package org.neo4j.internal.kernel.api.exceptions;
 
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
+
 import java.util.List;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
+import org.neo4j.internal.kernel.api.procs.DescribedSignature;
+import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Name;
@@ -297,5 +302,96 @@ public class ProcedureException extends KernelException {
                 .build();
         return new ProcedureException(
                 gql, statusCode, "The following namespaces are not reloadable: %s.".formatted(nonReloadableNamespaces));
+    }
+
+    public static ProcedureException loadFailedSandboxed(DescribedSignature signature) {
+        var gql = GqlHelper.get50N17(String.valueOf(signature.name()));
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                signature.description().orElse("Failed to load " + signature.name()));
+    }
+
+    public static ProcedureException noSuchIndex(String indexName, String procedureName, Boolean formatIndex) {
+        var gql = GqlHelper.get22N69_52N02(indexName, "db." + procedureName);
+        if (formatIndex) {
+            indexName = "'" + indexName + "'";
+        }
+        return new ProcedureException(gql, Status.Schema.IndexNotFound, "No such index %s", indexName);
+    }
+
+    public static ProcedureException surpressedRegisterFailed(List<Throwable> surpressedExceptions) {
+        var exception = surpressedExceptions.get(surpressedExceptions.size() - 1);
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.msgTitle, exception.getClass().getName())
+                .withParam(GqlParams.StringParam.msg, exception.getMessage())
+                .build();
+        for (int i = surpressedExceptions.size() - 2; i >= 0; i--) {
+            exception = surpressedExceptions.get(i);
+            gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
+                    .withClassification(ErrorClassification.CLIENT_ERROR)
+                    .withParam(
+                            GqlParams.StringParam.msgTitle, exception.getClass().getName())
+                    .withParam(GqlParams.StringParam.msg, exception.getMessage())
+                    .withCause(gql)
+                    .build();
+        }
+        gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(gql)
+                .build();
+
+        var exc = new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Failed to register procedures for the following reasons:");
+        for (var surpressedException : surpressedExceptions) {
+            exc.addSuppressed(surpressedException);
+        }
+        return exc;
+    }
+
+    public static ProcedureException innerExceptionFailed(Throwable throwable, ProcedureSignature signature) {
+        Throwable cause = getRootCause(throwable); // Do we risk losing valuable information here
+        var gql = GqlHelper.get50N16(
+                String.valueOf(signature.name()), (cause != null ? String.valueOf(cause) : String.valueOf(throwable)));
+
+        if (throwable instanceof Status.HasStatus statusException) {
+            return new ProcedureException(gql, statusException.status(), throwable, throwable.getMessage());
+        } else {
+            return new ProcedureException(
+                    gql,
+                    Status.Procedure.ProcedureCallFailed,
+                    throwable,
+                    "Failed to invoke procedure `%s`: %s",
+                    signature.name(),
+                    "Caused by: " + (cause != null ? cause : throwable));
+        }
+    }
+
+    public static ProcedureException compilationFailed(String routine, String procedureName, Throwable cause) {
+        var gql = GqlHelper.get51N00_50N18(procedureName, cause.getMessage());
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                cause,
+                "Failed to compile %s defined in `%s`: %s",
+                routine,
+                procedureName,
+                cause.getMessage());
+    }
+
+    public static ProcedureException invocationFailed(String typeAndName, Throwable cause) {
+        Throwable rootCause = getRootCause(cause); // Do we risk losing valuable information here
+        var gql = GqlHelper.get50N16(
+                typeAndName, (rootCause != null ? String.valueOf(rootCause) : String.valueOf(cause)));
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureCallFailed,
+                cause,
+                "Failed to invoke %s: %s",
+                typeAndName,
+                "Caused by: " + (rootCause != null ? rootCause : cause));
     }
 }
