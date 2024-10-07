@@ -38,7 +38,7 @@ import org.neo4j.cypher.internal.logical.plans.SchemaRelationshipIndexUsage
 import org.neo4j.cypher.internal.macros.AssertMacros
 import org.neo4j.cypher.internal.options.CypherExecutionMode
 import org.neo4j.cypher.internal.plandescription.PlanDescriptionBuilder
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.planning.CypherPlanner
 import org.neo4j.cypher.internal.planning.ExceptionTranslatingQueryContext
@@ -234,18 +234,21 @@ case class CypherCurrentCompiler[CONTEXT <: RuntimeContext](
       queryType == READ_ONLY || queryType == DBMS_READ,
       planState.returnColumns.toArray,
       planState.semanticTable,
-      planningAttributesCopy.effectiveCardinalities,
+      planningAttributesCopy.effectiveCardinalities.toMutable,
       planningAttributesCopy.providedOrders,
       planningAttributesCopy.leveragedOrders,
       planState.hasLoadCSV,
-      new SequentialIdGen(planningAttributesCopy.cardinalities.size),
+      new SequentialIdGen(planningAttributesCopy.effectiveCardinalities.size),
       query.options.queryOptions.executionMode == CypherExecutionMode.profile
     )
 
     try {
+      val executionPlan = runtime.compileToExecutable(logicalQuery, runtimeContext, transactionalContext.databaseMode())
       CachedExecutionPlan(
-        executionPlan = runtime.compileToExecutable(logicalQuery, runtimeContext, transactionalContext.databaseMode()),
-        effectiveCardinalities = planningAttributesCopy.effectiveCardinalities,
+        executionPlan = executionPlan,
+        // Note, effective cardinalities are mutated when the executable is constructed :/
+        effectiveCardinalities =
+          ImmutablePlanningAttributes.EffectiveCardinalities(logicalQuery.effectiveCardinalities),
         providedOrders = planningAttributesCopy.providedOrders
       )
     } catch {
@@ -367,7 +370,7 @@ object CypherCurrentCompiler {
   private[internal] class CypherExecutableQuery(
     logicalPlan: LogicalPlan,
     readOnly: Boolean,
-    effectiveCardinalities: EffectiveCardinalities,
+    effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
     rawCardinalitiesInPlanDescription: Boolean,
     distinctnessInPlanDescription: Boolean,
     providedOrders: ProvidedOrders,

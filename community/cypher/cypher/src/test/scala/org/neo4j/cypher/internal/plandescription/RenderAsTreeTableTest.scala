@@ -49,6 +49,7 @@ import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescriptionTest
 import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescriptionTest.planDescription
 import org.neo4j.cypher.internal.plandescription.asPrettyString.distinctness
 import org.neo4j.cypher.internal.planner.spi.IDPPlannerName
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.util.EffectiveCardinality
@@ -437,7 +438,7 @@ class RenderAsTreeTableTest extends CypherFunSuite with BeforeAndAfterAll with A
     providedOrders.set(expandPlan.id, DefaultProvidedOrderFactory.asc(varFor("  UNNAMED42")))
     val description = LogicalPlan2PlanDescription(
       readOnly = true,
-      new EffectiveCardinalities,
+      ImmutablePlanningAttributes.EffectiveCardinalities(new EffectiveCardinalities),
       withRawCardinalities = false,
       withDistinctness = false,
       providedOrders,
@@ -1285,7 +1286,7 @@ class RenderAsTreeTableTest extends CypherFunSuite with BeforeAndAfterAll with A
       logicalPlan,
       IDPPlannerName,
       readOnly = true,
-      effectiveCardinalities,
+      ImmutablePlanningAttributes.EffectiveCardinalities(effectiveCardinalities),
       withRawCardinalities = false,
       withDistinctness = false,
       new ProvidedOrders,

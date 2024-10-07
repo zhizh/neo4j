@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.logical.plans.CachedProperties
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.Selection.LabelAndRelTypeInfo
 import org.neo4j.cypher.internal.logical.plans.ordering.ProvidedOrder
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes.EffectiveCardinalities.MISSING
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
@@ -35,8 +36,11 @@ import org.neo4j.cypher.internal.util.Cardinality
 import org.neo4j.cypher.internal.util.EffectiveCardinality
 import org.neo4j.cypher.internal.util.attribution.Attribute
 import org.neo4j.cypher.internal.util.attribution.Attributes
+import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.cypher.internal.util.attribution.IdGen
 import org.neo4j.cypher.internal.util.attribution.PartialAttribute
+
+import scala.collection.immutable.ArraySeq
 
 object PlanningAttributes {
   class Solveds extends Attribute[LogicalPlan, PlannerQuery]
@@ -83,13 +87,73 @@ case class PlanningAttributes(
 }
 
 /**
- * This case class captures all PlanningAttributes needed for computing an ExecutionPlan.
+ * This case class captures all PlanningAttributes needed for computing an ExecutionPlan, optimised for space.
  * This class is also used in place of the original PlanningAttributes in `computeExecutionPlan` so that we by type
  * checking know that the key includes all PlanningAttributes that are needed for computing an execution plan.
  */
 case class PlanningAttributesCacheKey(
-  cardinalities: Cardinalities,
-  effectiveCardinalities: EffectiveCardinalities,
+  effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
   providedOrders: ProvidedOrders,
   leveragedOrders: LeveragedOrders
 )
+
+object ImmutablePlanningAttributes {
+
+  case class EffectiveCardinalities(
+    private val amounts: ArraySeq[Double],
+    private val originalAmounts: ArraySeq[Double]
+  ) {
+    def isDefinedAt(id: Id): Boolean = id.x < amounts.size && amounts(id.x) != MISSING
+
+    def get(id: Id): EffectiveCardinality = {
+      if (!isDefinedAt(id)) {
+        throw new NoSuchElementException(s"Id $id")
+      } else {
+        EffectiveCardinality(
+          amounts(id.x),
+          Option.when(id.x < originalAmounts.size && originalAmounts(id.x) != MISSING) {
+            Cardinality(originalAmounts(id.x))
+          }
+        )
+      }
+    }
+
+    def size: Int = amounts.count(_ != MISSING)
+
+    def toMutable: PlanningAttributes.EffectiveCardinalities = {
+      val mutable = new PlanningAttributes.EffectiveCardinalities
+      mutable.sizeHint(amounts.size)
+      var i = 0
+      while (i < amounts.size) {
+        val id = Id(i)
+        if (isDefinedAt(id)) mutable.set(id, get(id))
+        i += 1
+      }
+      mutable
+    }
+  }
+
+  object EffectiveCardinalities {
+    private val MISSING = Double.MinValue
+
+    def apply(cs: PlanningAttributes.EffectiveCardinalities): ImmutablePlanningAttributes.EffectiveCardinalities = {
+      val maxId = cs.iterator
+        .map { case (id, _) => id.x + 1 }
+        .maxOption
+        .getOrElse(0)
+      val amounts = Array.fill[Double](maxId)(MISSING)
+      val originals = Array.fill[Double](maxId)(MISSING)
+      cs.iterator.foreach { case (Id(id), c) =>
+        amounts(id) = flatten(c.amount)
+        originals(id) = c.originalCardinality match {
+          case Some(Cardinality(original)) => flatten(original)
+          case None                        => MISSING
+        }
+      }
+      EffectiveCardinalities(ArraySeq.unsafeWrapArray(amounts), ArraySeq.unsafeWrapArray(originals))
+    }
+
+    // Unexpected edge case, if cardinality is Double.MinValue we bump it one step.
+    private def flatten(value: Double): Double = if (value == MISSING) math.nextUp(MISSING) else value
+  }
+}

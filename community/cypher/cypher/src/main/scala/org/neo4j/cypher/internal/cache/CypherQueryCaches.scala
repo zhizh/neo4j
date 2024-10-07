@@ -61,7 +61,7 @@ import org.neo4j.cypher.internal.config.CypherConfiguration
 import org.neo4j.cypher.internal.config.StatsDivergenceCalculatorConfig
 import org.neo4j.cypher.internal.frontend.phases.BaseState
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributesCacheKey
 import org.neo4j.cypher.internal.util.InternalNotification
@@ -314,7 +314,7 @@ object CypherQueryCaches {
 
   case class CachedExecutionPlan(
     executionPlan: ExecutionPlan,
-    effectiveCardinalities: EffectiveCardinalities,
+    effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
     providedOrders: ProvidedOrders
   )
 

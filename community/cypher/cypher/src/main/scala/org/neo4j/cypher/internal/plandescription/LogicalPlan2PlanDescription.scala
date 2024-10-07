@@ -297,7 +297,7 @@ import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescription.pre
 import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescription.prettyUpdateLabelString
 import org.neo4j.cypher.internal.plandescription.asPrettyString.PrettyStringInterpolator
 import org.neo4j.cypher.internal.plandescription.asPrettyString.PrettyStringMaker
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.util.CancellationChecker
 import org.neo4j.cypher.internal.util.InputPosition
@@ -315,7 +315,7 @@ object LogicalPlan2PlanDescription {
     input: LogicalPlan,
     plannerName: PlannerName,
     readOnly: Boolean,
-    effectiveCardinalities: EffectiveCardinalities,
+    effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
     withRawCardinalities: Boolean,
     withDistinctness: Boolean,
     providedOrders: ProvidedOrders,
@@ -363,7 +363,7 @@ object LogicalPlan2PlanDescription {
 
 case class LogicalPlan2PlanDescription(
   readOnly: Boolean,
-  effectiveCardinalities: EffectiveCardinalities,
+  effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
   withRawCardinalities: Boolean,
   withDistinctness: Boolean = false,
   providedOrders: ProvidedOrders,

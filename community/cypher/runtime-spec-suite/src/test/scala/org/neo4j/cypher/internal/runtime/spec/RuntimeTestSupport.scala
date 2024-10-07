@@ -35,6 +35,7 @@ import org.neo4j.cypher.internal.options.CypherDebugOptions
 import org.neo4j.cypher.internal.plandescription.InternalPlanDescription
 import org.neo4j.cypher.internal.plandescription.PlanDescriptionBuilder
 import org.neo4j.cypher.internal.planner.spi.IDPPlannerName
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.runtime.InputDataStream
 import org.neo4j.cypher.internal.runtime.InputValues
 import org.neo4j.cypher.internal.runtime.NoInput
@@ -693,7 +694,7 @@ class RuntimeTestSupport[CONTEXT <: RuntimeContext](
           executionPlan.rewrittenPlan.getOrElse(logicalQuery.logicalPlan),
           IDPPlannerName,
           logicalQuery.readOnly,
-          logicalQuery.effectiveCardinalities,
+          ImmutablePlanningAttributes.EffectiveCardinalities(logicalQuery.effectiveCardinalities),
           debugOptions.rawCardinalitiesEnabled,
           debugOptions.renderDistinctnessEnabled,
           logicalQuery.providedOrders,

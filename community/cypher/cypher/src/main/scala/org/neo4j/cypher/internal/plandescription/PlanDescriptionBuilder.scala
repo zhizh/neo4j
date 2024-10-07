@@ -30,7 +30,7 @@ import org.neo4j.cypher.internal.plandescription.Arguments.RuntimeImpl
 import org.neo4j.cypher.internal.plandescription.Arguments.StringRepresentation
 import org.neo4j.cypher.internal.plandescription.Arguments.Time
 import org.neo4j.cypher.internal.plandescription.rewrite.InternalPlanDescriptionRewriter
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.cypher.result.OperatorProfile
@@ -42,7 +42,7 @@ object PlanDescriptionBuilder {
     logicalPlan: LogicalPlan,
     plannerName: PlannerName,
     readOnly: Boolean,
-    effectiveCardinalities: EffectiveCardinalities,
+    effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
     withRawCardinalities: Boolean,
     withDistinctness: Boolean,
     providedOrders: ProvidedOrders,
@@ -80,7 +80,7 @@ class PlanDescriptionBuilder(
   logicalPlan: LogicalPlan,
   plannerName: PlannerName,
   readOnly: Boolean,
-  effectiveCardinalities: EffectiveCardinalities,
+  effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
   withRawCardinalities: Boolean,
   withDistinctness: Boolean,
   providedOrders: ProvidedOrders,

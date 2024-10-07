@@ -425,6 +425,7 @@ import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescriptionTest
 import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescriptionTest.planDescription
 import org.neo4j.cypher.internal.plandescription.asPrettyString.PrettyStringInterpolator
 import org.neo4j.cypher.internal.planner.spi.IDPPlannerName
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.runtime.ast.MakeTraversable
@@ -8351,7 +8352,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       logicalPlan,
       IDPPlannerName,
       readOnly,
-      effectiveCardinalities,
+      ImmutablePlanningAttributes.EffectiveCardinalities(effectiveCardinalities),
       withRawCardinalities = false,
       withDistinctness = false,
       providedOrders = providedOrders,

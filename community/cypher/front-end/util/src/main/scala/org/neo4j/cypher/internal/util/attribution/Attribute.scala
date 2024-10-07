@@ -130,6 +130,8 @@ trait Attribute[KEY, VALUE] {
     }
   }.toSeq
 
+  def sizeHint(hint: Int): Unit = array.sizeHint(hint)
+
   private def resizeArray(requiredSize: Int): Unit = {
     while (array.size < requiredSize)
       array += new Unchangeable

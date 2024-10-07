@@ -32,10 +32,9 @@ import org.neo4j.cypher.internal.frontend.phases.BaseState
 import org.neo4j.cypher.internal.ir.PlannerQuery
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.options.CypherEagerAnalyzerOption
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LeveragedOrders
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
@@ -82,8 +81,7 @@ case class LogicalPlanState(
       queryText,
       plannerName,
       CachablePlanningAttributes(
-        planningAttributes.cardinalities,
-        planningAttributes.effectiveCardinalities,
+        ImmutablePlanningAttributes.EffectiveCardinalities(planningAttributes.effectiveCardinalities),
         planningAttributes.providedOrders,
         planningAttributes.leveragedOrders,
         planningAttributes.labelAndRelTypeInfos,
@@ -158,8 +156,7 @@ case class CachableLogicalPlanState(
 )
 
 case class CachablePlanningAttributes(
-  cardinalities: Cardinalities,
-  effectiveCardinalities: EffectiveCardinalities,
+  effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
   providedOrders: ProvidedOrders,
   leveragedOrders: LeveragedOrders,
   labelAndRelTypeInfos: LabelAndRelTypeInfos,
@@ -169,7 +166,6 @@ case class CachablePlanningAttributes(
 
   def cacheKey: PlanningAttributesCacheKey =
     PlanningAttributesCacheKey(
-      cardinalities,
       effectiveCardinalities,
       providedOrders,
       leveragedOrders
@@ -178,8 +174,7 @@ case class CachablePlanningAttributes(
   // Let's not override the copy method of case classes
   def createCopy(): CachablePlanningAttributes =
     CachablePlanningAttributes(
-      cardinalities.clone[Cardinalities],
-      effectiveCardinalities.clone[EffectiveCardinalities],
+      effectiveCardinalities, // Immutable
       providedOrders.clone[ProvidedOrders],
       leveragedOrders.clone[LeveragedOrders],
       labelAndRelTypeInfos.clone[LabelAndRelTypeInfos],
