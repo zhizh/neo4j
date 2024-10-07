@@ -20,7 +20,6 @@
 package org.neo4j.cypher.internal.administration
 
 import org.neo4j.configuration.Config
-import org.neo4j.cypher.internal.AdministrationCommandRuntime.followerError
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.getPasswordExpression
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.getValidPasswordParameter
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.internalKey
@@ -91,8 +90,9 @@ case class SetOwnPasswordExecutionPlanner(
       QueryHandler
         .handleError {
           case (error: HasStatus, p) if error.status() == Status.Cluster.NotALeader =>
-            new DatabaseAdministrationOnFollowerException(
-              s"User '${currentUser(p)}' failed to alter their own password: $followerError",
+            DatabaseAdministrationOnFollowerException.notALeader(
+              "ALTER CURRENT USER SET PASSWORD",
+              s"User '${currentUser(p)}' failed to alter their own password",
               error
             )
           case (error: Neo4jException, _) => error

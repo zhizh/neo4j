@@ -429,6 +429,7 @@ case object RoleEntity extends RBACEntity
 
 case class DoNothingIfNotExists(
   source: PrivilegePlan,
+  command: String,
   entity: RBACEntity,
   name: Either[String, Parameter],
   operation: String,
@@ -437,6 +438,7 @@ case class DoNothingIfNotExists(
 
 case class DoNothingIfExists(
   source: PrivilegePlan,
+  command: String,
   entity: RBACEntity,
   name: Either[String, Parameter],
   valueMapper: String => String = s => s
@@ -444,6 +446,7 @@ case class DoNothingIfExists(
 
 case class DoNothingIfDatabaseNotExists(
   source: PrivilegePlan,
+  command: String,
   name: DatabaseName,
   operation: String,
   databaseTypeFilter: DatabaseTypeFilter = All
@@ -451,12 +454,14 @@ case class DoNothingIfDatabaseNotExists(
 
 case class DoNothingIfDatabaseExists(
   source: PrivilegePlan,
+  command: String,
   name: DatabaseName,
   databaseTypeFilter: DatabaseTypeFilter = All
 )(implicit idGen: IdGen) extends SecurityAdministrationLogicalPlan(Some(source))
 
 case class EnsureNodeExists(
   source: PrivilegePlan,
+  command: String,
   entity: RBACEntity,
   name: Either[String, Parameter],
   valueMapper: String => String = s => s,
@@ -467,6 +472,7 @@ case class EnsureNodeExists(
 
 case class EnsureDatabaseNodeExists(
   source: PrivilegePlan,
+  command: String,
   name: DatabaseName,
   extraFilter: String => String = _ => "",
   action: String
@@ -568,6 +574,7 @@ case class ShowAliases(
 
 case class EnsureValidNonSystemDatabase(
   source: AdministrationCommandLogicalPlan,
+  command: String,
   databaseName: DatabaseName,
   action: String,
   aliasName: Option[DatabaseName] = None

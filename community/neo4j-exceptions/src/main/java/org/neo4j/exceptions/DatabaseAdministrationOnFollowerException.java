@@ -19,17 +19,31 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class DatabaseAdministrationOnFollowerException extends CypherExecutionException {
-    public DatabaseAdministrationOnFollowerException(String message, Throwable cause) {
-        super(message, cause);
-    }
 
-    public DatabaseAdministrationOnFollowerException(
+    private static final String FOLLOWER_ERROR = "Administration commands must be executed on the LEADER server.";
+
+    private DatabaseAdministrationOnFollowerException(
             ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
+    }
+
+    public static DatabaseAdministrationOnFollowerException notALeader(
+            String command, String startOfLegacyMessage, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N29)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.cmd, command)
+                .build();
+
+        return new DatabaseAdministrationOnFollowerException(
+                gql, String.format("%s: %s", startOfLegacyMessage, FOLLOWER_ERROR), cause);
     }
 
     @Override

@@ -218,7 +218,12 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
       case IfExistsReplace =>
         plans.DropRole(plans.AssertAllowedDbmsActions(None, Seq(DropRoleAction, CreateRoleAction)), roleName)
       case IfExistsDoNothing =>
-        plans.DoNothingIfExists(plans.AssertAllowedDbmsActions(CreateRoleAction), plans.RoleEntity, roleName)
+        plans.DoNothingIfExists(
+          plans.AssertAllowedDbmsActions(CreateRoleAction),
+          "CREATE ROLE",
+          plans.RoleEntity,
+          roleName
+        )
       case _ => plans.AssertAllowedDbmsActions(CreateRoleAction)
     }
 
@@ -293,7 +298,12 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
               userName
             )
           case IfExistsDoNothing =>
-            plans.DoNothingIfExists(plans.AssertAllowedDbmsActions(CreateUserAction), plans.UserEntity, userName)
+            plans.DoNothingIfExists(
+              plans.AssertAllowedDbmsActions(CreateUserAction),
+              "CREATE USER",
+              plans.UserEntity,
+              userName
+            )
           case _ => plans.AssertAllowedDbmsActions(CreateUserAction)
         }
         Some(plans.LogSystemCommand(
@@ -312,7 +322,8 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
       case c @ RenameUser(fromUserName, toUserName, ifExists) =>
         val assertAllowed = plans.AssertAllowedDbmsActions(RenameUserAction)
         val source =
-          if (ifExists) plans.DoNothingIfNotExists(assertAllowed, plans.UserEntity, fromUserName, "rename")
+          if (ifExists)
+            plans.DoNothingIfNotExists(assertAllowed, "RENAME USER", plans.UserEntity, fromUserName, "rename")
           else assertAllowed
         Some(plans.LogSystemCommand(plans.RenameUser(source, fromUserName, toUserName), prettifier.asString(c)))
 
@@ -325,9 +336,10 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           "Deleting yourself is not allowed"
         )
         val source =
-          if (ifExists) plans.DoNothingIfNotExists(assertAllowed, plans.UserEntity, userName, "delete")
+          if (ifExists) plans.DoNothingIfNotExists(assertAllowed, "DROP USER", plans.UserEntity, userName, "delete")
           else plans.EnsureNodeExists(
             assertAllowed,
+            "DROP USER",
             plans.UserEntity,
             userName,
             labelDescription = "User",
@@ -357,7 +369,7 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           )
           else assertAllowed
         val ifExistsSubPlan =
-          if (ifExists) plans.DoNothingIfNotExists(assertionSubPlan, plans.UserEntity, userName, "alter")
+          if (ifExists) plans.DoNothingIfNotExists(assertionSubPlan, "ALTER USER", plans.UserEntity, userName, "alter")
           else assertionSubPlan
         Some(plans.LogSystemCommand(
           plans.AlterUser(
@@ -426,7 +438,8 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
       case c @ RenameRole(fromRoleName, toRoleName, ifExists) =>
         val assertAllowed = plans.AssertAllowedDbmsActions(RenameRoleAction)
         val source =
-          if (ifExists) plans.DoNothingIfNotExists(assertAllowed, plans.RoleEntity, fromRoleName, "rename")
+          if (ifExists)
+            plans.DoNothingIfNotExists(assertAllowed, "RENAME ROLE", plans.RoleEntity, fromRoleName, "rename")
           else assertAllowed
         Some(plans.LogSystemCommand(plans.RenameRole(source, fromRoleName, toRoleName), prettifier.asString(c)))
 
@@ -434,9 +447,10 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
       case c @ DropRole(roleName, ifExists) =>
         val assertAllowed = plans.AssertAllowedDbmsActions(DropRoleAction)
         val source =
-          if (ifExists) plans.DoNothingIfNotExists(assertAllowed, plans.RoleEntity, roleName, "delete")
+          if (ifExists) plans.DoNothingIfNotExists(assertAllowed, "DROP ROLE", plans.RoleEntity, roleName, "delete")
           else plans.EnsureNodeExists(
             assertAllowed,
+            "DROP ROLE",
             plans.RoleEntity,
             roleName,
             labelDescription = "Role",
@@ -975,6 +989,7 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
                 Some(canCreateCheck)
                   .map(plans.DoNothingIfDatabaseExists(
                     _,
+                    "CREATE DATABASE",
                     dbName
                   ))
               case _ =>
@@ -1003,6 +1018,7 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
                 Some(canCreateCheck)
                   .map(plans.DoNothingIfDatabaseExists(
                     _,
+                    "CREATE COMPOSITE DATABASE",
                     dbName
                   ))
               case _ =>
@@ -1032,6 +1048,7 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           if (ifExists)
             plans.DoNothingIfDatabaseNotExists(
               assertAllowed,
+              "DROP DATABASE",
               dbName,
               "delete",
               if (composite) CompositeDatabase else DatabaseOrLocalAlias
@@ -1039,7 +1056,7 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           else assertAllowed
         )
           .map(plans.EnsureDatabaseSafeToDelete(_, dbName, aliasAction))
-          .map(plans.EnsureValidNonSystemDatabase(_, dbName, "delete"))
+          .map(plans.EnsureValidNonSystemDatabase(_, "DROP DATABASE", dbName, "delete"))
           .map(plans.DropDatabase(_, dbName, additionalAction, composite, aliasAction))
           .map(wrapInWait(_, dbName, waitUntilComplete))
           .map(plans.LogSystemCommand(_, prettifier.asString(c)))
@@ -1067,13 +1084,14 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           .map(assertAllowed =>
             if (ifExists) plans.DoNothingIfDatabaseNotExists(
               assertAllowed,
+              "ALTER DATABASE",
               dbName,
               "alter",
               DatabaseOrLocalAlias
             )
             else assertAllowed
           )
-          .map(plans.EnsureValidNonSystemDatabase(_, dbName, "alter"))
+          .map(plans.EnsureValidNonSystemDatabase(_, "ALTER DATABASE", dbName, "alter"))
           .map(plans.AlterDatabase(_, dbName, access, topology, options, optionsToRemove))
           .map(wrapInWait(_, dbName, waitUntilComplete))
           .map(plans.LogSystemCommand(_, prettifier.asString(c)))
@@ -1096,7 +1114,10 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           Some(plans.AssertManagementActionNotBlocked(StopDatabaseAction))
         )
         val plan = wrapInWait(
-          plans.StopDatabase(plans.EnsureValidNonSystemDatabase(assertAllowed, dbName, "stop"), dbName),
+          plans.StopDatabase(
+            plans.EnsureValidNonSystemDatabase(assertAllowed, "STOP DATABASE", dbName, "stop"),
+            dbName
+          ),
           dbName,
           waitUntilComplete
         )
@@ -1115,13 +1136,15 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           case IfExistsDoNothing => (
               plans.DoNothingIfDatabaseExists(
                 plans.AssertAllowedDbmsActions(None, Seq(CreateAliasAction)),
+                "CREATE DATABASE ALIAS",
                 aliasName
               ),
               false
             )
           case _ => (plans.AssertAllowedDbmsActions(None, Seq(CreateAliasAction)), false)
         }
-        val ensureValidDatabase = plans.EnsureValidNonSystemDatabase(source, targetName, "create", Some(aliasName))
+        val ensureValidDatabase =
+          plans.EnsureValidNonSystemDatabase(source, "CREATE DATABASE ALIAS", targetName, "create", Some(aliasName))
         val aliasCommand =
           plans.CreateLocalDatabaseAlias(ensureValidDatabase, aliasName, targetName, properties, replace)
         Some(plans.LogSystemCommand(aliasCommand, prettifier.asString(c)))
@@ -1152,8 +1175,9 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
               ),
               true
             )
-          case IfExistsDoNothing => (plans.DoNothingIfDatabaseExists(assertAllowed, aliasName), false)
-          case _                 => (assertAllowed, false)
+          case IfExistsDoNothing =>
+            (plans.DoNothingIfDatabaseExists(assertAllowed, "CREATE DATABASE ALIAS", aliasName), false)
+          case _ => (assertAllowed, false)
         }
         val aliasCommand = plans.CreateRemoteDatabaseAlias(
           source,
@@ -1175,9 +1199,11 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           Seq(DropAliasAction)
         )
         val source =
-          if (ifExists) plans.DoNothingIfDatabaseNotExists(assertAllowed, aliasName, "delete", Alias)
+          if (ifExists)
+            plans.DoNothingIfDatabaseNotExists(assertAllowed, "DROP DATABASE ALIAS", aliasName, "delete", Alias)
           else plans.EnsureDatabaseNodeExists(
             assertAllowed,
+            "DROP DATABASE ALIAS",
             aliasName,
             node => s"WHERE $node.$PRIMARY_PROPERTY = false",
             "delete"
@@ -1191,16 +1217,23 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
 
         val source =
           if (ifExists)
-            plans.DoNothingIfDatabaseNotExists(assertAllowedLocal, aliasName, "alter", Alias)
+            plans.DoNothingIfDatabaseNotExists(assertAllowedLocal, "ALTER DATABASE ALIAS", aliasName, "alter", Alias)
           else plans.EnsureDatabaseNodeExists(
             assertAllowedLocal,
+            "ALTER DATABASE ALIAS",
             aliasName,
             node => s"WHERE $node.$PRIMARY_PROPERTY = false",
             "alter"
           )
 
         val aliasCommand = plans.AlterLocalDatabaseAlias(
-          targetName.map(plans.EnsureValidNonSystemDatabase(source, _, "alter", Some(aliasName))),
+          targetName.map(plans.EnsureValidNonSystemDatabase(
+            source,
+            "ALTER DATABASE ALIAS",
+            _,
+            "alter",
+            Some(aliasName)
+          )),
           aliasName,
           targetName,
           properties
@@ -1224,9 +1257,11 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
         )
 
         val source =
-          if (ifExists) plans.DoNothingIfDatabaseNotExists(assertAllowedRemote, aliasName, "alter", Alias)
+          if (ifExists)
+            plans.DoNothingIfDatabaseNotExists(assertAllowedRemote, "ALTER DATABASE ALIAS", aliasName, "alter", Alias)
           else plans.EnsureDatabaseNodeExists(
             assertAllowedRemote,
+            "ALTER DATABASE ALIAS",
             aliasName,
             node => s"WHERE $node.$PRIMARY_PROPERTY = false",
             "alter"

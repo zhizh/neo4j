@@ -23,7 +23,6 @@ import org.neo4j.cypher.internal.AdministrationCommandRuntime.Show
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.Show.showDatabaseName
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.Show.showString
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.checkNamespaceExists
-import org.neo4j.cypher.internal.AdministrationCommandRuntime.followerError
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.getDatabaseNameFields
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.getNameFields
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.userLabel
@@ -54,6 +53,7 @@ case class EnsureNodeExistsExecutionPlanner(
 ) {
 
   def planEnsureNodeExists(
+    command: String,
     entity: RBACEntity,
     name: Either[String, Parameter],
     valueMapper: String => String,
@@ -75,13 +75,14 @@ case class EnsureNodeExistsExecutionPlanner(
          |${extraFilter("node")}
          |RETURN node""".stripMargin,
       VirtualValues.map(Array(nameFields.nameKey), Array(nameFields.nameValue)),
-      queryHandler(action, labelDescription, name),
+      queryHandler(command, action, labelDescription, name),
       sourcePlan,
       parameterTransformer = ParameterTransformer().convert(nameFields.nameConverter)
     )
   }
 
   def planEnsureDatabaseNodeExists(
+    command: String,
     aliasName: DatabaseName,
     extraFilter: String => String,
     action: String,
@@ -98,7 +99,7 @@ case class EnsureNodeExistsExecutionPlanner(
          |${extraFilter("node")}
          |RETURN node""".stripMargin,
       VirtualValues.map(aliasNameFields.keys, aliasNameFields.values),
-      queryHandler(action, DATABASE_NAME_LABEL_DESCRIPTION, aliasName),
+      queryHandler(command, action, DATABASE_NAME_LABEL_DESCRIPTION, aliasName),
       sourcePlan,
       parameterTransformer = ParameterTransformer().convert(aliasNameFields.nameConverter).validate(
         checkNamespaceExists(aliasNameFields)
@@ -107,7 +108,8 @@ case class EnsureNodeExistsExecutionPlanner(
 
   }
 
-  private def queryHandler[T](action: String, labelDescription: String, value: T)(implicit show: Show[T]) = {
+  private def queryHandler[T](command: String, action: String, labelDescription: String, value: T)(implicit
+  show: Show[T]) = {
     QueryHandler
       .handleNoResult(p =>
         Some(ThrowException(new InvalidArgumentException(
@@ -116,8 +118,9 @@ case class EnsureNodeExistsExecutionPlanner(
       )
       .handleError {
         case (error: HasStatus, p) if error.status() == Status.Cluster.NotALeader =>
-          new DatabaseAdministrationOnFollowerException(
-            s"Failed to $action the specified ${labelDescription.toLowerCase} '${show(value, p)}': $followerError",
+          DatabaseAdministrationOnFollowerException.notALeader(
+            command,
+            s"Failed to $action the specified ${labelDescription.toLowerCase} '${show(value, p)}'",
             error
           )
         case (error, p) => new IllegalStateException(

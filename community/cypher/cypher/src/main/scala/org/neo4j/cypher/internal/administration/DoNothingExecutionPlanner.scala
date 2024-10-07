@@ -23,7 +23,6 @@ import org.neo4j.cypher.internal.AdministrationCommandRuntime.Show
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.Show.showDatabaseName
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.Show.showString
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.checkNamespaceExists
-import org.neo4j.cypher.internal.AdministrationCommandRuntime.followerError
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.getDatabaseNameFields
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.getNameFields
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.userLabel
@@ -61,6 +60,7 @@ case class DoNothingExecutionPlanner(
 ) {
 
   def planDoNothingIfNotExists(
+    command: String,
     entity: RBACEntity,
     name: Either[String, Parameter],
     valueMapper: String => String,
@@ -76,12 +76,13 @@ case class DoNothingExecutionPlanner(
       valueMapper,
       QueryHandler
         .ignoreNoResult()
-        .handleError(handleErrorFn(operation, label, name)),
+        .handleError(handleErrorFn(command, operation, label, name)),
       sourcePlan
     )
   }
 
   def planDoNothingIfExists(
+    command: String,
     entity: RBACEntity,
     name: Either[String, Parameter],
     valueMapper: String => String,
@@ -96,12 +97,13 @@ case class DoNothingExecutionPlanner(
       valueMapper,
       QueryHandler
         .ignoreOnResult()
-        .handleError(handleErrorFn("create", label, name)),
+        .handleError(handleErrorFn(command, "create", label, name)),
       sourcePlan
     )
   }
 
   def planDoNothingIfDatabaseNotExists(
+    command: String,
     name: DatabaseName,
     operation: String,
     sourcePlan: Option[ExecutionPlan],
@@ -112,13 +114,14 @@ case class DoNothingExecutionPlanner(
       name,
       QueryHandler
         .ignoreNoResult()
-        .handleError(handleErrorFn(operation, DATABASE, name)),
+        .handleError(handleErrorFn(command, operation, DATABASE, name)),
       sourcePlan,
       databaseTypeFilter
     )
   }
 
   def planDoNothingIfDatabaseExists(
+    command: String,
     name: DatabaseName,
     sourcePlan: Option[ExecutionPlan],
     databaseTypeFilter: DatabaseTypeFilter
@@ -128,7 +131,7 @@ case class DoNothingExecutionPlanner(
       name,
       QueryHandler
         .ignoreOnResult()
-        .handleError(handleErrorFn("create", DATABASE, name)),
+        .handleError(handleErrorFn(command, "create", DATABASE, name)),
       sourcePlan,
       databaseTypeFilter
     )
@@ -191,13 +194,15 @@ case class DoNothingExecutionPlanner(
   }
 
   private def handleErrorFn[T](
+    command: String,
     operation: String,
     labelDescription: String,
     name: T
   )(implicit show: Show[T]): (Throwable, MapValue) => Throwable = {
     case (error: HasStatus, p) if error.status() == Status.Cluster.NotALeader =>
-      new DatabaseAdministrationOnFollowerException(
-        s"Failed to $operation the specified ${labelDescription.toLowerCase} '${show(name, p)}': $followerError",
+      DatabaseAdministrationOnFollowerException.notALeader(
+        command,
+        s"Failed to $operation the specified ${labelDescription.toLowerCase} '${show(name, p)}'",
         error
       )
     case (error, p) => new IllegalStateException(

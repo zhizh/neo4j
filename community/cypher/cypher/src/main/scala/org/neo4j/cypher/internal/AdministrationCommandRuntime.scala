@@ -361,8 +361,9 @@ object AdministrationCommandRuntime {
                 )
               }
             case (e: HasStatus, _) if e.status() == Status.Cluster.NotALeader =>
-              new DatabaseAdministrationOnFollowerException(
-                s"Failed to create the specified user '${runtimeStringValue(userName, params)}': $followerError",
+              DatabaseAdministrationOnFollowerException.notALeader(
+                "CREATE USER",
+                s"Failed to create the specified user '${runtimeStringValue(userName, params)}'",
                 error
               )
             case _ => new CypherExecutionException(
@@ -582,8 +583,9 @@ object AdministrationCommandRuntime {
                 error
               )
             case (e: HasStatus, _) if e.status() == Status.Cluster.NotALeader =>
-              new DatabaseAdministrationOnFollowerException(
-                s"Failed to alter the specified user '${runtimeStringValue(userName, p)}': $followerError",
+              DatabaseAdministrationOnFollowerException.notALeader(
+                "ALTER USER",
+                s"Failed to alter the specified user '${runtimeStringValue(userName, p)}'",
                 error
               )
             case _ => new CypherExecutionException(
@@ -693,8 +695,9 @@ object AdministrationCommandRuntime {
                 error
               )
             case (e: HasStatus, _) if e.status() == Status.Cluster.NotALeader =>
-              new DatabaseAdministrationOnFollowerException(
-                s"Failed to rename the specified ${entity.toString.toLowerCase(Locale.ROOT)} '${runtimeStringValue(fromName, p)}': $followerError",
+              DatabaseAdministrationOnFollowerException.notALeader(
+                s"RENAME ${entity.toString.toUpperCase(Locale.ROOT)}",
+                s"Failed to rename the specified ${entity.toString.toLowerCase(Locale.ROOT)} '${runtimeStringValue(fromName, p)}'",
                 error
               )
             case _ =>

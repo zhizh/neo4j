@@ -19,12 +19,21 @@
  */
 package org.neo4j.graphdb;
 
+import static java.lang.String.format;
+
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlRuntimeException;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class WriteOperationsNotAllowedException extends GqlRuntimeException implements Status.HasStatus {
     private final Status statusCode;
+
+    public static final String NOT_LEADER_ERROR_MSG =
+            "No write operations are allowed directly on this database. Writes must pass through the leader. "
+                    + "The role of this server is: %s";
 
     @Deprecated
     public WriteOperationsNotAllowedException(String message, Status statusCode) {
@@ -35,6 +44,14 @@ public class WriteOperationsNotAllowedException extends GqlRuntimeException impl
     public WriteOperationsNotAllowedException(ErrorGqlStatusObject gqlStatusObject, String message, Status statusCode) {
         super(gqlStatusObject, message);
         this.statusCode = statusCode;
+    }
+
+    public static WriteOperationsNotAllowedException notALeader(String currentRole) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N07)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new WriteOperationsNotAllowedException(
+                gql, format(NOT_LEADER_ERROR_MSG, currentRole), Status.Cluster.NotALeader);
     }
 
     /** The Neo4j status code associated with this exception type. */

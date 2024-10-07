@@ -20,7 +20,6 @@
 package org.neo4j.cypher.internal.administration
 
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.authRelType
-import org.neo4j.cypher.internal.AdministrationCommandRuntime.followerError
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.getNameFields
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.runtimeStringValue
 import org.neo4j.cypher.internal.AdministrationCommandRuntime.userLabel
@@ -61,8 +60,9 @@ case class DropUserExecutionPlanner(
       QueryHandler
         .handleError {
           case (error: HasStatus, p) if error.status() == Status.Cluster.NotALeader =>
-            new DatabaseAdministrationOnFollowerException(
-              s"Failed to delete the specified user '${runtimeStringValue(userName, p)}': $followerError",
+            DatabaseAdministrationOnFollowerException.notALeader(
+              "DROP USER",
+              s"Failed to delete the specified user '${runtimeStringValue(userName, p)}'",
               error
             )
           case (error, p) => new CypherExecutionException(
