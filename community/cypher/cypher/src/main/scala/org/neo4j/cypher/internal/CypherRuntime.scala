@@ -180,10 +180,9 @@ case class UnknownRuntime(requestedRuntime: String) extends CypherRuntime[Runtim
     logicalQuery: LogicalQuery,
     context: RuntimeContext,
     databaseMode: DatabaseMode
-  ): ExecutionPlan =
-    throw new CantCompileQueryException(
-      s"This version of Neo4j does not support the requested runtime: `$requestedRuntime`"
-    )
+  ): ExecutionPlan = {
+    throw CantCompileQueryException.unsupportedRuntimeInThisVersion(String.valueOf(requestedRuntime))
+  }
 }
 
 /**

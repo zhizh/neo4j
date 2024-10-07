@@ -75,6 +75,16 @@ public class InvalidArgumentException extends Neo4jException {
         return new InvalidArgumentException(gql, String.format("A %s point must contain %s", crs, mandatoryKeys));
     }
 
+    public static InvalidArgumentException invalidSpatialValueCombination() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N22)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        return new InvalidArgumentException(gql, "Cannot specify both CRS and SRID");
+    }
+
     public static InvalidArgumentException timezoneAndOffsetMismatch(
             String zoneName, String offset, List<String> validOffsets, String matcherGroup) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)

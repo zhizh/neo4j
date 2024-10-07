@@ -220,8 +220,7 @@ public class WebURLAccessRule implements AccessRule<URL> {
             return Readables.wrap(
                     stream, url.toString(), StandardCharsets.UTF_8, 0); /*length doesn't matter in this context*/
         } catch (IOException | URISyntaxException e) {
-            throw new LoadExternalResourceException(
-                    String.format("Couldn't load the external resource at: %s", url), e);
+            throw LoadExternalResourceException.couldNotLoadExternalResource(String.valueOf(url), e);
         }
     }
 
@@ -246,9 +245,7 @@ public class WebURLAccessRule implements AccessRule<URL> {
              * If it turns out there is some wretched http server out there that we need to support,
              * that don't respect the spec recommendations, please don't forget to align checkUrlIncludingHops.
              */
-            throw new LoadExternalResourceException(String.format(
-                    "LOAD CSV failed to access resource. The request to %s was at some point redirected to from which it could not proceed. This may happen if %s redirects to a resource which uses a different protocol than the original request.",
-                    con.getURL(), con.getURL()));
+            throw LoadExternalResourceException.failedToAccessResource(con.getURL());
         }
 
         con.setConnectTimeout(CONNECTION_TIMEOUT);

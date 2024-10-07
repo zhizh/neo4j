@@ -54,9 +54,7 @@ object CommunityRuntimeFactory {
       case CypherRuntimeOption.default => default
 
       case unsupported if disallowFallback =>
-        throw new RuntimeUnsupportedException(
-          s"This version of Neo4j does not support the requested runtime: `$unsupported`"
-        )
+        throw RuntimeUnsupportedException.unsupportedRuntimeInThisVersion(String.valueOf(unsupported))
 
       case unsupported => new FallbackRuntime[RuntimeContext](
           ArraySeq(UnknownRuntime(unsupported.name), SchemaCommandRuntime, CommunitySlottedRuntime),

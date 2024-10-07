@@ -373,7 +373,7 @@ public class ResultSubscriber extends PrefetchingResourceIterator<Map<String, Ob
         } else if (e instanceof RuntimeException) {
             throw (RuntimeException) e;
         } else {
-            neo4jException = new CypherExecutionException(e.getMessage(), e);
+            neo4jException = CypherExecutionException.unexpectedError(e);
         }
         return new QueryExecutionKernelException(neo4jException).asUserException();
     }

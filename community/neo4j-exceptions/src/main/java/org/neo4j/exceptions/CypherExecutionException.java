@@ -19,10 +19,15 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class CypherExecutionException extends Neo4jException {
+
+    @Deprecated
     public CypherExecutionException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -31,12 +36,39 @@ public class CypherExecutionException extends Neo4jException {
         super(gqlStatusObject, message, cause);
     }
 
+    @Deprecated
     public CypherExecutionException(String message) {
         super(message);
     }
 
     public CypherExecutionException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
+    }
+
+    public static CypherExecutionException csvBufferSizeOverflow(Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N49)
+                        .withClassification(ErrorClassification.DATABASE_ERROR)
+                        .build())
+                .build();
+        return new CypherExecutionException(
+                gql,
+                """
+                Tried to read a field larger than the current buffer size.
+                 Make sure that the field doesn't have an unterminated quote,
+                 if it doesn't you can try increasing the buffer size via `dbms.import.csv.buffer_size`.""",
+                cause);
+    }
+
+    public static CypherExecutionException unexpectedError(Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        return new CypherExecutionException(gql, cause.getMessage(), cause);
     }
 
     @Override

@@ -134,7 +134,7 @@ class StandardInternalExecutionResult(
     if (executionMode == ProfileMode) {
       if (runtimeResult.consumptionState != ConsumptionState.EXHAUSTED) {
         // TODO: Do we really need to close here?
-        val error = new ProfilerStatisticsNotReadyException()
+        val error = ProfilerStatisticsNotReadyException.invalidUseOfProfile()
         taskCloser.close(Error(error))
         outerCloseable.close()
         throw error

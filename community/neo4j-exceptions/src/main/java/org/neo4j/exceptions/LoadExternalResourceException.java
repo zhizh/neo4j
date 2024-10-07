@@ -19,24 +19,84 @@
  */
 package org.neo4j.exceptions;
 
+import java.net.URL;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class LoadExternalResourceException extends Neo4jException {
-    public LoadExternalResourceException(String message, Throwable cause) {
-        super(message, cause);
-    }
 
-    public LoadExternalResourceException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
+    private LoadExternalResourceException(ErrorGqlStatusObject gqlStatusObject, String message, Throwable cause) {
         super(gqlStatusObject, message, cause);
     }
 
-    public LoadExternalResourceException(String message) {
-        super(message);
+    private LoadExternalResourceException(ErrorGqlStatusObject gqlStatusObject, String message) {
+        super(gqlStatusObject, message);
     }
 
-    public LoadExternalResourceException(ErrorGqlStatusObject gqlStatusObject, String message) {
-        super(gqlStatusObject, message);
+    public static LoadExternalResourceException withInnerErrorMessage(String url, Throwable cause) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(String.valueOf(url)), cause.getMessage(), cause);
+    }
+
+    public static LoadExternalResourceException couldNotLoadExternalResource(String url, Throwable cause) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(String.valueOf(url)),
+                String.format("Couldn't load the external resource at: %s", url),
+                cause);
+    }
+
+    public static LoadExternalResourceException failedToAccessResource(URL url) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(String.valueOf(url)),
+                String.format(
+                        "LOAD CSV failed to access resource. The request to %s was at some point redirected to from which it could not proceed. This may happen if %s redirects to a resource which uses a different protocol than the original request.",
+                        url, url));
+    }
+
+    public static LoadExternalResourceException invalidUrl(String url, Throwable cause) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(url),
+                String.format("Invalid URL '%s': %s", url, cause.getMessage()),
+                cause);
+    }
+
+    public static LoadExternalResourceException invalidUrlNoScheme(String url) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(url), String.format("Invalid URL '%s': no scheme", url));
+    }
+
+    public static LoadExternalResourceException invalidUrlNoProtocol(String url) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(url),
+                String.format("Invalid URL '%s': no protocol: %s", url, url));
+    }
+
+    public static LoadExternalResourceException invalidUrlNoProtocol(String url, Throwable cause) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(url),
+                String.format("Invalid URL '%s': no protocol: %s", url, url),
+                cause);
+    }
+
+    public static LoadExternalResourceException cannotLoadFromUrl(String url, Throwable cause) {
+        return new LoadExternalResourceException(
+                unableToLoadExternalResourceErrorObject(url),
+                String.format("Cannot load from URL '%s': %s", url, cause.getMessage()),
+                cause);
+    }
+
+    private static ErrorGqlStatusObject unableToLoadExternalResourceErrorObject(String url) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N43)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.url, url)
+                        .build())
+                .build();
     }
 
     @Override

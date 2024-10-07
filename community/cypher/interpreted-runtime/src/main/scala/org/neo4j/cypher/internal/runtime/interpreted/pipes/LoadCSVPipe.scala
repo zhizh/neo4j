@@ -198,15 +198,15 @@ abstract class AbstractLoadCSVPipe(
         case e: java.net.URISyntaxException =>
           if (e.getMessage.startsWith("Expected scheme name")) {
             // this captures the previous behaviour when creating a URL
-            throw new LoadExternalResourceException(s"Invalid URL '$urlString': no protocol: $urlString", e)
+            throw LoadExternalResourceException.invalidUrlNoProtocol(urlString, e)
           } else {
-            throw new LoadExternalResourceException(s"Invalid URL '$urlString': ${e.getMessage}", e)
+            throw LoadExternalResourceException.invalidUrl(urlString, e)
           }
       }
 
     // this also captures the previous behaviour when creating a URL
     if (!uri.isAbsolute || uri.getScheme == null) {
-      throw new LoadExternalResourceException(s"Invalid URL '$urlString': no protocol: $urlString")
+      throw LoadExternalResourceException.invalidUrlNoProtocol(urlString)
     }
 
     uri

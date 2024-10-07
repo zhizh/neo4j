@@ -19,19 +19,28 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class ProfilerStatisticsNotReadyException extends Neo4jException {
     private static final String ERROR_MSG =
             "This result has not been materialised yet. Iterate over it to get profiler stats.";
 
-    public ProfilerStatisticsNotReadyException() {
-        super(ERROR_MSG);
+    private ProfilerStatisticsNotReadyException(ErrorGqlStatusObject gqlStatusObject) {
+        super(gqlStatusObject, ERROR_MSG);
     }
 
-    public ProfilerStatisticsNotReadyException(ErrorGqlStatusObject gqlStatusObject) {
-        super(gqlStatusObject, ERROR_MSG);
+    public static ProfilerStatisticsNotReadyException invalidUseOfProfile() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N53)
+                        .withClassification(ErrorClassification.DATABASE_ERROR)
+                        .build())
+                .build();
+        return new ProfilerStatisticsNotReadyException(gql);
     }
 
     @Override

@@ -331,7 +331,7 @@ public class PointValue extends HashMemoizingScalarValue implements Point, Compa
         String crsValue = fields.crs;
         int sridValue = fields.srid;
         if (crsValue != null && sridValue != -1) {
-            throw new InvalidArgumentException("Cannot specify both CRS and SRID");
+            throw InvalidArgumentException.invalidSpatialValueCombination();
         } else if (crsValue != null) {
             return CoordinateReferenceSystem.byName(crsValue);
         } else if (sridValue != -1) {

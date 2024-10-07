@@ -82,7 +82,6 @@ class CSVResources(resourceManager: ResourceManager) extends ExternalCSVResource
     bufferSize: Int,
     headers: Boolean = false
   ): LoadCsvIterator = {
-
     val (uri, reader) = Try {
       val uri = new URI(urlString)
       (uri, query.getImportDataConnection(uri))
@@ -91,16 +90,16 @@ class CSVResources(resourceManager: ResourceManager) extends ExternalCSVResource
       case Failure(error: AuthorizationViolationException) => throw error
       // even though we're working with URIs - report as URL errors for compat with original error messages
       case Failure(error: URISyntaxException) =>
-        throw new LoadExternalResourceException(s"Invalid URL '$urlString': ${error.getMessage}", error)
+        throw LoadExternalResourceException.invalidUrl(urlString, error)
       case Failure(error: URLAccessValidationError) =>
         if (error.getMessage.contains("unknown protocol:")) {
           // for backwards compatability with old error messages
-          throw new LoadExternalResourceException(error.getMessage, error)
+          throw LoadExternalResourceException.withInnerErrorMessage(urlString, error)
         } else {
-          throw new LoadExternalResourceException(s"Cannot load from URL '$urlString': ${error.getMessage}", error)
+          throw LoadExternalResourceException.cannotLoadFromUrl(urlString, error)
         }
       case Failure(error) =>
-        throw new LoadExternalResourceException(s"Cannot load from URL '$urlString': ${error.getMessage}", error)
+        throw LoadExternalResourceException.cannotLoadFromUrl(urlString, error)
     }
     val delimiter: Char = fieldTerminator.map(_.charAt(0)).getOrElse(CSVResources.DEFAULT_FIELD_TERMINATOR)
     val seeker = CharSeekers.charSeeker(reader, CSVResources.config(legacyCsvQuoteEscaping, bufferSize), false)
@@ -127,12 +126,8 @@ class CSVResources(resourceManager: ResourceManager) extends ExternalCSVResource
             if (mark.isEndOfLine) return if (buffer.isEmpty) null else buffer.toArray
           }
         } catch {
-          case e: BufferOverflowException => throw new CypherExecutionException(
-              """Tried to read a field larger than the current buffer size.
-                | Make sure that the field doesn't have an unterminated quote,
-                | if it doesn't you can try increasing the buffer size via `dbms.import.csv.buffer_size`.""".stripMargin,
-              e
-            )
+          case e: BufferOverflowException =>
+            throw CypherExecutionException.csvBufferSizeOverflow(e);
         }
 
         if (buffer.isEmpty) {

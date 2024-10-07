@@ -57,7 +57,7 @@ public class URIAccessRules {
         String scheme = uri.getScheme();
         if (scheme == null) {
             // even though we're working with URIs - report as URL errors for compat with original error messages
-            throw new LoadExternalResourceException(String.format("Invalid URL '%s': no scheme", uri));
+            throw LoadExternalResourceException.invalidUrlNoScheme(String.valueOf(uri));
         }
         try {
             if (WEB_SCHEMES.contains(scheme.toLowerCase(Locale.ROOT))) {
@@ -66,8 +66,7 @@ public class URIAccessRules {
                 return fileAccess.getReader(uri, securityAuthorizationHandler, securityContext);
             }
         } catch (IOException e) {
-            throw new LoadExternalResourceException(
-                    String.format("Couldn't load the external resource at: %s", uri), e);
+            throw LoadExternalResourceException.couldNotLoadExternalResource(String.valueOf(uri), e);
         }
     }
 }
