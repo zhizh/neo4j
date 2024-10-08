@@ -1269,6 +1269,47 @@ public final class CypherFunctions {
         }
     }
 
+    @CalledFromGeneratedCode
+    public static boolean hasAnyDynamicLabel(
+            AnyValue entity,
+            AnyValue[] labels,
+            NodeCursor nodeCursor,
+            org.neo4j.cypher.internal.runtime.QueryContext queryContext)
+            throws IllegalTokenNameException {
+        assert entity != NO_VALUE : "NO_VALUE checks need to happen outside this call";
+        if (entity instanceof VirtualNodeValue node) {
+            for (var labelName : labels) {
+                if (labelName instanceof TextValue textLabel) {
+                    if (hasLabel(node, textLabel, nodeCursor, queryContext)) {
+                        return true;
+                    }
+                } else if (labelName instanceof SequenceValue labelSequence) {
+                    for (var l : labelSequence) {
+                        if (l instanceof TextValue textLabel) {
+                            if (hasLabel(node, textLabel, nodeCursor, queryContext)) {
+                                return true;
+                            }
+                        } else {
+                            throw new CypherTypeException(format(
+                                    "Invalid input for function 'hasAnyDynamicLabel()': Expected %s to be a string, but it was a `%s`",
+                                    l, l.getTypeName()));
+                        }
+                    }
+                } else {
+                    throw new CypherTypeException(format(
+                            "Invalid input for function 'hasAnyDynamicLabel()': Expected %s to be a string or list of strings, but it was a `%s`",
+                            labelName, labelName.getTypeName()));
+                }
+            }
+        } else {
+            throw new CypherTypeException(format(
+                    "Invalid input for function 'hasAnyDynamicLabel()': Expected %s to be a node, but it was a `%s`",
+                    entity, entity.getTypeName()));
+        }
+
+        return false;
+    }
+
     public static AnyValue type(AnyValue item, DbAccess access, RelationshipScanCursor relCursor, Read read) {
         if (item == NO_VALUE) {
             return NO_VALUE;

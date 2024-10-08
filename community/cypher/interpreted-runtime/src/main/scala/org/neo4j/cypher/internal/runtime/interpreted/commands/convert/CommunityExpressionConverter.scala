@@ -284,17 +284,14 @@ case class CommunityExpressionConverter(
             e.pattern.asLegacyPatterns(id, None, self, anonymousVariableNameGenerator).head,
             operatorId = id
           )
-      case e: internal.expressions.HasLabelsOrTypes => hasLabelsOrTypes(id, e, self)
-      case e: internal.expressions.HasALabelOrType  => hasALabelOrType(id, e, self)
-      case e: internal.expressions.HasALabel        => hasALabel(id, e, self)
-      case e: internal.expressions.HasLabels        => hasLabels(id, e, self)
-      case e: internal.expressions.HasDynamicLabels => hasDynamicLabels(id, e, self)
-      case e: internal.expressions.HasAnyLabel =>
-        predicates.HasAnyLabel(
-          self.toCommandExpression(id, e.expression),
-          e.labels.map(l => commands.values.KeyToken.Unresolved(l.name, commands.values.TokenType.Label))
-        )
-      case e: internal.expressions.HasTypes => hasTypes(id, e, self)
+      case e: internal.expressions.HasLabelsOrTypes   => hasLabelsOrTypes(id, e, self)
+      case e: internal.expressions.HasALabelOrType    => hasALabelOrType(id, e, self)
+      case e: internal.expressions.HasALabel          => hasALabel(id, e, self)
+      case e: internal.expressions.HasLabels          => hasLabels(id, e, self)
+      case e: internal.expressions.HasDynamicLabels   => hasDynamicLabels(id, e, self)
+      case e: internal.expressions.HasAnyLabel        => hasAnyLabel(id, e, self)
+      case e: internal.expressions.HasAnyDynamicLabel => hasAnyDynamicLabel(id, e, self)
+      case e: internal.expressions.HasTypes           => hasTypes(id, e, self)
       case e: internal.expressions.ListLiteral =>
         commands.expressions.ListLiteral(toCommandExpression(id, e.expressions, self): _*)
       case e: internal.expressions.MapExpression => commands.expressions.LiteralMap(mapItems(id, e.items, self))
@@ -939,6 +936,26 @@ case class CommunityExpressionConverter(
     self: ExpressionConverters
   ): Predicate =
     predicates.HasDynamicLabels(
+      self.toCommandExpression(id, e.expression),
+      e.labels.map(self.toCommandExpression(id, _))
+    ): Predicate
+
+  private def hasAnyLabel(
+    id: Id,
+    e: internal.expressions.HasAnyLabel,
+    self: ExpressionConverters
+  ): Predicate =
+    predicates.HasAnyLabel(
+      self.toCommandExpression(id, e.expression),
+      e.labels.map(l => commands.values.KeyToken.Unresolved(l.name, commands.values.TokenType.Label))
+    ): Predicate
+
+  private def hasAnyDynamicLabel(
+    id: Id,
+    e: internal.expressions.HasAnyDynamicLabel,
+    self: ExpressionConverters
+  ): Predicate =
+    predicates.HasAnyDynamicLabel(
       self.toCommandExpression(id, e.expression),
       e.labels.map(self.toCommandExpression(id, _))
     ): Predicate

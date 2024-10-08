@@ -61,6 +61,7 @@ import org.neo4j.cypher.internal.expressions.GreaterThan
 import org.neo4j.cypher.internal.expressions.GreaterThanOrEqual
 import org.neo4j.cypher.internal.expressions.HasALabel
 import org.neo4j.cypher.internal.expressions.HasALabelOrType
+import org.neo4j.cypher.internal.expressions.HasAnyDynamicLabel
 import org.neo4j.cypher.internal.expressions.HasAnyLabel
 import org.neo4j.cypher.internal.expressions.HasDynamicLabels
 import org.neo4j.cypher.internal.expressions.HasLabels
@@ -233,6 +234,9 @@ trait AstConstructionTestSupport {
 
   def hasAnyLabel(v: String, labels: String*): HasAnyLabel =
     HasAnyLabel(varFor(v), labels.map(labelName(_)))(pos)
+
+  def hasAnyDynamicLabel(v: Expression, labels: Expression*): HasAnyDynamicLabel =
+    HasAnyDynamicLabel(v, labels)(pos)
 
   def hasLabelsOrTypes(v: String, labelsOrTypes: String*): HasLabelsOrTypes =
     HasLabelsOrTypes(varFor(v), labelsOrTypes.map(n => LabelOrRelTypeName(n)(pos)))(pos)

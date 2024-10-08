@@ -156,4 +156,11 @@ class ExpressionCanonicalStringValTest extends CypherFunSuite {
       .asCanonicalStringVal should equal("node:$all(label1):$all(label2)")
   }
 
+  test("HasAnyDynamicLabel should render nicely") {
+    HasAnyDynamicLabel(varFor("node"), Seq(varFor("labelName")))(pos)
+      .asCanonicalStringVal should equal("node:$any(labelName)")
+
+    HasAnyDynamicLabel(varFor("node"), Seq(varFor("label1"), varFor("label2")))(pos)
+      .asCanonicalStringVal should equal("node:$any(label1)|$any(label2)")
+  }
 }

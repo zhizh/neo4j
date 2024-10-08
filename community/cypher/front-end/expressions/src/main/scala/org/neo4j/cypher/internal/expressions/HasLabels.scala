@@ -34,7 +34,7 @@ trait LabelCheckExpression extends BooleanExpression {
   override def isConstantForQuery: Boolean = false
 }
 
-/*
+/**
  * Checks if expression has all labels
  */
 case class HasLabels(expression: Expression, labels: Seq[LabelName])(val position: InputPosition)
@@ -44,8 +44,8 @@ case class HasLabels(expression: Expression, labels: Seq[LabelName])(val positio
     s"${expression.asCanonicalStringVal}${labels.map(_.asCanonicalStringVal).mkString(":", ":", "")}"
 }
 
-/*
- * Checks if expression has all labels
+/**
+ * Checks if expression has all the specified dynamic labels
  */
 case class HasDynamicLabels(expression: Expression, labels: Seq[Expression])(val position: InputPosition)
     extends LabelCheckExpression {
@@ -54,7 +54,7 @@ case class HasDynamicLabels(expression: Expression, labels: Seq[Expression])(val
     s"${expression.asCanonicalStringVal}${labels.map(_.asCanonicalStringVal).map(e => s":$$all($e)").mkString}"
 }
 
-/*
+/**
  * Checks if expression has any of the specified labels
  */
 case class HasAnyLabel(expression: Expression, labels: Seq[LabelName])(val position: InputPosition)
@@ -64,7 +64,17 @@ case class HasAnyLabel(expression: Expression, labels: Seq[LabelName])(val posit
     s"${expression.asCanonicalStringVal}${labels.map(_.asCanonicalStringVal).mkString(":", "|", "")}"
 }
 
-/*
+/**
+ * Checks if expression has any of the specified dynamic labels
+ */
+case class HasAnyDynamicLabel(expression: Expression, labels: Seq[Expression])(val position: InputPosition)
+    extends LabelCheckExpression {
+
+  override def asCanonicalStringVal =
+    s"${expression.asCanonicalStringVal}${labels.map(_.asCanonicalStringVal).map(e => s"$$any($e)").mkString(":", "|", "")}"
+}
+
+/**
  * Checks if expression has all labels OR all types
  */
 case class HasLabelsOrTypes(entityExpression: Expression, labelsOrTypes: Seq[LabelOrRelTypeName])(

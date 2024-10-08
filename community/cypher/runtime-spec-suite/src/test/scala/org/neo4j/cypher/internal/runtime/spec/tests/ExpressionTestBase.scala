@@ -1015,6 +1015,33 @@ abstract class ExpressionTestBase[CONTEXT <: RuntimeContext](edition: Edition[CO
     result should beColumns("n").withRows(singleColumn(expected))
   }
 
+  test("should filter with HasAnyDynamicLabel predicate and input nodes") {
+    val nodes = givenGraph {
+      val n0 = tx.createNode(label("A"), label("B"))
+      n0.setProperty("prop", "A")
+      val n1 = tx.createNode(label("A"), label("B"))
+      n1.setProperty("prop", "C")
+      val n2 = tx.createNode(label("C"))
+      n2.setProperty("prop", "C")
+      val n3 = tx.createNode(label("D"))
+      n3.setProperty("prop", "E")
+      Seq(n0, n1, n2, n3)
+    }
+
+    val input = inputValues(nodes.map(n => Array[Any](n)): _*).stream()
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("n")
+      .filterExpression(hasAnyDynamicLabel(varFor("n"), prop("n", "prop")))
+      .input(nodes = Seq("n"))
+      .build()
+
+    val result = execute(logicalQuery, runtime, input)
+
+    val expected = Seq(nodes(0), nodes(2))
+    result should beColumns("n").withRows(singleColumn(expected))
+  }
+
   test("should handle non-existing node with has any label expression") {
     // given
     givenGraph {
