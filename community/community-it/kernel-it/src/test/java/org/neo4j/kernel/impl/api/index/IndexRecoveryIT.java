@@ -259,6 +259,12 @@ class IndexRecoveryIT {
                 .getInitialState(any(IndexDescriptor.class), any(CursorContext.class), any());
         // Start on one permit to let recovery through
         final Semaphore recoverySemaphore = new Semaphore(1);
+        var drainingMonitor = new IndexMonitor.MonitorAdapter() {
+            @Override
+            public void populationCancelled(IndexDescriptor[] indexDescriptors, boolean storeScanHadStated) {
+                recoverySemaphore.drainPermits();
+            }
+        };
         try {
             doReturn(indexPopulatorWithControlledCompletionTiming(recoverySemaphore))
                     .when(mockedIndexProvider)
@@ -278,12 +284,7 @@ class IndexRecoveryIT {
             // The IndexPopulator::run() checks if it's marked as stopped and return before calling create.
             // To prevent that, we drain the semaphore if we get a cancel job, which should only happen from
             // the recovery flow.
-            monitors.addMonitorListener(new IndexMonitor.MonitorAdapter() {
-                @Override
-                public void populationCancelled(IndexDescriptor[] indexDescriptors, boolean storeScanHadStated) {
-                    recoverySemaphore.drainPermits();
-                }
-            });
+            monitors.addMonitorListener(drainingMonitor);
 
             startDb();
 
@@ -315,6 +316,7 @@ class IndexRecoveryIT {
             verify(mockedIndexProvider, times(2)).getMinimalIndexAccessor(any(), anyBoolean());
             verify(minimalIndexAccessor, times(2)).drop();
         } finally {
+            monitors.removeMonitorListener(drainingMonitor);
             recoverySemaphore.release();
         }
     }
