@@ -42,6 +42,7 @@ import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.ProcedureHandle;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
+import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.ResourceMonitor;
 import org.neo4j.kernel.api.procedure.CallableProcedure;
@@ -102,7 +103,9 @@ class ProceduresTest {
 
         // When
         RawIterator<AnyValue[], ProcedureException> result = view.callProcedure(
-                buildContext(dependencyResolver, valueMapper).context(),
+                buildContext(dependencyResolver, valueMapper)
+                        .withKernelTransaction(mock(KernelTransaction.class))
+                        .context(),
                 procHandle.id(),
                 new AnyValue[] {longValue(1337)},
                 EMPTY_RESOURCE_TRACKER);
@@ -192,7 +195,9 @@ class ProceduresTest {
     }
 
     private Context prepareContext() {
-        return buildContext(dependencyResolver, valueMapper).context();
+        return buildContext(dependencyResolver, valueMapper)
+                .withKernelTransaction(mock(KernelTransaction.class))
+                .context();
     }
 
     private CallableProcedure.BasicProcedure procedureWithSignature(final ProcedureSignature signature) {

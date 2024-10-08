@@ -228,9 +228,9 @@ public class ProcedureRegistry {
     }
 
     private void verifyDBType(Context ctx, CallableProcedure proc) throws ProcedureException {
-        if (Arrays.stream(proc.signature().unsupportedDbTypes())
-                        .anyMatch(t -> t.equals(UnsupportedDatabaseTypes.DatabaseType.SPD))
-                && ctx.kernelTransaction().isSPDTransaction()) {
+        if (ctx.kernelTransaction().isSPDTransaction()
+                && Arrays.stream(proc.signature().unsupportedDbTypes())
+                        .anyMatch(t -> t.equals(UnsupportedDatabaseTypes.DatabaseType.SPD))) {
             throw new ProcedureException(
                     Status.Statement.SyntaxError,
                     "Procedure '" + proc.signature().name() + "' is not supported in SPD.");
