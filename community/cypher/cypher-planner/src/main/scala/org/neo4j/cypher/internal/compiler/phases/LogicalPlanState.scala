@@ -36,6 +36,8 @@ import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LeveragedOrders
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributesCacheKey
@@ -84,7 +86,6 @@ case class LogicalPlanState(
         ImmutablePlanningAttributes.EffectiveCardinalities(planningAttributes.effectiveCardinalities),
         planningAttributes.providedOrders,
         planningAttributes.leveragedOrders,
-        planningAttributes.labelAndRelTypeInfos,
         planningAttributes.cachedPropertiesPerPlan,
         planningAttributes.solveds.getOption(logicalPlan.id).exists(_.readOnly)
       ),
@@ -159,7 +160,6 @@ case class CachablePlanningAttributes(
   effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
   providedOrders: ProvidedOrders,
   leveragedOrders: LeveragedOrders,
-  labelAndRelTypeInfos: LabelAndRelTypeInfos,
   cachedPropertiesPerPlan: CachedPropertiesPerPlan,
   readOnly: Boolean
 ) {
@@ -177,7 +177,6 @@ case class CachablePlanningAttributes(
       effectiveCardinalities, // Immutable
       providedOrders.clone[ProvidedOrders],
       leveragedOrders.clone[LeveragedOrders],
-      labelAndRelTypeInfos.clone[LabelAndRelTypeInfos],
       cachedPropertiesPerPlan.clone[CachedPropertiesPerPlan],
       readOnly
     )
