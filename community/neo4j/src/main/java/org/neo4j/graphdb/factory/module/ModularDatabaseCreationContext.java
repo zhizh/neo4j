@@ -42,7 +42,6 @@ import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
-import org.neo4j.kernel.api.SpdKernelTransactionDecorator;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
 import org.neo4j.kernel.availability.DatabaseAvailabilityGuard;
 import org.neo4j.kernel.database.DatabaseCreationContext;
@@ -55,6 +54,7 @@ import org.neo4j.kernel.impl.api.CommandCommitListeners;
 import org.neo4j.kernel.impl.api.ExternalIdReuseConditionProvider;
 import org.neo4j.kernel.impl.api.LeaseService;
 import org.neo4j.kernel.impl.api.TransactionalProcessFactory;
+import org.neo4j.kernel.impl.api.TransactionsFactory;
 import org.neo4j.kernel.impl.constraints.ConstraintSemantics;
 import org.neo4j.kernel.impl.factory.AccessCapabilityFactory;
 import org.neo4j.kernel.impl.factory.DbmsInfo;
@@ -127,7 +127,7 @@ public class ModularDatabaseCreationContext implements DatabaseCreationContext {
     private final GlobalMemoryGroupTracker otherMemoryPool;
     private final ReadOnlyDatabases readOnlyDatabases;
     private final CommandCommitListeners commandCommitListeners;
-    private final SpdKernelTransactionDecorator spdKernelTransactionDecorator;
+    private final TransactionsFactory transactionsFactory;
 
     public ModularDatabaseCreationContext(
             HostedOnMode mode,
@@ -157,7 +157,7 @@ public class ModularDatabaseCreationContext implements DatabaseCreationContext {
             IOControllerService ioControllerService,
             DatabaseTracers tracers,
             CommandCommitListeners commandCommitListeners,
-            SpdKernelTransactionDecorator spdKernelTransactionDecorator) {
+            TransactionsFactory transactionsFactory) {
         this.serverIdentity = serverIdentity;
         this.namedDatabaseId = namedDatabaseId;
         this.databaseConfig = databaseConfig;
@@ -208,7 +208,7 @@ public class ModularDatabaseCreationContext implements DatabaseCreationContext {
         this.startupController = databaseStartupController;
         this.readOnlyDatabases = readOnlyDatabases;
         this.commandCommitListeners = commandCommitListeners;
-        this.spdKernelTransactionDecorator = spdKernelTransactionDecorator;
+        this.transactionsFactory = transactionsFactory;
     }
 
     @Override
@@ -432,13 +432,13 @@ public class ModularDatabaseCreationContext implements DatabaseCreationContext {
     }
 
     @Override
-    public SpdKernelTransactionDecorator getSpdKernelTransactionDecorator() {
-        return spdKernelTransactionDecorator;
+    public ExternalIdReuseConditionProvider externalIdReuseConditionProvider() {
+        return externalIdReuseConditionProvider;
     }
 
     @Override
-    public ExternalIdReuseConditionProvider externalIdReuseConditionProvider() {
-        return externalIdReuseConditionProvider;
+    public TransactionsFactory getTransactionsFactory() {
+        return transactionsFactory;
     }
 
     private DatabaseAvailabilityGuard databaseAvailabilityGuardFactory(

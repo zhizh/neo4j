@@ -58,7 +58,6 @@ import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.kernel.KernelVersionProvider;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.api.KernelTransactionHandle;
-import org.neo4j.kernel.api.SpdKernelTransactionDecorator;
 import org.neo4j.kernel.api.TransactionTimeout;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
@@ -173,7 +172,6 @@ public class KernelTransactions extends LifecycleAdapter
     private final boolean multiVersioned;
     private final TopologyGraphDbmsModel.HostedOnMode mode;
     private final DatabaseSerialGuard databaseSerialGuard;
-    private final SpdKernelTransactionDecorator spdKernelTransactionDecorator;
     private final TransactionStateBehaviour transactionStateBehaviour;
     private ScopedMemoryPool transactionMemoryPool;
 
@@ -224,7 +222,6 @@ public class KernelTransactions extends LifecycleAdapter
             DatabaseHealth databaseHealth,
             TransactionValidatorFactory transactionValidatorFactory,
             LogProvider internalLogProvider,
-            SpdKernelTransactionDecorator spdKernelTransactionDecorator,
             TopologyGraphDbmsModel.HostedOnMode mode) {
         this.config = config;
         this.lockManager = lockManager;
@@ -275,7 +272,6 @@ public class KernelTransactions extends LifecycleAdapter
         this.transactionStateBehaviour = new KernelTransactionsStateBehaviour(storageEngine, enrichmentStrategy);
         this.securityLog = this.databaseDependencies.resolveDependency(AbstractSecurityLog.class);
         this.databaseSerialGuard = multiVersioned ? new MultiVersionDatabaseSerialGuard(allTransactions) : EMPTY_GUARD;
-        this.spdKernelTransactionDecorator = spdKernelTransactionDecorator;
 
         doBlockNewTransactions();
     }
@@ -311,7 +307,7 @@ public class KernelTransactions extends LifecycleAdapter
         return tx;
     }
 
-    private KernelTransaction newKernelTransaction(
+    protected KernelTransaction newKernelTransaction(
             KernelTransaction.Type type,
             ClientConnectionInfo clientInfo,
             TransactionTimeout timeout,
@@ -333,9 +329,7 @@ public class KernelTransactions extends LifecycleAdapter
                         transactionIdSequence.next(),
                         clientInfo,
                         procedureView);
-                return spdKernelTransactionDecorator != null
-                        ? spdKernelTransactionDecorator.decorate(tx, procedureView, databaseDependencies)
-                        : tx;
+                return tx;
             } finally {
                 newTransactionsLock.readLock().unlock();
             }

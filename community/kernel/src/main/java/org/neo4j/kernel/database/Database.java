@@ -27,8 +27,6 @@ import static org.neo4j.internal.helpers.collection.Iterators.asList;
 import static org.neo4j.internal.id.BufferingIdGeneratorFactory.PAGED_ID_BUFFER_FILE_NAME;
 import static org.neo4j.internal.schema.IndexType.LOOKUP;
 import static org.neo4j.kernel.extension.ExtensionFailureStrategies.fail;
-import static org.neo4j.kernel.impl.query.TransactionalContext.DatabaseMode.SHARDED;
-import static org.neo4j.kernel.impl.query.TransactionalContext.DatabaseMode.SINGLE;
 import static org.neo4j.kernel.impl.transaction.log.TransactionAppenderFactory.createTransactionAppender;
 import static org.neo4j.kernel.recovery.Recovery.context;
 import static org.neo4j.kernel.recovery.Recovery.validateStoreId;
@@ -88,7 +86,6 @@ import org.neo4j.kernel.BinarySupportedKernelVersions;
 import org.neo4j.kernel.KernelVersionProvider;
 import org.neo4j.kernel.api.Kernel;
 import org.neo4j.kernel.api.KernelTransaction;
-import org.neo4j.kernel.api.SpdKernelTransactionDecorator;
 import org.neo4j.kernel.api.database.transaction.TransactionLogServiceImpl;
 import org.neo4j.kernel.api.impl.fulltext.DefaultFulltextAdapter;
 import org.neo4j.kernel.api.impl.fulltext.FulltextIndexProvider;
@@ -105,12 +102,14 @@ import org.neo4j.kernel.impl.api.DatabaseSchemaState;
 import org.neo4j.kernel.impl.api.ExternalIdReuseConditionProvider;
 import org.neo4j.kernel.impl.api.KernelImpl;
 import org.neo4j.kernel.impl.api.KernelTransactions;
+import org.neo4j.kernel.impl.api.KernelTransactionsFactory;
 import org.neo4j.kernel.impl.api.LeaseService;
 import org.neo4j.kernel.impl.api.TransactionCommitProcess;
 import org.neo4j.kernel.impl.api.TransactionIdSequence;
 import org.neo4j.kernel.impl.api.TransactionRegistry;
 import org.neo4j.kernel.impl.api.TransactionVisibilityProvider;
 import org.neo4j.kernel.impl.api.TransactionalProcessFactory;
+import org.neo4j.kernel.impl.api.TransactionsFactory;
 import org.neo4j.kernel.impl.api.index.IndexProviderMap;
 import org.neo4j.kernel.impl.api.index.IndexingService;
 import org.neo4j.kernel.impl.api.index.IndexingServiceFactory;
@@ -224,6 +223,7 @@ public class Database extends AbstractDatabase {
     private final LeaseService leaseService;
     private final ExternalIdReuseConditionProvider externalIdReuseConditionProvider;
     private final StorageEngineFactorySupplier storageEngineFactorySupplier;
+    private final KernelTransactionsFactory kernelTransactionsFactory;
 
     private TransactionIdSequence transactionIdSequence;
     private IndexProviderMap indexProviderMap;
@@ -253,7 +253,6 @@ public class Database extends AbstractDatabase {
     private final CursorContextFactory cursorContextFactory;
     private final VersionStorageFactory versionStorageFactory;
     private final CommandCommitListeners commandCommitListeners;
-    private final SpdKernelTransactionDecorator spdKernelTransactionDecorator;
     private MemoryTracker otherDatabaseMemoryTracker;
     private RecoveryCleanupWorkCollector recoveryCleanupWorkCollector;
     private DatabaseAvailability databaseAvailability;
@@ -305,11 +304,9 @@ public class Database extends AbstractDatabase {
         this.globalPageCache = context.getPageCache();
         this.collectionsFactorySupplier = context.getCollectionsFactorySupplier();
         this.storageEngineFactorySupplier = context.getStorageEngineFactorySupplier();
-
-        this.spdKernelTransactionDecorator = context.getSpdKernelTransactionDecorator();
-        var databaseMode = spdKernelTransactionDecorator != null ? SHARDED : SINGLE;
-        this.databaseFacade =
-                new GraphDatabaseFacade(this, databaseConfig, dbmsInfo, mode, databaseMode, databaseAvailabilityGuard);
+        TransactionsFactory transactionsFactory = context.getTransactionsFactory();
+        this.databaseFacade = new GraphDatabaseFacade(
+                this, databaseConfig, dbmsInfo, mode, transactionsFactory.mode(), databaseAvailabilityGuard);
         this.kernelTransactionFactory = new FacadeKernelTransactionFactory(databaseConfig, databaseFacade);
         this.tracers = context.getTracers();
         this.fileLockerService = context.getFileLockerService();
@@ -318,6 +315,7 @@ public class Database extends AbstractDatabase {
         this.readOnlyDatabaseChecker = context.getDbmsReadOnlyChecker().forDatabase(namedDatabaseId);
         this.externalIdReuseConditionProvider = context.externalIdReuseConditionProvider();
         this.commandCommitListeners = context.getCommandCommitListeners();
+        this.kernelTransactionsFactory = transactionsFactory.kernelTransactionsFactory();
     }
 
     /**
@@ -1002,7 +1000,7 @@ public class Database extends AbstractDatabase {
             databaseDependencies.satisfyDependency(ApplyEnrichmentStrategy.NO_ENRICHMENT);
         }
 
-        KernelTransactions kernelTransactions = life.add(new KernelTransactions(
+        KernelTransactions kernelTransactions = life.add(kernelTransactionsFactory.create(
                 databaseConfig,
                 databaseLockManager,
                 constraintIndexCreator,
@@ -1042,7 +1040,6 @@ public class Database extends AbstractDatabase {
                 databaseHealth,
                 transactionValidatorFactory,
                 internalLogProvider,
-                spdKernelTransactionDecorator,
                 mode));
 
         var transactionMonitor = buildTransactionMonitor(kernelTransactions, transactionIdStore, databaseConfig);

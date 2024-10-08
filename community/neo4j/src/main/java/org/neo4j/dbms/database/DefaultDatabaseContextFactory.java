@@ -37,6 +37,7 @@ import org.neo4j.kernel.database.NamedDatabaseId;
 import org.neo4j.kernel.impl.api.ExternalIdReuseConditionProvider;
 import org.neo4j.kernel.impl.api.LeaseService;
 import org.neo4j.kernel.impl.api.TransactionalProcessFactory;
+import org.neo4j.kernel.impl.api.TransactionsFactory;
 import org.neo4j.kernel.impl.constraints.StandardConstraintSemantics;
 import org.neo4j.kernel.impl.factory.AccessCapabilityFactory;
 import org.neo4j.kernel.impl.index.DatabaseIndexStats;
@@ -118,7 +119,7 @@ public class DefaultDatabaseContextFactory
                     controllerService,
                     new DatabaseTracers(globalModule.getTracers(), namedDatabaseId),
                     globalModule.getDefaultCommandCommitListeners(),
-                    null);
+                    TransactionsFactory.DEFAULT);
             kernelDatabase = new Database(creationContext);
             context = new StandaloneDatabaseContext(kernelDatabase);
         }

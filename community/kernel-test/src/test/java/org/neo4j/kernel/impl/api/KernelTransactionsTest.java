@@ -839,7 +839,6 @@ class KernelTransactionsTest {
                 mock(DatabaseHealth.class),
                 EMPTY_VALIDATOR_FACTORY,
                 NullLogProvider.getInstance(),
-                null,
                 TopologyGraphDbmsModel.HostedOnMode.SINGLE);
     }
 
@@ -966,7 +965,6 @@ class KernelTransactionsTest {
                     mock(DatabaseHealth.class),
                     EMPTY_VALIDATOR_FACTORY,
                     NullLogProvider.getInstance(),
-                    null,
                     TopologyGraphDbmsModel.HostedOnMode.SINGLE);
         }
 
