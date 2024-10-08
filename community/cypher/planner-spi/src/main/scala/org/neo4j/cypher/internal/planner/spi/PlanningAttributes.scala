@@ -41,6 +41,7 @@ import org.neo4j.cypher.internal.util.attribution.IdGen
 import org.neo4j.cypher.internal.util.attribution.PartialAttribute
 
 import scala.collection.immutable.ArraySeq
+import scala.collection.immutable.BitSet
 
 object PlanningAttributes {
   class Solveds extends Attribute[LogicalPlan, PlannerQuery]
@@ -93,8 +94,8 @@ case class PlanningAttributes(
  */
 case class PlanningAttributesCacheKey(
   effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
-  providedOrders: ProvidedOrders,
-  leveragedOrders: LeveragedOrders
+  providedOrders: ImmutablePlanningAttributes.ProvidedOrders,
+  leveragedOrders: ImmutablePlanningAttributes.LeveragedOrders
 )
 
 object ImmutablePlanningAttributes {
@@ -161,5 +162,59 @@ object ImmutablePlanningAttributes {
     // but if we do encounter a cardinality of Double.MinValue we remap it to math.nextUp(MISSING).
     // This is done to not hide unexpected cardinalities, caused by bugs, in plan descriptions.
     private def flatten(value: Double): Double = if (value == MISSING) math.nextUp(MISSING) else value
+  }
+
+  case class ProvidedOrders private (
+    private val orders: Map[Int, ProvidedOrder],
+    private val size: Int
+  ) {
+    def isDefinedAt(id: Id): Boolean = id.x < size && !orders.get(id.x).contains(null)
+
+    def get(id: Id): ProvidedOrder = orders.getOrElse(id.x, ProvidedOrder.empty)
+
+    def toMutable: PlanningAttributes.ProvidedOrders = {
+      val mutable = new PlanningAttributes.ProvidedOrders()
+      mutable.sizeHint(size)
+      Range(0, size)
+        .filter(id => isDefinedAt(Id(id)))
+        .foreach(id => mutable.set(Id(id), get(Id(id))))
+      mutable
+    }
+  }
+
+  object ProvidedOrders {
+
+    def apply(mutable: PlanningAttributes.ProvidedOrders): ProvidedOrders = {
+      val size = mutable.iterator
+        .map { case (Id(id), _) => id + 1 }
+        .maxOption
+        .getOrElse(0)
+      val map = Range(0, size)
+        .map(Id.apply)
+        .collect {
+          case id if mutable.isDefinedAt(id) && mutable.get(id) != ProvidedOrder.empty => id.x -> mutable.get(id)
+          case id if !mutable.isDefinedAt(id)                                          => id.x -> null
+        }
+        .toMap
+      new ProvidedOrders(map, size)
+    }
+  }
+
+  case class LeveragedOrders private (private val leveraged: BitSet) {
+
+    def toMutable: PlanningAttributes.LeveragedOrders = {
+      val mutable = new PlanningAttributes.LeveragedOrders
+      leveraged.foreach(id => mutable.set(Id(id), true))
+      mutable
+    }
+  }
+
+  object LeveragedOrders {
+
+    def apply(mutable: PlanningAttributes.LeveragedOrders): LeveragedOrders = {
+      val builder = BitSet.newBuilder
+      mutable.iterator.foreach { case (Id(id), l) => if (l) builder.addOne(id) }
+      new LeveragedOrders(builder.result())
+    }
   }
 }

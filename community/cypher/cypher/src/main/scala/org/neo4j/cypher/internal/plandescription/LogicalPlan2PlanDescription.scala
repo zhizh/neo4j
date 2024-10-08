@@ -299,7 +299,6 @@ import org.neo4j.cypher.internal.plandescription.LogicalPlan2PlanDescription.pre
 import org.neo4j.cypher.internal.plandescription.asPrettyString.PrettyStringInterpolator
 import org.neo4j.cypher.internal.plandescription.asPrettyString.PrettyStringMaker
 import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.util.CancellationChecker
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.Repetition
@@ -319,7 +318,7 @@ object LogicalPlan2PlanDescription {
     effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
     withRawCardinalities: Boolean,
     withDistinctness: Boolean,
-    providedOrders: ProvidedOrders,
+    providedOrders: ImmutablePlanningAttributes.ProvidedOrders,
     runtimeOperatorMetadata: Id => Seq[Argument],
     cypherVersion: CypherVersion
   ): InternalPlanDescription = {
@@ -367,7 +366,7 @@ case class LogicalPlan2PlanDescription(
   effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
   withRawCardinalities: Boolean,
   withDistinctness: Boolean = false,
-  providedOrders: ProvidedOrders,
+  providedOrders: ImmutablePlanningAttributes.ProvidedOrders,
   runtimeOperatorMetadata: Id => Seq[Argument],
   cypherVersion: CypherVersion = CypherVersion.Default
 ) extends LogicalPlans.Mapper[InternalPlanDescription] {
@@ -3101,8 +3100,8 @@ case class LogicalPlan2PlanDescription(
       } else {
         identity
       },
-      if (providedOrders.isDefinedAt(plan.id) && !providedOrders(plan.id).isEmpty) {
-        _.addArgument(asPrettyString.order(providedOrders(plan.id)))
+      if (providedOrders.isDefinedAt(plan.id) && !providedOrders.get(plan.id).isEmpty) {
+        _.addArgument(asPrettyString.order(providedOrders.get(plan.id)))
       } else {
         identity
       },

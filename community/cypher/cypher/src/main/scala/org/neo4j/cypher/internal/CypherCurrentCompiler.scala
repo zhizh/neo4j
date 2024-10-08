@@ -39,7 +39,6 @@ import org.neo4j.cypher.internal.macros.AssertMacros
 import org.neo4j.cypher.internal.options.CypherExecutionMode
 import org.neo4j.cypher.internal.plandescription.PlanDescriptionBuilder
 import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.planning.CypherPlanner
 import org.neo4j.cypher.internal.planning.ExceptionTranslatingQueryContext
 import org.neo4j.cypher.internal.planning.LogicalPlanResult
@@ -235,8 +234,8 @@ case class CypherCurrentCompiler[CONTEXT <: RuntimeContext](
       planState.returnColumns.toArray,
       planState.semanticTable,
       planningAttributesCopy.effectiveCardinalities.toMutable,
-      planningAttributesCopy.providedOrders,
-      planningAttributesCopy.leveragedOrders,
+      planningAttributesCopy.providedOrders.toMutable,
+      planningAttributesCopy.leveragedOrders.toMutable,
       planState.hasLoadCSV,
       new SequentialIdGen(planningAttributesCopy.effectiveCardinalities.size),
       query.options.queryOptions.executionMode == CypherExecutionMode.profile
@@ -249,7 +248,8 @@ case class CypherCurrentCompiler[CONTEXT <: RuntimeContext](
         // Note, effective cardinalities are mutated when the executable is constructed :/
         effectiveCardinalities =
           ImmutablePlanningAttributes.EffectiveCardinalities(logicalQuery.effectiveCardinalities),
-        providedOrders = planningAttributesCopy.providedOrders
+        // Note, provided orders are mutated during compileToExecutable :/
+        providedOrders = ImmutablePlanningAttributes.ProvidedOrders(logicalQuery.providedOrders)
       )
     } catch {
       case e: Exception =>
@@ -373,7 +373,7 @@ object CypherCurrentCompiler {
     effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
     rawCardinalitiesInPlanDescription: Boolean,
     distinctnessInPlanDescription: Boolean,
-    providedOrders: ProvidedOrders,
+    providedOrders: ImmutablePlanningAttributes.ProvidedOrders,
     executionPlan: ExecutionPlan,
     planningNotifications: IndexedSeq[InternalNotification],
     reusabilityState: ReusabilityState,

@@ -441,7 +441,7 @@ class RenderAsTreeTableTest extends CypherFunSuite with BeforeAndAfterAll with A
       ImmutablePlanningAttributes.EffectiveCardinalities(new EffectiveCardinalities),
       withRawCardinalities = false,
       withDistinctness = false,
-      providedOrders,
+      ImmutablePlanningAttributes.ProvidedOrders(providedOrders),
       StubExecutionPlan().operatorMetadata
     )
 
@@ -1289,7 +1289,7 @@ class RenderAsTreeTableTest extends CypherFunSuite with BeforeAndAfterAll with A
       ImmutablePlanningAttributes.EffectiveCardinalities(effectiveCardinalities),
       withRawCardinalities = false,
       withDistinctness = false,
-      new ProvidedOrders,
+      ImmutablePlanningAttributes.ProvidedOrders(new ProvidedOrders),
       StubExecutionPlan().operatorMetadata,
       CypherVersion.Cypher5
     )

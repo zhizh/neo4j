@@ -24,7 +24,6 @@ import org.neo4j.cypher.internal.CypherCurrentCompiler.CypherExecutableQuery
 import org.neo4j.cypher.internal.frontend.PlannerName
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes
 import org.neo4j.cypher.internal.runtime.READ_ONLY
 import org.neo4j.cypher.internal.util.CartesianProductNotification
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInMerge
@@ -71,7 +70,7 @@ class CypherExecutableQueryTest extends CypherFunSuite {
       effectiveCardinalities = mock[ImmutablePlanningAttributes.EffectiveCardinalities],
       rawCardinalitiesInPlanDescription = false,
       distinctnessInPlanDescription = false,
-      providedOrders = mock[PlanningAttributes.ProvidedOrders],
+      providedOrders = mock[ImmutablePlanningAttributes.ProvidedOrders],
       reusabilityState = FineToReuse,
       paramNames = Array.empty,
       extractedParams = MapValue.EMPTY,

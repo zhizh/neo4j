@@ -697,7 +697,7 @@ class RuntimeTestSupport[CONTEXT <: RuntimeContext](
           ImmutablePlanningAttributes.EffectiveCardinalities(logicalQuery.effectiveCardinalities),
           debugOptions.rawCardinalitiesEnabled,
           debugOptions.renderDistinctnessEnabled,
-          logicalQuery.providedOrders,
+          ImmutablePlanningAttributes.ProvidedOrders(logicalQuery.providedOrders),
           executionPlan,
           renderPlanDescription = false,
           CypherVersion.Default

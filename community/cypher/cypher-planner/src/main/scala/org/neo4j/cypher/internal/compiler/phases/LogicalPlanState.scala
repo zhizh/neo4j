@@ -34,8 +34,8 @@ import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.options.CypherEagerAnalyzerOption
 import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LeveragedOrders
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributesCacheKey
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.ObfuscationMetadata
@@ -80,8 +80,10 @@ case class LogicalPlanState(
       plannerName,
       CachablePlanningAttributes(
         ImmutablePlanningAttributes.EffectiveCardinalities(planningAttributes.effectiveCardinalities),
-        planningAttributes.providedOrders,
-        planningAttributes.leveragedOrders,
+        ImmutablePlanningAttributes.ProvidedOrders(planningAttributes.providedOrders),
+        ImmutablePlanningAttributes.LeveragedOrders(planningAttributes.leveragedOrders),
+        planningAttributes.labelAndRelTypeInfos,
+        planningAttributes.cachedPropertiesPerPlan,
         planningAttributes.solveds.getOption(logicalPlan.id).exists(_.readOnly)
       ),
       anonymousVariableNameGenerator,
@@ -153,8 +155,10 @@ case class CachableLogicalPlanState(
 
 case class CachablePlanningAttributes(
   effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
-  providedOrders: ProvidedOrders,
-  leveragedOrders: LeveragedOrders,
+  providedOrders: ImmutablePlanningAttributes.ProvidedOrders,
+  leveragedOrders: ImmutablePlanningAttributes.LeveragedOrders,
+  labelAndRelTypeInfos: LabelAndRelTypeInfos,
+  cachedPropertiesPerPlan: CachedPropertiesPerPlan,
   readOnly: Boolean
 ) {
 
@@ -169,8 +173,10 @@ case class CachablePlanningAttributes(
   def createCopy(): CachablePlanningAttributes =
     CachablePlanningAttributes(
       effectiveCardinalities, // Immutable
-      providedOrders.clone[ProvidedOrders],
-      leveragedOrders.clone[LeveragedOrders],
+      providedOrders, // Immutable
+      leveragedOrders, // Immutable
+      labelAndRelTypeInfos.clone[LabelAndRelTypeInfos],
+      cachedPropertiesPerPlan.clone[CachedPropertiesPerPlan],
       readOnly
     )
 

@@ -31,7 +31,6 @@ import org.neo4j.cypher.internal.plandescription.Arguments.StringRepresentation
 import org.neo4j.cypher.internal.plandescription.Arguments.Time
 import org.neo4j.cypher.internal.plandescription.rewrite.InternalPlanDescriptionRewriter
 import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
-import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.cypher.result.OperatorProfile
 import org.neo4j.cypher.result.QueryProfile
@@ -45,7 +44,7 @@ object PlanDescriptionBuilder {
     effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
     withRawCardinalities: Boolean,
     withDistinctness: Boolean,
-    providedOrders: ProvidedOrders,
+    providedOrders: ImmutablePlanningAttributes.ProvidedOrders,
     executionPlan: ExecutionPlan,
     renderPlanDescription: Boolean,
     cypherVersion: CypherVersion
@@ -83,7 +82,7 @@ class PlanDescriptionBuilder(
   effectiveCardinalities: ImmutablePlanningAttributes.EffectiveCardinalities,
   withRawCardinalities: Boolean,
   withDistinctness: Boolean,
-  providedOrders: ProvidedOrders,
+  providedOrders: ImmutablePlanningAttributes.ProvidedOrders,
   runtimeName: RuntimeName,
   runtimeMetadata: Seq[Argument],
   runtimeOperatorMetadata: Id => Seq[Argument],

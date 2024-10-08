@@ -8419,7 +8419,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
       ImmutablePlanningAttributes.EffectiveCardinalities(effectiveCardinalities),
       withRawCardinalities = false,
       withDistinctness = false,
-      providedOrders = providedOrders,
+      providedOrders = ImmutablePlanningAttributes.ProvidedOrders(providedOrders),
       StubExecutionPlan().operatorMetadata,
       cypherVersion
     )
