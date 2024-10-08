@@ -84,6 +84,7 @@ public class BufferingIdGeneratorFactory extends AbstractBufferingIdGeneratorFac
             Path bufferBasePath,
             Config config,
             Supplier<IdController.TransactionSnapshot> snapshotSupplier,
+            IdController.TransactionIdVisibilityBoundary visibilityBoundary,
             IdController.IdFreeCondition condition,
             MemoryTracker memoryTracker)
             throws IOException {

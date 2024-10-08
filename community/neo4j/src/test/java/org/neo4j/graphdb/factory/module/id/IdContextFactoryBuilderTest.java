@@ -109,6 +109,7 @@ class IdContextFactoryBuilderTest {
                         testDirectory.file("buffer"),
                         config,
                         () -> new IdController.TransactionSnapshot(10, 0, 0),
+                        () -> 9,
                         s -> true,
                         EmptyMemoryTracker.INSTANCE);
         life.add(idContext.getIdController());
@@ -174,6 +175,7 @@ class IdContextFactoryBuilderTest {
                 testDirectory.file("buffer"),
                 config,
                 () -> new IdController.TransactionSnapshot(10, 0, 0),
+                () -> 9,
                 s -> true,
                 EmptyMemoryTracker.INSTANCE,
                 writable());

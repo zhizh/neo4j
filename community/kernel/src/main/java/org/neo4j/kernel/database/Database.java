@@ -465,6 +465,7 @@ public class Database extends AbstractDatabase {
                 databaseLayout.file(PAGED_ID_BUFFER_FILE_NAME),
                 databaseConfig,
                 () -> kernelModule.kernelTransactions().get(),
+                () -> kernelModule.transactionMonitor().oldestObservableHorizon(),
                 s -> kernelModule.kernelTransactions().eligibleForFreeing(s),
                 otherDatabaseMemoryTracker,
                 readOnlyDatabaseChecker);

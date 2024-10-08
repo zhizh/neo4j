@@ -61,6 +61,11 @@ public interface IdController extends Lifecycle {
         }
     }
 
+    @FunctionalInterface
+    interface TransactionIdVisibilityBoundary {
+        long oldestObservableHorizon();
+    }
+
     /**
      * Perform ids related maintenance.
      */
@@ -71,6 +76,7 @@ public interface IdController extends Lifecycle {
             Path baseBufferPath,
             Config config,
             Supplier<TransactionSnapshot> snapshotSupplier,
+            TransactionIdVisibilityBoundary visibilityBoundary,
             IdFreeCondition condition,
             MemoryTracker memoryTracker,
             DatabaseReadOnlyChecker databaseReadOnlyChecker)

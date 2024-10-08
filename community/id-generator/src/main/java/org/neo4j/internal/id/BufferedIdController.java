@@ -135,11 +135,13 @@ public class BufferedIdController extends LifecycleAdapter implements IdControll
             Path baseBufferPath,
             Config config,
             Supplier<TransactionSnapshot> snapshotSupplier,
+            TransactionIdVisibilityBoundary visibilityBoundary,
             IdFreeCondition condition,
             MemoryTracker memoryTracker,
             DatabaseReadOnlyChecker databaseReadOnlyChecker)
             throws IOException {
-        bufferingIdGeneratorFactory.initialize(fs, baseBufferPath, config, snapshotSupplier, condition, memoryTracker);
+        bufferingIdGeneratorFactory.initialize(
+                fs, baseBufferPath, config, snapshotSupplier, visibilityBoundary, condition, memoryTracker);
         this.databaseReadOnlyChecker = databaseReadOnlyChecker;
     }
 }

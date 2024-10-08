@@ -101,7 +101,13 @@ class BufferingIdGeneratorFactoryTest {
         bufferingIdGeneratorFactory = new BufferingIdGeneratorFactory(actual);
         Config config = Config.defaults(GraphDatabaseInternalSettings.buffered_ids_offload, offHeap);
         bufferingIdGeneratorFactory.initialize(
-                fs, directory.file("tmp-ids"), config, boundaries, boundaries, dbMemoryPool.getPoolMemoryTracker());
+                fs,
+                directory.file("tmp-ids"),
+                config,
+                boundaries,
+                boundaries,
+                boundaries,
+                dbMemoryPool.getPoolMemoryTracker());
         idGenerator = bufferingIdGeneratorFactory.open(
                 pageCache,
                 Path.of("doesnt-matter"),
@@ -229,7 +235,9 @@ class BufferingIdGeneratorFactoryTest {
     }
 
     private static class ControllableSnapshotSupplier
-            implements Supplier<IdController.TransactionSnapshot>, IdController.IdFreeCondition {
+            implements Supplier<IdController.TransactionSnapshot>,
+                    IdController.IdFreeCondition,
+                    IdController.TransactionIdVisibilityBoundary {
         boolean automaticallyEnableConditions;
         volatile IdController.TransactionSnapshot mostRecentlyReturned;
         private final Set<IdController.TransactionSnapshot> enabledSnapshots = new HashSet<>();
@@ -254,6 +262,11 @@ class BufferingIdGeneratorFactoryTest {
 
         void setMostRecentlyReturnedSnapshotToAllClosed() {
             enabledSnapshots.add(mostRecentlyReturned);
+        }
+
+        @Override
+        public long oldestObservableHorizon() {
+            return 9;
         }
     }
 

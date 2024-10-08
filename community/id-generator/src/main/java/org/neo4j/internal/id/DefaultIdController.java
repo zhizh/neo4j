@@ -44,6 +44,7 @@ public class DefaultIdController extends LifecycleAdapter implements IdControlle
             Path baseBufferPath,
             Config config,
             Supplier<TransactionSnapshot> snapshotSupplier,
+            TransactionIdVisibilityBoundary visibilityBoundary,
             IdFreeCondition condition,
             MemoryTracker memoryTracker,
             DatabaseReadOnlyChecker databaseReadOnlyChecker)

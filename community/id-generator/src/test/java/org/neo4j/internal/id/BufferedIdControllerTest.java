@@ -88,6 +88,7 @@ class BufferedIdControllerTest {
                 testDirectory.file("buffer"),
                 globalConfig,
                 () -> new IdController.TransactionSnapshot(10, 0, 0),
+                () -> 9,
                 s -> true,
                 EmptyMemoryTracker.INSTANCE,
                 writable());

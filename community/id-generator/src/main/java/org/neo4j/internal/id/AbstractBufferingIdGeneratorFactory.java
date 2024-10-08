@@ -46,6 +46,7 @@ public abstract class AbstractBufferingIdGeneratorFactory extends LifecycleAdapt
             Path bufferBasePath,
             Config config,
             Supplier<IdController.TransactionSnapshot> snapshotSupplier,
+            IdController.TransactionIdVisibilityBoundary visibilityBoundary,
             IdController.IdFreeCondition condition,
             MemoryTracker memoryTracker)
             throws IOException;
