@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.api.security;
 
-import static java.lang.String.format;
 import static org.neo4j.internal.helpers.collection.MapUtil.map;
 
 import java.util.Arrays;
@@ -69,8 +68,7 @@ public interface AuthToken {
         } else if (value instanceof Map) {
             return (Map<String, Object>) value;
         } else {
-            throw new InvalidAuthTokenException("The value associated with the key `" + key
-                    + "` must be a Map but was: " + value.getClass().getSimpleName());
+            throw InvalidAuthTokenException.valueMustBeMap(key, value.getClass().getSimpleName());
         }
     }
 
@@ -89,7 +87,7 @@ public interface AuthToken {
         if (StringUtils.isNotEmpty(explanation) && !explanation.matches("^[,.:;].*")) {
             explanation = ", " + explanation;
         }
-        return new InvalidAuthTokenException(format("Unsupported authentication token%s", explanation));
+        return InvalidAuthTokenException.unsupportedAuthenticationToken(explanation);
     }
 
     static Map<String, Object> newBasicAuthToken(String username, byte[] password) {

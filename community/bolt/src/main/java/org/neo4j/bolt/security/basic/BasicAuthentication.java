@@ -52,7 +52,7 @@ public class BasicAuthentication implements Authentication {
                 case TOO_MANY_ATTEMPTS:
                     throw new AuthenticationException(Status.Security.AuthenticationRateLimit);
                 default:
-                    throw new AuthenticationException(Status.Security.Unauthorized);
+                    throw AuthenticationException.unauthorized();
             }
 
             return new BasicAuthenticationResult(loginContext);

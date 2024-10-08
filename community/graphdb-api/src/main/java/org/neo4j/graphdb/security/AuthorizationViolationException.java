@@ -19,8 +19,11 @@
  */
 package org.neo4j.graphdb.security;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlRuntimeException;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 /**
@@ -53,6 +56,13 @@ public class AuthorizationViolationException extends GqlRuntimeException impleme
     public AuthorizationViolationException(ErrorGqlStatusObject gqlStatusObject, String message) {
         super(gqlStatusObject, message);
         statusCode = Status.Security.Forbidden;
+    }
+
+    public static AuthorizationViolationException permissionDenied() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new AuthorizationViolationException(gql, PERMISSION_DENIED, Status.Security.Unauthorized);
     }
 
     /** The Neo4j status code associated with this exception type. */

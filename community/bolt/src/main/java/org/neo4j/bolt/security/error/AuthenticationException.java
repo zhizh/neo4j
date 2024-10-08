@@ -20,9 +20,12 @@
 package org.neo4j.bolt.security.error;
 
 import java.io.IOException;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
 import org.neo4j.gqlstatus.GqlHelper;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 public class AuthenticationException extends IOException implements Status.HasStatus, ErrorGqlStatusObject {
@@ -30,6 +33,7 @@ public class AuthenticationException extends IOException implements Status.HasSt
     private final ErrorGqlStatusObject gqlStatusObject;
     private final String oldMessage;
 
+    @Deprecated
     public AuthenticationException(Status status) {
         this(status, status.code().description(), null);
     }
@@ -38,6 +42,7 @@ public class AuthenticationException extends IOException implements Status.HasSt
         this(gqlStatusObject, status, status.code().description(), null);
     }
 
+    @Deprecated
     public AuthenticationException(Status status, String message) {
         this(status, message, null);
     }
@@ -46,6 +51,7 @@ public class AuthenticationException extends IOException implements Status.HasSt
         this(gqlStatusObject, status, message, null);
     }
 
+    @Deprecated
     public AuthenticationException(Status status, String message, Throwable e) {
         super(message, e);
         this.status = status;
@@ -58,6 +64,13 @@ public class AuthenticationException extends IOException implements Status.HasSt
         this.status = status;
         this.gqlStatusObject = GqlHelper.getInnerGqlStatusObject(gqlStatusObject, e);
         oldMessage = message;
+    }
+
+    public static AuthenticationException unauthorized() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .build();
+        return new AuthenticationException(gql, Status.Security.Unauthorized);
     }
 
     @Override
