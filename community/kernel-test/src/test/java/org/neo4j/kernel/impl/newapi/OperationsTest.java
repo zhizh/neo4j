@@ -77,10 +77,10 @@ import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.EndpointType;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.internal.schema.IndexProviderDescriptor;
-import org.neo4j.internal.schema.LabelCoexistenceSchemaDescriptor;
 import org.neo4j.internal.schema.LabelSchemaDescriptor;
-import org.neo4j.internal.schema.RelationshipEndpointSchemaDescriptor;
-import org.neo4j.internal.schema.SchemaDescriptorImplementation;
+import org.neo4j.internal.schema.NodeLabelExistenceSchemaDescriptor;
+import org.neo4j.internal.schema.RelationshipEndpointLabelSchemaDescriptor;
+import org.neo4j.internal.schema.SchemaDescriptorImplementationNode;
 import org.neo4j.internal.schema.SchemaDescriptors;
 import org.neo4j.internal.schema.SchemaState;
 import org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory;
@@ -254,7 +254,8 @@ abstract class OperationsTest {
                 mock(ConstraintSemantics.class),
                 indexingProvidersService,
                 Config.defaults(Map.of(
-                        GraphDatabaseInternalSettings.relationship_endpoint_and_label_coexistence_constraints, true)),
+                        GraphDatabaseInternalSettings.relationship_endpoint_label_and_node_label_existence_constraints,
+                        true)),
                 INSTANCE,
                 () -> Static.FULL,
                 TransactionStateBehaviour.DEFAULT_BEHAVIOUR);
@@ -345,7 +346,7 @@ abstract class OperationsTest {
         verify(locks).acquireShared(any(), eq(ResourceType.LABEL), eq(3L));
         verify(locks)
                 .acquireShared(
-                        any(), eq(ResourceType.LABEL), eq(SchemaDescriptorImplementation.TOKEN_INDEX_LOCKING_IDS));
+                        any(), eq(ResourceType.LABEL), eq(SchemaDescriptorImplementationNode.TOKEN_INDEX_LOCKING_IDS));
         verify(locks).acquireShared(any(), eq(ResourceType.LABEL), eq(1L), eq(2L));
         verify(storageLocks).acquireNodeLabelChangeLock(any(), eq(node), eq(1));
         verify(storageLocks).acquireNodeLabelChangeLock(any(), eq(node), eq(3));
@@ -368,28 +369,28 @@ abstract class OperationsTest {
     }
 
     @Test
-    void creationOfEndpointConstraintShouldLockTypeAndLabels() throws Exception {
+    void creationOfEndpointLabelConstraintShouldLockTypeAndLabels() throws Exception {
         int expectedType = 5;
         int expectedLabelId = 1;
 
         when(relationshipCursor.next()).thenReturn(false);
-        RelationshipEndpointSchemaDescriptor relationshipEndpointSchemaDescriptor =
-                SchemaDescriptors.forRelationshipEndpoint(expectedType);
-        operations.relationshipEndpointConstraintCreate(
-                relationshipEndpointSchemaDescriptor, "SomeName", expectedLabelId, EndpointType.START);
+        RelationshipEndpointLabelSchemaDescriptor relationshipEndpointLabelSchemaDescriptor =
+                SchemaDescriptors.forRelationshipEndpointLabel(expectedType);
+        operations.relationshipEndpointLabelConstraintCreate(
+                relationshipEndpointLabelSchemaDescriptor, "SomeName", expectedLabelId, EndpointType.START);
 
         verify(locks).acquireExclusive(any(), eq(ResourceType.RELATIONSHIP_TYPE), eq((long) expectedType));
         verify(locks).acquireExclusive(any(), eq(ResourceType.LABEL), eq((long) expectedLabelId));
     }
 
     @Test
-    void creationOfLabelCoexistenceConstraintShouldLockLabels() throws Exception {
+    void creationOfNodeLabelExistenceConstraintShouldLockLabels() throws Exception {
         int schemaLabelId = 1;
         int requiredLabelId = 2;
 
-        LabelCoexistenceSchemaDescriptor labelCoexistenceSchemaDescriptor =
-                SchemaDescriptors.forLabelCoexistence(schemaLabelId);
-        operations.labelCoexistenceConstraintCreate(labelCoexistenceSchemaDescriptor, "SomeName", requiredLabelId);
+        NodeLabelExistenceSchemaDescriptor nodeLabelExistenceSchemaDescriptor =
+                SchemaDescriptors.forNodeLabelExistence(schemaLabelId);
+        operations.nodeLabelExistenceConstraintCreate(nodeLabelExistenceSchemaDescriptor, "SomeName", requiredLabelId);
 
         verify(locks).acquireExclusive(any(), eq(ResourceType.LABEL), eq((long) schemaLabelId));
         verify(locks).acquireExclusive(any(), eq(ResourceType.LABEL), eq((long) requiredLabelId));

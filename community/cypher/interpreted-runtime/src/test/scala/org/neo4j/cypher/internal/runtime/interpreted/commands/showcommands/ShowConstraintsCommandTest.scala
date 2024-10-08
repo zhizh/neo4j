@@ -1392,12 +1392,12 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     )
   }
 
-  // These tests should be merged later, we need some way to disambiguate between different endpoint constraints...
-  test("show end point constraints - target") {
+  // These tests should be merged later, we need some way to disambiguate between different relationship endpoint label constraints...
+  test("show relationship endpoint label constraints - target") {
     // Given
     val relTargetConstraintDescriptor =
-      ConstraintDescriptorFactory.relationshipEndpointForSchema(
-        relEndpointDescriptor,
+      ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+        relEndpointLabelDescriptor,
         labelDescriptor.getLabelId,
         EndpointType.END
       )
@@ -1432,12 +1432,12 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     )
   }
 
-  // These tests should be merged later, we need some way to disambiguate between different endpoint constraints...
-  test("show end point constraints - source") {
+  // These tests should be merged later, we need some way to disambiguate between different relationship endpoint label constraints...
+  test("show relationship endpoint label constraints - source") {
     // Given
     val relSourceConstraintDescriptor =
-      ConstraintDescriptorFactory.relationshipEndpointForSchema(
-        relEndpointDescriptor,
+      ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+        relEndpointLabelDescriptor,
         labelDescriptor.getLabelId,
         EndpointType.START
       )
@@ -1474,11 +1474,11 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
 
   }
 
-  test("show label coexistence constraints") {
+  test("show node label existence constraints") {
     // Given
-    val labelCoexistenceConstraintDescriptor =
-      ConstraintDescriptorFactory.labelCoexistenceForSchema(
-        SchemaDescriptors.forLabelCoexistence(0),
+    val nodeLabelExistenceConstraintDescriptor =
+      ConstraintDescriptorFactory.nodeLabelExistenceForSchema(
+        SchemaDescriptors.forNodeLabelExistence(0),
         1
       )
         .withName("constraint0")
@@ -1489,7 +1489,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
 
     // Set-up which constraints to return:
     when(ctx.getAllConstraints()).thenReturn(Map(
-      labelCoexistenceConstraintDescriptor -> constraintInfo
+      nodeLabelExistenceConstraintDescriptor -> constraintInfo
     ))
 
     // When
@@ -1502,7 +1502,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       result.head,
       name = "constraint0",
       id = 0,
-      constraintType = "NODE_LABEL_COEXISTENCE",
+      constraintType = "NODE_LABEL_EXISTENCE",
       entityType = "NODE",
       labelsOrTypes = List(label),
       properties = List.empty[String],

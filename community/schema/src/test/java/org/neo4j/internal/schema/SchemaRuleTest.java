@@ -195,20 +195,20 @@ class SchemaRuleTest {
                     relTypeSchema, PropertyTypeSet.of(SchemaValueType.STRING), false)
             .withName("namedRelationshipTypeConstraint")
             .withId(11);
-    private final ConstraintDescriptor relationshipEndpointStartConstraint =
-            ConstraintDescriptorFactory.relationshipEndpointForRelType(0, 0, EndpointType.START);
-    private final ConstraintDescriptor relationshipEndpointStartAnotherLabelConstraint =
-            ConstraintDescriptorFactory.relationshipEndpointForRelType(0, 1, EndpointType.START);
-    private final ConstraintDescriptor relationshipEndpointStartAnotherRelTypeConstraint =
-            ConstraintDescriptorFactory.relationshipEndpointForRelType(1, 0, EndpointType.START);
-    private final ConstraintDescriptor relationshipEndpointEndConstraint =
-            ConstraintDescriptorFactory.relationshipEndpointForRelType(0, 0, EndpointType.END);
-    private final ConstraintDescriptor labelCoexistenceConstraint =
-            ConstraintDescriptorFactory.labelCoexistenceForLabel(0, 1);
-    private final ConstraintDescriptor labelCoexistenceAnotherConstrainedLabelConstraint =
-            ConstraintDescriptorFactory.labelCoexistenceForLabel(2, 1);
-    private final ConstraintDescriptor labelCoexistenceAnotherRequiredLabelConstraint =
-            ConstraintDescriptorFactory.labelCoexistenceForLabel(0, 2);
+    private final ConstraintDescriptor relationshipEndpointLabelStartConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointLabelForRelType(0, 0, EndpointType.START);
+    private final ConstraintDescriptor relationshipEndpointLabelStartAnotherLabelConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointLabelForRelType(0, 1, EndpointType.START);
+    private final ConstraintDescriptor relationshipEndpointLabelStartAnotherRelTypeConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointLabelForRelType(1, 0, EndpointType.START);
+    private final ConstraintDescriptor relationshipEndpointLabelEndConstraint =
+            ConstraintDescriptorFactory.relationshipEndpointLabelForRelType(0, 0, EndpointType.END);
+    private final ConstraintDescriptor nodeLabelExistenceConstraint =
+            ConstraintDescriptorFactory.nodeLabelExistenceForLabel(0, 1);
+    private final ConstraintDescriptor nodeLabelExistenceAnotherConstrainedLabelConstraint =
+            ConstraintDescriptorFactory.nodeLabelExistenceForLabel(2, 1);
+    private final ConstraintDescriptor nodeLabelExistenceAnotherRequiredLabelConstraint =
+            ConstraintDescriptorFactory.nodeLabelExistenceForLabel(0, 2);
 
     private final InMemoryTokens lookup = new InMemoryTokens()
             .label(0, "La:bel")
@@ -247,13 +247,13 @@ class SchemaRuleTest {
         assertName(nodeTypeConstraintBoolString, "constraint_c99ece6");
         assertName(nodeTypeConstraintIntBool, "constraint_f37a6b9f");
         assertName(nodeTypeConstraintBoolInt, "constraint_f37a6b9f");
-        assertName(relationshipEndpointStartConstraint, "constraint_45a43ff5");
-        assertName(relationshipEndpointStartAnotherLabelConstraint, "constraint_dc30653e");
-        assertName(relationshipEndpointStartAnotherRelTypeConstraint, "constraint_22d39b8c");
-        assertName(relationshipEndpointEndConstraint, "constraint_32fd396b");
-        assertName(labelCoexistenceConstraint, "constraint_e9e53eab");
-        assertName(labelCoexistenceAnotherConstrainedLabelConstraint, "constraint_29315144");
-        assertName(labelCoexistenceAnotherRequiredLabelConstraint, "constraint_e19ffddf");
+        assertName(relationshipEndpointLabelStartConstraint, "constraint_45a43ff5");
+        assertName(relationshipEndpointLabelStartAnotherLabelConstraint, "constraint_dc30653e");
+        assertName(relationshipEndpointLabelStartAnotherRelTypeConstraint, "constraint_22d39b8c");
+        assertName(relationshipEndpointLabelEndConstraint, "constraint_32fd396b");
+        assertName(nodeLabelExistenceConstraint, "constraint_e9e53eab");
+        assertName(nodeLabelExistenceAnotherConstrainedLabelConstraint, "constraint_29315144");
+        assertName(nodeLabelExistenceAnotherRequiredLabelConstraint, "constraint_e19ffddf");
         assertName(allLabelsPrototype, "index_343aff4e");
         assertName(allRelTypesPrototype, "index_f7700477");
         assertName(textLabelPrototype, "index_19f9e602");

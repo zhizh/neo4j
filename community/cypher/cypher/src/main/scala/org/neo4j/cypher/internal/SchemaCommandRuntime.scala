@@ -97,10 +97,10 @@ import org.neo4j.graphdb.schema.IndexType.TEXT
 import org.neo4j.graphdb.schema.IndexType.VECTOR
 import org.neo4j.graphdb.security.AuthorizationViolationException
 import org.neo4j.internal.schema.ConstraintDescriptor
-import org.neo4j.internal.schema.ConstraintType.ENDPOINT
 import org.neo4j.internal.schema.ConstraintType.EXISTS
-import org.neo4j.internal.schema.ConstraintType.LABEL_COEXISTENCE
+import org.neo4j.internal.schema.ConstraintType.NODE_LABEL_EXISTENCE
 import org.neo4j.internal.schema.ConstraintType.PROPERTY_TYPE
+import org.neo4j.internal.schema.ConstraintType.RELATIONSHIP_ENDPOINT_LABEL
 import org.neo4j.internal.schema.ConstraintType.UNIQUE
 import org.neo4j.internal.schema.ConstraintType.UNIQUE_EXISTS
 import org.neo4j.internal.schema.IndexConfig
@@ -862,14 +862,14 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
           if (cypherVersion == CypherVersion.Cypher5)
             if (isNode) "IS NODE KEY" else "IS RELATIONSHIP KEY"
           else "IS KEY"
-        case UNIQUE            => "IS UNIQUE"
-        case PROPERTY_TYPE     => s"IS :: ${propertyType.get}"
-        case ENDPOINT          => ""
-        case LABEL_COEXISTENCE => ""
+        case UNIQUE                      => "IS UNIQUE"
+        case PROPERTY_TYPE               => s"IS :: ${propertyType.get}"
+        case RELATIONSHIP_ENDPOINT_LABEL => ""
+        case NODE_LABEL_EXISTENCE        => ""
       }
       val prettyAssertion = asPrettyString.raw(assertion)
-      // Currently don't have a constraint command for endpoint and label coexistence constraints so let's return the same as if the user wasn't allowed to see the constraint for now
-      if (constraintType == ENDPOINT || constraintType == LABEL_COEXISTENCE) "constraint"
+      // Currently don't have a constraint command for endpoint and node label existence constraints so let's return the same as if the user wasn't allowed to see the constraint for now
+      if (constraintType == RELATIONSHIP_ENDPOINT_LABEL || constraintType == NODE_LABEL_EXISTENCE) "constraint"
       else pretty"CONSTRAINT$nameString FOR $pattern REQUIRE $propertyString $prettyAssertion".prettifiedString
     } catch {
       // Not allowed to see constraint description, only show `constraint`

@@ -54,12 +54,12 @@ class ConstraintSubSectionTest {
                 SchemaDescriptors.forRelType(0, 0), PropertyTypeSet.of(SchemaValueType.INTEGER), false)),
         NODE_KEY(ConstraintDescriptorFactory.keyForSchema(SchemaDescriptors.forLabel(0, 0))),
         RELATIONSHIP_KEY(ConstraintDescriptorFactory.keyForSchema(SchemaDescriptors.forRelType(0, 0))),
-        ENDPOINT_START(ConstraintDescriptorFactory.relationshipEndpointForSchema(
-                SchemaDescriptors.forRelationshipEndpoint(0), 0, EndpointType.START)),
-        ENDPOINT_END(ConstraintDescriptorFactory.relationshipEndpointForSchema(
-                SchemaDescriptors.forRelationshipEndpoint(0), 0, EndpointType.END)),
-        LABEL_COEXISTENCE(
-                ConstraintDescriptorFactory.labelCoexistenceForSchema(SchemaDescriptors.forLabelCoexistence(0), 1));
+        ENDPOINT_START(ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+                SchemaDescriptors.forRelationshipEndpointLabel(0), 0, EndpointType.START)),
+        ENDPOINT_END(ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+                SchemaDescriptors.forRelationshipEndpointLabel(0), 0, EndpointType.END)),
+        NODE_LABEL_EXISTENCE(
+                ConstraintDescriptorFactory.nodeLabelExistenceForSchema(SchemaDescriptors.forNodeLabelExistence(0), 1));
 
         public final ConstraintDescriptor descriptor;
 
@@ -179,28 +179,28 @@ class ConstraintSubSectionTest {
     }
 
     @Test
-    void relationshipEndpointConstraintSerialization() {
+    void relationshipEndpointLabelConstraintSerialization() {
         Map<String, Object> expectedDataStart = Map.of(
                 "relationshipType", "REL",
-                "type", "Relationship endpoint constraint",
+                "type", "Relationship endpoint label constraint",
                 "endpointType", "START",
                 "properties", List.of());
         assertEquals(serializeConstraint(Constraint.ENDPOINT_START), expectedDataStart);
 
         Map<String, Object> expectedDataEnd = Map.of(
                 "relationshipType", "REL",
-                "type", "Relationship endpoint constraint",
+                "type", "Relationship endpoint label constraint",
                 "endpointType", "END",
                 "properties", List.of());
         assertEquals(serializeConstraint(Constraint.ENDPOINT_END), expectedDataEnd);
     }
 
     @Test
-    void labelCoexistenceConstraintSerialization() {
+    void nodeLabelExistenceConstraintSerialization() {
         Map<String, Object> expectedData = Map.of(
                 "label", "Label",
-                "type", "Label coexistence constraint",
+                "type", "Node label existence constraint",
                 "properties", List.of());
-        assertEquals(serializeConstraint(Constraint.LABEL_COEXISTENCE), expectedData);
+        assertEquals(serializeConstraint(Constraint.NODE_LABEL_EXISTENCE), expectedData);
     }
 }

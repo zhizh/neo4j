@@ -27,7 +27,7 @@ import org.neo4j.common.EntityType;
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.PropertyTypeSet;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.SchemaValueType;
 import org.neo4j.internal.schema.constraints.TypeConstraintDescriptor;
 
@@ -77,16 +77,18 @@ final class ConstraintSubSection {
                         propertyTypeSet.stream().map(SchemaValueType::serialize).toList();
                 data.put("propertyTypes", propertyTypes);
                 break;
-            case ENDPOINT:
-                RelationshipEndpointConstraintDescriptor endpointConstraintDescriptor =
-                        constraint.asRelationshipEndpointConstraint();
-                data.put("type", "Relationship endpoint constraint");
+            case RELATIONSHIP_ENDPOINT_LABEL:
+                RelationshipEndpointLabelConstraintDescriptor relationshipEndpointLabelConstraintDescriptor =
+                        constraint.asRelationshipEndpointLabelConstraint();
+                data.put("type", "Relationship endpoint label constraint");
                 data.put(
                         "endpointType",
-                        endpointConstraintDescriptor.endpointType().name());
+                        relationshipEndpointLabelConstraintDescriptor
+                                .endpointType()
+                                .name());
                 break;
-            case LABEL_COEXISTENCE:
-                data.put("type", "Label coexistence constraint");
+            case NODE_LABEL_EXISTENCE:
+                data.put("type", "Node label existence constraint");
             default:
         }
 

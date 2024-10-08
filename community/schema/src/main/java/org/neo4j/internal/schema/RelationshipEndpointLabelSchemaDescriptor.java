@@ -22,4 +22,4 @@ package org.neo4j.internal.schema;
 import org.neo4j.util.MarkerInterface;
 
 @MarkerInterface
-public interface RelationshipEndpointSchemaDescriptor extends SchemaDescriptor {}
+public interface RelationshipEndpointLabelSchemaDescriptor extends SchemaDescriptor {}

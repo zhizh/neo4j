@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.internal.kernel.api.security.LoginContext;
+import org.neo4j.internal.schema.EndpointType;
 import org.neo4j.internal.schema.SchemaDescriptors;
 import org.neo4j.kernel.api.KernelTransaction;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
@@ -34,17 +35,18 @@ import org.neo4j.test.extension.ExtensionCallback;
 import org.neo4j.test.extension.Inject;
 
 @DbmsExtension(configurationCallback = "configure")
-public final class LabelCoexistenceConstraintCommunityIT {
+public final class RelationshipEndpointLabelConstraintCommunityIT {
     @Inject
     private GraphDatabaseAPI graphDatabaseAPI;
 
     @ExtensionCallback
     void configure(TestDatabaseManagementServiceBuilder builder) {
-        builder.setConfig(GraphDatabaseInternalSettings.relationship_endpoint_and_label_coexistence_constraints, true);
+        builder.setConfig(
+                GraphDatabaseInternalSettings.relationship_endpoint_label_and_node_label_existence_constraints, true);
     }
 
     @Test
-    void shouldNotAllowLabelCoexistenceConstraintsInCE() {
+    void shouldNotAllowRelationshipEndpointLabelConstraintsInCE() {
 
         try (Transaction tx =
                 graphDatabaseAPI.beginTransaction(KernelTransaction.Type.EXPLICIT, LoginContext.AUTH_DISABLED)) {
@@ -54,8 +56,11 @@ public final class LabelCoexistenceConstraintCommunityIT {
                             internalTransaction
                                     .kernelTransaction()
                                     .schemaWrite()
-                                    .labelCoexistenceConstraintCreate(
-                                            SchemaDescriptors.forLabelCoexistence(0), "ConstraintName", 1);
+                                    .relationshipEndpointLabelConstraintCreate(
+                                            SchemaDescriptors.forRelationshipEndpointLabel(0),
+                                            "ConstraintName",
+                                            0,
+                                            EndpointType.START);
                         }
                     })
                     .hasMessageContaining("requires Neo4j Enterprise Edition");

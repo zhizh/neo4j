@@ -28,10 +28,10 @@ import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
 import org.neo4j.internal.schema.EndpointType;
 import org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
-import org.neo4j.kernel.api.exceptions.schema.RelationshipEndpointMissingLabelException;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
+import org.neo4j.kernel.api.exceptions.schema.RelationshipEndpointLabelMissingLabelException;
 
-public final class RelationshipEndpointMissingLabelExceptionTest {
+public final class RelationshipEndpointLabelMissingLabelExceptionTest {
     private static final int LABEL_ID = 0;
     private static final int REL_TYPE_ID = 0;
 
@@ -43,10 +43,11 @@ public final class RelationshipEndpointMissingLabelExceptionTest {
         when(kernelToken.labelGetName(LABEL_ID)).thenReturn("EndpointLabel");
         long relationshipReference = 1;
         long nodeReference = 2;
-        RelationshipEndpointConstraintDescriptor endpointConstraintDescriptor =
-                ConstraintDescriptorFactory.relationshipEndpointForRelType(REL_TYPE_ID, LABEL_ID, EndpointType.START);
-        var userMessage = new RelationshipEndpointMissingLabelException(
-                        endpointConstraintDescriptor,
+        RelationshipEndpointLabelConstraintDescriptor relationshipEndpointLabelConstraintDescriptor =
+                ConstraintDescriptorFactory.relationshipEndpointLabelForRelType(
+                        REL_TYPE_ID, LABEL_ID, EndpointType.START);
+        var userMessage = new RelationshipEndpointLabelMissingLabelException(
+                        relationshipEndpointLabelConstraintDescriptor,
                         ConstraintValidationException.Phase.VERIFICATION,
                         relationshipReference,
                         nodeReference,

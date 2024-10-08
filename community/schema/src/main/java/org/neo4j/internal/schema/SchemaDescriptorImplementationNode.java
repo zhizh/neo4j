@@ -36,14 +36,14 @@ import org.neo4j.lock.ResourceType;
 import org.neo4j.token.api.TokenConstants;
 import org.neo4j.util.Preconditions;
 
-public final class SchemaDescriptorImplementation
+public final class SchemaDescriptorImplementationNode
         implements SchemaDescriptor,
                 LabelSchemaDescriptor,
                 RelationTypeSchemaDescriptor,
                 FulltextSchemaDescriptor,
                 AnyTokenSchemaDescriptor,
-                RelationshipEndpointSchemaDescriptor,
-                LabelCoexistenceSchemaDescriptor {
+                RelationshipEndpointLabelSchemaDescriptor,
+                NodeLabelExistenceSchemaDescriptor {
     public static final int TOKEN_INDEX_LOCKING_ID = Integer.MAX_VALUE;
     public static final long[] TOKEN_INDEX_LOCKING_IDS = {TOKEN_INDEX_LOCKING_ID};
 
@@ -58,7 +58,7 @@ public final class SchemaDescriptorImplementation
      * This constructor is only public so that it can be called directly from the SchemaStore.
      * Use the static methods on {@link SchemaDescriptors} to create the usual kinds of schemas.
      */
-    public SchemaDescriptorImplementation(
+    public SchemaDescriptorImplementationNode(
             EntityType entityType,
             SchemaPatternMatchingType schemaPatternMatchingType,
             int[] entityTokens,
@@ -184,8 +184,8 @@ public final class SchemaDescriptorImplementation
             case "RelationTypeSchemaDescriptor" -> schemaArchetype == SchemaArchetype.RELATIONSHIP_PROPERTY;
             case "FulltextSchemaDescriptor" -> schemaArchetype == SchemaArchetype.MULTI_TOKEN;
             case "AnyTokenSchemaDescriptor" -> schemaArchetype == SchemaArchetype.ANY_TOKEN;
-            case "RelationshipEndpointSchemaDescriptor" -> schemaArchetype == SchemaArchetype.SINGLE_RELATIONSHIP;
-            case "LabelCoexistenceSchemaDescriptor" -> schemaArchetype == SchemaArchetype.SINGLE_LABEL;
+            case "RelationshipEndpointLabelSchemaDescriptor" -> schemaArchetype == SchemaArchetype.SINGLE_RELATIONSHIP;
+            case "NodeLabelExistenceSchemaDescriptor" -> schemaArchetype == SchemaArchetype.SINGLE_LABEL;
             default -> false;
         };
     }

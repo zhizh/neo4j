@@ -27,10 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
 import org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory;
-import org.neo4j.internal.schema.constraints.LabelCoexistenceConstraintDescriptor;
-import org.neo4j.kernel.api.exceptions.schema.LabelCoexistenceMissingLabelException;
+import org.neo4j.internal.schema.constraints.NodeLabelExistenceConstraintDescriptor;
+import org.neo4j.kernel.api.exceptions.schema.NodeLabelExistenceMissingLabelException;
 
-public final class LabelCoexistenceMissingLabelExceptionTest {
+public final class NodeLabelExistenceMissingLabelExceptionTest {
     private static final int SCHEMA_LABEL_ID = 0;
     private static final int REQUIRED_LABEL_ID = 1;
 
@@ -41,9 +41,9 @@ public final class LabelCoexistenceMissingLabelExceptionTest {
         when(kernelToken.labelGetName(SCHEMA_LABEL_ID)).thenReturn("SchemaLabel");
         when(kernelToken.labelGetName(REQUIRED_LABEL_ID)).thenReturn("RequiredLabel");
 
-        LabelCoexistenceConstraintDescriptor constraintDescriptor =
-                ConstraintDescriptorFactory.labelCoexistenceForLabel(SCHEMA_LABEL_ID, REQUIRED_LABEL_ID);
-        var userMessage = new LabelCoexistenceMissingLabelException(
+        NodeLabelExistenceConstraintDescriptor constraintDescriptor =
+                ConstraintDescriptorFactory.nodeLabelExistenceForLabel(SCHEMA_LABEL_ID, REQUIRED_LABEL_ID);
+        var userMessage = new NodeLabelExistenceMissingLabelException(
                         constraintDescriptor,
                         ConstraintValidationException.Phase.VERIFICATION,
                         SCHEMA_LABEL_ID,

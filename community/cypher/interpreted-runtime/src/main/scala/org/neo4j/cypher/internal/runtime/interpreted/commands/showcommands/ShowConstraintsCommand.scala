@@ -25,9 +25,9 @@ import org.neo4j.cypher.internal.ast.AllConstraints
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.KeyConstraints
-import org.neo4j.cypher.internal.ast.LabelCoexistenceConstraints
 import org.neo4j.cypher.internal.ast.NodeExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodeLabelExistenceConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
@@ -35,7 +35,7 @@ import org.neo4j.cypher.internal.ast.RelExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
-import org.neo4j.cypher.internal.ast.RelationshipEndpointConstraints
+import org.neo4j.cypher.internal.ast.RelationshipEndpointLabelConstraints
 import org.neo4j.cypher.internal.ast.ShowColumn
 import org.neo4j.cypher.internal.ast.ShowConstraintType
 import org.neo4j.cypher.internal.ast.ShowConstraintsClause.createStatementColumn
@@ -251,10 +251,10 @@ object ShowConstraintsCommand {
           throw new IllegalArgumentException(s"Expected a property type for $constraintType constraint.")
         )
         createRelConstraintCommand(name, labelsOrTypes, properties, s"IS :: $typeString")
-      case RelationshipEndpointConstraints =>
+      case RelationshipEndpointLabelConstraints =>
         // Currently not implemented
         ""
-      case LabelCoexistenceConstraints =>
+      case NodeLabelExistenceConstraints =>
         // Currently not implemented
         ""
       case _ => throw new IllegalArgumentException(
@@ -281,8 +281,9 @@ object ShowConstraintsCommand {
         if (returnCypher5Values) RelExistsConstraints.cypher5 else RelExistsConstraints.cypher25
       case (schema.ConstraintType.PROPERTY_TYPE, EntityType.NODE)         => NodePropTypeConstraints
       case (schema.ConstraintType.PROPERTY_TYPE, EntityType.RELATIONSHIP) => RelPropTypeConstraints
-      case (schema.ConstraintType.ENDPOINT, EntityType.RELATIONSHIP)      => RelationshipEndpointConstraints
-      case (schema.ConstraintType.LABEL_COEXISTENCE, EntityType.NODE)     => LabelCoexistenceConstraints
+      case (schema.ConstraintType.RELATIONSHIP_ENDPOINT_LABEL, EntityType.RELATIONSHIP) =>
+        RelationshipEndpointLabelConstraints
+      case (schema.ConstraintType.NODE_LABEL_EXISTENCE, EntityType.NODE) => NodeLabelExistenceConstraints
       case _ => throw new IllegalStateException(
           s"Invalid constraint combination: ConstraintType $internalConstraintType and EntityType $entityType."
         )

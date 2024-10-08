@@ -119,21 +119,21 @@ public class SchemaNameUtil {
                         key,
                         constraint.asPropertyTypeConstraint().propertyType().hashCode());
             }
-            if (constraint.isRelationshipEndpointConstraint()) {
-                var relEndpointConstraint = constraint.asRelationshipEndpointConstraint();
+            if (constraint.isRelationshipEndpointLabelConstraint()) {
+                var relEndpointLabelConstraint = constraint.asRelationshipEndpointLabelConstraint();
                 key = hf.update(
                         key,
                         tokenNameLookup
-                                .labelGetName(relEndpointConstraint.endpointLabelId())
+                                .labelGetName(relEndpointLabelConstraint.endpointLabelId())
                                 .hashCode());
-                key = hf.update(key, relEndpointConstraint.endpointType().ordinal());
+                key = hf.update(key, relEndpointLabelConstraint.endpointType().ordinal());
             }
-            if (constraint.isLabelCoexistenceConstraint()) {
+            if (constraint.isNodeLabelExistenceConstraint()) {
                 key = hf.update(
                         key,
                         tokenNameLookup
                                 .labelGetName(constraint
-                                        .asLabelCoexistenceConstraint()
+                                        .asNodeLabelExistenceConstraint()
                                         .requiredLabelId())
                                 .hashCode());
             }

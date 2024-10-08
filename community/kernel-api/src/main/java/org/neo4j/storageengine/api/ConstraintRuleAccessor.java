@@ -22,8 +22,8 @@ package org.neo4j.storageengine.api;
 import org.neo4j.internal.kernel.api.exceptions.schema.CreateConstraintFailureException;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.KeyConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.LabelCoexistenceConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.NodeLabelExistenceConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.TypeConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.UniquenessConstraintDescriptor;
 
@@ -42,9 +42,10 @@ public interface ConstraintRuleAccessor {
     ConstraintDescriptor createPropertyTypeConstraint(long ruleId, TypeConstraintDescriptor descriptor)
             throws CreateConstraintFailureException;
 
-    ConstraintDescriptor createRelationshipEndpointConstraint(
-            long ruleId, RelationshipEndpointConstraintDescriptor descriptor) throws CreateConstraintFailureException;
-
-    ConstraintDescriptor createLabelCoexistenceConstraint(long ruleId, LabelCoexistenceConstraintDescriptor descriptor)
+    ConstraintDescriptor createRelationshipEndpointLabelConstraint(
+            long ruleId, RelationshipEndpointLabelConstraintDescriptor descriptor)
             throws CreateConstraintFailureException;
+
+    ConstraintDescriptor createNodeLabelExistenceConstraint(
+            long ruleId, NodeLabelExistenceConstraintDescriptor descriptor) throws CreateConstraintFailureException;
 }

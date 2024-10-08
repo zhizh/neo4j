@@ -42,8 +42,8 @@ import org.neo4j.internal.schema.FulltextSchemaDescriptor;
 import org.neo4j.internal.schema.GraphTypeDependence;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexPrototype;
-import org.neo4j.internal.schema.LabelCoexistenceSchemaDescriptor;
-import org.neo4j.internal.schema.RelationshipEndpointSchemaDescriptor;
+import org.neo4j.internal.schema.NodeLabelExistenceSchemaDescriptor;
+import org.neo4j.internal.schema.RelationshipEndpointLabelSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptors;
 import org.neo4j.internal.schema.SchemaRule;
@@ -194,21 +194,21 @@ public class SchemaMigrator {
                                                     .propertyType(),
                                             constraintDescriptor.graphTypeDependence()
                                                     == GraphTypeDependence.DEPENDENT);
-                                    case ENDPOINT -> {
-                                        var relEndpointSchemaDescriptor =
-                                                constraintDescriptor.asRelationshipEndpointConstraint();
-                                        yield ConstraintDescriptorFactory.relationshipEndpointForSchema(
+                                    case RELATIONSHIP_ENDPOINT_LABEL -> {
+                                        var relationshipEndpointLabelSchemaDescriptor =
+                                                constraintDescriptor.asRelationshipEndpointLabelConstraint();
+                                        yield ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
                                                 schema.asSchemaDescriptorType(
-                                                        RelationshipEndpointSchemaDescriptor.class),
-                                                relEndpointSchemaDescriptor.endpointLabelId(),
-                                                relEndpointSchemaDescriptor.endpointType());
+                                                        RelationshipEndpointLabelSchemaDescriptor.class),
+                                                relationshipEndpointLabelSchemaDescriptor.endpointLabelId(),
+                                                relationshipEndpointLabelSchemaDescriptor.endpointType());
                                     }
-                                    case LABEL_COEXISTENCE -> {
-                                        var labelCoexistenceSchemaDescriptor =
-                                                constraintDescriptor.asLabelCoexistenceConstraint();
-                                        yield ConstraintDescriptorFactory.labelCoexistenceForSchema(
-                                                schema.asSchemaDescriptorType(LabelCoexistenceSchemaDescriptor.class),
-                                                labelCoexistenceSchemaDescriptor.requiredLabelId());
+                                    case NODE_LABEL_EXISTENCE -> {
+                                        var nodeLabelExistenceSchemaDescriptor =
+                                                constraintDescriptor.asNodeLabelExistenceConstraint();
+                                        yield ConstraintDescriptorFactory.nodeLabelExistenceForSchema(
+                                                schema.asSchemaDescriptorType(NodeLabelExistenceSchemaDescriptor.class),
+                                                nodeLabelExistenceSchemaDescriptor.requiredLabelId());
                                     }
                                 };
                         descriptor = descriptor.withName(constraintDescriptor.getName());

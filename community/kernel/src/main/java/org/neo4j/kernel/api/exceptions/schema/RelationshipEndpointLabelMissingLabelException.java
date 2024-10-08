@@ -24,15 +24,15 @@ import static java.lang.String.format;
 import java.util.Locale;
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
 
-public final class RelationshipEndpointMissingLabelException extends ConstraintValidationException {
+public final class RelationshipEndpointLabelMissingLabelException extends ConstraintValidationException {
     private final long relationshipReference;
-    private final RelationshipEndpointConstraintDescriptor descriptor;
+    private final RelationshipEndpointLabelConstraintDescriptor descriptor;
     private final long nodeReference;
 
-    public RelationshipEndpointMissingLabelException(
-            RelationshipEndpointConstraintDescriptor descriptor,
+    public RelationshipEndpointLabelMissingLabelException(
+            RelationshipEndpointLabelConstraintDescriptor descriptor,
             Phase phase,
             long relationshipReference,
             long nodeReference,

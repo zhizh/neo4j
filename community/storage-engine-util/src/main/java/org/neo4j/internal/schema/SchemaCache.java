@@ -671,8 +671,8 @@ public class SchemaCache {
                 case UNIQUE -> 1;
                 case EXISTS -> 2;
                 case PROPERTY_TYPE -> 3;
-                case ENDPOINT -> 4;
-                case LABEL_COEXISTENCE -> 5;
+                case RELATIONSHIP_ENDPOINT_LABEL -> 4;
+                case NODE_LABEL_EXISTENCE -> 5;
             };
         }
     }

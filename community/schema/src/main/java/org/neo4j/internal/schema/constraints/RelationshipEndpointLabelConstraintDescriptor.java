@@ -17,9 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.internal.schema;
+package org.neo4j.internal.schema.constraints;
 
-import org.neo4j.util.MarkerInterface;
+import org.neo4j.internal.schema.ConstraintDescriptor;
+import org.neo4j.internal.schema.EndpointType;
 
-@MarkerInterface
-public interface LabelCoexistenceSchemaDescriptor extends SchemaDescriptor {}
+public interface RelationshipEndpointLabelConstraintDescriptor extends ConstraintDescriptor {
+    EndpointType endpointType();
+
+    @Override
+    RelationshipEndpointLabelConstraintDescriptor withName(String name);
+
+    @Override
+    RelationshipEndpointLabelConstraintDescriptor withId(long id);
+
+    /**
+     * @return the id of the required label in the endpoint, enforced by this constraint
+     */
+    int endpointLabelId();
+}

@@ -32,9 +32,9 @@ import org.neo4j.common.EntityType;
 import org.neo4j.internal.kernel.api.exceptions.schema.MalformedSchemaRuleException;
 import org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory;
 import org.neo4j.internal.schema.constraints.IndexBackedConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.LabelCoexistenceConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.NodeLabelExistenceConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.PropertyTypeSet;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.SchemaValueType;
 import org.neo4j.internal.schema.constraints.TypeConstraintDescriptor;
 import org.neo4j.values.storable.IntArray;
@@ -54,7 +54,8 @@ public class SchemaRuleMapifier {
     private static final String PROP_SCHEMA_GRAPH_TYPE_DEPENDENCE = PROP_SCHEMA_RULE_PREFIX + "graphTypeDependence";
     private static final String PROP_SCHEMA_ENDPOINT_TYPE = PROP_SCHEMA_RULE_PREFIX + "endpointType";
     private static final String PROP_SCHEMA_ENDPOINT_LABEL_ID = PROP_SCHEMA_RULE_PREFIX + "endpointLabelId";
-    private static final String PROP_SCHEMA_COEXISTENCE_REQUIRED_LABEL_ID = PROP_SCHEMA_RULE_PREFIX + "requiredLabelId";
+    private static final String PROP_SCHEMA_NODE_LABEL_EXISTENCE_REQUIRED_LABEL_ID =
+            PROP_SCHEMA_RULE_PREFIX + "requiredLabelId";
     private static final String PROP_SCHEMA_RULE_NAME = PROP_SCHEMA_RULE_PREFIX + "name";
     private static final String PROP_OWNED_INDEX = PROP_SCHEMA_RULE_PREFIX + "ownedIndex";
     public static final String PROP_OWNING_CONSTRAINT = PROP_SCHEMA_RULE_PREFIX + "owningConstraint";
@@ -196,22 +197,27 @@ public class SchemaRuleMapifier {
                 }
                 putStringArrayProperty(map, PROP_CONSTRAINT_ALLOWED_TYPES, typeArray);
             }
-            case ENDPOINT -> {
-                RelationshipEndpointConstraintDescriptor endpointConstraintDescriptor =
-                        rule.asRelationshipEndpointConstraint();
+            case RELATIONSHIP_ENDPOINT_LABEL -> {
+                RelationshipEndpointLabelConstraintDescriptor relationshipEndpointLabelConstraintDescriptor =
+                        rule.asRelationshipEndpointLabelConstraint();
                 putStringProperty(
                         map,
                         PROP_SCHEMA_ENDPOINT_TYPE,
-                        endpointConstraintDescriptor.endpointType().name());
-                putLongProperty(map, PROP_SCHEMA_ENDPOINT_LABEL_ID, endpointConstraintDescriptor.endpointLabelId());
-            }
-            case LABEL_COEXISTENCE -> {
-                LabelCoexistenceConstraintDescriptor labelCoexistenceConstraintDescriptor =
-                        rule.asLabelCoexistenceConstraint();
+                        relationshipEndpointLabelConstraintDescriptor
+                                .endpointType()
+                                .name());
                 putLongProperty(
                         map,
-                        PROP_SCHEMA_COEXISTENCE_REQUIRED_LABEL_ID,
-                        labelCoexistenceConstraintDescriptor.requiredLabelId());
+                        PROP_SCHEMA_ENDPOINT_LABEL_ID,
+                        relationshipEndpointLabelConstraintDescriptor.endpointLabelId());
+            }
+            case NODE_LABEL_EXISTENCE -> {
+                NodeLabelExistenceConstraintDescriptor nodeLabelExistenceConstraintDescriptor =
+                        rule.asNodeLabelExistenceConstraint();
+                putLongProperty(
+                        map,
+                        PROP_SCHEMA_NODE_LABEL_EXISTENCE_REQUIRED_LABEL_ID,
+                        nodeLabelExistenceConstraintDescriptor.requiredLabelId());
             }
 
             default -> {}
@@ -375,13 +381,13 @@ public class SchemaRuleMapifier {
                     getAllowedTypes(getStringArray(PROP_CONSTRAINT_ALLOWED_TYPES, props)),
                     graphTypeDependence == GraphTypeDependence.DEPENDENT);
 
-            case ENDPOINT -> ConstraintDescriptorFactory.relationshipEndpointForSchema(
-                    schema.asSchemaDescriptorType(RelationshipEndpointSchemaDescriptor.class),
+            case RELATIONSHIP_ENDPOINT_LABEL -> ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+                    schema.asSchemaDescriptorType(RelationshipEndpointLabelSchemaDescriptor.class),
                     (int) getLong(PROP_SCHEMA_ENDPOINT_LABEL_ID, props),
                     getEndpointType(props));
-            case LABEL_COEXISTENCE -> ConstraintDescriptorFactory.labelCoexistenceForSchema(
-                    schema.asSchemaDescriptorType(LabelCoexistenceSchemaDescriptor.class),
-                    (int) getLong(PROP_SCHEMA_COEXISTENCE_REQUIRED_LABEL_ID, props));
+            case NODE_LABEL_EXISTENCE -> ConstraintDescriptorFactory.nodeLabelExistenceForSchema(
+                    schema.asSchemaDescriptorType(NodeLabelExistenceSchemaDescriptor.class),
+                    (int) getLong(PROP_SCHEMA_NODE_LABEL_EXISTENCE_REQUIRED_LABEL_ID, props));
         };
     }
 
@@ -393,7 +399,7 @@ public class SchemaRuleMapifier {
         int[] entityIds = getIntArray(PROP_SCHEMA_DESCRIPTOR_ENTITY_IDS, props);
         int[] propertyIds = getIntArray(PROP_SCHEMA_DESCRIPTOR_PROPERTY_IDS, props);
 
-        return new SchemaDescriptorImplementation(entityType, schemaPatternMatchingType, entityIds, propertyIds);
+        return new SchemaDescriptorImplementationNode(entityType, schemaPatternMatchingType, entityIds, propertyIds);
     }
 
     private static IndexConfig extractIndexConfig(Map<String, Value> props) {

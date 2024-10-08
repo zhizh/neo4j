@@ -1186,9 +1186,9 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
             .build();
 
     @Internal
-    @Description("Enables usage of relationship endpoint constraints")
-    public static final Setting<Boolean> relationship_endpoint_and_label_coexistence_constraints = newBuilder(
-                    "internal.dbms.relationship_endpoint_and_label_coexistence_constraints", BOOL, false)
+    @Description("Enables usage of relationship endpoint label and node label existence constraints")
+    public static final Setting<Boolean> relationship_endpoint_label_and_node_label_existence_constraints = newBuilder(
+                    "internal.dbms.relationship_endpoint_label_and_node_label_existence_constraints", BOOL, false)
             .build();
 
     public enum ExtractLiteral {

@@ -38,8 +38,8 @@ import org.neo4j.internal.schema.RelationTypeSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory;
 import org.neo4j.internal.schema.constraints.KeyConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.LabelCoexistenceConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.NodeLabelExistenceConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.TypeConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.UniquenessConstraintDescriptor;
 import org.neo4j.io.pagecache.context.CursorContext;
@@ -54,10 +54,10 @@ public class StandardConstraintSemantics extends ConstraintSemantics {
     public static final String ERROR_MESSAGE_EXISTS = "Property existence constraint requires Neo4j Enterprise Edition";
     public static final String ERROR_MESSAGE_KEY_SUFFIX = "Key constraint requires Neo4j Enterprise Edition";
     public static final String ERROR_MESSAGE_TYPE = "Property type constraint requires Neo4j Enterprise Edition";
-    public static final String ERROR_MESSAGE_ENDPOINT =
+    public static final String ERROR_MESSAGE_RELATIONSHIP_ENDPOINT_LABEL =
             "Relationship endpoint label constraint requires Neo4j Enterprise Edition";
-    public static final String ERROR_MESSAGE_LABEL_COEXISTENCE =
-            "Label coexistence constraint requires Neo4j Enterprise Edition";
+    public static final String ERROR_MESSAGE_NODE_LABEL_EXISTENCE =
+            "Node label existence constraint requires Neo4j Enterprise Edition";
 
     protected final StandardConstraintRuleAccessor accessor = new StandardConstraintRuleAccessor();
 
@@ -143,8 +143,9 @@ public class StandardConstraintSemantics extends ConstraintSemantics {
             case EXISTS -> throw new IllegalStateException(ERROR_MESSAGE_EXISTS);
             case UNIQUE_EXISTS -> throw new IllegalStateException(keyConstraintErrorMessage(constraint.schema()));
             case PROPERTY_TYPE -> throw new IllegalStateException(ERROR_MESSAGE_TYPE);
-            case ENDPOINT -> throw new IllegalStateException(ERROR_MESSAGE_ENDPOINT);
-            case LABEL_COEXISTENCE -> throw new IllegalStateException(ERROR_MESSAGE_LABEL_COEXISTENCE);
+            case RELATIONSHIP_ENDPOINT_LABEL -> throw new IllegalStateException(
+                    ERROR_MESSAGE_RELATIONSHIP_ENDPOINT_LABEL);
+            case NODE_LABEL_EXISTENCE -> throw new IllegalStateException(ERROR_MESSAGE_NODE_LABEL_EXISTENCE);
         };
     }
 
@@ -162,13 +163,13 @@ public class StandardConstraintSemantics extends ConstraintSemantics {
     }
 
     private static CreateConstraintFailureException relationshipEndpointLabelConstraintsNotAllowed(
-            RelationshipEndpointConstraintDescriptor descriptor) {
-        return new CreateConstraintFailureException(descriptor, ERROR_MESSAGE_ENDPOINT);
+            RelationshipEndpointLabelConstraintDescriptor descriptor) {
+        return new CreateConstraintFailureException(descriptor, ERROR_MESSAGE_RELATIONSHIP_ENDPOINT_LABEL);
     }
 
-    private static CreateConstraintFailureException labelCoexistenceConstraintsNotAllowed(
-            LabelCoexistenceConstraintDescriptor descriptor) {
-        return new CreateConstraintFailureException(descriptor, ERROR_MESSAGE_LABEL_COEXISTENCE);
+    private static CreateConstraintFailureException nodeLabelExistenceConstraintsNotAllowed(
+            NodeLabelExistenceConstraintDescriptor descriptor) {
+        return new CreateConstraintFailureException(descriptor, ERROR_MESSAGE_NODE_LABEL_EXISTENCE);
     }
 
     private static String keyConstraintErrorMessage(SchemaDescriptor descriptor) {
@@ -207,15 +208,16 @@ public class StandardConstraintSemantics extends ConstraintSemantics {
     }
 
     @Override
-    public ConstraintDescriptor createRelationshipEndpointConstraint(
-            long ruleId, RelationshipEndpointConstraintDescriptor descriptor) throws CreateConstraintFailureException {
+    public ConstraintDescriptor createRelationshipEndpointLabelConstraint(
+            long ruleId, RelationshipEndpointLabelConstraintDescriptor descriptor)
+            throws CreateConstraintFailureException {
         throw relationshipEndpointLabelConstraintsNotAllowed(descriptor);
     }
 
     @Override
-    public ConstraintDescriptor createLabelCoexistenceConstraint(
-            long ruleId, LabelCoexistenceConstraintDescriptor descriptor) throws CreateConstraintFailureException {
-        throw labelCoexistenceConstraintsNotAllowed(descriptor);
+    public ConstraintDescriptor createNodeLabelExistenceConstraint(
+            long ruleId, NodeLabelExistenceConstraintDescriptor descriptor) throws CreateConstraintFailureException {
+        throw nodeLabelExistenceConstraintsNotAllowed(descriptor);
     }
 
     @Override
@@ -303,39 +305,39 @@ public class StandardConstraintSemantics extends ConstraintSemantics {
     }
 
     @Override
-    public void validateRelationshipEndpointConstraint(
+    public void validateRelationshipEndpointLabelConstraint(
             RelationshipScanCursor relCursor,
             NodeCursor nodeCursor,
-            RelationshipEndpointConstraintDescriptor descriptor,
+            RelationshipEndpointLabelConstraintDescriptor descriptor,
             TokenNameLookup tokenNameLookup)
             throws CreateConstraintFailureException {
         throw relationshipEndpointLabelConstraintsNotAllowed(descriptor);
     }
 
     @Override
-    public void validateRelationshipEndpointConstraint(
+    public void validateRelationshipEndpointLabelConstraint(
             RelationshipTypeIndexCursor relCursor,
             NodeCursor nodeCursor,
-            RelationshipEndpointConstraintDescriptor descriptor,
+            RelationshipEndpointLabelConstraintDescriptor descriptor,
             TokenNameLookup tokenNameLookup)
             throws CreateConstraintFailureException {
         throw relationshipEndpointLabelConstraintsNotAllowed(descriptor);
     }
 
     @Override
-    public void validateLabelCoexistenceConstraint(
+    public void validateNodeLabelExistenceConstraint(
             NodeLabelIndexCursor allNodes,
             NodeCursor nodeCursor,
-            LabelCoexistenceConstraintDescriptor descriptor,
+            NodeLabelExistenceConstraintDescriptor descriptor,
             TokenNameLookup tokenNameLookup)
             throws CreateConstraintFailureException {
-        throw labelCoexistenceConstraintsNotAllowed(descriptor);
+        throw nodeLabelExistenceConstraintsNotAllowed(descriptor);
     }
 
     @Override
-    public void validateLabelCoexistenceConstraint(
-            NodeCursor nodeCursor, LabelCoexistenceConstraintDescriptor descriptor, TokenNameLookup tokenNameLookup)
+    public void validateNodeLabelExistenceConstraint(
+            NodeCursor nodeCursor, NodeLabelExistenceConstraintDescriptor descriptor, TokenNameLookup tokenNameLookup)
             throws CreateConstraintFailureException {
-        throw labelCoexistenceConstraintsNotAllowed(descriptor);
+        throw nodeLabelExistenceConstraintsNotAllowed(descriptor);
     }
 }

@@ -23,14 +23,14 @@ import static java.lang.String.format;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidationException;
-import org.neo4j.internal.schema.constraints.LabelCoexistenceConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.NodeLabelExistenceConstraintDescriptor;
 
-public final class LabelCoexistenceMissingLabelException extends ConstraintValidationException {
-    private final LabelCoexistenceConstraintDescriptor descriptor;
+public final class NodeLabelExistenceMissingLabelException extends ConstraintValidationException {
+    private final NodeLabelExistenceConstraintDescriptor descriptor;
     private final long nodeReference;
 
-    public LabelCoexistenceMissingLabelException(
-            LabelCoexistenceConstraintDescriptor descriptor,
+    public NodeLabelExistenceMissingLabelException(
+            NodeLabelExistenceConstraintDescriptor descriptor,
             Phase phase,
             long nodeReference,
             TokenNameLookup tokenNameLookup) {

@@ -23,9 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory.existsForLabel;
-import static org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory.labelCoexistenceForLabel;
 import static org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory.nodeKeyForLabel;
-import static org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory.relationshipEndpointForRelType;
+import static org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory.nodeLabelExistenceForLabel;
+import static org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory.relationshipEndpointLabelForRelType;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,8 +33,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory;
 import org.neo4j.internal.schema.constraints.ExistenceConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.KeyConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.LabelCoexistenceConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.NodeLabelExistenceConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.UniquenessConstraintDescriptor;
 
 class ConstraintDescriptorTest extends SchemaRuleTestBase {
@@ -107,68 +107,68 @@ class ConstraintDescriptorTest extends SchemaRuleTestBase {
 
     @ParameterizedTest
     @EnumSource(EndpointType.class)
-    void shouldCreateRelationshipEndpointConstraint(EndpointType endpointType) {
+    void shouldCreateRelationshipEndpointLabelConstraint(EndpointType endpointType) {
         // GIVEN
-        RelationshipEndpointConstraintDescriptor descriptor =
-                relationshipEndpointForRelType(REL_TYPE_ID, LABEL_ID, endpointType);
+        RelationshipEndpointLabelConstraintDescriptor descriptor =
+                relationshipEndpointLabelForRelType(REL_TYPE_ID, LABEL_ID, endpointType);
         var constraint = descriptor.withId(RULE_ID);
-        var endpointConstraint = constraint.asRelationshipEndpointConstraint();
+        var relationshipEndpointLabelConstraint = constraint.asRelationshipEndpointLabelConstraint();
 
         assertThat(constraint.getId()).isEqualTo(RULE_ID);
         assertThat(constraint.schema()).isEqualTo(descriptor.schema());
         assertThat(constraint).isEqualTo(descriptor);
-        assertThat(endpointConstraint.endpointLabelId()).isEqualTo(LABEL_ID);
-        assertThat(endpointConstraint.endpointType()).isEqualTo(endpointType);
+        assertThat(relationshipEndpointLabelConstraint.endpointLabelId()).isEqualTo(LABEL_ID);
+        assertThat(relationshipEndpointLabelConstraint.endpointType()).isEqualTo(endpointType);
         assertThrows(IllegalStateException.class, constraint::asPropertyExistenceConstraint);
     }
 
     @Test
-    void shouldFailToCreateRelationshipEndpointConstraintWithNegativeEntityTokenId() {
-        assertThatThrownBy(() -> relationshipEndpointForRelType(-1, LABEL_ID, EndpointType.END))
+    void shouldFailToCreateRelationshipEndpointLabelConstraintWithNegativeEntityTokenId() {
+        assertThatThrownBy(() -> relationshipEndpointLabelForRelType(-1, LABEL_ID, EndpointType.END))
                 .hasMessageContaining("must not have a negative entity token id");
     }
 
     @Test
-    void shouldFailToCreateRelationshipEndpointConstraintWithNegativeEndpointLabelId() {
-        assertThatThrownBy(() -> relationshipEndpointForRelType(REL_TYPE_ID, -1, EndpointType.END))
+    void shouldFailToCreateRelationshipEndpointLabelConstraintWithNegativeEndpointLabelId() {
+        assertThatThrownBy(() -> relationshipEndpointLabelForRelType(REL_TYPE_ID, -1, EndpointType.END))
                 .hasMessageContaining("endpointLabelId cannot be negative");
     }
 
     @Test
-    void shouldFailToCreateRelationshipEndpointConstraintWithNullEndpointType() {
-        assertThatThrownBy(() -> relationshipEndpointForRelType(REL_TYPE_ID, LABEL_ID, null))
+    void shouldFailToCreateRelationshipEndpointLabelConstraintWithNullEndpointType() {
+        assertThatThrownBy(() -> relationshipEndpointLabelForRelType(REL_TYPE_ID, LABEL_ID, null))
                 .hasMessageContaining("EndpointType cannot be null");
     }
 
     @Test
-    void shouldCreateLabelCoexistenceConstraint() {
+    void shouldCreateNodeLabelExistenceConstraint() {
         // GIVEN
-        LabelCoexistenceConstraintDescriptor descriptor = labelCoexistenceForLabel(LABEL_ID, 11);
+        NodeLabelExistenceConstraintDescriptor descriptor = nodeLabelExistenceForLabel(LABEL_ID, 11);
         var constraint = descriptor.withId(RULE_ID);
-        var labelCoexistenceConstraint = constraint.asLabelCoexistenceConstraint();
+        var nodeLabelExistenceConstraint = constraint.asNodeLabelExistenceConstraint();
 
         assertThat(constraint.getId()).isEqualTo(RULE_ID);
         assertThat(constraint.schema()).isEqualTo(descriptor.schema());
         assertThat(constraint).isEqualTo(descriptor);
-        assertThat(labelCoexistenceConstraint.requiredLabelId()).isEqualTo(11);
+        assertThat(nodeLabelExistenceConstraint.requiredLabelId()).isEqualTo(11);
         assertThrows(IllegalStateException.class, constraint::asPropertyExistenceConstraint);
     }
 
     @Test
-    void shouldFailToCreateLabelCoexistenceConstraintWithNegativeEntityTokenId() {
-        assertThatThrownBy(() -> labelCoexistenceForLabel(-1, LABEL_ID))
+    void shouldFailToCreateNodeLabelExistenceConstraintWithNegativeEntityTokenId() {
+        assertThatThrownBy(() -> nodeLabelExistenceForLabel(-1, LABEL_ID))
                 .hasMessageContaining("must not have a negative entity token id");
     }
 
     @Test
-    void shouldFailToCreateLabelCoexistenceConstraintWithNegativeRequiredLabelId() {
-        assertThatThrownBy(() -> labelCoexistenceForLabel(LABEL_ID, -1))
+    void shouldFailToCreateNodeLabelExistenceConstraintWithNegativeRequiredLabelId() {
+        assertThatThrownBy(() -> nodeLabelExistenceForLabel(LABEL_ID, -1))
                 .hasMessageContaining("requiredLabelId cannot be negative");
     }
 
     @Test
-    void shouldFailToCreateLabelCoexistenceConstraintWithEqualRequiredLabelAndLabelId() {
-        assertThatThrownBy(() -> labelCoexistenceForLabel(LABEL_ID, LABEL_ID))
+    void shouldFailToCreateNodeLabelExistenceConstraintWithEqualRequiredLabelAndLabelId() {
+        assertThatThrownBy(() -> nodeLabelExistenceForLabel(LABEL_ID, LABEL_ID))
                 .hasMessageContaining("requiredLabelId cannot be same as schema labelId");
     }
 
@@ -185,24 +185,24 @@ class ConstraintDescriptorTest extends SchemaRuleTestBase {
     }
 
     @Test
-    void isRelationshipEndpointConstraintShouldReturnFalseWhenNot() {
+    void isRelationshipEndpointLabelConstraintShouldReturnFalseWhenNot() {
         KeyConstraintDescriptor nodeKeyConstraintDescriptor = nodeKeyForLabel(LABEL_ID, PROPERTY_ID_1);
-        assertThat(nodeKeyConstraintDescriptor.isRelationshipEndpointConstraint())
+        assertThat(nodeKeyConstraintDescriptor.isRelationshipEndpointLabelConstraint())
                 .isFalse();
 
         UniquenessConstraintDescriptor nodeUniquenessConstraintDescriptor =
                 ConstraintDescriptorFactory.uniqueForLabel(LABEL_ID, PROPERTY_ID_1);
-        assertThat(nodeUniquenessConstraintDescriptor.isRelationshipEndpointConstraint())
+        assertThat(nodeUniquenessConstraintDescriptor.isRelationshipEndpointLabelConstraint())
                 .isFalse();
 
         ExistenceConstraintDescriptor nodeExistenceConstraintDescriptor =
                 existsForLabel(false, LABEL_ID, PROPERTY_ID_1);
-        assertThat(nodeExistenceConstraintDescriptor.isRelationshipEndpointConstraint())
+        assertThat(nodeExistenceConstraintDescriptor.isRelationshipEndpointLabelConstraint())
                 .isFalse();
 
         ExistenceConstraintDescriptor relationshipExistenceConstraintDescriptor =
                 ConstraintDescriptorFactory.existsForRelType(false, REL_TYPE_ID, PROPERTY_ID_1);
-        assertThat(relationshipExistenceConstraintDescriptor.isRelationshipEndpointConstraint())
+        assertThat(relationshipExistenceConstraintDescriptor.isRelationshipEndpointLabelConstraint())
                 .isFalse();
     }
 

@@ -27,35 +27,42 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.internal.schema.ConstraintDescriptor;
 import org.neo4j.internal.schema.ConstraintType;
+import org.neo4j.internal.schema.EndpointType;
 import org.neo4j.internal.schema.GraphTypeDependence;
-import org.neo4j.internal.schema.LabelCoexistenceSchemaDescriptor;
+import org.neo4j.internal.schema.RelationshipEndpointLabelSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.SchemaNameUtil;
 import org.neo4j.internal.schema.SchemaUserDescription;
 import org.neo4j.string.Mask;
 
-final class LabelCoexistenceConstraintDescriptorImplementation implements LabelCoexistenceConstraintDescriptor {
+final class RelationshipEndpointLabelConstraintDescriptorImplementation
+        implements RelationshipEndpointLabelConstraintDescriptor {
     private final long id;
+    private final int endpointLabelId;
     private final String name;
-    private final LabelCoexistenceSchemaDescriptor schema;
-    private final int requiredLabelId;
+    private final RelationshipEndpointLabelSchemaDescriptor schema;
+    private final EndpointType endpointType;
 
-    LabelCoexistenceConstraintDescriptorImplementation(
-            LabelCoexistenceSchemaDescriptor schema, long id, int requiredLabelId, String name) {
-        if (requiredLabelId < 0) {
-            throw new IllegalArgumentException("requiredLabelId cannot be negative");
+    RelationshipEndpointLabelConstraintDescriptorImplementation(
+            RelationshipEndpointLabelSchemaDescriptor schema,
+            long id,
+            int endpointLabelId,
+            String name,
+            EndpointType endpointType) {
+        if (endpointLabelId < 0) {
+            throw new IllegalArgumentException("endpointLabelId cannot be negative");
         }
-        this.schema = requireNonNull(schema, "LabelCoexistenceSchemaDescriptor cannot be null");
-        if (requiredLabelId == schema.getLabelId()) {
-            throw new IllegalArgumentException("requiredLabelId cannot be same as schema labelId");
-        }
-        this.requiredLabelId = requiredLabelId;
+        this.schema = requireNonNull(schema, "SchemaDescriptor cannot be null");
+        this.endpointType = requireNonNull(endpointType, "EndpointType cannot be null");
         this.id = id;
+        this.endpointLabelId = endpointLabelId;
         this.name = name;
     }
 
-    static LabelCoexistenceConstraintDescriptor make(LabelCoexistenceSchemaDescriptor schema, int requiredLabelId) {
-        return new LabelCoexistenceConstraintDescriptorImplementation(schema, NO_ID, requiredLabelId, null);
+    static RelationshipEndpointLabelConstraintDescriptor make(
+            RelationshipEndpointLabelSchemaDescriptor schema, int endpointLabelId, EndpointType endpointType) {
+        return new RelationshipEndpointLabelConstraintDescriptorImplementation(
+                schema, NO_ID, endpointLabelId, null, endpointType);
     }
 
     @Override
@@ -65,7 +72,7 @@ final class LabelCoexistenceConstraintDescriptorImplementation implements LabelC
 
     @Override
     public ConstraintType type() {
-        return ConstraintType.LABEL_COEXISTENCE;
+        return ConstraintType.RELATIONSHIP_ENDPOINT_LABEL;
     }
 
     @Override
@@ -94,13 +101,13 @@ final class LabelCoexistenceConstraintDescriptorImplementation implements LabelC
     }
 
     @Override
-    public boolean isRelationshipEndpointConstraint() {
-        return false;
+    public boolean isRelationshipEndpointLabelConstraint() {
+        return true;
     }
 
     @Override
-    public boolean isLabelCoexistenceConstraint() {
-        return true;
+    public boolean isNodeLabelExistenceConstraint() {
+        return false;
     }
 
     @Override
@@ -189,17 +196,19 @@ final class LabelCoexistenceConstraintDescriptorImplementation implements LabelC
     }
 
     @Override
-    public LabelCoexistenceConstraintDescriptor withId(long newId) {
-        return new LabelCoexistenceConstraintDescriptorImplementation(schema, newId, requiredLabelId, name);
+    public RelationshipEndpointLabelConstraintDescriptor withId(long newId) {
+        return new RelationshipEndpointLabelConstraintDescriptorImplementation(
+                schema, newId, endpointLabelId, name, endpointType);
     }
 
     @Override
-    public LabelCoexistenceConstraintDescriptor withName(String newName) {
+    public RelationshipEndpointLabelConstraintDescriptor withName(String newName) {
         if (newName == null) {
             return this;
         }
         newName = SchemaNameUtil.sanitiseName(newName);
-        return new LabelCoexistenceConstraintDescriptorImplementation(schema, id, requiredLabelId, newName);
+        return new RelationshipEndpointLabelConstraintDescriptorImplementation(
+                schema, id, endpointLabelId, newName, endpointType);
     }
 
     @Override
@@ -208,22 +217,26 @@ final class LabelCoexistenceConstraintDescriptorImplementation implements LabelC
     }
 
     @Override
-    public RelationshipEndpointConstraintDescriptor asRelationshipEndpointConstraint() {
-        throw conversionException(RelationshipEndpointConstraintDescriptor.class);
-    }
-
-    @Override
-    public LabelCoexistenceConstraintDescriptor asLabelCoexistenceConstraint() {
+    public RelationshipEndpointLabelConstraintDescriptor asRelationshipEndpointLabelConstraint() {
         return this;
     }
 
     @Override
+    public NodeLabelExistenceConstraintDescriptor asNodeLabelExistenceConstraint() {
+        throw conversionException(NodeLabelExistenceConstraintDescriptor.class);
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (!(o instanceof LabelCoexistenceConstraintDescriptor that)) {
+        if (!(o instanceof RelationshipEndpointLabelConstraintDescriptor that)) {
             return false;
         }
 
-        if (this.requiredLabelId != that.requiredLabelId()) {
+        if (this.endpointType != that.endpointType()) {
+            return false;
+        }
+
+        if (this.endpointLabelId != that.endpointLabelId()) {
             return false;
         }
 
@@ -253,8 +266,8 @@ final class LabelCoexistenceConstraintDescriptorImplementation implements LabelC
     }
 
     @Override
-    public int requiredLabelId() {
-        return requiredLabelId;
+    public int endpointLabelId() {
+        return endpointLabelId;
     }
 
     @Override
@@ -270,24 +283,16 @@ final class LabelCoexistenceConstraintDescriptorImplementation implements LabelC
 
     private String userDescription(TokenNameLookup tokenNameLookup, Mask mask) {
         return SchemaUserDescription.forConstraint(
-                tokenNameLookup,
-                id,
-                name,
-                ConstraintType.LABEL_COEXISTENCE,
-                schema,
-                null,
-                null,
-                tokenNameLookup.labelGetName(requiredLabelId),
-                mask);
-    }
-
-    @Override
-    public String userDescription(TokenNameLookup tokenNameLookup) {
-        return userDescription(TOKEN_ID_NAME_LOOKUP, Mask.NO);
+                tokenNameLookup, id, name, ConstraintType.RELATIONSHIP_ENDPOINT_LABEL, schema, null, null, null, mask);
     }
 
     private IllegalStateException conversionException(Class<? extends ConstraintDescriptor> targetType) {
         return new IllegalStateException("Cannot cast this schema to a " + targetType
                 + " because it does not match that structure: " + this + ".");
+    }
+
+    @Override
+    public EndpointType endpointType() {
+        return endpointType;
     }
 }

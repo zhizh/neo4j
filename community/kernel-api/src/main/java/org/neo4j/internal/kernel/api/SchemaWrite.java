@@ -28,10 +28,10 @@ import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.internal.schema.IndexProviderDescriptor;
 import org.neo4j.internal.schema.IndexType;
-import org.neo4j.internal.schema.LabelCoexistenceSchemaDescriptor;
 import org.neo4j.internal.schema.LabelSchemaDescriptor;
+import org.neo4j.internal.schema.NodeLabelExistenceSchemaDescriptor;
 import org.neo4j.internal.schema.RelationTypeSchemaDescriptor;
-import org.neo4j.internal.schema.RelationshipEndpointSchemaDescriptor;
+import org.neo4j.internal.schema.RelationshipEndpointLabelSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.constraints.PropertyTypeSet;
 
@@ -146,7 +146,7 @@ public interface SchemaWrite {
             throws KernelException;
 
     /**
-     * Create a relationship endpoint constraint
+     * Create a relationship endpoint label constraint
      *
      * @param name the name the created constraint should have, or null (when null a generated name will be chosen)
      * @param schema descriptor of entities that the constraint applies to
@@ -155,20 +155,23 @@ public interface SchemaWrite {
      * @return the created constraint
      * @throws KernelException
      */
-    ConstraintDescriptor relationshipEndpointConstraintCreate(
-            RelationshipEndpointSchemaDescriptor schema, String name, int endpointLabelId, EndpointType endpointType)
+    ConstraintDescriptor relationshipEndpointLabelConstraintCreate(
+            RelationshipEndpointLabelSchemaDescriptor schema,
+            String name,
+            int endpointLabelId,
+            EndpointType endpointType)
             throws KernelException;
 
     /**
-     * Create a label coexistence constraint
+     * Create a node label existence constraint
      *
      * @param schema descriptor of entities that the constraint applies to
      * @param name the name the created constraint should have, or null (when null a generated name will be chosen)
      * @param requiredLabelId the token id for the label that the node will be required to have
      * @return the created constraint
      */
-    ConstraintDescriptor labelCoexistenceConstraintCreate(
-            LabelCoexistenceSchemaDescriptor schema, String name, int requiredLabelId) throws KernelException;
+    ConstraintDescriptor nodeLabelExistenceConstraintCreate(
+            NodeLabelExistenceSchemaDescriptor schema, String name, int requiredLabelId) throws KernelException;
 
     /**
      * Drop the constraint with the given name.

@@ -107,12 +107,12 @@ import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.internal.schema.IndexProviderDescriptor;
 import org.neo4j.internal.schema.IndexType;
-import org.neo4j.internal.schema.LabelCoexistenceSchemaDescriptor;
 import org.neo4j.internal.schema.LabelSchemaDescriptor;
+import org.neo4j.internal.schema.NodeLabelExistenceSchemaDescriptor;
 import org.neo4j.internal.schema.RelationTypeSchemaDescriptor;
-import org.neo4j.internal.schema.RelationshipEndpointSchemaDescriptor;
+import org.neo4j.internal.schema.RelationshipEndpointLabelSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
-import org.neo4j.internal.schema.SchemaDescriptorImplementation;
+import org.neo4j.internal.schema.SchemaDescriptorImplementationNode;
 import org.neo4j.internal.schema.SchemaDescriptorSupplier;
 import org.neo4j.internal.schema.SchemaDescriptors;
 import org.neo4j.internal.schema.SchemaNameUtil;
@@ -120,9 +120,9 @@ import org.neo4j.internal.schema.SettingsAccessor;
 import org.neo4j.internal.schema.constraints.ConstraintDescriptorFactory;
 import org.neo4j.internal.schema.constraints.IndexBackedConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.KeyConstraintDescriptor;
-import org.neo4j.internal.schema.constraints.LabelCoexistenceConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.NodeLabelExistenceConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.PropertyTypeSet;
-import org.neo4j.internal.schema.constraints.RelationshipEndpointConstraintDescriptor;
+import org.neo4j.internal.schema.constraints.RelationshipEndpointLabelConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.TypeConstraintDescriptor;
 import org.neo4j.internal.schema.constraints.TypeRepresentation;
 import org.neo4j.internal.schema.constraints.UniquenessConstraintDescriptor;
@@ -194,7 +194,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
     private final MemoryTracker memoryTracker;
     private final boolean additionLockVerification;
     private final boolean dependentConstraintsEnabled;
-    private final boolean relationshipEndpointAndLabelCoexistenceConstraintsEnabled;
+    private final boolean relationshipEndpointLabelAndNodeLabelExistenceConstraintsEnabled;
     private final TransactionStateBehaviour transactionStateBehaviour;
     private DefaultNodeCursor nodeCursor;
     private DefaultNodeCursor restrictedNodeCursor;
@@ -241,8 +241,8 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         this.memoryTracker = memoryTracker;
         this.additionLockVerification = config.get(additional_lock_verification);
         this.dependentConstraintsEnabled = config.get(GraphDatabaseInternalSettings.dependent_constraints_enabled);
-        this.relationshipEndpointAndLabelCoexistenceConstraintsEnabled =
-                config.get(GraphDatabaseInternalSettings.relationship_endpoint_and_label_coexistence_constraints);
+        this.relationshipEndpointLabelAndNodeLabelExistenceConstraintsEnabled = config.get(
+                GraphDatabaseInternalSettings.relationship_endpoint_label_and_node_label_existence_constraints);
         this.transactionStateBehaviour = transactionStateBehaviour;
     }
 
@@ -2313,27 +2313,31 @@ public class Operations implements Write, SchemaWrite, Upgrade {
     }
 
     @Override
-    public ConstraintDescriptor relationshipEndpointConstraintCreate(
-            RelationshipEndpointSchemaDescriptor schema, String name, int endpointLabelId, EndpointType endpointType)
+    public ConstraintDescriptor relationshipEndpointLabelConstraintCreate(
+            RelationshipEndpointLabelSchemaDescriptor schema,
+            String name,
+            int endpointLabelId,
+            EndpointType endpointType)
             throws KernelException {
 
-        if (!relationshipEndpointAndLabelCoexistenceConstraintsEnabled) {
+        if (!relationshipEndpointLabelAndNodeLabelExistenceConstraintsEnabled) {
             throw new UnsupportedOperationException("Relationship endpoint constraints are not enabled, setting: "
-                    + GraphDatabaseInternalSettings.relationship_endpoint_and_label_coexistence_constraints.name());
+                    + GraphDatabaseInternalSettings.relationship_endpoint_label_and_node_label_existence_constraints
+                            .name());
         }
 
         // TODO: Add assertSupportedInVersion check
 
-        RelationshipEndpointConstraintDescriptor constraint =
-                lockAndValidateRelationshipEndpointConstraint(schema, name, endpointLabelId, endpointType);
+        RelationshipEndpointLabelConstraintDescriptor constraint =
+                lockAndValidateRelationshipEndpointLabelConstraint(schema, name, endpointLabelId, endpointType);
 
-        enforceRelationshipEndpointConstraint(constraint);
+        enforceRelationshipEndpointLabelConstraint(constraint);
 
         ktx.txState().constraintDoAdd(constraint);
         return constraint;
     }
 
-    private void enforceRelationshipEndpointConstraint(RelationshipEndpointConstraintDescriptor descriptor)
+    private void enforceRelationshipEndpointLabelConstraint(RelationshipEndpointLabelConstraintDescriptor descriptor)
             throws KernelException {
         exclusiveLock(ResourceType.LABEL, new long[] {descriptor.endpointLabelId()});
         var index = findUsableTokenIndex(RELATIONSHIP);
@@ -2349,7 +2353,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                         unconstrained(),
                         new TokenPredicate(descriptor.schema().getRelTypeId()),
                         ktx.cursorContext());
-                constraintSemantics.validateRelationshipEndpointConstraint(
+                constraintSemantics.validateRelationshipEndpointLabelConstraint(
                         fullAccessRelationshipIndexCursor, nodeCursor, descriptor, token);
             }
         } else {
@@ -2357,7 +2361,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                             cursors.allocateFullAccessRelationshipScanCursor(ktx.cursorContext(), memoryTracker);
                     var nodeCursor = cursors.allocateFullAccessNodeCursor(ktx.cursorContext(), memoryTracker)) {
                 kernelRead.allRelationshipsScan(allRelationshipsCursor);
-                constraintSemantics.validateRelationshipEndpointConstraint(
+                constraintSemantics.validateRelationshipEndpointLabelConstraint(
                         new FilteringRelationshipScanCursorWrapper(
                                 allRelationshipsCursor,
                                 CursorPredicates.hasType(descriptor.schema().getRelTypeId())),
@@ -2368,8 +2372,8 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         }
     }
 
-    private RelationshipEndpointConstraintDescriptor lockAndValidateRelationshipEndpointConstraint(
-            RelationshipEndpointSchemaDescriptor schemaDescriptor,
+    private RelationshipEndpointLabelConstraintDescriptor lockAndValidateRelationshipEndpointLabelConstraint(
+            RelationshipEndpointLabelSchemaDescriptor schemaDescriptor,
             String name,
             int endpointLabelId,
             EndpointType endpointType)
@@ -2384,9 +2388,10 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             throw new RuntimeException(e);
         }
 
-        RelationshipEndpointConstraintDescriptor constraint = ConstraintDescriptorFactory.relationshipEndpointForSchema(
-                        schemaDescriptor, endpointLabelId, endpointType)
-                .withName(name);
+        RelationshipEndpointLabelConstraintDescriptor constraint =
+                ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+                                schemaDescriptor, endpointLabelId, endpointType)
+                        .withName(name);
 
         constraint = ensureConstraintHasName(constraint);
         exclusiveSchemaNameLock(constraint.getName());
@@ -2401,27 +2406,28 @@ public class Operations implements Write, SchemaWrite, Upgrade {
     }
 
     @Override
-    public ConstraintDescriptor labelCoexistenceConstraintCreate(
-            LabelCoexistenceSchemaDescriptor schema, String name, int requiredLabelId) throws KernelException {
+    public ConstraintDescriptor nodeLabelExistenceConstraintCreate(
+            NodeLabelExistenceSchemaDescriptor schema, String name, int requiredLabelId) throws KernelException {
 
-        if (!relationshipEndpointAndLabelCoexistenceConstraintsEnabled) {
-            throw new UnsupportedOperationException("Label coexistence constraints are not enabled, setting: "
-                    + GraphDatabaseInternalSettings.relationship_endpoint_and_label_coexistence_constraints.name());
+        if (!relationshipEndpointLabelAndNodeLabelExistenceConstraintsEnabled) {
+            throw new UnsupportedOperationException("Node label existence constraints are not enabled, setting: "
+                    + GraphDatabaseInternalSettings.relationship_endpoint_label_and_node_label_existence_constraints
+                            .name());
         }
 
         // TODO: Add assertSupportedInVersion check
 
-        LabelCoexistenceConstraintDescriptor constraint =
-                lockAndValidateLabelCoexistenceConstraint(schema, name, requiredLabelId);
+        NodeLabelExistenceConstraintDescriptor constraint =
+                lockAndValidateNodeLabelExistenceConstraint(schema, name, requiredLabelId);
 
-        enforceLabelCoexistenceConstraint(constraint);
+        enforceNodeLabelExistenceConstraint(constraint);
 
         ktx.txState().constraintDoAdd(constraint);
         return constraint;
     }
 
-    private LabelCoexistenceConstraintDescriptor lockAndValidateLabelCoexistenceConstraint(
-            LabelCoexistenceSchemaDescriptor schemaDescriptor, String name, int requiredLabelId)
+    private NodeLabelExistenceConstraintDescriptor lockAndValidateNodeLabelExistenceConstraint(
+            NodeLabelExistenceSchemaDescriptor schemaDescriptor, String name, int requiredLabelId)
             throws KernelException {
         exclusiveSchemaLock(schemaDescriptor);
         ktx.assertOpen();
@@ -2432,9 +2438,9 @@ public class Operations implements Write, SchemaWrite, Upgrade {
             exclusiveSchemaUnlock(schemaDescriptor);
             throw new RuntimeException(e);
         }
-        var constraint = ConstraintDescriptorFactory.labelCoexistenceForSchema(schemaDescriptor, requiredLabelId)
+        var constraint = ConstraintDescriptorFactory.nodeLabelExistenceForSchema(schemaDescriptor, requiredLabelId)
                 .withName(name)
-                .asLabelCoexistenceConstraint();
+                .asNodeLabelExistenceConstraint();
 
         constraint = ensureConstraintHasName(constraint);
         exclusiveSchemaNameLock(constraint.getName());
@@ -2448,7 +2454,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
         }
     }
 
-    private void enforceLabelCoexistenceConstraint(LabelCoexistenceConstraintDescriptor descriptor)
+    private void enforceNodeLabelExistenceConstraint(NodeLabelExistenceConstraintDescriptor descriptor)
             throws KernelException {
         exclusiveLock(ResourceType.LABEL, new long[] {descriptor.requiredLabelId()});
         var schema = descriptor.schema();
@@ -2459,12 +2465,12 @@ public class Operations implements Write, SchemaWrite, Upgrade {
                 var session = kernelRead.tokenReadSession(index);
                 kernelRead.nodeLabelScan(
                         session, cursor, unconstrained(), new TokenPredicate(schema.getLabelId()), ktx.cursorContext());
-                constraintSemantics.validateLabelCoexistenceConstraint(cursor, nodeCursor, descriptor, token);
+                constraintSemantics.validateNodeLabelExistenceConstraint(cursor, nodeCursor, descriptor, token);
             }
         } else {
             try (var cursor = cursors.allocateFullAccessNodeCursor(ktx.cursorContext(), ktx.memoryTracker())) {
                 kernelRead.allNodesScan(cursor);
-                constraintSemantics.validateLabelCoexistenceConstraint(
+                constraintSemantics.validateNodeLabelExistenceConstraint(
                         new FilteringNodeCursorWrapper(cursor, CursorPredicates.hasLabel(schema.getLabelId())),
                         descriptor,
                         token);
@@ -2591,7 +2597,7 @@ public class Operations implements Write, SchemaWrite, Upgrade {
 
     private void sharedTokenSchemaLock(ResourceType rt) {
         // this guards label or relationship type token indexes from being dropped during write operations
-        sharedSchemaLock(rt, SchemaDescriptorImplementation.TOKEN_INDEX_LOCKING_ID);
+        sharedSchemaLock(rt, SchemaDescriptorImplementationNode.TOKEN_INDEX_LOCKING_ID);
     }
 
     private void exclusiveSchemaLock(SchemaDescriptor schema) {

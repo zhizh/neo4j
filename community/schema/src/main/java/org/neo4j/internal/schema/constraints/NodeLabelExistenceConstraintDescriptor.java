@@ -20,19 +20,19 @@
 package org.neo4j.internal.schema.constraints;
 
 import org.neo4j.internal.schema.ConstraintDescriptor;
-import org.neo4j.internal.schema.EndpointType;
 
-public interface RelationshipEndpointConstraintDescriptor extends ConstraintDescriptor {
-    EndpointType endpointType();
-
-    @Override
-    RelationshipEndpointConstraintDescriptor withName(String name);
-
-    @Override
-    RelationshipEndpointConstraintDescriptor withId(long id);
+public interface NodeLabelExistenceConstraintDescriptor extends ConstraintDescriptor {
 
     /**
-     * @return the id of the required label in the endpoint, enforced by this constraint
+     * For a constraint that enforces that nodes with label `:A`
+     * should also have the label `:B`.
+     * @return the token id for label `:B`.
      */
-    int endpointLabelId();
+    int requiredLabelId();
+
+    @Override
+    NodeLabelExistenceConstraintDescriptor withName(String name);
+
+    @Override
+    NodeLabelExistenceConstraintDescriptor withId(long id);
 }

@@ -34,8 +34,8 @@ public enum ConstraintType {
     EXISTS(false, true, false),
     UNIQUE_EXISTS(true, true, false),
     PROPERTY_TYPE(false, false, true),
-    ENDPOINT(false, false, false),
-    LABEL_COEXISTENCE(false, false, false);
+    RELATIONSHIP_ENDPOINT_LABEL(false, false, false),
+    NODE_LABEL_EXISTENCE(false, false, false);
 
     private final boolean isUnique;
     private final boolean mustExist;
@@ -66,8 +66,8 @@ public enum ConstraintType {
             case UNIQUE -> entityType == NODE ? "UNIQUENESS" : name + " UNIQUENESS";
             case UNIQUE_EXISTS -> name + " KEY";
             case PROPERTY_TYPE -> name + " PROPERTY TYPE";
-            case ENDPOINT -> name + " ENDPOINT";
-            case LABEL_COEXISTENCE -> name + " LABEL COEXISTENCE";
+            case RELATIONSHIP_ENDPOINT_LABEL -> name + " ENDPOINT";
+            case NODE_LABEL_EXISTENCE -> name + " NODE LABEL EXISTENCE";
         };
     }
 }

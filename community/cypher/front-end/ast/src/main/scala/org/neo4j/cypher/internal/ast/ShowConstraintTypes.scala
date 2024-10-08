@@ -175,15 +175,15 @@ case object RelPropTypeConstraints extends ShowConstraintType {
   override val description: String = "relationshipPropertyTypeConstraints"
 }
 
-case object RelationshipEndpointConstraints extends ShowConstraintType {
+case object RelationshipEndpointLabelConstraints extends ShowConstraintType {
   override val output: String = "RELATIONSHIP_ENDPOINT_LABEL"
   override val prettyPrint: String = "RELATIONSHIP ENDPOINT LABEL"
   override val description: String = "relationshipEndpointLabelConstraints"
 }
 
-case object LabelCoexistenceConstraints extends ShowConstraintType {
+case object NodeLabelExistenceConstraints extends ShowConstraintType {
   // TODO: Verify once CIP: https://docs.google.com/document/d/1UcqorA0YmqgE-Pvs6zDxsGzoC2sKsGYgT5qDkXeQX6Q/edit is approved
-  override val output: String = "NODE_LABEL_COEXISTENCE"
-  override val prettyPrint: String = "NODE LABEL COEXISTENCE"
-  override val description: String = "nodeLabelCoexistenceConstraints"
+  override val output: String = "NODE_LABEL_EXISTENCE"
+  override val prettyPrint: String = "NODE LABEL EXISTENCE"
+  override val description: String = "nodeLabelExistenceConstraints"
 }

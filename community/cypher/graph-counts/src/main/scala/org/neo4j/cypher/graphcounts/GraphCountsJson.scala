@@ -290,16 +290,16 @@ case object ConstraintTypeSerializer extends CustomSerializer[ConstraintType](fo
           case JString("Existence constraint")                   => ConstraintType.EXISTS
           case JString("Node Key")                               => ConstraintType.UNIQUE_EXISTS
           case JString("Property type constraint")               => ConstraintType.PROPERTY_TYPE
-          case JString("Relationship endpoint label constraint") => ConstraintType.ENDPOINT
-          case JString("Label coexistence constraint")           => ConstraintType.LABEL_COEXISTENCE
+          case JString("Relationship endpoint label constraint") => ConstraintType.RELATIONSHIP_ENDPOINT_LABEL
+          case JString("Node label existence constraint")        => ConstraintType.NODE_LABEL_EXISTENCE
         },
         {
-          case ConstraintType.UNIQUE            => JString("Uniqueness constraint")
-          case ConstraintType.EXISTS            => JString("Existence constraint")
-          case ConstraintType.UNIQUE_EXISTS     => JString("Node Key")
-          case ConstraintType.PROPERTY_TYPE     => JString("Property type constraint")
-          case ConstraintType.ENDPOINT          => JString("Relationship endpoint label constraint")
-          case ConstraintType.LABEL_COEXISTENCE => JString("Label coexistence constraint")
+          case ConstraintType.UNIQUE                      => JString("Uniqueness constraint")
+          case ConstraintType.EXISTS                      => JString("Existence constraint")
+          case ConstraintType.UNIQUE_EXISTS               => JString("Node Key")
+          case ConstraintType.PROPERTY_TYPE               => JString("Property type constraint")
+          case ConstraintType.RELATIONSHIP_ENDPOINT_LABEL => JString("Relationship endpoint label constraint")
+          case ConstraintType.NODE_LABEL_EXISTENCE        => JString("Node label existence constraint")
         }
       )
     )

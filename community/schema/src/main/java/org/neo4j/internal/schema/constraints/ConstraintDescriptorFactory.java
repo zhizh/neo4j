@@ -21,8 +21,8 @@ package org.neo4j.internal.schema.constraints;
 
 import org.neo4j.internal.schema.EndpointType;
 import org.neo4j.internal.schema.IndexType;
-import org.neo4j.internal.schema.LabelCoexistenceSchemaDescriptor;
-import org.neo4j.internal.schema.RelationshipEndpointSchemaDescriptor;
+import org.neo4j.internal.schema.NodeLabelExistenceSchemaDescriptor;
+import org.neo4j.internal.schema.RelationshipEndpointLabelSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptors;
 import org.neo4j.util.VisibleForTesting;
@@ -55,14 +55,14 @@ public class ConstraintDescriptorFactory {
         return ConstraintDescriptorImplementation.makePropertyTypeConstraint(schema, allowedTypes, isDependent);
     }
 
-    public static RelationshipEndpointConstraintDescriptor relationshipEndpointForSchema(
-            RelationshipEndpointSchemaDescriptor schema, int endpointLabelId, EndpointType endpointType) {
-        return RelationshipEndpointConstraintDescriptorImplementation.make(schema, endpointLabelId, endpointType);
+    public static RelationshipEndpointLabelConstraintDescriptor relationshipEndpointLabelForSchema(
+            RelationshipEndpointLabelSchemaDescriptor schema, int endpointLabelId, EndpointType endpointType) {
+        return RelationshipEndpointLabelConstraintDescriptorImplementation.make(schema, endpointLabelId, endpointType);
     }
 
-    public static LabelCoexistenceConstraintDescriptor labelCoexistenceForSchema(
-            LabelCoexistenceSchemaDescriptor schema, int requiredLabelId) {
-        return LabelCoexistenceConstraintDescriptorImplementation.make(schema, requiredLabelId);
+    public static NodeLabelExistenceConstraintDescriptor nodeLabelExistenceForSchema(
+            NodeLabelExistenceSchemaDescriptor schema, int requiredLabelId) {
+        return NodeLabelExistenceConstraintDescriptorImplementation.make(schema, requiredLabelId);
     }
 
     public static ExistenceConstraintDescriptor existsForLabel(boolean isDependent, int labelId, int... propertyIds) {
@@ -91,15 +91,15 @@ public class ConstraintDescriptorFactory {
     }
 
     @VisibleForTesting
-    public static RelationshipEndpointConstraintDescriptor relationshipEndpointForRelType(
+    public static RelationshipEndpointLabelConstraintDescriptor relationshipEndpointLabelForRelType(
             int relTypeId, int endpointLabelId, EndpointType endpointType) {
-        return relationshipEndpointForSchema(
-                SchemaDescriptors.forRelationshipEndpoint(relTypeId), endpointLabelId, endpointType);
+        return relationshipEndpointLabelForSchema(
+                SchemaDescriptors.forRelationshipEndpointLabel(relTypeId), endpointLabelId, endpointType);
     }
 
     @VisibleForTesting
-    public static LabelCoexistenceConstraintDescriptor labelCoexistenceForLabel(
+    public static NodeLabelExistenceConstraintDescriptor nodeLabelExistenceForLabel(
             int existingLabelId, int requiredLabelId) {
-        return labelCoexistenceForSchema(SchemaDescriptors.forLabelCoexistence(existingLabelId), requiredLabelId);
+        return nodeLabelExistenceForSchema(SchemaDescriptors.forNodeLabelExistence(existingLabelId), requiredLabelId);
     }
 }

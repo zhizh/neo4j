@@ -266,23 +266,23 @@ public class ConstraintDescriptorImplementation
     }
 
     @Override
-    public boolean isRelationshipEndpointConstraint() {
+    public boolean isRelationshipEndpointLabelConstraint() {
         return false;
     }
 
     @Override
-    public boolean isLabelCoexistenceConstraint() {
+    public boolean isNodeLabelExistenceConstraint() {
         return false;
     }
 
     @Override
-    public RelationshipEndpointConstraintDescriptor asRelationshipEndpointConstraint() {
-        throw conversionException(RelationshipEndpointConstraintDescriptor.class);
+    public RelationshipEndpointLabelConstraintDescriptor asRelationshipEndpointLabelConstraint() {
+        throw conversionException(RelationshipEndpointLabelConstraintDescriptor.class);
     }
 
     @Override
-    public LabelCoexistenceConstraintDescriptor asLabelCoexistenceConstraint() {
-        throw conversionException(LabelCoexistenceConstraintDescriptor.class);
+    public NodeLabelExistenceConstraintDescriptor asNodeLabelExistenceConstraint() {
+        throw conversionException(NodeLabelExistenceConstraintDescriptor.class);
     }
 
     private IllegalStateException conversionException(Class<? extends ConstraintDescriptor> targetType) {

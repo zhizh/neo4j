@@ -17,22 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.internal.schema.constraints;
+package org.neo4j.internal.schema;
 
-import org.neo4j.internal.schema.ConstraintDescriptor;
+import org.neo4j.util.MarkerInterface;
 
-public interface LabelCoexistenceConstraintDescriptor extends ConstraintDescriptor {
-
-    /**
-     * For a constraint that enforces that nodes with label `:A`
-     * should also have the label `:B`.
-     * @return the token id for label `:B`.
-     */
-    int requiredLabelId();
-
-    @Override
-    LabelCoexistenceConstraintDescriptor withName(String name);
-
-    @Override
-    LabelCoexistenceConstraintDescriptor withId(long id);
-}
+@MarkerInterface
+public interface NodeLabelExistenceSchemaDescriptor extends SchemaDescriptor {}

@@ -32,10 +32,10 @@ import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexPrototype;
 import org.neo4j.internal.schema.IndexProviderDescriptor;
 import org.neo4j.internal.schema.IndexType;
-import org.neo4j.internal.schema.LabelCoexistenceSchemaDescriptor;
 import org.neo4j.internal.schema.LabelSchemaDescriptor;
+import org.neo4j.internal.schema.NodeLabelExistenceSchemaDescriptor;
 import org.neo4j.internal.schema.RelationTypeSchemaDescriptor;
-import org.neo4j.internal.schema.RelationshipEndpointSchemaDescriptor;
+import org.neo4j.internal.schema.RelationshipEndpointLabelSchemaDescriptor;
 import org.neo4j.internal.schema.SchemaDescriptor;
 import org.neo4j.internal.schema.constraints.PropertyTypeSet;
 
@@ -121,18 +121,21 @@ public class RestrictedSchemaWrite implements SchemaWrite {
     }
 
     @Override
-    public ConstraintDescriptor relationshipEndpointConstraintCreate(
-            RelationshipEndpointSchemaDescriptor schema, String name, int endpointLabelId, EndpointType endpointType)
+    public ConstraintDescriptor relationshipEndpointLabelConstraintCreate(
+            RelationshipEndpointLabelSchemaDescriptor schema,
+            String name,
+            int endpointLabelId,
+            EndpointType endpointType)
             throws KernelException {
         securityAuthorizationHandler.assertSchemaWrites(securityContext, PrivilegeAction.CREATE_CONSTRAINT);
-        return inner.relationshipEndpointConstraintCreate(schema, name, endpointLabelId, endpointType);
+        return inner.relationshipEndpointLabelConstraintCreate(schema, name, endpointLabelId, endpointType);
     }
 
     @Override
-    public ConstraintDescriptor labelCoexistenceConstraintCreate(
-            LabelCoexistenceSchemaDescriptor schema, String name, int requiredLabelId) throws KernelException {
+    public ConstraintDescriptor nodeLabelExistenceConstraintCreate(
+            NodeLabelExistenceSchemaDescriptor schema, String name, int requiredLabelId) throws KernelException {
         securityAuthorizationHandler.assertSchemaWrites(securityContext, PrivilegeAction.CREATE_CONSTRAINT);
-        return inner.labelCoexistenceConstraintCreate(schema, name, requiredLabelId);
+        return inner.nodeLabelExistenceConstraintCreate(schema, name, requiredLabelId);
     }
 
     @Override
