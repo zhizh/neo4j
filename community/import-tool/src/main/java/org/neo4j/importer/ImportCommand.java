@@ -141,7 +141,8 @@ public class ImportCommand {
         @Option(
                 names = "--schema",
                 paramLabel = "<path>",
-                description = "File in which to store the Cypher schema commands to run as part of of the data import.")
+                description =
+                        "Path to the file containing the Cypher commands for creating indexes and constraints during data import.")
         private Path schemaCommands;
 
         @Parameters(
