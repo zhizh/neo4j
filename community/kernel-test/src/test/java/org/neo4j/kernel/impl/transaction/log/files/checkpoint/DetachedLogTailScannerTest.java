@@ -584,6 +584,7 @@ class DetachedLogTailScannerTest {
         // given
         long transactionId = 4;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_7);
         setupLogFiles(
                 13,
                 logFile(
@@ -617,6 +618,7 @@ class DetachedLogTailScannerTest {
     void doNotParseConsensusIndexFromTransactionHeaderFor57PlusCheckpoint() throws Exception {
         // given
         long transactionId = 4;
+        logFiles = createLogFiles(KernelVersion.V5_7);
         setupLogFiles(
                 13,
                 logFile(
@@ -651,6 +653,7 @@ class DetachedLogTailScannerTest {
         // given
         long transactionId = 4;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_0);
         setupLogFiles(
                 13,
                 logFile(
@@ -685,6 +688,7 @@ class DetachedLogTailScannerTest {
         // given
         long transactionId = 7;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_0);
         setupLogFiles(
                 13,
                 logFile(
@@ -719,6 +723,7 @@ class DetachedLogTailScannerTest {
         // given
         long transactionId = 1;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_0);
         setupLogFiles(
                 13,
                 logFile(
@@ -816,8 +821,12 @@ class DetachedLogTailScannerTest {
     }
 
     LogFiles createLogFiles() throws IOException {
+        return createLogFiles(LATEST_KERNEL_VERSION);
+    }
+
+    LogFiles createLogFiles(KernelVersion kernelVersion) throws IOException {
         var storeId = new StoreId(1, 2, "engine-1", "format-1", 3, 4);
-        return LogFilesBuilder.activeFilesBuilder(databaseLayout, fs, LatestVersions.LATEST_KERNEL_VERSION_PROVIDER)
+        return LogFilesBuilder.activeFilesBuilder(databaseLayout, fs, () -> kernelVersion)
                 .withLogVersionRepository(logVersionRepository)
                 .withTransactionIdStore(transactionIdStore)
                 .withAppendIndexProvider(appendIndexProvider)

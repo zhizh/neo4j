@@ -284,6 +284,12 @@ class EnvelopeFuzzerTest {
             public boolean locklessRotateLogIfNeeded(LogRotateEvents logRotateEvents) {
                 return rotateLogIfNeeded(logRotateEvents);
             }
+
+            @Override
+            public boolean locklessRotateLogIfNeeded(
+                    LogRotateEvents logRotateEvents, KernelVersion kernelVersion, boolean force) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 

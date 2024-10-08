@@ -163,7 +163,7 @@ class UpgradeToFutureVersionIT {
                 .cause()
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining(
-                        "Checkpoint log file with version 0 has some data available after last readable log entry");
+                        "Log file contains entries with prefix 127, and the highest supported Kernel Version is");
     }
 
     @Test

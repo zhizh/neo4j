@@ -21,46 +21,80 @@ package org.neo4j.kernel.impl.transaction.log.checkpoint;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME;
 import static org.neo4j.storageengine.api.TransactionIdStore.UNKNOWN_CONSENSUS_INDEX;
 
 import java.io.IOException;
+import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.neo4j.common.DependencyResolver;
+import org.neo4j.configuration.Config;
+import org.neo4j.configuration.GraphDatabaseInternalSettings;
+import org.neo4j.dbms.api.DatabaseManagementService;
+import org.neo4j.dbms.database.DbmsRuntimeVersion;
+import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.kernel.KernelVersion;
-import org.neo4j.kernel.KernelVersionRepository;
 import org.neo4j.kernel.impl.transaction.log.files.LogFiles;
+import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.storageengine.AppendIndexProvider;
-import org.neo4j.test.extension.DbmsExtension;
+import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 import org.neo4j.test.extension.Inject;
+import org.neo4j.test.extension.Neo4jLayoutExtension;
 
-@DbmsExtension
+@Neo4jLayoutExtension
 public class CheckpointKernelVersionIT {
     @Inject
+    private Neo4jLayout dbLayout;
+
     private CheckPointer checkPointer;
 
-    @Inject
-    private KernelVersionRepository kernelVersionRepository;
-
-    @Inject
     private LogFiles logFiles;
+
+    private DatabaseManagementService dbms;
+
+    private void setupDbms(DbmsRuntimeVersion version) {
+        dbms = new TestDatabaseManagementServiceBuilder(dbLayout)
+                .setConfig(Config.defaults(Map.of(
+                        GraphDatabaseInternalSettings.latest_runtime_version,
+                        version.getVersion(),
+                        GraphDatabaseInternalSettings.latest_kernel_version,
+                        version.kernelVersion().version())))
+                .build();
+        DependencyResolver dependencyResolver =
+                ((GraphDatabaseAPI) dbms.database(DEFAULT_DATABASE_NAME)).getDependencyResolver();
+        checkPointer = dependencyResolver.resolveDependency(CheckPointer.class);
+        logFiles = dependencyResolver.resolveDependency(LogFiles.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (dbms != null) {
+            dbms.shutdown();
+            dbms = null;
+        }
+    }
 
     @Test
     void checkPointRecordContainsDatabaseKernelVersion() throws IOException {
         // earlier version do not support new format of checkpoint commands; it's impossible to read them back, so we
         // cannot test them
-        kernelVersionRepository.setKernelVersion(KernelVersion.V5_7);
-        checkPointer.forceCheckPoint(new SimpleTriggerInfo("Forced " + kernelVersionRepository.kernelVersion()));
+        DbmsRuntimeVersion version = DbmsRuntimeVersion.V5_7;
+        setupDbms(version);
+        checkPointer.forceCheckPoint(new SimpleTriggerInfo("Forced " + version.kernelVersion()));
 
         final var checkpoint =
                 logFiles.getCheckpointFile().findLatestCheckpoint().orElseThrow();
         assertThat(checkpoint.kernelVersion())
                 .as("kernel version from last checkpoint")
-                .isEqualTo(kernelVersionRepository.kernelVersion());
+                .isEqualTo(version.kernelVersion());
     }
 
     @Test
     void checkPointRecordContainsAppendIndex() throws IOException {
-        kernelVersionRepository.setKernelVersion(KernelVersion.V5_20);
-        checkPointer.forceCheckPoint(new SimpleTriggerInfo("Forced " + kernelVersionRepository.kernelVersion()));
+        DbmsRuntimeVersion version = DbmsRuntimeVersion.V5_20;
+        setupDbms(version);
+        checkPointer.forceCheckPoint(new SimpleTriggerInfo("Forced " + version.kernelVersion()));
 
         final var checkpoint =
                 logFiles.getCheckpointFile().findLatestCheckpoint().orElseThrow();
@@ -71,7 +105,8 @@ public class CheckpointKernelVersionIT {
 
     @Test
     void checkPointInLegacy5_0Format() throws IOException {
-        kernelVersionRepository.setKernelVersion(KernelVersion.V5_0);
+        DbmsRuntimeVersion version = DbmsRuntimeVersion.V5_0;
+        setupDbms(version);
         checkPointer.forceCheckPoint(new SimpleTriggerInfo("Legacy format."));
 
         final var checkpoint =

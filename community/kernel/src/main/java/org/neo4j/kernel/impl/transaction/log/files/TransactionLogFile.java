@@ -348,6 +348,11 @@ public class TransactionLogFile extends LifecycleAdapter implements LogFile {
     }
 
     @Override
+    public synchronized Path rotate(KernelVersion kernelVersion) throws IOException {
+        throw new UnsupportedOperationException("Transaction log does not support this type of rotation");
+    }
+
+    @Override
     public long rotationSize() {
         return rotateAtSize.get();
     }

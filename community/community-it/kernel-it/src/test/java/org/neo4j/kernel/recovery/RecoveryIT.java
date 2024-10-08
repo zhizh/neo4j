@@ -53,7 +53,7 @@ import static org.neo4j.kernel.database.DatabaseTracers.EMPTY;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogFormat.BIGGEST_HEADER;
 import static org.neo4j.kernel.recovery.Recovery.context;
 import static org.neo4j.kernel.recovery.Recovery.performRecovery;
-import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLastLogFile;
+import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLogFile;
 import static org.neo4j.kernel.recovery.facade.RecoveryCriteria.ALL;
 import static org.neo4j.logging.LogAssertions.assertThat;
 import static org.neo4j.memory.EmptyMemoryTracker.INSTANCE;
@@ -235,8 +235,8 @@ class RecoveryIT {
         generateSomeData(database);
         managementService.shutdown();
         // shutdown and init checkpoints
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         CheckpointTracer checkpointTracer = new CheckpointTracer();
         var tracers =
@@ -375,7 +375,7 @@ class RecoveryIT {
         }
         managementService.shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         // we write big transaction with huge property command above and here we truncate a bit of that to simulate
         // partially written command
         removeLastKbFromLogFile(logFileToManipulate, position);
@@ -397,7 +397,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         // append data that will cause broken next entry
         appendBytesToLastLogFile(logFileToManipulate, positionForCorruption, new byte[] {1, 0, 0});
 
@@ -466,7 +466,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         prepareEmptyZeroedLogFile(victimFilePath);
         assertNotEquals(logFilesWithoutVictim, countTransactionLogFiles());
 
@@ -495,7 +495,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         prepareEmptyZeroedLogFile(victimFilePath1);
         prepareEmptyZeroedLogFile(victimFilePath2);
 
@@ -523,7 +523,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         prepareEmptyLogFile(victimFilePath);
         assertNotEquals(logFilesWithoutVictim, countTransactionLogFiles());
 
@@ -574,7 +574,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         prepareEmptyZeroedLogFile(victimFilePath);
         assertNotEquals(logFilesWithoutVictim, countTransactionLogFiles());
 
@@ -602,7 +602,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         // append data that will cause broken next entry
         appendBytesToLastLogFile(logFileToMutate, currentPosition, new byte[] {1, 0, 0});
 
@@ -622,7 +622,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         // append data that will cause broken next entry
         appendBytesToLastLogFile(logFileToMutate, currentPosition, new byte[] {1, 0, 0, 1});
 
@@ -645,7 +645,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         // append data that will cause broken next entry
         appendBytesToLastLogFile(logFileToMutate, currentPosition, new byte[] {1, 2, 0, 0});
 
@@ -670,7 +670,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         // append data that will cause broken next entry
 
         var data = new byte[(int) ByteUnit.kibiBytes(random.nextInt(120, 484))];
@@ -698,7 +698,7 @@ class RecoveryIT {
         managementService.shutdown();
 
         // remove shutdown checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         var data = new byte[(int) ByteUnit.kibiBytes(random.nextInt(20, 789))];
         data[0] = 1;
         data[data.length - random.nextInt(2, 15)] = 2;
@@ -715,7 +715,7 @@ class RecoveryIT {
         GraphDatabaseService database = createDatabase();
         generateSomeData(database);
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         int removedFiles = 0;
         Path transactionLogsDirectory = databaseLayout.getTransactionLogsDirectory();
@@ -754,8 +754,8 @@ class RecoveryIT {
         generateSomeData(database);
         managementService.shutdown();
         // shutdown and init checkpoints
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         int removedFiles = 0;
         Path transactionLogsDirectory = databaseLayout.getTransactionLogsDirectory();
@@ -809,7 +809,7 @@ class RecoveryIT {
         assertEquals(10, checkpointFile.getLowestLogVersion());
         assertEquals(12, checkpointFile.getHighestLogVersion());
 
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         int removedFiles = 0;
         int checkpointFilesLeftOvers = 0;
@@ -849,7 +849,7 @@ class RecoveryIT {
         GraphDatabaseService database = createDatabase();
         generateSomeData(database);
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         assertTrue(isRecoveryRequired(databaseLayout));
     }
@@ -874,7 +874,7 @@ class RecoveryIT {
                 .setConfig(config)
                 .build();
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         assertFalse(isRecoveryRequired(databaseLayout, config));
     }
@@ -888,7 +888,7 @@ class RecoveryIT {
             createSingleNode(database);
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -909,7 +909,7 @@ class RecoveryIT {
             createSingleNode(database);
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         var pageCacheTracer = new DefaultPageCacheTracer();
         var tracers =
@@ -945,7 +945,7 @@ class RecoveryIT {
             }
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -976,7 +976,7 @@ class RecoveryIT {
             }
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1013,7 +1013,7 @@ class RecoveryIT {
             }
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1059,7 +1059,7 @@ class RecoveryIT {
             }
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1128,7 +1128,7 @@ class RecoveryIT {
             }
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1172,7 +1172,7 @@ class RecoveryIT {
             }
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1231,7 +1231,7 @@ class RecoveryIT {
             transaction.commit();
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1276,7 +1276,7 @@ class RecoveryIT {
             transaction.commit();
         }
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1374,7 +1374,7 @@ class RecoveryIT {
         }
 
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         recoverDatabase();
 
@@ -1396,7 +1396,7 @@ class RecoveryIT {
         GraphDatabaseService database = createDatabase();
         generateSomeData(database);
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         var checkpointsBeforeRecovery = countCheckPointsInTransactionLogs();
 
@@ -1411,7 +1411,7 @@ class RecoveryIT {
         GraphDatabaseService database = createDatabase();
         generateSomeData(database);
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         var extension = new TestPanicRecoveryExtension();
         assertThatThrownBy(() -> recoverDatabase(List.of(extension)))
@@ -1518,8 +1518,8 @@ class RecoveryIT {
         managementService.shutdown();
         assertEquals(2, countCheckPointsInTransactionLogs());
         // shutdown and init checkpoints
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         assertEquals(0, countCheckPointsInTransactionLogs());
         assertTrue(isRecoveryRequired(databaseLayout));
@@ -1606,7 +1606,7 @@ class RecoveryIT {
 
         assertEquals(2, countTransactionLogFiles());
         assertEquals(2, countCheckPointsInTransactionLogs());
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         startStopDatabase();
 
@@ -1632,8 +1632,8 @@ class RecoveryIT {
 
         startStopDatabase();
         assertEquals(2, countCheckPointsInTransactionLogs());
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         startStopDatabase();
 
@@ -1659,7 +1659,7 @@ class RecoveryIT {
 
         startStopDatabase();
         assertEquals(2, countCheckPointsInTransactionLogs());
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         startStopDatabase();
 
@@ -1668,13 +1668,13 @@ class RecoveryIT {
         // and 2 will be truncated instead since truncation is based on position
         // next start-stop cycle will have transaction between so we will have 3 checkpoints as expected.
         assertEquals(2, countCheckPointsInTransactionLogs());
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         builder = null; // Reset log rotation threshold setting to avoid immediate rotation on `createSingleNode()`.
 
         GraphDatabaseService service = createDatabase(logThreshold * 2); // Bigger log, to avoid rotation.
         createSingleNode(service);
         this.managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         startStopDatabase();
 
         assertFalse(isRecoveryRequired(databaseLayout));
@@ -1821,7 +1821,7 @@ class RecoveryIT {
         DatabaseLayout layout = db.databaseLayout();
         managementService.shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         assertTrue(isRecoveryRequired(layout));
 
         Monitors monitors = new Monitors();
@@ -2138,7 +2138,7 @@ class RecoveryIT {
         generateSomeData(db);
         managementService.shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         assertTrue(isRecoveryRequired(layout));
 
         recoverDatabase(RecoveryCriteria.until(originalLastCommitted + 1));
@@ -2155,7 +2155,7 @@ class RecoveryIT {
         long originalLastCommitted = getMetadataProvider(db).getLastCommittedTransactionId();
         managementService.shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         assertTrue(isRecoveryRequired(layout));
 
         long restoreUntilTxId = originalLastCommitted - 4;
@@ -2233,7 +2233,7 @@ class RecoveryIT {
         generateSomeData(db);
         managementService.shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         assertTrue(isRecoveryRequired(layout));
 
@@ -2258,7 +2258,7 @@ class RecoveryIT {
         generateSomeData(db);
         managementService.shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         assertTrue(isRecoveryRequired(layout));
 

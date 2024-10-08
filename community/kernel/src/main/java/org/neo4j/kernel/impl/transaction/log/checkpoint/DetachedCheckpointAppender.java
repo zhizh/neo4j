@@ -76,6 +76,7 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
     private NativeScopedBuffer buffer;
     private PhysicalLogVersionedStoreChannel channel;
     private LogVersionRepository logVersionRepository;
+    private KernelVersion previousKernelVersion;
 
     public DetachedCheckpointAppender(
             LogFiles logFiles,
@@ -134,6 +135,11 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
         if (lastCheckPoint.isEmpty()) {
             LogHeader logHeader = logHeader(channel.getLogVersion());
             channel.position(logHeader.getStartPosition().getByteOffset());
+            KernelVersion logHeaderKernelVersion = logHeader.getKernelVersion();
+            previousKernelVersion = logHeaderKernelVersion != null
+                    ? logHeaderKernelVersion
+                    : context.getKernelVersionProvider().kernelVersion();
+
             return;
         }
         LogPosition channelPosition = lastCheckPoint.get().channelPositionAfterCheckpoint();
@@ -142,6 +148,7 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
                     + ", does not match to found tail version " + channelPosition.getLogVersion());
         }
         channel.position(channelPosition.getByteOffset());
+        previousKernelVersion = lastCheckPoint.get().kernelVersion();
     }
 
     @Override
@@ -171,6 +178,7 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
         synchronized (checkpointFile) {
             try {
                 databasePanic.assertNoPanic(IOException.class);
+                rotateIfNeeded(logCheckPointEvent, kernelVersion);
                 writer.resetAppendedBytesCounter();
                 serializationSet(kernelVersion, binarySupportedKernelVersions)
                         .select(LogEntryTypeCodes.DETACHED_CHECK_POINT_V5_0)
@@ -188,12 +196,24 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
 
                 logCheckPointEvent.appendedBytes(writer.getAppendedBytes());
                 forceAfterAppend(logCheckPointEvent);
-                logRotation.locklessRotateLogIfNeeded(logCheckPointEvent);
             } catch (Throwable cause) {
                 databasePanic.panic(cause);
                 throw cause;
             }
         }
+    }
+
+    private void rotateIfNeeded(LogCheckPointEvent logCheckPointEvent, KernelVersion kernelVersion) throws IOException {
+        boolean newKernelVersion = kernelVersion != previousKernelVersion;
+        if (newKernelVersion) {
+            if (kernelVersion.isLessThan(previousKernelVersion)) {
+                throw new IllegalStateException(
+                        "Can not rotate checkpoint log - supplied kernel version (%s) is lower than previously seen (%s)"
+                                .formatted(kernelVersion.name(), previousKernelVersion.name()));
+            }
+            previousKernelVersion = kernelVersion;
+        }
+        logRotation.locklessRotateLogIfNeeded(logCheckPointEvent, kernelVersion, newKernelVersion);
     }
 
     public long getCurrentPosition() {
@@ -222,6 +242,9 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
             PhysicalLogVersionedStoreChannel channel, KernelVersionProvider kernelVersionProvider) throws IOException {
         long newLogVersion = logVersionRepository.incrementAndGetCheckpointLogVersion();
         writer.prepareForFlush().flush();
+
+        long endSize = channel.position();
+        channel.truncate(endSize);
 
         int checksum = writer.currentChecksum().orElse(BASE_TX_CHECKSUM);
         var newChannel = channelAllocator.createLogChannel(

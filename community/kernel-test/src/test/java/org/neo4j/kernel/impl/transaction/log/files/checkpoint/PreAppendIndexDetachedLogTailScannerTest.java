@@ -105,8 +105,12 @@ class PreAppendIndexDetachedLogTailScannerTest {
     }
 
     LogFiles createLogFiles() throws IOException {
+        return createLogFiles(KernelVersion.V5_19);
+    }
+
+    LogFiles createLogFiles(KernelVersion kernelVersion) throws IOException {
         var storeId = new StoreId(1, 2, "engine-1", "format-1", 3, 4);
-        return LogFilesBuilder.activeFilesBuilder(databaseLayout, fs, () -> KernelVersion.V5_19)
+        return LogFilesBuilder.activeFilesBuilder(databaseLayout, fs, () -> kernelVersion)
                 .withLogVersionRepository(logVersionRepository)
                 .withTransactionIdStore(transactionIdStore)
                 .withAppendIndexProvider(appendIndexProvider)
@@ -547,6 +551,7 @@ class PreAppendIndexDetachedLogTailScannerTest {
         // given
         long transactionId = 4;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_7);
         setupLogFiles(
                 13,
                 logFile(
@@ -580,6 +585,7 @@ class PreAppendIndexDetachedLogTailScannerTest {
     void doNotParseConsensusIndexFromTransactionHeaderFor57PlusCheckpoint() throws Exception {
         // given
         long transactionId = 4;
+        logFiles = createLogFiles(KernelVersion.V5_7);
         setupLogFiles(
                 13,
                 logFile(
@@ -614,6 +620,7 @@ class PreAppendIndexDetachedLogTailScannerTest {
         // given
         long transactionId = 4;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_0);
         setupLogFiles(
                 13,
                 logFile(
@@ -648,6 +655,7 @@ class PreAppendIndexDetachedLogTailScannerTest {
         // given
         long transactionId = 7;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_0);
         setupLogFiles(
                 13,
                 logFile(
@@ -682,6 +690,7 @@ class PreAppendIndexDetachedLogTailScannerTest {
         // given
         long transactionId = 1;
         long consensusIndex = 999;
+        logFiles = createLogFiles(KernelVersion.V5_0);
         setupLogFiles(
                 13,
                 logFile(

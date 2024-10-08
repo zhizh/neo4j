@@ -22,7 +22,7 @@ package org.neo4j.kernel.recovery;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.neo4j.cloud.storage.StorageUtils.WRITE_OPTIONS;
 import static org.neo4j.configuration.GraphDatabaseSettings.fail_on_missing_files;
-import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLastLogFile;
+import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLogFile;
 import static org.neo4j.storageengine.AppendIndexProvider.BASE_APPEND_INDEX;
 import static org.neo4j.test.LatestVersions.LATEST_KERNEL_VERSION_PROVIDER;
 
@@ -41,7 +41,6 @@ import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.StoreFileChannel;
 import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
-import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.kernel.impl.transaction.SimpleAppendIndexProvider;
 import org.neo4j.kernel.impl.transaction.SimpleLogVersionRepository;
 import org.neo4j.kernel.impl.transaction.SimpleTransactionIdStore;
@@ -64,9 +63,6 @@ import org.neo4j.test.extension.pagecache.PageCacheExtension;
 public class LogTailAppendIndexIT {
     @Inject
     private DefaultFileSystemAbstraction fileSystem;
-
-    @Inject
-    private PageCache pageCache;
 
     @Inject
     private Neo4jLayout neo4jLayout;
@@ -215,7 +211,7 @@ public class LogTailAppendIndexIT {
         var layout = dependencyResolver.resolveDependency(DatabaseLayout.class);
         dbms.shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(layout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(layout, fileSystem);
 
         LogFiles logFiles = buildDefaultLogFiles(layout);
         assertEquals(lastBatchBeforeRestart, logFiles.getTailMetadata().lastBatch());

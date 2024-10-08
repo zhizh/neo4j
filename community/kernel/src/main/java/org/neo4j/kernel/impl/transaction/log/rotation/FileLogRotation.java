@@ -34,7 +34,6 @@ import org.neo4j.kernel.impl.transaction.log.rotation.monitor.LogRotationMonitor
 import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvent;
 import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvents;
 import org.neo4j.monitoring.Panic;
-import org.neo4j.util.VisibleForTesting;
 
 /**
  * Default implementation of the LogRotation interface.
@@ -133,7 +132,20 @@ public class FileLogRotation implements LogRotation {
         return false;
     }
 
-    @VisibleForTesting
+    @Override
+    public boolean locklessRotateLogIfNeeded(
+            LogRotateEvents logRotateEvents, KernelVersion kernelVersion, boolean force) throws IOException {
+        if (force || rotatableFile.rotationNeeded()) {
+            doRotate(
+                    logRotateEvents,
+                    lastAppendIndexSupplier.getAsLong(),
+                    currentFileVersionSupplier,
+                    () -> rotatableFile.rotate(kernelVersion));
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void rotateLogFile(LogRotateEvents logRotateEvents) throws IOException {
         synchronized (rotatableFile) {

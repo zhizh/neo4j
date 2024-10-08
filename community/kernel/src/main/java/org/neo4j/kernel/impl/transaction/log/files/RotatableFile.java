@@ -37,6 +37,17 @@ public interface RotatableFile {
     Path rotate() throws IOException;
 
     /**
+     * Rotate the active file but be explicit about what kernel version to use for the new header.
+     * This can be necessary in checkpoint log file where checkpoints are not blocked during upgrade so the
+     * kernel version repository can be updated between getting request to checkpoint and the rotation happens.
+     * Checksum and append index are guaranteed to be correct though and can use the usual providers.
+     *
+     * @return A file object representing the file name and path of the log file rotated to.
+     * @throws IOException if something goes wrong with either flushing the existing log file, or creating the new log file.
+     */
+    Path rotate(KernelVersion kernelVersion) throws IOException;
+
+    /**
      * Rotate the active file but be explicit about what values to use for the new header.
      * This can be necessary in scenarios where the kernel version repository is not
      * updated (because apply to store hasn't happened yet), or the transaction id sequence has already been updated but

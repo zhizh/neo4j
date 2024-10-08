@@ -48,6 +48,12 @@ public interface LogRotation {
         }
 
         @Override
+        public boolean locklessRotateLogIfNeeded(
+                LogRotateEvents logRotateEvents, KernelVersion kernelVersion, boolean force) {
+            return false;
+        }
+
+        @Override
         public void rotateLogFile(LogRotateEvents logRotateEvents) {}
 
         @Override
@@ -82,6 +88,14 @@ public interface LogRotation {
      * @param logRotateEvents A trace event for the current log append operation.
      */
     boolean locklessRotateLogIfNeeded(LogRotateEvents logRotateEvents) throws IOException;
+
+    /**
+     * Rotates the underlying log if it is required. Returns true if rotation happened, false otherwise
+     * @param logRotateEvents A trace event for the current log append operation.
+     * @param force If rotation should be forced even if not needed by the threshold
+     */
+    boolean locklessRotateLogIfNeeded(LogRotateEvents logRotateEvents, KernelVersion kernelVersion, boolean force)
+            throws IOException;
 
     /**
      * Force a log rotation.

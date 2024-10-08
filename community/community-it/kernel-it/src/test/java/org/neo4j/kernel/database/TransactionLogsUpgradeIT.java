@@ -29,7 +29,6 @@ import static org.neo4j.kernel.TxLogValidationUtils.assertWholeTransactionsIn;
 import static org.neo4j.kernel.TxLogValidationUtils.assertWholeTransactionsWithCorrectVersionInSpecificLogVersion;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogSegments.DEFAULT_LOG_SEGMENT_SIZE;
 import static org.neo4j.kernel.recovery.RecoveryHelpers.getLatestCheckpoint;
-import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLastLogFile;
 import static org.neo4j.storageengine.api.LogVersionRepository.INITIAL_LOG_VERSION;
 import static org.neo4j.test.LatestVersions.LATEST_KERNEL_VERSION;
 import static org.neo4j.test.UpgradeTestUtil.assertKernelVersion;
@@ -66,6 +65,7 @@ import org.neo4j.kernel.impl.transaction.log.entry.LogFormat;
 import org.neo4j.kernel.impl.transaction.log.files.LogFiles;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.kernel.internal.event.InternalTransactionEventListener;
+import org.neo4j.kernel.recovery.RecoveryHelpers;
 import org.neo4j.storageengine.api.CommandReaderFactory;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.storageengine.api.TransactionIdStore;
@@ -196,7 +196,7 @@ class TransactionLogsUpgradeIT {
         var config = Config.newBuilder()
                 .set(GraphDatabaseInternalSettings.latest_kernel_version, GLORIOUS_FUTURE.version())
                 .build();
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem, config);
+        RecoveryHelpers.removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem, config);
         assertThat(getLatestCheckpoint(dbLayout, fileSystem, config).kernelVersion())
                 .isEqualTo(LATEST_KERNEL_VERSION);
 

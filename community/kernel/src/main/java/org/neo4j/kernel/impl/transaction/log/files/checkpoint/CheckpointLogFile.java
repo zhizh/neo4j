@@ -371,8 +371,13 @@ public class CheckpointLogFile extends LifecycleAdapter implements CheckpointFil
 
     @Override
     public Path rotate(KernelVersion kernelVersion, long lastAppendIndex, int checksum) throws IOException {
-        // Checkpoint log handles checksums and append indexes internally, let's ignore those but respect the kernel
-        // version.
+        // Checkpoint log handles checksums and append indexes internally, this one should not ever be needed for
+        // checkpoint log file.
+        throw new UnsupportedOperationException("Checkpoint log does not support this type of rotation");
+    }
+
+    @Override
+    public Path rotate(KernelVersion kernelVersion) throws IOException {
         return checkpointAppender.rotate(kernelVersion);
     }
 

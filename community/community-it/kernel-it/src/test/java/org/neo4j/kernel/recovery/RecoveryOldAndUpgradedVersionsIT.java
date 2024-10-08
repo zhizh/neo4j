@@ -26,7 +26,7 @@ import static org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME
 import static org.neo4j.configuration.GraphDatabaseSettings.preallocate_logical_logs;
 import static org.neo4j.kernel.recovery.RecoveryHelpers.getLatestCheckpoint;
 import static org.neo4j.kernel.recovery.RecoveryHelpers.logsContainCheckpoint;
-import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLastLogFile;
+import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLogFile;
 import static org.neo4j.test.UpgradeTestUtil.assertKernelVersion;
 
 import java.io.IOException;
@@ -77,7 +77,7 @@ class RecoveryOldAndUpgradedVersionsIT {
         ZippedStoreCommunity.REC_AF11_V50_ALL.unzip(neo4jLayout.homeDirectory());
         DatabaseLayout dbLayout = neo4jLayout.databaseLayout(dbName);
 
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
         assertFalse(logsContainCheckpoint(dbLayout, fileSystem));
 
         createBuilderNoAutomaticUpgrade();
@@ -105,8 +105,8 @@ class RecoveryOldAndUpgradedVersionsIT {
         assertKernelVersion(db, LatestVersions.LATEST_KERNEL_VERSION);
         shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
         assertFalse(logsContainCheckpoint(dbLayout, fileSystem));
 
         managementService = builder.build();
@@ -133,7 +133,7 @@ class RecoveryOldAndUpgradedVersionsIT {
         assertKernelVersion(db, KernelVersion.V5_0);
         shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
         assertThat(getLatestCheckpoint(dbLayout, fileSystem).kernelVersion()).isEqualTo(KernelVersion.V5_0);
 
         managementService = builder.build();
@@ -160,7 +160,7 @@ class RecoveryOldAndUpgradedVersionsIT {
         assertKernelVersion(db, LatestVersions.LATEST_KERNEL_VERSION);
         shutdown();
 
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
         assertThat(getLatestCheckpoint(dbLayout, fileSystem).kernelVersion()).isEqualTo(KernelVersion.V5_0);
 
         managementService = builder.build();

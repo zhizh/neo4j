@@ -28,7 +28,7 @@ import static org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME
 import static org.neo4j.configuration.GraphDatabaseSettings.preallocate_logical_logs;
 import static org.neo4j.kernel.recovery.RecoveryHelpers.getLatestCheckpoint;
 import static org.neo4j.kernel.recovery.RecoveryHelpers.logsContainCheckpoint;
-import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLastLogFile;
+import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLogFile;
 import static org.neo4j.test.UpgradeTestUtil.assertKernelVersion;
 
 import java.io.IOException;
@@ -106,8 +106,8 @@ class RecoveryToFutureOverUpgradedVersionsIT {
         shutdownDbms();
 
         // shutdown and init checkpoints
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
 
         assertFalse(logsContainCheckpoint(dbLayout, fileSystem));
 
@@ -134,10 +134,10 @@ class RecoveryToFutureOverUpgradedVersionsIT {
                 .set(GraphDatabaseInternalSettings.latest_kernel_version, KernelVersion.GLORIOUS_FUTURE.version())
                 .build();
         // shutdown and init checkpoints
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem, config);
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem, config);
+        RecoveryHelpers.removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem, config);
+        RecoveryHelpers.removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem, config);
 
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem, config);
+        RecoveryHelpers.removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem, config);
         assertFalse(logsContainCheckpoint(dbLayout, fileSystem));
 
         startDbms(this::configureGloriousFutureAsLatest, true);
@@ -158,7 +158,7 @@ class RecoveryToFutureOverUpgradedVersionsIT {
         assertKernelVersion(testDb, LatestVersions.LATEST_KERNEL_VERSION);
         shutdownDbms();
 
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem);
         assertThat(getLatestCheckpoint(dbLayout, fileSystem).kernelVersion())
                 .isEqualTo(LatestVersions.LATEST_KERNEL_VERSION);
 
@@ -187,7 +187,7 @@ class RecoveryToFutureOverUpgradedVersionsIT {
         var config = Config.newBuilder()
                 .set(GraphDatabaseInternalSettings.latest_kernel_version, KernelVersion.GLORIOUS_FUTURE.version())
                 .build();
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem, config);
+        RecoveryHelpers.removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem, config);
         assertThat(getLatestCheckpoint(dbLayout, fileSystem, config).kernelVersion())
                 .isEqualTo(LatestVersions.LATEST_KERNEL_VERSION);
 
@@ -288,7 +288,7 @@ class RecoveryToFutureOverUpgradedVersionsIT {
         var config = Config.newBuilder()
                 .set(GraphDatabaseInternalSettings.latest_kernel_version, KernelVersion.GLORIOUS_FUTURE.version())
                 .build();
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fileSystem, config);
+        RecoveryHelpers.removeLastCheckpointRecordFromLogFile(dbLayout, fileSystem, config);
         assertThat(getLatestCheckpoint(dbLayout, fileSystem, config).kernelVersion())
                 .isEqualTo(LatestVersions.LATEST_KERNEL_VERSION);
 

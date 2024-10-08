@@ -30,7 +30,7 @@ import static org.neo4j.configuration.GraphDatabaseSettings.preallocate_logical_
 import static org.neo4j.graphdb.RelationshipType.withName;
 import static org.neo4j.kernel.database.DatabaseTracers.EMPTY;
 import static org.neo4j.kernel.recovery.Recovery.context;
-import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLastLogFile;
+import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLogFile;
 import static org.neo4j.memory.EmptyMemoryTracker.INSTANCE;
 
 import java.io.IOException;
@@ -127,7 +127,7 @@ class ForwardRecoveryIT {
         }
 
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         restoreStoreFiles(copyPath);
         logProvider.clear();
 
@@ -161,7 +161,7 @@ class ForwardRecoveryIT {
         }
 
         managementService.shutdown();
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
         restoreStoreFiles(copyPath);
         logProvider.clear();
 

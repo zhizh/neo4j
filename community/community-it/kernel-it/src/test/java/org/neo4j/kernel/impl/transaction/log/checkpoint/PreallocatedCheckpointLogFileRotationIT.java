@@ -81,11 +81,8 @@ class PreallocatedCheckpointLogFileRotationIT extends CheckpointLogFileRotationI
 
         checkpointFile.rotate();
 
-        for (int fileCount = 2; fileCount < 6; fileCount++) {
+        for (int fileCount = 2; fileCount <= 6; fileCount++) {
             for (int i = LATEST_LOG_FORMAT.getHeaderSize(); i < ACTUAL_ROTATION_THRESHOLD; i += RECORD_LENGTH_BYTES) {
-                assertThat(checkpointFile.getDetachedCheckpointFiles())
-                        .hasSize(fileCount)
-                        .allMatch(this::sizeEqualsToPreallocatedFile);
                 checkpointAppender.checkPoint(
                         NULL,
                         transactionId,
@@ -95,6 +92,9 @@ class PreallocatedCheckpointLogFileRotationIT extends CheckpointLogFileRotationI
                         logPosition,
                         Instant.now(),
                         reason);
+                assertThat(checkpointFile.getDetachedCheckpointFiles())
+                        .hasSize(fileCount)
+                        .allMatch(this::sizeEqualsToPreallocatedFile);
             }
         }
 

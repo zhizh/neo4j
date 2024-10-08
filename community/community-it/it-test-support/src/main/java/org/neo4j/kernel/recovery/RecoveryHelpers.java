@@ -35,12 +35,12 @@ public final class RecoveryHelpers {
     private RecoveryHelpers() { // non-constructable
     }
 
-    public static void removeLastCheckpointRecordFromLastLogFile(
+    public static void removeLastCheckpointRecordFromLogFile(
             DatabaseLayout dbLayout, FileSystemAbstraction fs, Config config) throws IOException {
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fs, config, false);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fs, config, false);
     }
 
-    public static void removeLastCheckpointRecordFromLastLogFile(
+    public static void removeLastCheckpointRecordFromLogFile(
             DatabaseLayout dbLayout, FileSystemAbstraction fs, Config config, boolean throwOnNoCheckpoint)
             throws IOException {
         LogFiles logFiles = buildLogFiles(dbLayout, fs, config);
@@ -49,7 +49,8 @@ public final class RecoveryHelpers {
         latestCheckpoint.ifPresentOrElse(
                 checkpointInfo -> {
                     LogPosition entryPosition = checkpointInfo.checkpointEntryPosition();
-                    try (StoreChannel storeChannel = fs.write(checkpointFile.getCurrentFile())) {
+                    try (StoreChannel storeChannel = fs.write(
+                            checkpointFile.getDetachedCheckpointFileForVersion(entryPosition.getLogVersion()))) {
                         storeChannel.truncate(entryPosition.getByteOffset());
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
@@ -62,17 +63,17 @@ public final class RecoveryHelpers {
                 });
     }
 
-    public static void removeLastCheckpointRecordFromLastLogFile(DatabaseLayout dbLayout, FileSystemAbstraction fs)
+    public static void removeLastCheckpointRecordFromLogFile(DatabaseLayout dbLayout, FileSystemAbstraction fs)
             throws IOException {
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fs, null);
+        removeLastCheckpointRecordFromLogFile(dbLayout, fs, null);
     }
 
     /**
      * Throws if no checkpoint was found.
      */
-    public static void throwingRemoveLastCheckpointRecordFromLastLogFile(
-            DatabaseLayout dbLayout, FileSystemAbstraction fs) throws IOException {
-        removeLastCheckpointRecordFromLastLogFile(dbLayout, fs, null, true);
+    public static void throwingRemoveLastCheckpointRecordFromLogFile(DatabaseLayout dbLayout, FileSystemAbstraction fs)
+            throws IOException {
+        removeLastCheckpointRecordFromLogFile(dbLayout, fs, null, true);
     }
 
     public static boolean logsContainCheckpoint(DatabaseLayout dbLayout, FileSystemAbstraction fs) throws IOException {

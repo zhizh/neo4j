@@ -33,6 +33,7 @@ import static org.neo4j.storageengine.api.TransactionIdStore.UNKNOWN_TRANSACTION
 import static org.neo4j.test.LatestVersions.LATEST_KERNEL_VERSION;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.io.ByteUnit;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.layout.DatabaseLayout;
+import org.neo4j.kernel.KernelVersion;
 import org.neo4j.kernel.impl.api.TestCommandReaderFactory;
 import org.neo4j.kernel.impl.transaction.SimpleAppendIndexProvider;
 import org.neo4j.kernel.impl.transaction.SimpleLogVersionRepository;
@@ -88,7 +90,11 @@ class DetachedCheckpointAppenderTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        logFiles = buildLogFiles();
+        setUp(LATEST_KERNEL_VERSION);
+    }
+
+    void setUp(KernelVersion kernelVersion) throws IOException {
+        logFiles = buildLogFiles(kernelVersion);
         life.add(logFiles);
         life.start();
 
@@ -182,9 +188,85 @@ class DetachedCheckpointAppenderTest {
         assertThat(checkpoints.get(2)).hasFieldOrPropertyWithValue("transactionLogPosition", logPosition3);
     }
 
-    private LogFiles buildLogFiles() throws IOException {
+    @Test
+    void shouldFindAllCheckpointsAfterRotatingBeforeRotationThreshold() throws IOException {
+        life.clear();
+        setUp(KernelVersion.V5_22);
+
+        CheckpointFile checkpointFile = logFiles.getCheckpointFile();
+
+        var logPosition1 = new LogPosition(0, 10);
+        var logPosition2 = new LogPosition(0, 20);
+        assertThat(checkpointFile.reachableCheckpoints()).hasSize(0);
+        checkpointAppender.checkPoint(
+                LogCheckPointEvent.NULL,
+                UNKNOWN_TRANSACTION_ID,
+                BASE_APPEND_INDEX,
+                KernelVersion.V5_22,
+                logPosition1,
+                logPosition1,
+                Instant.now(),
+                "first");
+        // Trigger rotation on kernel version = rotate before reaching threshold
+        checkpointAppender.checkPoint(
+                LogCheckPointEvent.NULL,
+                UNKNOWN_TRANSACTION_ID,
+                BASE_APPEND_INDEX,
+                LATEST_KERNEL_VERSION,
+                logPosition2,
+                logPosition2,
+                Instant.now(),
+                "second");
+
+        assertThat(checkpointFile.getDetachedCheckpointFiles()).hasSize(2);
+        var checkpoints = checkpointFile.reachableCheckpoints();
+        // Should find the checkpoints in both of the files
+        assertThat(checkpoints).hasSize(2);
+        assertThat(checkpoints.get(0)).hasFieldOrPropertyWithValue("transactionLogPosition", logPosition1);
+        assertThat(checkpoints.get(1)).hasFieldOrPropertyWithValue("transactionLogPosition", logPosition2);
+    }
+
+    @Test
+    void shouldTruncatePrevFileOnRotation() throws IOException {
+        life.clear();
+        setUp(KernelVersion.V5_22);
+
+        CheckpointFile checkpointFile = logFiles.getCheckpointFile();
+
+        var logPosition1 = new LogPosition(0, 10);
+        var logPosition2 = new LogPosition(0, 20);
+        assertThat(checkpointFile.reachableCheckpoints()).hasSize(0);
+        checkpointAppender.checkPoint(
+                LogCheckPointEvent.NULL,
+                UNKNOWN_TRANSACTION_ID,
+                BASE_APPEND_INDEX,
+                KernelVersion.V5_22,
+                logPosition1,
+                logPosition1,
+                Instant.now(),
+                "first");
+        long positionAfterCheckpoint = ((DetachedCheckpointAppender) checkpointAppender).getCurrentPosition();
+        assertThat(Files.size(checkpointFile.getDetachedCheckpointFileForVersion(checkpointFile.getLowestLogVersion())))
+                .isGreaterThan(positionAfterCheckpoint);
+        // Trigger rotation on kernel version = rotate before reaching threshold
+        checkpointAppender.checkPoint(
+                LogCheckPointEvent.NULL,
+                UNKNOWN_TRANSACTION_ID,
+                BASE_APPEND_INDEX,
+                LATEST_KERNEL_VERSION,
+                logPosition2,
+                logPosition2,
+                Instant.now(),
+                "second");
+
+        assertThat(checkpointFile.getDetachedCheckpointFiles()).hasSize(2);
+        assertThat(Files.size(checkpointFile.getDetachedCheckpointFileForVersion(checkpointFile.getLowestLogVersion())))
+                .isEqualTo(positionAfterCheckpoint);
+    }
+
+    private LogFiles buildLogFiles(KernelVersion initialKernelVersion) throws IOException {
         var storeId = new StoreId(1, 2, "engine-1", "format-1", 3, 4);
-        return LogFilesBuilder.builder(databaseLayout, fileSystem, LatestVersions.LATEST_KERNEL_VERSION_PROVIDER)
+        return LogFilesBuilder.builder(databaseLayout, fileSystem, () -> initialKernelVersion)
                 .withRotationThreshold(rotationThreshold)
                 .withTransactionIdStore(transactionIdStore)
                 .withAppendIndexProvider(appendIndexProvider)

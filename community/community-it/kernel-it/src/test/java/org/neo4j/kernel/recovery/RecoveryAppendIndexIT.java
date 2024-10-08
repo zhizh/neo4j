@@ -22,7 +22,7 @@ package org.neo4j.kernel.recovery;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME;
 import static org.neo4j.configuration.GraphDatabaseSettings.fail_on_missing_files;
-import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLastLogFile;
+import static org.neo4j.kernel.recovery.RecoveryHelpers.removeLastCheckpointRecordFromLogFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -159,7 +159,7 @@ public class RecoveryAppendIndexIT {
 
         dbms.shutdown();
         // force recovery after existing checkpoint
-        removeLastCheckpointRecordFromLastLogFile(databaseLayout, fileSystem);
+        removeLastCheckpointRecordFromLogFile(databaseLayout, fileSystem);
 
         dbms = buildDbms();
         var restartedDb = (GraphDatabaseAPI) dbms.database(GraphDatabaseSettings.DEFAULT_DATABASE_NAME);
