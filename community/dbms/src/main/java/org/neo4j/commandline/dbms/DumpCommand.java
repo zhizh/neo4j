@@ -86,7 +86,12 @@ public class DumpCommand extends AbstractAdminCommand {
     private TargetOption target = new TargetOption();
 
     private static class TargetOption {
-        @Option(names = "--to-path", paramLabel = "<path>", description = "Destination folder of a database dump.")
+        @Option(
+                names = "--to-path",
+                paramLabel = "<path>",
+                description = "Destination folder of a database dump.\n"
+                        + "It is possible to dump databases into AWS S3 buckets (from Neo4j 5.19), "
+                        + "Google Cloud storage buckets (from Neo4j 5.21), and Azure buckets (from Neo4j 5.24).")
         private String toDir;
 
         @Option(names = "--to-stdout", description = "Use standard output as the destination for the database dump.")
