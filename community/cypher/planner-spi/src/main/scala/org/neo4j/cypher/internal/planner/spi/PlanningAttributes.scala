@@ -99,6 +99,10 @@ case class PlanningAttributesCacheKey(
 
 object ImmutablePlanningAttributes {
 
+  /**
+   * Space optimized version of PlanningAttributes.EffectiveCardinalities,
+   * intended to decrease heap usage of query cache.
+   */
   case class EffectiveCardinalities(
     private val amounts: ArraySeq[Double],
     private val originalAmounts: ArraySeq[Double]
@@ -153,7 +157,9 @@ object ImmutablePlanningAttributes {
       EffectiveCardinalities(ArraySeq.unsafeWrapArray(amounts), ArraySeq.unsafeWrapArray(originals))
     }
 
-    // Unexpected edge case, if cardinality is Double.MinValue we bump it one step.
+    // We don't expect negative cardinalities,
+    // but if we do encounter a cardinality of Double.MinValue we remap it to math.nextUp(MISSING).
+    // This is done to not hide unexpected cardinalities, caused by bugs, in plan descriptions.
     private def flatten(value: Double): Double = if (value == MISSING) math.nextUp(MISSING) else value
   }
 }
