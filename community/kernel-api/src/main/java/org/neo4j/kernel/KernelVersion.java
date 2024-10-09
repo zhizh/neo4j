@@ -86,6 +86,7 @@ public enum KernelVersion {
     public static final KernelVersion VERSION_UNIONS_AND_LIST_TYPE_CONSTRAINTS_INTRODUCED = V5_10;
     public static final KernelVersion VERSION_NODE_VECTOR_INDEX_INTRODUCED = V5_11;
     public static final KernelVersion VERSION_CDC_USER_METADATA_INTRODUCED = V5_12;
+    public static final KernelVersion CLUSTER_FALLBACK_IN_RAW = V5_12;
     public static final KernelVersion VERSION_CDC_LOGICAL_KEY_CHANGES = V5_15;
     public static final KernelVersion VERSION_ENVELOPED_TRANSACTION_LOGS_INTRODUCED = GLORIOUS_FUTURE;
     public static final KernelVersion VERSION_VECTOR_2_INTRODUCED = V5_18;

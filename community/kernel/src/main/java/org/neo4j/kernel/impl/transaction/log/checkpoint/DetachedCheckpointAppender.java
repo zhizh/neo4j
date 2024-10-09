@@ -207,9 +207,17 @@ public class DetachedCheckpointAppender extends LifecycleAdapter implements Chec
         boolean newKernelVersion = kernelVersion != previousKernelVersion;
         if (newKernelVersion) {
             if (kernelVersion.isLessThan(previousKernelVersion)) {
-                throw new IllegalStateException(
-                        "Can not rotate checkpoint log - supplied kernel version (%s) is lower than previously seen (%s)"
-                                .formatted(kernelVersion.name(), previousKernelVersion.name()));
+                // There is one case where it is allowed to see a lower kernel version than the previous one.
+                // In RawTxLog catchup with an older protocol version (other member on pre v5.12 binaries)
+                // the log files initialization will be done with v5.12 but the first checkpoint written
+                // will have the version the older member was actually on.
+                // Let this through and don't force a rotation
+                if (kernelVersion.isAtLeast(KernelVersion.CLUSTER_FALLBACK_IN_RAW)) {
+                    throw new IllegalStateException(
+                            "Can not rotate checkpoint log - supplied kernel version (%s) is lower than previously seen (%s)"
+                                    .formatted(kernelVersion.name(), previousKernelVersion.name()));
+                }
+                newKernelVersion = false;
             }
             previousKernelVersion = kernelVersion;
         }
