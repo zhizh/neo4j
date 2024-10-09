@@ -80,31 +80,6 @@ case class PlanningAttributes(
   private val attributes = productIterator.asInstanceOf[Iterator[Attribute[LogicalPlan, _]]].toSeq
 
   def asAttributes(idGen: IdGen): Attributes[LogicalPlan] = Attributes[LogicalPlan](idGen, attributes: _*)
-
-  // Let's not override the copy method of case classes
-  def createCopy(): PlanningAttributes =
-    PlanningAttributes(
-      solveds.clone[Solveds],
-      cardinalities.clone[Cardinalities],
-      effectiveCardinalities.clone[EffectiveCardinalities],
-      providedOrders.clone[ProvidedOrders],
-      leveragedOrders.clone[LeveragedOrders],
-      labelAndRelTypeInfos.clone[LabelAndRelTypeInfos],
-      cachedPropertiesPerPlan.clone[CachedPropertiesPerPlan]
-    )
-
-  def hasEqualSizeAttributes: Boolean = {
-    val fullAttributes = attributes.filter(!_.isInstanceOf[PartialAttribute[_, _]])
-    fullAttributes.tail.forall(_.size == fullAttributes.head.size)
-  }
-
-  def cacheKey: PlanningAttributesCacheKey =
-    PlanningAttributesCacheKey(
-      cardinalities,
-      effectiveCardinalities,
-      providedOrders,
-      leveragedOrders
-    )
 }
 
 /**

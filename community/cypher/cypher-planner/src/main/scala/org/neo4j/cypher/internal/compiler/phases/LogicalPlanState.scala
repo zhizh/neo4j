@@ -32,9 +32,18 @@ import org.neo4j.cypher.internal.ir.PlannerQuery
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.options.CypherEagerAnalyzerOption
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.EffectiveCardinalities
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LabelAndRelTypeInfos
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.LeveragedOrders
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.ProvidedOrders
+import org.neo4j.cypher.internal.planner.spi.PlanningAttributesCacheKey
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.ObfuscationMetadata
 import org.neo4j.cypher.internal.util.StepSequencer
+import org.neo4j.cypher.internal.util.attribution.Attribute
+import org.neo4j.cypher.internal.util.attribution.PartialAttribute
 
 /*
 This is the state that is used during query compilation. It accumulates more and more values as it passes through
@@ -71,7 +80,15 @@ case class LogicalPlanState(
     CachableLogicalPlanState(
       queryText,
       plannerName,
-      planningAttributes,
+      CachablePlanningAttributes(
+        planningAttributes.cardinalities,
+        planningAttributes.effectiveCardinalities,
+        planningAttributes.providedOrders,
+        planningAttributes.leveragedOrders,
+        planningAttributes.labelAndRelTypeInfos,
+        planningAttributes.cachedPropertiesPerPlan,
+        planningAttributes.solveds.getOption(logicalPlan.id).exists(_.readOnly)
+      ),
       anonymousVariableNameGenerator,
       statement(),
       semanticTable(),
@@ -130,7 +147,7 @@ object LogicalPlanState {
 case class CachableLogicalPlanState(
   queryText: String,
   plannerName: PlannerName,
-  planningAttributes: PlanningAttributes,
+  planningAttributes: CachablePlanningAttributes,
   anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
   statement: Statement,
   semanticTable: SemanticTable,
@@ -138,3 +155,41 @@ case class CachableLogicalPlanState(
   hasLoadCSV: Boolean = false,
   returnColumns: Seq[String]
 )
+
+case class CachablePlanningAttributes(
+  cardinalities: Cardinalities,
+  effectiveCardinalities: EffectiveCardinalities,
+  providedOrders: ProvidedOrders,
+  leveragedOrders: LeveragedOrders,
+  labelAndRelTypeInfos: LabelAndRelTypeInfos,
+  cachedPropertiesPerPlan: CachedPropertiesPerPlan,
+  readOnly: Boolean
+) {
+
+  def cacheKey: PlanningAttributesCacheKey =
+    PlanningAttributesCacheKey(
+      cardinalities,
+      effectiveCardinalities,
+      providedOrders,
+      leveragedOrders
+    )
+
+  // Let's not override the copy method of case classes
+  def createCopy(): CachablePlanningAttributes =
+    CachablePlanningAttributes(
+      cardinalities.clone[Cardinalities],
+      effectiveCardinalities.clone[EffectiveCardinalities],
+      providedOrders.clone[ProvidedOrders],
+      leveragedOrders.clone[LeveragedOrders],
+      labelAndRelTypeInfos.clone[LabelAndRelTypeInfos],
+      cachedPropertiesPerPlan.clone[CachedPropertiesPerPlan],
+      readOnly
+    )
+
+  def hasEqualSizeAttributes: Boolean = {
+    val fullAttributes = productIterator
+      .collect { case a: Attribute[_, _] if !a.isInstanceOf[PartialAttribute[_, _]] => a }
+      .toSeq
+    fullAttributes.tail.forall(_.size == fullAttributes.head.size)
+  }
+}

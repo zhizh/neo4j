@@ -305,12 +305,12 @@ case class CypherCurrentCompiler[CONTEXT <: RuntimeContext](
         if (procedureOrSchema.isDefined) {
           procedureOrSchema.get
         } else if (planHasDBMSProcedure(planState.logicalPlan)) {
-          if (planState.planningAttributes.solveds(planState.logicalPlan.id).readOnly) {
+          if (planState.planningAttributes.readOnly) {
             DBMS_READ
           } else {
             DBMS
           }
-        } else if (planState.planningAttributes.solveds(planState.logicalPlan.id).readOnly) {
+        } else if (planState.planningAttributes.readOnly) {
           READ_ONLY
         } else if (CypherCurrentCompiler.columnNames(planState.logicalPlan).isEmpty) {
           WRITE
