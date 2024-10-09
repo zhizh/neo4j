@@ -17,16 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing
+package org.neo4j.cypher.internal.runtime.graphtemplate.parsing
 
+import MultiLineParsedRelFinder.RelData
+import MultiLineParsedRelFinder.RelPath
+import MultiLineParsedRelFinder.chooseOption
+import MultiLineParsedRelFinder.detailRegex
+import MultiLineParsedRelFinder.maybeLineChar
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing.MultiLineParsedRelFinder.RelData
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing.MultiLineParsedRelFinder.RelPath
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing.MultiLineParsedRelFinder.chooseOption
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing.MultiLineParsedRelFinder.detailRegex
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing.MultiLineParsedRelFinder.maybeLineChar
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
 /**

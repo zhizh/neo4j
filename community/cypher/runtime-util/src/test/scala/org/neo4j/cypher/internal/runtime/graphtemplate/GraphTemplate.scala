@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.cypher.internal.runtime.spec.graphtemplate
+package org.neo4j.cypher.internal.runtime.graphtemplate
 
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
@@ -201,7 +201,7 @@ class GraphTemplateTest extends CypherFunSuite {
       .node("a")
       .labels
 
-    labels should contain only ("L1", "L2")
+    labels.should(contain).only("L1", "L2")
   }
 
   test("rel type propagated") {

@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing
+package org.neo4j.cypher.internal.runtime.graphtemplate.parsing
 
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 

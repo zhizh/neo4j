@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.cypher.internal.runtime.spec.graphtemplate
+package org.neo4j.cypher.internal.runtime.graphtemplate
 
 import org.neo4j.graphdb.Label
 import org.neo4j.graphdb.Node
@@ -27,19 +27,19 @@ import org.neo4j.graphdb.Transaction
 import org.neo4j.values.virtual.PathReference
 import org.neo4j.values.virtual.VirtualValues
 
-trait TemplateInstantiator[Node, Rel] {
-  def createNode(labels: Seq[String]): Node
-  def createRel(from: Node, to: Node, relType: Option[String]): Rel
+trait TemplateInstantiator[NODE, REL] {
+  def createNode(labels: Seq[String]): NODE
+  def createRel(from: NODE, to: NODE, relType: Option[String]): REL
 }
 
-case class InstantiatedGraph[Node, Rel](
-  namedNodes: Map[String, Node],
-  nodes: Seq[Node],
-  namedRels: Map[String, Rel],
-  rels: Seq[Rel]
+case class InstantiatedGraph[NODE, REL](
+  namedNodes: Map[String, NODE],
+  nodes: Seq[NODE],
+  namedRels: Map[String, REL],
+  rels: Seq[REL]
 ) {
-  def node(name: String): Node = namedNodes(name)
-  def rel(name: String): Rel = namedRels(name)
+  def node(name: String): NODE = namedNodes(name)
+  def rel(name: String): REL = namedRels(name)
 }
 
 object InstantiatedGraph {

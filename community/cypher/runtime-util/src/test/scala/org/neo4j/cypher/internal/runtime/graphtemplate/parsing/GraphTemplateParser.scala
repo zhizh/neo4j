@@ -17,12 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.cypher.internal.runtime.spec.graphtemplate.parsing
+package org.neo4j.cypher.internal.runtime.graphtemplate.parsing
 
 import org.neo4j.cypher.internal.expressions.SemanticDirection
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.Directedness
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.GraphTemplate
-import org.neo4j.cypher.internal.runtime.spec.graphtemplate.TemplateId
+import org.neo4j.cypher.internal.runtime.graphtemplate.Directedness
+import org.neo4j.cypher.internal.runtime.graphtemplate.GraphTemplate
+import org.neo4j.cypher.internal.runtime.graphtemplate.TemplateId
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
 import scala.collection.mutable

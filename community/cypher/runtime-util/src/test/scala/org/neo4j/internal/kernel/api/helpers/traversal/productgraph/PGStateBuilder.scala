@@ -50,9 +50,10 @@ object PGStateBuilder {
       target: PGStateBuilder.BuilderState,
       relPredicate: Predicate[RelationshipDataReader] = Predicates.alwaysTrue(),
       types: Array[Int] = null,
-      direction: Direction = Direction.BOTH
+      direction: Direction = Direction.BOTH,
+      name: SlotOrName = SlotOrName.None
     ): Unit = {
-      val re = new RelationshipExpansion(this.state, relPredicate, types, direction, SlotOrName.none, target.state)
+      val re = new RelationshipExpansion(this.state, relPredicate, types, direction, name, target.state)
       this.state.setRelationshipExpansions(extend(this.state.getRelationshipExpansions, re))
       target.state.setReverseRelationshipExpansions(extend(target.state.getReverseRelationshipExpansions, re))
     }

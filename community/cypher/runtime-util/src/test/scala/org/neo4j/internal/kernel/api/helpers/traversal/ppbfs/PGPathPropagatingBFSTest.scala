@@ -19,59 +19,27 @@
  */
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs
 
-import org.neo4j.common.EntityType
 import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
-import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode.Trail
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
-import org.neo4j.internal.kernel.api.KernelReadTracer
-import org.neo4j.internal.kernel.api.NodeCursor
-import org.neo4j.internal.kernel.api.RelationshipDataReader
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.OrderedResults
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`()-->()<--(a)-->(b)<--(c)-->(d)<--(e)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)-->(b)<--(c)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)<--(b)-->(a)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(a)<--(b)-->(c)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)-->(n3)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(n1)-->(n2)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b))+ (t)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b)--(c))* (t) [single transition]`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)--(b)--(c))* (t)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)-->(b))* (t)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)-->(b))+ (t)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.`(s) ((a)-->(b)<--(c))+ (t)`
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.anyDirectedPath
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.singleRelPath
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest.testGraphs
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TestGraph.Rel
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TracedPath.PathEntity
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventPPBFSHooks
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest._
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.AddTarget
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.Expand
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.ExpandNode
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.NextLevel
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.ReturnPath
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.LoggingPPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
-import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.VisualizingPPBSHooks
-import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder
-import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder.MultiRelationshipBuilder.r
-import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor.DataGraphRelationshipCursor
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipPredicate
-import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.State
-import org.neo4j.kernel.api.AssertOpen
 import org.neo4j.memory.EmptyMemoryTracker
 import org.neo4j.memory.LocalMemoryTracker
 import org.neo4j.memory.MemoryTracker
-import org.neo4j.storageengine.api.RelationshipDirection
-import org.neo4j.storageengine.api.RelationshipSelection
 
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
-class PGPathPropagatingBFSTest extends CypherFunSuite {
+class PGPathPropagatingBFSTest extends CypherFunSuite with PGPathPropagatingBFSTestBase {
 
   /*************************************
    * simple tests on the nfa traversal *
@@ -964,6 +932,152 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     events should contain(ExpandNode(graph.c, TraversalDirection.BACKWARD))
   }
 
+  /****************************************
+   * Target node pruning regression cases *
+   ****************************************/
+
+  test("target node purging challenger") {
+
+    // This test highlights a problem that any target signpost purging solution we've tried has failed to solve.
+    // Namely that after we've purged target a given signpost, which we later re-register towards a new target,
+    // we're not guaranteed to register it at its minimum distance first.
+
+    // We first explain the ingredients to the test, after which we explain the cause of failure
+    //
+    // INGREDIENTS:
+    //
+    // * A SHORTEST 2 path selector
+    //
+    // * We need a target signpost `problem_sp` which lies on two paths to a target t1, p1 of length l1 and p2 of length l2
+    //   where, problem_sp is at index i1 in p1 and i2 in p2, where:
+    //   - l1 < l2
+    //   - l2 - i2 < l1 - i1    (I.e even if p1 is shorter, the subpath that remains after tsp is shorter in p2.)
+    //   - the path p0 = p1.subpath(0, i1).concat(p2.subpath(i2, l2)) shouldn't be a trail in the data graph
+    //
+    // * We then need a target t2 further away, that has t1 on it's way back from source like
+    //    (s) -- ... -->(t) --- ... --->(t2)
+    //
+    // * And we need a longer path from (s) to tsp.prevNode which is completely disconnected from the rest
+    //   of the graph, and longer than the shortest path we trace from (s) to (t2)
+    //
+    // Model for how the p0,p1,p2 paths can look:
+    //
+    //  p0 = (s)-...->()-[dup]->()-...->()-[problem_sp]->()-...->()-[dup]->()-...->(t)
+    //
+    //  p1 = (s)-...->()-[dup]->()-...->()-[problem_sp]->()-...->(t)
+    //
+    //  p2 = (s)-...->()-[tsp]->()-...->()-[problem_sp]->()-...->(t)
+    //
+    //
+    // This model fits the following pattern,
+    //
+    //  (s) (()-[:DUP|R1|R3]->())+ ()-[:PROBLEM]->() (()-[:DUP|R2]->())+ (()-[:REST]->())* (:T)
+    //
+    // on the following graphs,
+    //
+    //
+    //                    ┌───────────PROBLEM────────────┐
+    //                    │            ┌──┐              │
+    //                    │    ┌──R1───▶n2│───R1───┐     │
+    //                    │ ┌──┴─┐     └──┘       ┌▼───┐ │
+    //                    │ │    │                │    ├─┘
+    //                    └─▶n0:S│──────DUP──────▶│ n1 │      ┌─────┐      ┌───┐      ┌───┐      ┌─────┐
+    //                      │    │                │    ├─REST─▶n13:T├─REST─▶n14├─REST─▶n15├─REST─▶n16:T│
+    //                      └┬─┬─┘ ┌──┐    ┌──┐   └▲─▲─┘      └─────┘      └───┘      └───┘      └─────┘
+    //                       │ └R2─▶n3├─R2─▶n4├─R2─┘ │
+    //    ┌─────────R3───────┘     └──┘    └──┘      └────────R3───────┐
+    //    │┌──┐    ┌──┐    ┌──┐    ┌──┐    ┌──┐    ┌───┐    ┌───┐    ┌─┴─┐
+    //    └▶n5├─R3─▶n6├─R3─▶n7├─R3─▶n8├─R3─▶n9├─R3─▶n10├─R3─▶n11├─R3─▶n12│
+    //     └──┘    └──┘    └──┘    └──┘    └──┘    └───┘    └───┘    └───┘
+
+    // where the paths p0,p1,p2 are given by
+    //
+    // p0 = (s)-[:DUP]->(n1)-[sp_problem:PROBLEM]->(s)-[:DUP]->()-[:REST]->(t1)
+    //
+    // p1 = (s)-[:DUP]->(n1)-[sp_problem:PROBLEM]->(s)-[:R1 * 2]->()-[:REST]->(t1)
+    //
+    // p2 = (s)-[:R2 *3]->(n1)-[sp_problem:PROBLEM]->(s)-[:DUP]->()-[:REST]->(t1)
+    //
+    //
+    // CAUSE OF FAILURE:
+    //
+    // This is what will happen (in an algorithm with faulty target signpost purging):
+    //
+    // * We will trace p0 first, but since it isn't a trail in the data graph, we'll prune (among other source signposts)
+    //   the source signpost corresponding to sp_problem at lengthFromSource == 3. We will however add
+    //   minDistToTarget==2 to the target signpost corresponding to sp_problem
+    //
+    // * We then trace p1 and add lengthFromSource == 4 to the source signpost corresponding to sp_problem.
+    //   We also decrement the remainingTargetCount to 1
+    //
+    // * We then trace p2 and add lengthFromSource == 5 to the source signpost corresponding to sp_problem.
+    //   We also decrement the remainingTargetCount to 0, and set minDistToTarget==NO_SUCH_DISTANCE in the
+    //   target signpost corresponding to sp_problem during target signpost purging
+    //
+    // * Then when the BFS reaches t2, it will try to trace the path from (s) to (t2) of length 7, however,
+    //   when the tracer reaches (t1) it will stop since (t1) won't have any source signpost with
+    //   lengthFromSource==4, since this was pruned when we traced p0. This is still correct!
+    //   When it tries to trace this path, it will register target signposts the whole way from t1 to t2,
+    //   and t1 will be registered to propagate the length data corresponding to p1,
+    //
+    // * We will then trace the path
+    //
+    //    (s)-[:DUP]->(n1)-[sp_problem:PROBLEM]->(s)-[:R1 * 2]->()-[:REST]->(t1)-[:REST * 3]->(t2),
+    //
+    //   and when we do this we will re-set the minDistToTarget in the target signpost corresponding to sp_problem
+    //   to minDistToTarget=7. THIS IS INCORRECT! Indeed, sp_problem can follow an even shorter path to t2, namely,
+    //
+    //    (n1)-[sp_problem:PROBLEM]->(s)-[:DUP]->()-[:REST]->(t1)-[:REST * 3]->(t2)
+    //
+    //   with a distance to target of 6.
+    //
+    // * This makes it so that the longer subpath through all the :R3 rels are propagated up a non-shortest
+    //   path to a target it's first propagation, and won't be traced with the shorter path to the target which we
+    //   missed.
+
+    val graph = TestGraph.fromTemplate("""
+                       .----------[:PROBLEM]----------.
+                       | .----[:R1]--->()---[:R1]---. |
+                       v |                          v |
+                     (START)---------[:DUP]-------->( )-[:REST]->(:T)-[:REST]->()-[:REST]->()-[:REST]->(:T)
+                       | |                          ^ ^
+      .-----[:R3]------' '[:R2]->()-[:R2]->()-[:R2]-' '------[:R3]---------.
+      v                                                                    |
+     ()-[:R3]->()-[:R3]->()-[:R3]->()-[:R3]->()-[:R3]->()-[:R3]->()-[:R3]->()
+        """)
+
+    val R1 = graph relTypes "R1"
+    val R2 = graph relTypes "R2"
+    val R3 = graph relTypes "R3"
+    val DUP = graph relTypes "DUP"
+    val PROBLEM = graph relTypes "PROBLEM"
+    val REST = graph relTypes "REST"
+
+    val nfa = {
+      import NfaDsl.Implicits._
+      import scala.language.postfixOps
+      // format: off
+      "s"
+        .|> ("a"-(DUP:|R1:|R3)->"b"+)
+        .|> ("c"-PROBLEM->"d")
+        .|> ("e"-(DUP:|R2)->"f"+)
+        .|> ("g"-REST->"h"*)
+        .|> ("t" where graph.hasLabel("T"))
+      // format: on
+    }
+
+    val lengths = fixture()
+      .withGraph(graph.graph)
+      .withNfa(nfa.build)
+      .from(graph node "START")
+      .withK(2)
+      .project(TracedPath.fromSignpostStack(_).length)
+      .filter(len => len != 9 && len != 10)
+      .toList
+
+    lengths shouldBe Seq(5, 6, 8, 15)
+  }
+
   /**
   Walk mode
    */
@@ -1359,53 +1473,6 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
     the[Exception] thrownBy iter.asScala.toList should have message "boom"
   }
 
-  /***********************************************************************
-  * Generated graphs/fixtures, testing for equivalence with naive search *
-  ***********************************************************************/
-
-  for {
-    nfa <- Seq(
-      `(s) ((a)-->(b))* (t)`,
-      `(s) ((a)-->(b))+ (t)`,
-      `(s) ((a)--(b))+ (t)`,
-      `(s) ((a)--(b)--(c))* (t)`,
-      `(s) ((a)--(b)--(c))* (t) [single transition]`
-    )
-    graph <- testGraphs
-    into <- Seq(true, false)
-    grouped <- Seq(true, false)
-    matchMode <- Seq(TraversalMatchMode.Trail, TraversalMatchMode.Walk)
-    k <- if (matchMode == Trail) Seq(Int.MaxValue, 1, 2) else Seq(1, 2, 5)
-  } {
-    test(
-      s"running the algorithm gives the same results as naive search. into=$into matchMode=$matchMode grouped=$grouped k=$k nfa=$nfa graph=${graph.render}"
-    ) {
-      var f = fixture()
-        .withGraph(graph.graph)
-        .from(graph.source)
-        .withNfa(nfa)
-        .withMatchMode(matchMode)
-
-      if (matchMode == TraversalMatchMode.Walk) {
-        f = f.withMaxDepth(3)
-      }
-
-      if (into) {
-        f = f.into(graph.target)
-      }
-
-      if (grouped) {
-        f = f.grouped
-      }
-
-      if (k != Int.MaxValue) {
-        f = f.withK(k)
-      }
-
-      f.assertExpected()
-    }
-  }
-
   /*********************************************************
    * Examples of NFAs which currently break the algorithm! *
    *********************************************************/
@@ -1526,295 +1593,6 @@ class PGPathPropagatingBFSTest extends CypherFunSuite {
       Seq(a, ab, b)
     )
   }
-
-  /** Recursively compares groups of paths until we reach an expected group that is smaller than the remaining k */
-  private def compareGroups(
-    resultGroups: List[Set[TracedPath]],
-    expectedGroups: List[Set[TracedPath]],
-    k: Int
-  ): Unit = {
-    (resultGroups, expectedGroups) match {
-      case (res :: resTail, exp :: expTail) if exp.size <= k =>
-        res shouldBe exp
-        compareGroups(resTail, expTail, k - exp.size)
-
-      case (res :: _, exp :: _) =>
-        res.size shouldBe k
-        exp should contain allElementsOf res
-
-      case (res, Nil) =>
-        res shouldBe empty
-
-      case (Nil, _) =>
-        k shouldBe 0
-    }
-  }
-
-  case class FixtureBuilder[A](
-    graph: TestGraph,
-    nfa: PGStateBuilder,
-    source: Long,
-    intoTarget: Long,
-    searchMode: SearchMode,
-    isGroup: Boolean,
-    maxDepth: Int,
-    k: Int,
-    projection: SignpostStack => A,
-    predicate: A => Boolean,
-    mt: MemoryTracker,
-    hooks: PPBFSHooks,
-    assertOpen: AssertOpen,
-    matchMode: TraversalMatchMode
-  ) {
-
-    def withGraph(graph: TestGraph): FixtureBuilder[A] = copy(graph = graph)
-
-    def withNfa(f: PGStateBuilder => Unit): FixtureBuilder[A] = copy(nfa = {
-      val builder = new PGStateBuilder
-      f(builder)
-      builder
-    })
-    def from(source: Long): FixtureBuilder[A] = copy(source = source)
-
-    def into(intoTarget: Long, searchMode: SearchMode): FixtureBuilder[A] =
-      copy(intoTarget = intoTarget, searchMode = searchMode)
-
-    def into(intoTarget: Long): FixtureBuilder[A] =
-      into(intoTarget, if (intoTarget == -1L) SearchMode.Unidirectional else SearchMode.Bidirectional)
-
-    def withMode(searchMode: SearchMode): FixtureBuilder[A] = copy(searchMode = searchMode)
-    def withMatchMode(mode: TraversalMatchMode): FixtureBuilder[A] = copy(matchMode = mode)
-    def grouped: FixtureBuilder[A] = copy(isGroup = true)
-    def withMaxDepth(maxDepth: Int): FixtureBuilder[A] = copy(maxDepth = maxDepth)
-    def withK(k: Int): FixtureBuilder[A] = copy(k = k)
-    def withMemoryTracker(mt: MemoryTracker): FixtureBuilder[A] = copy(mt = mt)
-    def onAssertOpen(assertOpen: => Unit): FixtureBuilder[A] = copy(assertOpen = () => assertOpen)
-
-    /** NB: wipes any configured filter, since the iterated item type will change */
-    def project[B](projection: SignpostStack => B): FixtureBuilder[B] =
-      FixtureBuilder[B](
-        graph,
-        nfa,
-        source,
-        intoTarget,
-        searchMode,
-        isGroup,
-        maxDepth,
-        k,
-        projection,
-        _ => true,
-        mt,
-        hooks,
-        assertOpen,
-        matchMode
-      )
-    def filter(predicate: A => Boolean): FixtureBuilder[A] = copy(predicate = predicate)
-
-    def tracker(memoryTracker: MemoryTracker, hooks: PPBFSHooks) =
-      if (matchMode == TraversalMatchMode.Walk) TraversalMatchModeFactory.walkMode()
-      else TraversalMatchModeFactory.trailMode(memoryTracker, hooks)
-
-    def build(createPathTracer: (MemoryTracker, PPBFSHooks) => PathTracer[A] =
-      (memoryTracker, hooks) => new PathTracer(memoryTracker, tracker(memoryTracker, hooks), hooks)) =
-      new PGPathPropagatingBFS[A](
-        source,
-        nfa.getStart.state,
-        intoTarget,
-        nfa.getFinal.state,
-        searchMode,
-        new MockGraphCursor(graph),
-        createPathTracer(mt, hooks),
-        projection(_),
-        predicate(_),
-        isGroup,
-        maxDepth,
-        k,
-        nfa.stateCount,
-        mt,
-        hooks,
-        assertOpen,
-        tracker(EmptyMemoryTracker.INSTANCE, hooks)
-      )
-
-    def toList: Seq[A] = build().asScala.toList
-
-    def logged(level: LoggingPPBFSHooks = LoggingPPBFSHooks.debug): FixtureBuilder[A] = copy(hooks = level)
-
-    /** Render graphviz to stdout */
-    def viz(): FixtureBuilder[A] = copy(hooks = new VisualizingPPBSHooks)
-
-    /** Run the iterator with event hooks attached */
-    def events(): Seq[EventRecorder.Event] = {
-      val recorder = new EventRecorder
-      // run the iterator
-      copy(hooks = new EventPPBFSHooks(recorder)).toList
-      recorder.getEvents
-    }
-
-    /** Run the iterator and extract the entity ids from the yielded paths.
-     * Graph IDs are unique across nodes and relationships so there is no risk of inadvertent overlap when comparing. */
-    def paths()(implicit ev: A =:= TracedPath): Seq[Seq[Long]] =
-      build().asScala.map(_.entities.map(_.id).toSeq).toSeq
-
-    /** Runs a naive/slow DFS equivalent of the algorithm and compares results with the real implementation */
-    def assertExpected()(implicit ev: A =:= TracedPath): Unit = {
-      val result = this.toList.map(ev)
-      val expected = allPaths()
-
-      if (k == Int.MaxValue) {
-        // with no K value set, we can just compare all the paths without worrying about selectivity
-        result should contain theSameElementsAs expected
-      } else {
-        // if we have a limit then we need to ensure that the paths beneath that limit have been returned
-        val orderedResults = OrderedResults.fromSeq(result)
-        val orderedExpected = OrderedResults.fromSeq(expected)
-        if (isGroup) {
-          // this is the simpler case: we can apply the K limit to each target list since they are already grouped
-          orderedResults shouldBe orderedExpected.takeGroups(k)
-        } else {
-          // this is the most complex case since for each target we have to account for nondeterminism in chosen paths
-          orderedResults.targets shouldBe orderedExpected.targets
-
-          for ((target, resultPaths) <- orderedResults.byTargetThenLength) {
-            val expectedPaths = orderedExpected.paths(target)
-
-            compareGroups(resultPaths, expectedPaths, k)
-          }
-        }
-      }
-    }
-
-    /** Runs a recursive exhaustive depth first search to provide a comparison.
-     * Note that this does not truncate the result set by K, since that would be nondeterministic for non-grouped cases */
-    def allPaths()(implicit ev: A =:= TracedPath): Seq[TracedPath] = {
-
-      def recurseMultiRelExpansion(
-        stack: List[PathEntity],
-        node: Long,
-        rels: List[MultiRelationshipExpansion.Rel],
-        nodes: List[MultiRelationshipExpansion.Node],
-        targetState: State,
-        totalDepth: Int
-      ): Seq[TracedPath] = {
-        (rels, nodes) match {
-          case (r :: rels, n :: nodes) =>
-            for {
-              (rel, dir) <- graph.rels(node).toSeq
-              nextNode = dir match {
-                case RelationshipDirection.OUTGOING => rel.target
-                case RelationshipDirection.INCOMING => rel.source
-                case RelationshipDirection.LOOP     => node
-                case _                              => fail("inexhaustive match")
-              }
-              if dir.matches(r.direction) &&
-                r.predicate.test(rel) &&
-                n.predicate.test(nextNode) &&
-                (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
-
-              newStack = new PathEntity(n.slotOrName, nextNode, EntityType.NODE) ::
-                new PathEntity(r.slotOrName, rel.id, EntityType.RELATIONSHIP) ::
-                stack
-
-              path <- recurseMultiRelExpansion(newStack, nextNode, rels, nodes, targetState, totalDepth)
-            } yield path
-
-          case (r :: Nil, Nil) =>
-            for {
-              (rel, dir) <- graph.rels(node).toSeq
-              nextNode = dir match {
-                case RelationshipDirection.OUTGOING => rel.target
-                case RelationshipDirection.INCOMING => rel.source
-                case RelationshipDirection.LOOP     => node
-                case _                              => fail("inexhaustive match")
-              }
-              if dir.matches(r.direction) &&
-                r.predicate.test(rel) &&
-                targetState.test(nextNode) &&
-                (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
-
-              newStack = new PathEntity(targetState.slotOrName, nextNode, EntityType.NODE) ::
-                new PathEntity(r.slotOrName, rel.id, EntityType.RELATIONSHIP) ::
-                stack
-
-              path <- recurse(newStack, nextNode, targetState, totalDepth)
-            } yield path
-
-          case _ => fail("badly formatted multi rel expansion")
-        }
-      }
-
-      def recurse(stack: List[PathEntity], node: Long, state: State, totalDepth: Int): Seq[TracedPath] = {
-        if (maxDepth != -1 && totalDepth > maxDepth) {
-          Seq.empty
-        } else {
-          val nodeJuxtapositions = state.getNodeJuxtapositions
-            .filter(nj => nj.targetState().test(node))
-            .flatMap(nj =>
-              recurse(PathEntity.fromNode(nj.targetState(), node) :: stack, node, nj.targetState(), totalDepth)
-            )
-
-          val relExpansions = for {
-            re <- state.getRelationshipExpansions
-            (rel, dir) <- graph.rels(node)
-            nextNode = dir match {
-              case RelationshipDirection.OUTGOING => rel.target
-              case RelationshipDirection.INCOMING => rel.source
-              case RelationshipDirection.LOOP     => node
-              case _                              => fail("inexhaustive match")
-            }
-            if dir.matches(re.direction) &&
-              re.testRelationship(rel) &&
-              re.targetState().test(nextNode) &&
-              (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
-
-            newStack = PathEntity.fromNode(re.targetState(), nextNode) ::
-              PathEntity.fromRel(re, rel.id) ::
-              stack
-
-            path <- recurse(newStack, nextNode, re.targetState(), totalDepth + 1)
-          } yield path
-
-          val multRelExpansions = for {
-            mre <- state.getMultiRelationshipExpansions
-            path <- recurseMultiRelExpansion(
-              stack,
-              node,
-              mre.rels.toList,
-              mre.nodes.toList,
-              mre.targetState,
-              totalDepth + mre.length()
-            )
-          } yield path
-
-          val wholePath = Option.when(state.isFinalState && (intoTarget == -1L || intoTarget == node))(new TracedPath(
-            stack.reverse
-          )).toSeq
-
-          wholePath ++ nodeJuxtapositions ++ relExpansions ++ multRelExpansions
-        }
-      }
-
-      recurse(List(PathEntity.fromNode(nfa.getStart.state, source)), source, nfa.getStart.state, 0)
-        .filter(path => this.predicate(ev.flip(path)))
-    }
-  }
-
-  private def fixture() = FixtureBuilder[TracedPath](
-    graph = TestGraph.empty,
-    nfa = new PGStateBuilder,
-    source = -1L,
-    intoTarget = -1L,
-    SearchMode.Unidirectional,
-    isGroup = false,
-    maxDepth = -1,
-    k = Int.MaxValue,
-    projection = TracedPath.fromSignpostStack,
-    predicate = _ => true,
-    mt = EmptyMemoryTracker.INSTANCE,
-    hooks = PPBFSHooks.NULL,
-    assertOpen = () => (),
-    matchMode = TraversalMatchMode.Trail
-  )
 }
 
 object PGPathPropagatingBFSTest {
@@ -1826,48 +1604,6 @@ object PGPathPropagatingBFSTest {
 
   private def singleRelPath(sb: PGStateBuilder): Unit = {
     sb.newState(isStartState = true).addRelationshipExpansion(sb.newState(isFinalState = true))
-  }
-
-  /** Divides up paths by their target, then chunks them into groups of ascending path length */
-  case class OrderedResults(byTargetThenLength: Map[Long, List[Set[TracedPath]]]) {
-    def targets: Set[Long] = byTargetThenLength.keySet
-    def paths(target: Long): List[Set[TracedPath]] = byTargetThenLength(target)
-
-    /** Applies the K limit to each target group list */
-    def takeGroups(k: Int): OrderedResults = copy(byTargetThenLength =
-      byTargetThenLength
-        .view
-        .mapValues(_.take(k))
-        .toMap
-    )
-
-    override def toString: String = {
-      val sb = new StringBuilder()
-      sb.append("\nOrdered results:\n")
-      byTargetThenLength.toSeq.sortBy(_._1).foreach { case (target, pathGroups) =>
-        sb.append(s"- Target $target:\n")
-        pathGroups.foreach { group =>
-          val len = group.head.length
-          sb.append(s"  - Length $len (${group.size} paths)\n")
-          group.foreach { path =>
-            sb.append(s"    - $path\n")
-          }
-        }
-      }
-      sb.toString()
-    }
-  }
-
-  object OrderedResults {
-
-    def fromSeq(seq: Seq[TracedPath]): OrderedResults = OrderedResults(
-      seq
-        .groupBy(_.target)
-        .view
-        .mapValues(_.groupBy(_.length).toList.sortBy(_._1).map(_._2.toSet))
-        .toMap
-    )
-
   }
 
   // noinspection TypeAnnotation
@@ -1942,248 +1678,4 @@ object PGPathPropagatingBFSTest {
     val graph = g.build()
   }
 
-  private class Nfa(name: String, construct: PGStateBuilder => Unit) extends Function[PGStateBuilder, Unit] {
-    override def toString: String = name
-    def apply(v1: PGStateBuilder): Unit = construct(v1)
-  }
-
-  private def nfa(name: String)(construct: PGStateBuilder => Unit): Nfa = new Nfa(name, construct)
-
-  private val `(s) ((a)-->(b))* (t)` : Nfa = nfa("(s) ((a)-->(b))* (t)") { sb =>
-    val s = sb.newState("s", isStartState = true)
-    val a = sb.newState("a")
-    val b = sb.newState("b")
-    val t = sb.newState("t", isFinalState = true)
-
-    s.addNodeJuxtaposition(a)
-    a.addRelationshipExpansion(b, direction = Direction.OUTGOING)
-    b.addNodeJuxtaposition(a)
-    b.addNodeJuxtaposition(t)
-    s.addNodeJuxtaposition(t)
-  }
-
-  private val `(s) ((a)-->(b))+ (t)` : Nfa = nfa("(s) ((a)-->(b))+ (t)") { sb =>
-    val s = sb.newState("s", isStartState = true)
-    val a = sb.newState("a")
-    val b = sb.newState("b")
-    val t = sb.newState("t", isFinalState = true)
-
-    s.addNodeJuxtaposition(a)
-    a.addRelationshipExpansion(b, direction = Direction.OUTGOING)
-    b.addNodeJuxtaposition(a)
-    b.addNodeJuxtaposition(t)
-  }
-
-  private val `(s) ((a)--(b))+ (t)` : Nfa = nfa("(s) ((a)--(b))+ (t)") { sb =>
-    val s = sb.newState("s", isStartState = true)
-    val a = sb.newState("a")
-    val b = sb.newState("b")
-    val t = sb.newState("t", isFinalState = true)
-
-    s.addNodeJuxtaposition(a)
-    a.addRelationshipExpansion(b, direction = Direction.BOTH)
-    b.addNodeJuxtaposition(a)
-    b.addNodeJuxtaposition(t)
-  }
-
-  private val `(s) ((a)--(b)--(c))* (t)` : Nfa = nfa("(s) ((a)--(b)--(c))* (t)") { sb =>
-    val s = sb.newState("s", isStartState = true)
-    val a = sb.newState("a")
-    val c = sb.newState("c")
-    val t = sb.newState("t", isFinalState = true)
-
-    s.addNodeJuxtaposition(a)
-    a.addMultiRelationshipExpansion(c, r().n("b").r())
-    c.addNodeJuxtaposition(a)
-    c.addNodeJuxtaposition(t)
-    s.addNodeJuxtaposition(t)
-  }
-
-  private val `(s) ((a)--(b)--(c))* (t) [single transition]` : Nfa =
-    nfa("(s) ((a)--(b)--(c))* (t) [single transition]") { sb =>
-      val s = sb.newState("s", isStartState = true)
-      val a = sb.newState("a")
-      val b = sb.newState("b")
-      val c = sb.newState("c")
-      val t = sb.newState("t", isFinalState = true)
-
-      s.addNodeJuxtaposition(a)
-      a.addRelationshipExpansion(b, direction = Direction.BOTH)
-      b.addRelationshipExpansion(c, direction = Direction.BOTH)
-      c.addNodeJuxtaposition(a)
-      c.addNodeJuxtaposition(t)
-      s.addNodeJuxtaposition(t)
-    }
-
-  private val `(s) ((a)-->(b)<--(c))+ (t)` : Nfa = nfa("(s) ((a)-->(b)<--(c))+ (t)") { sb =>
-    val s = sb.newState("s", isStartState = true)
-    val a = sb.newState("a")
-    val c = sb.newState("c")
-    val t = sb.newState("t", isFinalState = true)
-
-    s.addNodeJuxtaposition(a)
-    a.addMultiRelationshipExpansion(c, r(direction = Direction.OUTGOING).n("b").r(direction = Direction.INCOMING))
-    c.addNodeJuxtaposition(a)
-    c.addNodeJuxtaposition(t)
-  }
-
-  private case class NamedGraph(render: String, graph: TestGraph, source: Long, target: Long)
-
-  /** a generated series of graphs consisting of a variable length chain of relationships from (start) to (end),
-   * with another variable length chain connecting two nodes from the original */
-  private val testGraphs: Seq[NamedGraph] = {
-    for {
-      mainLength <- 1 to 4
-      g2 = TestGraph.empty.line(mainLength)
-      start = g2.nodes.min
-      end = g2.nodes.max
-
-      n1 <- g2.nodes
-      n2 <- g2.nodes
-      secondaryLength <- 1 to 3
-      g3 = g2.chainRel(n1, n2, secondaryLength)
-    } yield NamedGraph(
-      s"(n$start)-$mainLength->(n$end), (n$n1)-$secondaryLength->(n$n2)",
-      g3,
-      start,
-      end
-    )
-  }
-
-}
-
-case class TestGraph(nodes: Set[Long], rels: Set[TestGraph.Rel]) {
-  def lastId: Long = nodes.size + rels.size
-  def nextId: Long = lastId + 1
-
-  def withNode(): TestGraph = copy(nodes = nodes + nextId)
-
-  def withRel(source: Long, target: Long, relType: Int): TestGraph = {
-    assert(nodes.contains(source) && nodes.contains(target))
-    copy(rels = rels + Rel(nextId, source, target, relType))
-  }
-
-  def rels(node: Long): Iterator[(Rel, RelationshipDirection)] =
-    rels.iterator.collect {
-      case rel if node == rel.source && node == rel.target =>
-        rel -> RelationshipDirection.LOOP
-      case rel if node == rel.source =>
-        rel -> RelationshipDirection.OUTGOING
-      case rel if node == rel.target =>
-        rel -> RelationshipDirection.INCOMING
-    }
-
-  def builder = new TestGraph.Builder(this)
-
-  def line(length: Int): TestGraph =
-    withBuilder(_.line(length))
-
-  def chainRel(source: Long, target: Long, length: Int): TestGraph =
-    withBuilder(_.chainRel(source, target, length))
-
-  private def withBuilder(f: TestGraph.Builder => Unit): TestGraph = {
-    val b = builder
-    f(b)
-    b.build()
-  }
-}
-
-object TestGraph {
-
-  case class Rel(id: Long, source: Long, target: Long, relType: Int) extends RelationshipDataReader {
-
-    def opposite(x: Long): Long =
-      x match {
-        case `target` => source
-        case `source` => target
-        case _        => throw new IllegalArgumentException()
-      }
-
-    override def toString: String = s"($source)-[$id:$relType]->($target)"
-
-    def relationshipReference(): Long = id
-    def `type`(): Int = relType
-    def sourceNodeReference(): Long = source
-    def targetNodeReference(): Long = target
-    def source(cursor: NodeCursor): Unit = ???
-    def target(cursor: NodeCursor): Unit = ???
-  }
-
-  val empty: TestGraph = TestGraph(Set.empty, Set.empty)
-  def builder = empty.builder
-
-  class Builder(private var graph: TestGraph) {
-
-    def node(): Long = {
-      val nextId = graph.nextId
-      graph = graph.withNode()
-      nextId
-    }
-
-    def rel(source: Long, target: Long): Long = rel(source, target, 1)
-
-    def rel(source: Long, target: Long, relType: Int): Long = {
-      val nextId = graph.nextId
-      graph = graph.withRel(source, target, relType)
-      nextId
-    }
-
-    def line(length: Int): Seq[Long] = {
-      val nodes = (0 to length).map(_ => node())
-      nodes.zip(nodes.drop(1)).foreach { case (a, b) => rel(a, b) }
-      nodes
-    }
-
-    def chainRel(source: Long, target: Long, length: Int): Unit = {
-      var current = source
-      for (_ <- 1 until length) {
-        val next = node()
-        rel(current, next)
-        current = next
-      }
-      rel(current, target)
-    }
-
-    def build(): TestGraph = graph
-  }
-}
-
-class MockGraphCursor(graph: TestGraph) extends DataGraphRelationshipCursor {
-  private var rels = Iterator.empty[Rel]
-  private var currentNode: Long = -1L
-  private var current: Rel = _
-
-  def nextRelationship(): Boolean = {
-    if (rels.hasNext) {
-      current = rels.next()
-      true
-    } else {
-      current = null
-      false
-    }
-  }
-
-  def setNode(node: Long, selection: RelationshipSelection): Unit = {
-    currentNode = node
-    rels = graph.rels(node)
-      .collect { case (rel, dir) if selection.test(rel.relType, dir) => rel }
-  }
-
-  def relationshipReference(): Long = this.current.id
-
-  def originNode(): Long = this.currentNode
-
-  def otherNode(): Long = this.current.opposite(this.currentNode)
-
-  def sourceNodeReference(): Long = this.current.source
-
-  def targetNodeReference(): Long = this.current.target
-
-  def `type`(): Int = this.current.relType
-
-  def setTracer(tracer: KernelReadTracer): Unit = ()
-
-  def source(cursor: NodeCursor): Unit = ???
-
-  def target(cursor: NodeCursor): Unit = ???
 }
