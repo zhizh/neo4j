@@ -31,6 +31,7 @@ import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.internal.helpers.collection.Pair;
 import org.neo4j.kernel.database.DatabaseReference;
 import org.neo4j.kernel.database.DatabaseReferenceImpl;
 import org.neo4j.kernel.database.NamedDatabaseId;
@@ -215,10 +216,11 @@ public class CommunityTopologyGraphDbmsModel implements TopologyGraphDbmsModel {
                             db.getRelationships(Direction.OUTGOING, TopologyGraphDbmsModel.HAS_SHARD)
                                     .spliterator(),
                             false)
-                    .collect(Collectors.toMap(
-                            r -> (int) r.getProperty(HAS_SHARD_INDEX_PROPERTY),
-                            r -> getDatabaseRefByAlias((String) r.getEndNode().getProperty(DATABASE_NAME_PROPERTY))
-                                    .orElseThrow()));
+                    .flatMap(rel ->
+                            getDatabaseRefByAlias((String) rel.getEndNode().getProperty(DATABASE_NAME_PROPERTY))
+                                    .map(ref -> Pair.of((int) rel.getProperty(HAS_SHARD_INDEX_PROPERTY), ref))
+                                    .stream())
+                    .collect(Collectors.toMap(Pair::first, Pair::other));
             return Optional.of(new DatabaseReferenceImpl.SPD(aliasName, databaseId, shards));
         });
     }
