@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.TokenTable
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.planner.spi.ReadTokenContext
 import org.neo4j.cypher.internal.runtime.WriteQueryContext
@@ -63,7 +63,7 @@ object LazyLabel {
 
   def apply(name: String): LazyLabel = new LazyLabel(name)
 
-  def apply(name: LabelName)(implicit table: SemanticTable): LazyLabel = {
+  def apply(name: LabelName)(implicit table: TokenTable): LazyLabel = {
     val label = new LazyLabel(name.name)
     label.id = table.id(name)
     label

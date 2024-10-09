@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.slotted
 
 import org.mockito.Mockito
 import org.mockito.Mockito.when
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningTestSupport2
 import org.neo4j.cypher.internal.expressions.CachedProperty
@@ -132,7 +133,7 @@ import org.neo4j.values.virtual.VirtualValues
 //noinspection NameBooleanParameters
 class SlottedPipeMapperTest extends CypherFunSuite with LogicalPlanningTestSupport2 with FakeEntityTestSupport {
 
-  implicit private val table: SemanticTable = SemanticTable()
+  implicit private val table: CachableSemanticTable = CachableSemanticTable(SemanticTable())
 
   private def build(beforeRewrite: LogicalPlan): Pipe = {
     val tokenContext = mock[ReadTokenContext]

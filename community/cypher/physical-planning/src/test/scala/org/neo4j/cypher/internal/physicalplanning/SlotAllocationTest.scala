@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.physicalplanning
 
 import org.neo4j.cypher.internal.ast.ASTAnnotationMap
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.ast.semantics.ExpressionTypeInfo
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningTestSupport2
@@ -90,7 +91,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2 with PlanMatchHelp {
 
   private val LABEL = labelName("label")
-  private val semanticTable = SemanticTable()
+  private val semanticTable = CachableSemanticTable(SemanticTable())
   private val NO_EXPR_VARS = new AvailableExpressionVariables()
   private val config = CypherRuntimeConfiguration.defaultConfiguration
 
@@ -1590,7 +1591,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // when
     val allocations = allocateSlots(
       foreach,
-      semanticTableWithList,
+      CachableSemanticTable(semanticTableWithList),
       BREAK_FOR_LEAFS,
       NO_EXPR_VARS,
       config,
@@ -1635,7 +1636,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // when
     val allocations = allocateSlots(
       foreach,
-      semanticTableWithList,
+      CachableSemanticTable(semanticTableWithList),
       BREAK_FOR_LEAFS,
       NO_EXPR_VARS,
       config,
@@ -1667,7 +1668,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
   private def allocateSlots(
     lp: LogicalPlan,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     breakingPolicy: PipelineBreakingPolicy,
     availableExpressionVariables: AvailableExpressionVariables,
     config: CypherRuntimeConfiguration,

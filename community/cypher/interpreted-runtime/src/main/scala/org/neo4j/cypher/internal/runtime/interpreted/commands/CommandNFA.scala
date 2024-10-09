@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.commands
 
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.TokenTable
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.SemanticDirection
@@ -246,7 +246,7 @@ object CommandNFA {
     logicalNFA: NFA,
     predicateToCommand: Expression => commands.predicates.Predicate,
     getSlotOrName: LogicalVariable => SlotOrName = x => SlotOrName.None
-  )(implicit st: SemanticTable): CommandNFA = {
+  )(implicit st: TokenTable): CommandNFA = {
 
     def convertPredicate(varPredicate: VariablePredicate): CommandPredicateFunction = {
       val predicate = predicateToCommand(varPredicate.predicate)
@@ -260,7 +260,7 @@ object CommandNFA {
     def compileStubbedRelationshipExpansion(
       logicalPredicate: NFA.RelationshipExpansionPredicate,
       end: State
-    )(implicit st: SemanticTable): RelationshipExpansionTransition = {
+    )(implicit st: TokenTable): RelationshipExpansionTransition = {
       val commandRelPred = logicalPredicate.relPred.map(convertPredicate)
 
       // In planner land, empty type seq means all types. We use null in runtime land to represent all types

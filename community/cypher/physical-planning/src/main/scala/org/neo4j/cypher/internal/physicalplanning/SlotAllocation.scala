@@ -22,7 +22,7 @@ package org.neo4j.cypher.internal.physicalplanning
 import org.neo4j.cypher.internal
 import org.neo4j.cypher.internal.ast.ProcedureResultItem
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorFail
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.expressions.CachedHasProperty
 import org.neo4j.cypher.internal.expressions.CachedProperty
 import org.neo4j.cypher.internal.expressions.Equals
@@ -249,7 +249,7 @@ object SlotAllocation {
 
   def allocateSlots(
     lp: LogicalPlan,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     breakingPolicy: PipelineBreakingPolicy,
     availableExpressionVariables: AvailableExpressionVariables,
     config: CypherRuntimeConfiguration,
@@ -304,7 +304,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
    */
   def allocateSlots(
     lp: LogicalPlan,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     initialSlotsAndArgument: Option[SlotsAndArgument],
     cancellationChecker: CancellationChecker
   ): SlotMetaData = {
@@ -470,7 +470,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
     plan: LogicalPlan,
     nullable: Boolean,
     slots: SlotConfiguration,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     cancellationChecker: CancellationChecker
   ): Unit = plan match {
     case ssp: StatefulShortestPath =>
@@ -489,7 +489,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
     plan: LogicalPlan,
     nullable: Boolean,
     slots: SlotConfiguration,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     cancellationChecker: CancellationChecker
   ): Unit = plan match {
     case ssp: StatefulShortestPath =>
@@ -507,7 +507,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
     plan: LogicalPlan,
     nullable: Boolean,
     slots: SlotConfiguration,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     cancellationChecker: CancellationChecker
   ): Unit = {
 
@@ -537,7 +537,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   private def allocateExpressionsTwoChild(
     plan: LogicalPlan,
     slots: SlotConfiguration,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     comingFromLeft: Boolean,
     cancellationChecker: CancellationChecker
   ): Unit = {
@@ -568,7 +568,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   private def allocateExpressionsInternal(
     expression: Foldable,
     slots: SlotConfiguration,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     planId: Id,
     cancellationChecker: CancellationChecker,
     acc: Accumulator = Accumulator(doNotTraverseExpression = None)
@@ -761,7 +761,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
     source: SlotConfiguration,
     slots: SlotConfiguration,
     recordArgument: LogicalPlan => Unit,
-    semanticTable: SemanticTable
+    semanticTable: CachableSemanticTable
   ): Unit = {
     lp match {
 
@@ -972,9 +972,8 @@ class SingleQuerySlotAllocator private[physicalplanning] (
             c.relationships.foreach(r => slots.newLong(r.variable, false, CTRelationship))
           case _ =>
         }
-        val typeGetter = semanticTable.typeFor(listExpression)
-        val listOfNodes = typeGetter.is(CTList(CTNode))
-        val listOfRels = typeGetter.is(CTList(CTRelationship))
+        val listOfNodes = semanticTable.isListOfNodes(listExpression)
+        val listOfRels = semanticTable.isListOfRelationships(listExpression)
 
         (listOfNodes, listOfRels) match {
           case (true, false) => slots.newLong(variableName, true, CTNode)
@@ -1327,15 +1326,14 @@ class SingleQuerySlotAllocator private[physicalplanning] (
     plan: LogicalPlan,
     nullable: Boolean,
     lhs: SlotConfiguration,
-    semanticTable: SemanticTable
+    semanticTable: CachableSemanticTable
   ): Unit =
     plan match {
       case ForeachApply(_, _, variableName, listExpression) =>
         // The slot for the iteration variable of foreach needs to be available as an argument on the rhs of the apply
         // so we allocate it on the lhs (even though its value will not be needed after the foreach is done)
-        val typeGetter = semanticTable.typeFor(listExpression)
-        val listOfNodes = typeGetter.is(CTList(CTNode))
-        val listOfRels = typeGetter.is(CTList(CTRelationship))
+        val listOfNodes = semanticTable.isListOfNodes(listExpression)
+        val listOfRels = semanticTable.isListOfRelationships(listExpression)
 
         (listOfNodes, listOfRels) match {
           case (true, false) => lhs.newLong(variableName, true, CTNode)

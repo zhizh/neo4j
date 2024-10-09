@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.TokenTable
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.planner.spi.ReadTokenContext
 import org.neo4j.cypher.internal.runtime.WriteQueryContext
@@ -54,7 +54,7 @@ case class LazyType(name: String) {
 object LazyType {
   val UNKNOWN: Int = -1
 
-  def apply(relTypeName: RelTypeName)(implicit table: SemanticTable): LazyType = {
+  def apply(relTypeName: RelTypeName)(implicit table: TokenTable): LazyType = {
     val typ = LazyType(relTypeName.name)
     typ.id = table.id(relTypeName)
     typ

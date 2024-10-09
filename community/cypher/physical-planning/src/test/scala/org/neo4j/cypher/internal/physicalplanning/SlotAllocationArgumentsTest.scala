@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.physicalplanning
 
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningTestSupport2
 import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
@@ -50,7 +51,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 //noinspection NameBooleanParameters
 class SlotAllocationArgumentsTest extends CypherFunSuite with LogicalPlanningTestSupport2 {
 
-  private val semanticTable = SemanticTable()
+  private val semanticTable = CachableSemanticTable(SemanticTable())
   private val NO_EXPR_VARS = new AvailableExpressionVariables()
   private val config = CypherRuntimeConfiguration.defaultConfiguration
 
@@ -434,7 +435,7 @@ class SlotAllocationArgumentsTest extends CypherFunSuite with LogicalPlanningTes
 
   private def allocateSlots(
     lp: LogicalPlan,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     breakingPolicy: PipelineBreakingPolicy,
     availableExpressionVariables: AvailableExpressionVariables,
     config: CypherRuntimeConfiguration,

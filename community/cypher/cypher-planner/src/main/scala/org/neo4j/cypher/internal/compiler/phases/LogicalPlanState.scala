@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.compiler.phases
 import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchPropertiesImplementation
 import org.neo4j.cypher.internal.ast.Query
 import org.neo4j.cypher.internal.ast.Statement
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.expressions.AutoExtractedParameter
@@ -91,7 +92,7 @@ case class LogicalPlanState(
       ),
       anonymousVariableNameGenerator,
       statement(),
-      semanticTable(),
+      CachableSemanticTable(semanticTable()),
       logicalPlan,
       hasLoadCSV,
       returnColumns()
@@ -150,7 +151,7 @@ case class CachableLogicalPlanState(
   planningAttributes: CachablePlanningAttributes,
   anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
   statement: Statement,
-  semanticTable: SemanticTable,
+  semanticTable: CachableSemanticTable,
   logicalPlan: LogicalPlan,
   hasLoadCSV: Boolean = false,
   returnColumns: Seq[String]

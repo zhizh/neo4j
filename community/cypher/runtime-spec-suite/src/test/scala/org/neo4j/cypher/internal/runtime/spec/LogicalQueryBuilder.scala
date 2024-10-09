@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.runtime.spec
 
 import org.neo4j.cypher.internal.LogicalQuery
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder
 import org.neo4j.cypher.internal.logical.builder.Resolver
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
@@ -76,7 +77,7 @@ class LogicalQueryBuilder(
       "<<queryText>>",
       readOnly,
       resultColumns,
-      semanticTable,
+      CachableSemanticTable(semanticTable),
       effectiveCardinalities,
       providedOrders,
       leveragedOrders,

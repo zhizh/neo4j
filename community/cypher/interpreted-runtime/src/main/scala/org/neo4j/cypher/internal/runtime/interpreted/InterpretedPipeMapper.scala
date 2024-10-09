@@ -21,7 +21,7 @@ package org.neo4j.cypher.internal.runtime.interpreted
 
 import org.neo4j.cypher.internal
 import org.neo4j.cypher.internal.CypherVersion
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.TokenTable
 import org.neo4j.cypher.internal.expressions
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.NODE_TYPE
@@ -381,7 +381,7 @@ case class InterpretedPipeMapper(
   anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
   isCommunity: Boolean,
   parameterMapping: ParameterMapping
-)(implicit semanticTable: SemanticTable) extends PipeMapper {
+)(implicit semanticTable: TokenTable) extends PipeMapper {
 
   private def getBuildExpression(id: Id): internal.expressions.Expression => Expression =
     ((e: internal.expressions.Expression) => expressionConverters.toCommandExpression(id, e)) andThen

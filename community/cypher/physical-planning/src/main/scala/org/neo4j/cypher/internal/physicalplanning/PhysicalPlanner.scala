@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.physicalplanning
 
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.ApplyPlans
 import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.ArgumentSizes
@@ -43,7 +43,7 @@ object PhysicalPlanner {
   def plan(
     tokenContext: ReadTokenContext,
     beforeRewrite: LogicalPlan,
-    semanticTable: SemanticTable,
+    semanticTable: CachableSemanticTable,
     breakingPolicy: PipelineBreakingPolicy,
     config: CypherRuntimeConfiguration,
     anonymousVariableNameGenerator: AnonymousVariableNameGenerator,

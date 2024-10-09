@@ -31,6 +31,7 @@ import org.neo4j.cypher.internal.util.PropertyKeyId
 import org.neo4j.cypher.internal.util.RelTypeId
 import org.neo4j.cypher.internal.util.Rewriter
 import org.neo4j.cypher.internal.util.symbols.CTAny
+import org.neo4j.cypher.internal.util.symbols.CTList
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTRelationship
 import org.neo4j.cypher.internal.util.symbols.CypherType
@@ -67,21 +68,29 @@ object SemanticTable {
   }
 }
 
-case class SemanticTable(
+trait TokenTable {
+  def id(labelName: LabelName): Option[LabelId]
+  def id(propertyKeyName: PropertyKeyName): Option[PropertyKeyId]
+  def id(resolvedRelTypeName: RelTypeName): Option[RelTypeId]
+}
+
+final case class SemanticTable(
   types: ASTAnnotationMap[Expression, ExpressionTypeInfo] = ASTAnnotationMap.empty,
   recordedScopes: ASTAnnotationMap[ASTNode, Scope] = ASTAnnotationMap.empty,
   resolvedLabelNames: Map[String, LabelId] = Map.empty,
   resolvedPropertyKeyNames: Map[String, PropertyKeyId] = Map.empty,
   resolvedRelTypeNames: Map[String, RelTypeId] = Map.empty
-) {
+) extends TokenTable {
 
   override lazy val hashCode: Int = ScalaRunTime._hashCode(this)
 
-  def id(labelName: LabelName): Option[LabelId] = resolvedLabelNames.get(labelName.name)
+  override def id(labelName: LabelName): Option[LabelId] = resolvedLabelNames.get(labelName.name)
 
-  def id(propertyKeyName: PropertyKeyName): Option[PropertyKeyId] = resolvedPropertyKeyNames.get(propertyKeyName.name)
+  override def id(propertyKeyName: PropertyKeyName): Option[PropertyKeyId] =
+    resolvedPropertyKeyNames.get(propertyKeyName.name)
 
-  def id(resolvedRelTypeName: RelTypeName): Option[RelTypeId] = resolvedRelTypeNames.get(resolvedRelTypeName.name)
+  override def id(resolvedRelTypeName: RelTypeName): Option[RelTypeId] =
+    resolvedRelTypeNames.get(resolvedRelTypeName.name)
 
   def symbolDefinition(variable: Variable): SymbolUse =
     recordedScopes(variable).symbolTable(variable.name).definition
@@ -111,7 +120,7 @@ case class SemanticTable(
   def typeFor(expr: Expression): TypeGetter =
     TypeGetter(types.get(expr).map(_.actual))
 
-  // Copy methods
+// Copy methods
 
   def addNode(expr: Variable): SemanticTable =
     addTypeInfo(expr, CTNode.invariant)
@@ -143,4 +152,38 @@ case class SemanticTable(
 
   def addResolvedPropertyKeyName(name: String, propertyKeyId: PropertyKeyId): SemanticTable =
     copy(resolvedPropertyKeyNames = resolvedPropertyKeyNames + (name -> propertyKeyId))
+}
+
+final case class CachableSemanticTable private (
+  private val listOfNodeExpressions: Set[PositionedNode[Expression]],
+  private val listOfRelExpressions: Set[PositionedNode[Expression]],
+
+  // TODO Remove these from the cache, kernel keeps an in memory map of tokens anyway.
+  private val resolvedLabelNames: Map[String, LabelId] = Map.empty,
+  private val resolvedPropertyKeyNames: Map[String, PropertyKeyId] = Map.empty,
+  private val resolvedRelTypeNames: Map[String, RelTypeId] = Map.empty
+) extends TokenTable {
+
+  override def id(label: LabelName): Option[LabelId] = resolvedLabelNames.get(label.name)
+  override def id(property: PropertyKeyName): Option[PropertyKeyId] = resolvedPropertyKeyNames.get(property.name)
+  override def id(relType: RelTypeName): Option[RelTypeId] = resolvedRelTypeNames.get(relType.name)
+
+  def isListOfNodes(expression: Expression): Boolean =
+    listOfNodeExpressions.contains(PositionedNode(expression))
+
+  def isListOfRelationships(expression: Expression): Boolean =
+    listOfRelExpressions.contains(PositionedNode(expression))
+}
+
+object CachableSemanticTable {
+
+  def apply(table: SemanticTable): CachableSemanticTable = {
+    CachableSemanticTable(
+      listOfNodeExpressions = table.types.keys.filter(e => table.typeFor(e.node).is(CTList(CTNode))).toSet,
+      listOfRelExpressions = table.types.keys.filter(e => table.typeFor(e.node).is(CTList(CTRelationship))).toSet,
+      resolvedLabelNames = table.resolvedLabelNames,
+      resolvedPropertyKeyNames = table.resolvedPropertyKeyNames,
+      resolvedRelTypeNames = table.resolvedRelTypeNames
+    )
+  }
 }

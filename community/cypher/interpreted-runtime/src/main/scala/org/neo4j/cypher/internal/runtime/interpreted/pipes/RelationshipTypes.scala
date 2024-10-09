@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.TokenTable
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.planner.spi.ReadTokenContext
 
@@ -43,7 +43,7 @@ final class LazyTypes(names: Array[String], private var ids: Array[Int]) extends
 
 object RelationshipTypes {
 
-  def apply(names: Array[RelTypeName])(implicit table: SemanticTable): RelationshipTypes = {
+  def apply(names: Array[RelTypeName])(implicit table: TokenTable): RelationshipTypes = {
     if (names.isEmpty) empty
     else {
       val ids = names.flatMap(r => table.id(r).map(_.id))

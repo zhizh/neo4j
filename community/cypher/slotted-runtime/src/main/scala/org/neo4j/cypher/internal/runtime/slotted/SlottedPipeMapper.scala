@@ -20,7 +20,7 @@
 package org.neo4j.cypher.internal.runtime.slotted
 
 import org.neo4j.cypher.internal
-import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.ast.semantics.TokenTable
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.SemanticDirection
@@ -343,7 +343,7 @@ class SlottedPipeMapper(
   physicalPlan: PhysicalPlan,
   readOnly: Boolean,
   indexRegistrator: QueryIndexRegistrator
-)(implicit semanticTable: SemanticTable)
+)(implicit semanticTable: TokenTable)
     extends PipeMapper {
 
   override def onLeaf(plan: LogicalPlan): Pipe = {

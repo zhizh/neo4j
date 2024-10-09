@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.spec
 
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.LogicalQuery
+import org.neo4j.cypher.internal.ast.semantics.CachableSemanticTable
 import org.neo4j.cypher.internal.logical.generator.LogicalPlanGenerator
 import org.neo4j.cypher.internal.logical.generator.LogicalPlanGenerator.WithState
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
@@ -82,7 +83,7 @@ object LogicalQueryGenerator {
             "<<queryText>>",
             readOnly = true,
             logicalPlan.availableSymbols.map(_.name).toArray,
-            state.semanticTable,
+            CachableSemanticTable(state.semanticTable),
             effectiveCardinalities,
             providedOrders,
             leveragedOrders,
