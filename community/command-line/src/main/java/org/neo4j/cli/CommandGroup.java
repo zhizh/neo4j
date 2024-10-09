@@ -22,7 +22,8 @@ package org.neo4j.cli;
 public enum CommandGroup {
     DATABASE("database", "Database-specific administration tasks."),
     DBMS("dbms", "DBMS-wide (for single and clustered environments) administration tasks."),
-    SERVER("server", "Server-wide administration tasks.");
+    SERVER("server", "Server-wide administration tasks."),
+    BACKUP("backup", "Backup-specific administration tasks.");
 
     private final String displayName;
     private final String description;

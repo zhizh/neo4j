@@ -26,7 +26,7 @@ import org.neo4j.kernel.database.DatabaseId;
 import org.neo4j.kernel.database.NormalizedDatabaseName;
 import org.neo4j.storageengine.api.StoreId;
 
-public class BackupDescription {
+public class BackupDescription implements Comparable<BackupDescription> {
     private final String databaseName;
     private final StoreId storeId;
     private final DatabaseId databaseId;
@@ -190,5 +190,25 @@ public class BackupDescription {
                 + lowestAppendIndex + ", highestAppendIndex="
                 + highestAppendIndex + ", metadataScript='"
                 + metadataScript + '\'' + '}';
+    }
+
+    @Override
+    public int compareTo(BackupDescription o) {
+
+        var nameCompared = getDatabaseName().compareTo(o.getDatabaseName());
+        if (nameCompared != 0) {
+            return nameCompared;
+        }
+
+        var dbIdCompared = getDatabaseId().uuid().compareTo(o.getDatabaseId().uuid());
+        if (dbIdCompared != 0) {
+            return dbIdCompared;
+        }
+
+        if (isEmpty() || o.isEmpty()) {
+            return getBackupTime().compareTo(o.getBackupTime());
+        } else {
+            return Long.compare(getHighestAppendIndex(), o.getHighestAppendIndex());
+        }
     }
 }
