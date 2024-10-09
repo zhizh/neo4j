@@ -27,7 +27,7 @@ import static org.eclipse.collections.impl.tuple.Tuples.pair;
 import static org.neo4j.batchimport.api.Configuration.DEFAULT;
 import static org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME;
 import static org.neo4j.csv.reader.Configuration.COMMAS;
-import static org.neo4j.importer.CsvImporter.DEFAULT_REPORT_FILE_NAME;
+import static org.neo4j.importer.FileImporter.DEFAULT_REPORT_FILE_NAME;
 import static org.neo4j.kernel.database.DatabaseTracers.EMPTY;
 import static org.neo4j.storageengine.api.StorageEngineFactory.SELECTOR;
 import static org.neo4j.storageengine.api.TransactionIdStore.BASE_TX_ID;
@@ -68,7 +68,7 @@ import org.neo4j.commandline.dbms.CannotWriteException;
 import org.neo4j.commandline.dbms.LockChecker;
 import org.neo4j.configuration.Config;
 import org.neo4j.configuration.GraphDatabaseSettings;
-import org.neo4j.importer.CsvImporter.CsvImportException;
+import org.neo4j.importer.FileImporter.CsvImportException;
 import org.neo4j.importer.SchemaCommandReader.ReaderConfig;
 import org.neo4j.internal.batchimport.DefaultAdditionalIds;
 import org.neo4j.internal.schema.SchemaCommand;
@@ -418,6 +418,16 @@ public class ImportCommand {
                                 + "may not be optimal, this option can override this calculation")
         private int overrideNumRanges;
 
+        @Option(
+                names = "--input-type",
+                showDefaultValue = ALWAYS,
+                required = true,
+                paramLabel = "csv|parquet",
+                defaultValue = "csv",
+                description = "File type to import from. Can be csv or parquet. Defaults to csv.",
+                converter = FileInputTypeConverter.class)
+        private FileImporter.FileInputType fileInputType;
+
         protected Base(ExecutionContext ctx) {
             super(ctx);
         }
@@ -443,12 +453,12 @@ public class ImportCommand {
                 DatabaseLayout databaseLayout = Neo4jLayout.of(databaseConfig).databaseLayout(database.name());
 
                 try (var ignore = maybeLockChecker.maybeCheckLock(databaseLayout);
-                        var logProvider = CsvImporter.createLogProvider(ctx.fs(), databaseConfig);
+                        var logProvider = FileImporter.createLogProvider(ctx.fs(), databaseConfig);
                         var fileSystem = new SchemeFileSystemAbstraction(ctx.fs(), databaseConfig, logProvider)) {
                     final var csvConfig = csvConfiguration();
                     final var importConfig = importConfiguration();
 
-                    final var importerBuilder = CsvImporter.builder()
+                    final var importerBuilder = FileImporter.builder()
                             .withDatabaseLayout(databaseLayout)
                             .withDatabaseConfig(databaseConfig)
                             .withFileSystem(fileSystem)
@@ -471,7 +481,9 @@ public class ImportCommand {
                             .withForce(overwriteDestination)
                             .withIncremental(incremental)
                             .withLogProvider(logProvider)
-                            .withSchemaCommands(parseSchemaCommands(fileSystem, databaseConfig));
+                            .withSchemaCommands(parseSchemaCommands(fileSystem, databaseConfig))
+                            .withLogProvider(logProvider)
+                            .withFileInputType(fileInputType);
                     if (incremental) {
                         importerBuilder.withCursorContextFactory(new CursorContextFactory(
                                 PageCacheTracer.NULL,
@@ -676,6 +688,17 @@ public class ImportCommand {
                     return IdType.valueOf(in.toUpperCase(Locale.ROOT));
                 } catch (Exception e) {
                     throw new CommandLine.TypeConversionException(format("Invalid id type: %s (%s)", in, e));
+                }
+            }
+        }
+
+        static class FileInputTypeConverter implements CommandLine.ITypeConverter<FileImporter.FileInputType> {
+            @Override
+            public FileImporter.FileInputType convert(String in) {
+                try {
+                    return FileImporter.FileInputType.valueOf(in.toUpperCase(Locale.ROOT));
+                } catch (Exception e) {
+                    throw new CommandLine.TypeConversionException(format("Invalid file import type: %s (%s)", in, e));
                 }
             }
         }

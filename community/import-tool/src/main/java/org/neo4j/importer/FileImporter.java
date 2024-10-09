@@ -67,6 +67,8 @@ import org.neo4j.internal.batchimport.input.InputException;
 import org.neo4j.internal.batchimport.input.MissingRelationshipDataException;
 import org.neo4j.internal.batchimport.input.csv.CsvInput;
 import org.neo4j.internal.batchimport.input.csv.DataFactory;
+import org.neo4j.internal.batchimport.input.parquet.ParquetInput;
+import org.neo4j.internal.batchimport.input.parquet.ParquetMonitor;
 import org.neo4j.internal.schema.SchemaCommand;
 import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.FileSystemAbstraction;
@@ -87,7 +89,7 @@ import org.neo4j.memory.MemoryTracker;
 import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.util.Preconditions;
 
-class CsvImporter {
+class FileImporter {
     static final String DEFAULT_REPORT_FILE_NAME = "import.report";
 
     private final DatabaseLayout databaseLayout;
@@ -118,8 +120,9 @@ class CsvImporter {
     private final boolean incremental;
     private final InternalLogProvider logProvider;
     private final List<SchemaCommand> schemaCommands;
+    private final FileInputType fileImportType;
 
-    private CsvImporter(Builder b) {
+    private FileImporter(Builder b) {
         this.databaseLayout = requireNonNull(b.databaseLayout);
         this.databaseConfig = requireNonNull(b.databaseConfig);
         this.csvConfig = requireNonNull(b.csvConfig);
@@ -148,6 +151,7 @@ class CsvImporter {
         this.incremental = b.incremental;
         this.incrementalStage = b.incrementalStage;
         this.schemaCommands = b.schemaCommands;
+        this.fileImportType = b.fileInputType;
     }
 
     void doImport(ImportCommand.Base type) throws IOException {
@@ -165,8 +169,16 @@ class CsvImporter {
 
             final var nodeData = nodeData();
             final var relationshipsData = relationshipData();
+            try (var input = importInput(nodeData, defaultTimeZone, relationshipsData)) {
+                doImport(input, badCollector, type);
+            }
+        }
+    }
 
-            try (CsvInput input = new CsvInput(
+    private Input importInput(
+            Iterable<DataFactory> nodeData, Supplier<ZoneId> defaultTimeZone, Iterable<DataFactory> relationshipsData) {
+        return switch (fileImportType) {
+            case CSV -> new CsvInput(
                     nodeData,
                     defaultFormatNodeFileHeader(defaultTimeZone, normalizeTypes),
                     relationshipsData,
@@ -177,10 +189,15 @@ class CsvImporter {
                     autoSkipHeaders,
                     new CsvInput.PrintingMonitor(stdOut),
                     new Groups(),
-                    memoryTracker)) {
-                doImport(input, badCollector, type);
-            }
-        }
+                    memoryTracker);
+            case PARQUET -> new ParquetInput(
+                    nodeFiles,
+                    relationshipFiles,
+                    idType,
+                    csvConfig.arrayDelimiter(),
+                    new Groups(),
+                    new ParquetMonitor(stdOut));
+        };
     }
 
     private void doImport(Input input, Collector badCollector, ImportCommand.Base type) {
@@ -387,6 +404,11 @@ class CsvImporter {
         return new Builder();
     }
 
+    enum FileInputType {
+        CSV,
+        PARQUET
+    }
+
     static class Builder {
         private DatabaseLayout databaseLayout;
         private Config databaseConfig;
@@ -417,6 +439,7 @@ class CsvImporter {
         private ImportCommand.IncrementalStage incrementalStage = null;
         private InternalLogProvider logProvider = NullLogProvider.getInstance();
         private final MutableList<SchemaCommand> schemaCommands = Lists.mutable.empty();
+        private FileInputType fileInputType = FileInputType.CSV;
 
         Builder withDatabaseLayout(DatabaseLayout databaseLayout) {
             this.databaseLayout = databaseLayout;
@@ -560,12 +583,17 @@ class CsvImporter {
             return this;
         }
 
-        CsvImporter build() {
+        Builder withFileInputType(FileInputType fileInputType) {
+            this.fileInputType = fileInputType;
+            return this;
+        }
+
+        FileImporter build() {
             Preconditions.checkState(
                     !(force && incremental),
                     "--overwrite-destination doesn't work with incremental import",
                     incrementalStage);
-            return new CsvImporter(this);
+            return new FileImporter(this);
         }
     }
 }

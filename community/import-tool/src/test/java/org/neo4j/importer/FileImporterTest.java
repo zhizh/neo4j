@@ -53,7 +53,7 @@ import org.neo4j.test.extension.Neo4jLayoutExtension;
 import org.neo4j.test.utils.TestDirectory;
 
 @Neo4jLayoutExtension
-class CsvImporterTest {
+class FileImporterTest {
     @Inject
     private TestDirectory testDir;
 
@@ -72,8 +72,8 @@ class CsvImporterTest {
 
         Config config = Config.defaults(GraphDatabaseSettings.logs_directory, logDir.toAbsolutePath());
 
-        try (var logProvider = CsvImporter.createLogProvider(testDir.getFileSystem(), config)) {
-            final var csvImporter = CsvImporter.builder()
+        try (var logProvider = FileImporter.createLogProvider(testDir.getFileSystem(), config)) {
+            final var csvImporter = FileImporter.builder()
                     .withDatabaseLayout(databaseLayout.getNeo4jLayout().databaseLayout("foodb"))
                     .withDatabaseConfig(config)
                     .withReportFile(reportLocation.toAbsolutePath())
@@ -104,7 +104,7 @@ class CsvImporterTest {
         var rawErr = new ByteArrayOutputStream();
         try (var out = new PrintStream(rawOut);
                 var err = new PrintStream(rawErr)) {
-            CsvImporter.Builder csvImporterBuilder = CsvImporter.builder()
+            FileImporter.Builder csvImporterBuilder = FileImporter.builder()
                     .withDatabaseConfig(Config.defaults(GraphDatabaseSettings.neo4j_home, testDir.homePath()))
                     .withDatabaseLayout(databaseLayout)
                     .withCsvConfig(Configuration.TABS)
@@ -134,7 +134,7 @@ class CsvImporterTest {
         Config config = Config.defaults(GraphDatabaseSettings.logs_directory, logDir.toAbsolutePath());
 
         var cacheTracer = new DefaultPageCacheTracer();
-        CsvImporter csvImporter = CsvImporter.builder()
+        FileImporter fileImporter = FileImporter.builder()
                 .withDatabaseLayout(databaseLayout)
                 .withDatabaseConfig(config)
                 .withReportFile(reportLocation.toAbsolutePath())
@@ -147,7 +147,7 @@ class CsvImporterTest {
                 .addNodeFiles(emptySet(), new Path[] {inputFile.toAbsolutePath()})
                 .build();
 
-        csvImporter.doImport(fullImport());
+        fileImporter.doImport(fullImport());
 
         long pins = cacheTracer.pins();
         assertThat(pins).isGreaterThan(0);
@@ -160,7 +160,7 @@ class CsvImporterTest {
     void shouldEnforceBadTolerance() throws IOException {
         // given
         var nodes = writeFileWithLines("nodes.csv", ":ID", "abc", "abc", "abc", "abc", "abc", "abc");
-        var importer = CsvImporter.builder()
+        var importer = FileImporter.builder()
                 .withDatabaseConfig(Config.defaults(GraphDatabaseSettings.neo4j_home, testDir.homePath()))
                 .withDatabaseLayout(databaseLayout)
                 .withFileSystem(testDir.getFileSystem())

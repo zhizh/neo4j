@@ -1531,7 +1531,7 @@ class CsvInputTest {
     void shouldFailOnGlobalGroupInRelationshipHeaderIfNoGLobalGroupInNodeHeader() throws IOException {
         // given
         Iterable<DataFactory> nodeData = datas(data(":ID(left)"), data(":ID(right)"));
-        Iterable<DataFactory> relationshipData = datas(data(":START_ID(left),:END_ID(rite)"));
+        Iterable<DataFactory> relationshipData = datas(data(":START_ID,:END_ID(rite)"));
 
         try {
             // when
@@ -1819,7 +1819,7 @@ class CsvInputTest {
                 .validateAndEstimate(PROPERTY_SIZE_CALCULATOR);
 
         // then
-        verify(monitor, never()).noRelationshipTypeSpecified(sourceDescription);
+        verify(monitor, never()).noNodeLabelsSpecified(sourceDescription);
     }
 
     @Test

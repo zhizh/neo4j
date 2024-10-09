@@ -109,7 +109,7 @@ import org.neo4j.graphdb.ResourceIterable;
 import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.schema.IndexDefinition;
-import org.neo4j.importer.CsvImporter.CsvImportException;
+import org.neo4j.importer.FileImporter.CsvImportException;
 import org.neo4j.internal.batchimport.cache.idmapping.string.DuplicateInputIdException;
 import org.neo4j.internal.batchimport.input.InputException;
 import org.neo4j.internal.batchimport.input.csv.Type;
@@ -2718,11 +2718,11 @@ class ImportCommandTest {
     }
 
     private Path reportFile() {
-        return file(CsvImporter.DEFAULT_REPORT_FILE_NAME);
+        return file(FileImporter.DEFAULT_REPORT_FILE_NAME);
     }
 
     private Path badFile() {
-        return layout.databaseLayout(DEFAULT_DATABASE_NAME).file(CsvImporter.DEFAULT_REPORT_FILE_NAME);
+        return layout.databaseLayout(DEFAULT_DATABASE_NAME).file(FileImporter.DEFAULT_REPORT_FILE_NAME);
     }
 
     private static void writeRelationshipHeader(

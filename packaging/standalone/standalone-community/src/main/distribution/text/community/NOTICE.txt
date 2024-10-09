@@ -44,6 +44,7 @@ Apache Software License, Version 2.0
   @firebase/storage-types
   @firebase/util
   @firebase/webchannel-wrapper
+  aircompressor
   Apache Commons Codec
   Apache Commons Compress
   Apache Commons Configuration
@@ -58,6 +59,11 @@ Apache Software License, Version 2.0
   Apache Lucene (module: common)
   Apache Lucene (module: core)
   Apache Lucene (module: queryparser)
+  Apache Parquet Column
+  Apache Parquet Common
+  Apache Parquet Encodings
+  Apache Parquet Format Structures
+  Apache Parquet Hadoop
   Apache Shiro :: Cache
   Apache Shiro :: Configuration :: Core
   Apache Shiro :: Core
@@ -154,6 +160,8 @@ Apache Software License, Version 2.0
   rxjs
   Scala Reflect
   scala-collection-contrib
+  snappy-java
+  Strategic Blue Parquet Floor
   tslib
   tunnel-agent
   WMI4Java
@@ -196,6 +204,9 @@ BSD License 2-clause
   uri-js
   zstd-jni
 
+Common Development and Distribution License Version 1.1
+  javax.annotation API
+
 Eclipse Distribution License - v 1.0
   Eclipse Collections API
   Eclipse Collections Main Library
@@ -234,6 +245,7 @@ GNU General Public License, version 2 with the Classpath Exception
   HK2 Implementation Utilities
   Jakarta Annotations API
   jakarta.ws.rs-api
+  javax.annotation API
   javax.inject:1 as OSGi bundle
   jersey-container-servlet
   jersey-container-servlet-core
@@ -484,6 +496,10 @@ fastinfoset
 
 jakarta.ws.rs-api
   Eclipse Public License v2.0
+  GNU General Public License, version 2 with the Classpath Exception
+
+javax.annotation API
+  Common Development and Distribution License Version 1.1
   GNU General Public License, version 2 with the Classpath Exception
 
 javax.inject:1 as OSGi bundle

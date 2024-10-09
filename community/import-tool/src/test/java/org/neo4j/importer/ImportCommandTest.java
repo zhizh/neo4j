@@ -94,7 +94,8 @@ class ImportCommandTest {
         "--normalize-types",
         "--nodes",
         "--relationships",
-        "--auto-skip-subsequent-headers"
+        "--auto-skip-subsequent-headers",
+        "--input-type"
     };
 
     private static final String[] sharedPositionals = {"<database>"};
