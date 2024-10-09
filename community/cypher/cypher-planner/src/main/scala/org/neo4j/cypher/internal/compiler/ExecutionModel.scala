@@ -69,6 +69,16 @@ sealed trait ExecutionModel {
   def invalidatesProvidedOrder(plan: LogicalPlan): Boolean
 
   /**
+   * "For Block format, setting a property cursor on a relationship using only
+   * the id is much more expensive than setting it using an existing
+   * relationship cursor"
+   */
+  final def supportsCursorReuseInBlockFormat: Boolean = this match {
+    case ExecutionModel.Volcano    => false
+    case _: ExecutionModel.Batched => true
+  }
+
+  /**
    * @return any fields that are relevant for caching
    */
   def cacheKey(): Seq[Any]

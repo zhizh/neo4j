@@ -94,7 +94,8 @@ case class TrailToVarExpandRewriter(
   otherAttributes: Attributes[LogicalPlan],
   anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
   isBlockFormat: Boolean,
-  isShardedDabase: Boolean = false
+  executionModelSupportsCursorReuseInBlockFormat: Boolean,
+  isShardedDatabase: Boolean
 ) extends Rewriter with TopDownMergeableRewriter {
 
   private def createVarLengthExpand(
@@ -168,7 +169,7 @@ case class TrailToVarExpandRewriter(
   }
 
   private def requiresPropertyAccessFromShards(predicates: Iterable[Expression]): Boolean = {
-    isShardedDabase && predicates.exists(requiresPropertyAccess)
+    isShardedDatabase && predicates.exists(requiresPropertyAccess)
   }
 
   private def requiresPropertyAccess(expr: Expression): Boolean =
@@ -264,8 +265,13 @@ case class TrailToVarExpandRewriter(
   }
 
   private def shouldInlinePredicates(inlinedPredicates: InlinedPredicates): Boolean = {
-    if (isBlockFormat) !containsRelationshipPropertyPredicate(inlinedPredicates)
-    else true
+    // special rule for Block format and Pipelined/Parallel runtime
+    val shouldNotInline =
+      isBlockFormat &&
+        executionModelSupportsCursorReuseInBlockFormat &&
+        containsRelationshipPropertyPredicate(inlinedPredicates)
+
+    !shouldNotInline
   }
 
   private def containsRelationshipPropertyPredicate(inlinedPredicates: InlinedPredicates): Boolean = {

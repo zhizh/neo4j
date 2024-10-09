@@ -98,7 +98,8 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
         otherAttributes.withAlso(solveds, cardinalities, effectiveCardinalities, providedOrders),
         anonymousVariableNameGenerator,
         isBlockFormat = context.planContext.storageHasPropertyColocation,
-        isShardedDatabase
+        executionModelSupportsCursorReuseInBlockFormat = context.executionModel.supportsCursorReuseInBlockFormat,
+        isShardedDatabase = isShardedDatabase
       )),
       Some(fuseSelections),
       Some(UnnestApply(

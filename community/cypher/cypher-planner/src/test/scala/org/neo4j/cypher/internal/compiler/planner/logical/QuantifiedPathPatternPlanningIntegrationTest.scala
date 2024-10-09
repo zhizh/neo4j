@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.compiler.planner.logical
 
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
+import org.neo4j.cypher.internal.compiler.ExecutionModel
 import org.neo4j.cypher.internal.compiler.planner.AttributeComparisonStrategy
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningAttributesTestSupport
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningIntegrationTestSupport
@@ -88,7 +89,7 @@ trait QuantifiedPathPatternPlanningIntegrationTestBase extends CypherFunSuite wi
   private def disjoint(lhs: String, rhs: String, unnamedOffset: Int = 0): String =
     s"NONE(anon_$unnamedOffset IN $lhs WHERE anon_$unnamedOffset IN $rhs)"
 
-  private val plannerBase = plannerBuilder()
+  protected val plannerBase = plannerBuilder()
     .enablePlanningIntersectionScans()
     .setAllNodesCardinality(100)
     .setAllRelationshipsCardinality(40)
@@ -3369,6 +3370,39 @@ trait QuantifiedPathPatternBlockSpecificPlanningIntegrationTestBase {
           .|.filterExpressionOrString(filterExpressions: _*)
           .|.expandAll("(anon_0)-[r]->(anon_1)")
           .|.argument("anon_0")
+          .allNodeScan("a")
+          .build()
+      }
+  }
+
+  relationshipPredicatesWithPropertyAccess.foreach {
+    case RelationshipPredicate(queryPredicate, plannedType, plannedPredicates @ _*) =>
+      test(
+        s"Should plan VarExpand instead of Trail on quantified path pattern with relationship predicate $queryPredicate, Volcano execution model"
+      ) {
+        val planner = plannerBase
+          .setExecutionModel(ExecutionModel.Volcano)
+          .build()
+
+        val query = s"MATCH (a) ((n)-[r $queryPredicate]->(m))+ (b) RETURN r"
+        val plan = planner.plan(query).stripProduceResults
+        plan shouldEqual planner.subPlanBuilder()
+          .expand(s"(a)-[r$plannedType*1..]->(b)", relationshipPredicates = plannedPredicates)
+          .allNodeScan("a")
+          .build()
+      }
+
+      test(
+        s"Should plan VarExpand instead of Trail on quantified relationship with relationship predicate $queryPredicate, Volcano execution model"
+      ) {
+        val planner = plannerBase
+          .setExecutionModel(ExecutionModel.Volcano)
+          .build()
+
+        val query = s"MATCH (a)-[r $queryPredicate]->+(b) RETURN r"
+        val plan = planner.plan(query).stripProduceResults
+        plan shouldEqual planner.subPlanBuilder()
+          .expand(s"(a)-[r$plannedType*1..]->(b)", relationshipPredicates = plannedPredicates.toList)
           .allNodeScan("a")
           .build()
       }

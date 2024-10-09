@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter
 
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
+import org.neo4j.cypher.internal.compiler.ExecutionModel
 import org.neo4j.cypher.internal.compiler.helpers.LogicalPlanBuilder
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanTestOps
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningTestSupport
@@ -200,7 +201,8 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
       .build()
 
     rewrites(trail, expand, dbFormat = DbFormat.Aligned)
-    preserves(trail, dbFormat = DbFormat.Block)
+    rewrites(trail, expand, executionModels = Seq(ExecutionModel.Volcano))
+    preserves(trail, dbFormat = DbFormat.Block, executionModels = Seq(ExecutionModel.Batched.default))
   }
 
   // pre-filter predicate with inner node dependency
@@ -313,7 +315,8 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
       .build()
 
     rewrites(trail, expand, dbFormat = DbFormat.Aligned)
-    preserves(trail, dbFormat = DbFormat.Block)
+    rewrites(trail, expand, executionModels = Seq(ExecutionModel.Volcano))
+    preserves(trail, dbFormat = DbFormat.Block, executionModels = Seq(ExecutionModel.Batched.default))
   }
 
   // pre-filter relationship type predicate
@@ -347,7 +350,8 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
       .build()
 
     rewrites(trail, expand, dbFormat = DbFormat.Aligned)
-    preserves(trail, dbFormat = DbFormat.Block)
+    rewrites(trail, expand, executionModels = Seq(ExecutionModel.Volcano))
+    preserves(trail, dbFormat = DbFormat.Block, executionModels = Seq(ExecutionModel.Batched.default))
   }
 
   // post-filter predicate
@@ -1111,23 +1115,46 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
     rewrites(selectionAndTrail, expand)
   }
 
-  private def rewrites(trail: LogicalPlan, expand: LogicalPlan, dbFormat: DbFormat = DbFormat.All): Unit =
-    for (isBlockFormat <- dbFormat.isBlockFormat) withClue(s"isBlockFormat = $isBlockFormat\n") {
-      rewrite(trail, isBlockFormat).stripProduceResults should equal(expand.stripProduceResults)
+  private def rewrites(
+    trail: LogicalPlan,
+    expand: LogicalPlan,
+    dbFormat: DbFormat = DbFormat.All,
+    executionModels: Seq[ExecutionModel] = Seq(ExecutionModel.Volcano, ExecutionModel.Batched.default)
+  ): Unit =
+    for {
+      isBlockFormat <- dbFormat.isBlockFormat
+      em <- executionModels
+      supportsCursorReuse = em.supportsCursorReuseInBlockFormat
+    } withClue(s"isBlockFormat = $isBlockFormat, supportsCursorReuse = $supportsCursorReuse\n") {
+      rewrite(trail, isBlockFormat, supportsCursorReuse).stripProduceResults should equal(expand.stripProduceResults)
     }
 
-  private def preserves(trail: LogicalPlan, dbFormat: DbFormat = DbFormat.All): Unit = {
-    for (isBlockFormat <- dbFormat.isBlockFormat) withClue(s"isBlockFormat = $isBlockFormat\n") {
-      rewrite(trail, isBlockFormat).stripProduceResults should equal(trail.stripProduceResults)
+  private def preserves(
+    trail: LogicalPlan,
+    dbFormat: DbFormat = DbFormat.All,
+    executionModels: Seq[ExecutionModel] = Seq(ExecutionModel.Volcano, ExecutionModel.Batched.default)
+  ): Unit = {
+    for {
+      isBlockFormat <- dbFormat.isBlockFormat
+      em <- executionModels
+      supportsCursorReuse = em.supportsCursorReuseInBlockFormat
+    } withClue(s"isBlockFormat = $isBlockFormat, supportsCursorReuse = $supportsCursorReuse\n") {
+      rewrite(trail, isBlockFormat, supportsCursorReuse).stripProduceResults should equal(trail.stripProduceResults)
     }
   }
 
-  private def rewrite(p: LogicalPlan, isBlockFormat: Boolean): LogicalPlan =
+  private def rewrite(
+    p: LogicalPlan,
+    isBlockFormat: Boolean,
+    executionModelSupportsCursorReuseInBlockFormat: Boolean
+  ): LogicalPlan =
     p.endoRewrite(TrailToVarExpandRewriter(
       new StubLabelAndRelTypeInfos,
       Attributes(idGen, new StubSolveds),
       new AnonymousVariableNameGenerator,
-      isBlockFormat = isBlockFormat
+      isBlockFormat = isBlockFormat,
+      executionModelSupportsCursorReuseInBlockFormat = executionModelSupportsCursorReuseInBlockFormat,
+      isShardedDatabase = false
     ))
 
   private def subPlanBuilder = new LogicalPlanBuilder(wholePlan = false)
