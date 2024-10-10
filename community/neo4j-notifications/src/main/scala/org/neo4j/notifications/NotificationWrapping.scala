@@ -50,6 +50,7 @@ import org.neo4j.cypher.internal.util.ImpossibleRevokeCommandWarning
 import org.neo4j.cypher.internal.util.IndexOrConstraintAlreadyExistsNotification
 import org.neo4j.cypher.internal.util.IndexOrConstraintDoesNotExistNotification
 import org.neo4j.cypher.internal.util.InputPosition
+import org.neo4j.cypher.internal.util.InsecureProtocol
 import org.neo4j.cypher.internal.util.InternalNotification
 import org.neo4j.cypher.internal.util.NoDatabasesReallocated
 import org.neo4j.cypher.internal.util.RedundantOptionalProcedure
@@ -429,6 +430,7 @@ object NotificationWrapping {
 
     case AggregationSkippedNull    => NotificationCodeWithDescription.aggregationSkippedNull()
     case DeprecatedBooleanCoercion => NotificationCodeWithDescription.deprecatedBooleanCoercion()
+    case InsecureProtocol          => NotificationCodeWithDescription.insecureProtocol()
 
     case _ => throw new IllegalStateException("Missing mapping for notification detail.")
   }

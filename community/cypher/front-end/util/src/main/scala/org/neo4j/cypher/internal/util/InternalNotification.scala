@@ -183,3 +183,5 @@ case object DeprecatedBooleanCoercion extends InternalNotification {
 }
 
 case class DeprecatedOptionInOptionMap(oldOption: String, newOption: String) extends InternalNotification
+
+case object InsecureProtocol extends InternalNotification

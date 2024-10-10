@@ -382,7 +382,12 @@ public interface Status {
                 ClientNotification,
                 "The query contains an aggregation function that skips null values.",
                 SeverityLevel.WARNING,
-                NotificationCategory.UNRECOGNIZED);
+                NotificationCategory.UNRECOGNIZED),
+        InsecureProtocol(
+                ClientNotification,
+                "The query uses an insecure protocol.",
+                SeverityLevel.WARNING,
+                NotificationCategory.SECURITY);
 
         private final Code code;
 

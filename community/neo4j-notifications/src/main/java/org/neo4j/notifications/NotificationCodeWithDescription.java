@@ -322,7 +322,8 @@ public enum NotificationCodeWithDescription {
             Status.Statement.FeatureDeprecationWarning,
             GqlStatusInfoCodes.STATUS_01N02,
             "The query converted a list or path to a boolean value."),
-
+    INSECURE_PROTOCOL(
+            Status.Statement.InsecureProtocol, GqlStatusInfoCodes.STATUS_01N72, "Query uses an insecure protocol."),
     DEPRECATED_OPTION_IN_OPTION_MAP(
             Status.Statement.FeatureDeprecationWarning,
             GqlStatusInfoCodes.STATUS_01N01,
@@ -714,6 +715,10 @@ public enum NotificationCodeWithDescription {
     public static NotificationImplementation deprecatedBooleanCoercion() {
         return DEPRECATED_BOOLEAN_COERCION.notificationWithParameters(
                 InputPosition.empty, new String[] {}, new String[] {"Converting a list or a path to a boolean"});
+    }
+
+    public static NotificationImplementation insecureProtocol() {
+        return INSECURE_PROTOCOL.notification(InputPosition.empty);
     }
 
     public static NotificationImplementation indexOrConstraintAlreadyExists(

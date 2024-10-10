@@ -62,6 +62,7 @@ import static org.neo4j.notifications.NotificationCodeWithDescription.indexHintU
 import static org.neo4j.notifications.NotificationCodeWithDescription.indexLookupForDynamicProperty;
 import static org.neo4j.notifications.NotificationCodeWithDescription.indexOrConstraintAlreadyExists;
 import static org.neo4j.notifications.NotificationCodeWithDescription.indexOrConstraintDoesNotExist;
+import static org.neo4j.notifications.NotificationCodeWithDescription.insecureProtocol;
 import static org.neo4j.notifications.NotificationCodeWithDescription.joinHintUnfulfillable;
 import static org.neo4j.notifications.NotificationCodeWithDescription.largeLabelLoadCsv;
 import static org.neo4j.notifications.NotificationCodeWithDescription.missingLabel;
@@ -1682,6 +1683,23 @@ class NotificationCodeWithDescriptionTest {
     }
 
     @Test
+    void shouldConstructNotificationsFor_INSECURE_PROTOCOL() {
+        NotificationImplementation notification = insecureProtocol();
+
+        verifyNotification(
+                notification,
+                "The query uses an insecure protocol.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.InsecureProtocol",
+                "Query uses an insecure protocol.",
+                NotificationCategory.SECURITY,
+                NotificationClassification.SECURITY,
+                "01N72",
+                new DiagnosticRecord(warning, NotificationClassification.SECURITY, -1, -1, -1, Map.of()).asMap(),
+                "warn: query uses an insecure protocol");
+    }
+
+    @Test
     void shouldConstructNotificationsFor_DEPRECATED_OPTION_IN_OPTION_MAP() {
         NotificationImplementation notification = deprecatedOptionInOptionMap("oldName", "newName");
 
@@ -1825,8 +1843,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            -51, -88, -74, -33, -87, 123, 12, 2, -73, 118, -4, 28, 50, -116, 114, 71, -24, 5, -110, -89, 95, -84, 21,
-            -42, 59, 56, 19, 120, 28, 92, -2, -127
+            37, 9, -100, -31, -83, 70, 103, 86, -108, -43, 63, -76, -86, 108, -21, -105, -91, -23, 125, -42, 1, -35, -3,
+            -111, -83, -26, 125, -105, 76, -127, -113, 116
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {
