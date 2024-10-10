@@ -31,6 +31,7 @@ import org.neo4j.cypher.internal.runtime.CreateTempFileTestSupport
 import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.CSVResources.DEFAULT_BUFFER_SIZE
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.internal.kernel.api.AutoCloseablePlus
 import org.neo4j.io.fs.FileUtils
@@ -45,14 +46,17 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
   var resources: CSVResources = _
   var cleaner: ResourceManager = _
   var queryContext: QueryContext = _
+  var state: QueryState = _
   var config: Config = _
 
   override def beforeEach(): Unit = {
     cleaner = mock[ResourceManager]
+    state = mock[QueryState]
     queryContext = mock[QueryContext]
     config = mock[Config]
 
     resources = new CSVResources(cleaner)
+    when(state.query).thenReturn(queryContext)
     when(queryContext.getConfig).thenReturn(config)
     when(config.get(GraphDatabaseSettings.allow_file_urls)).thenReturn(true)
   }
@@ -73,7 +77,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     // when
     val result: List[Array[String]] = resources.getCsvIterator(
       url,
-      queryContext,
+      state,
       None,
       legacyCsvQuoteEscaping = false,
       DEFAULT_BUFFER_SIZE
@@ -106,7 +110,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     val result =
       resources.getCsvIterator(
         url,
-        queryContext,
+        state,
         None,
         legacyCsvQuoteEscaping = false,
         DEFAULT_BUFFER_SIZE
@@ -141,7 +145,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     val result =
       resources.getCsvIterator(
         url,
-        queryContext,
+        state,
         None,
         legacyCsvQuoteEscaping = false,
         DEFAULT_BUFFER_SIZE
@@ -171,7 +175,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     val result =
       resources.getCsvIterator(
         url,
-        queryContext,
+        state,
         None,
         legacyCsvQuoteEscaping = false,
         DEFAULT_BUFFER_SIZE
@@ -195,7 +199,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     )
 
     // when
-    resources.getCsvIterator(url, queryContext, None, legacyCsvQuoteEscaping = false, DEFAULT_BUFFER_SIZE)
+    resources.getCsvIterator(url, state, None, legacyCsvQuoteEscaping = false, DEFAULT_BUFFER_SIZE)
 
     // then
     verify(cleaner).trace(any(classOf[AutoCloseablePlus]))
@@ -217,7 +221,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     // when
     val result: List[Array[String]] = resources.getCsvIterator(
       url,
-      queryContext,
+      state,
       Some("\t"),
       legacyCsvQuoteEscaping = false,
       DEFAULT_BUFFER_SIZE
@@ -247,7 +251,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     // when
     val result: List[Array[String]] = resources.getCsvIterator(
       url,
-      queryContext,
+      state,
       None,
       legacyCsvQuoteEscaping = false,
       DEFAULT_BUFFER_SIZE
@@ -278,7 +282,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     // when
     val e = intercept[IllegalStateException](resources.getCsvIterator(
       url,
-      queryContext,
+      state,
       None,
       legacyCsvQuoteEscaping = false,
       DEFAULT_BUFFER_SIZE
@@ -310,7 +314,7 @@ class CSVResourcesTest extends CypherFunSuite with CreateTempFileTestSupport {
     // when
     val result: List[Array[String]] = resources.getCsvIterator(
       url,
-      queryContext,
+      state,
       Some("\t"),
       legacyCsvQuoteEscaping = false,
       DEFAULT_BUFFER_SIZE

@@ -153,10 +153,9 @@ abstract class AbstractLoadCSVPipe(
   }
 
   private def getLoadCSVIterator(state: QueryState, urlString: String, useHeaders: Boolean): LoadCsvIterator = {
-
     state.resources.getCsvIterator(
       urlString,
-      state.query,
+      state,
       fieldTerminator,
       legacyCsvQuoteEscaping,
       bufferSize,

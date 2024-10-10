@@ -24,10 +24,11 @@ import org.neo4j.csv.reader.CharSeekers
 import org.neo4j.csv.reader.Configuration
 import org.neo4j.csv.reader.Extractors
 import org.neo4j.csv.reader.Mark
-import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.ExternalCSVResource
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.LoadCsvIterator
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.cypher.internal.util.InsecureProtocol
 import org.neo4j.exceptions.CypherExecutionException
 import org.neo4j.exceptions.LoadExternalResourceException
 import org.neo4j.graphdb.security.AuthorizationViolationException
@@ -42,6 +43,7 @@ import java.net.CookieManager
 import java.net.CookiePolicy
 import java.net.URI
 import java.net.URISyntaxException
+import java.util.Locale
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Failure
@@ -76,7 +78,7 @@ class CSVResources(resourceManager: ResourceManager) extends ExternalCSVResource
 
   override def getCsvIterator(
     urlString: String,
-    query: QueryContext,
+    state: QueryState,
     fieldTerminator: Option[String],
     legacyCsvQuoteEscaping: Boolean,
     bufferSize: Int,
@@ -84,7 +86,8 @@ class CSVResources(resourceManager: ResourceManager) extends ExternalCSVResource
   ): LoadCsvIterator = {
     val (uri, reader) = Try {
       val uri = new URI(urlString)
-      (uri, query.getImportDataConnection(uri))
+      checkForUnsecureProtocols(uri, state)
+      (uri, state.query.getImportDataConnection(uri))
     } match {
       case Success(readable)                               => readable
       case Failure(error: AuthorizationViolationException) => throw error
@@ -149,6 +152,15 @@ class CSVResources(resourceManager: ResourceManager) extends ExternalCSVResource
         readAll = !hasNext
         row
       }
+    }
+  }
+
+  private def checkForUnsecureProtocols(uri: URI, state: QueryState): Unit = {
+    val scheme = uri.getScheme.toLowerCase(Locale.ROOT)
+    scheme match {
+      case "http" =>
+        state.newRuntimeNotification(InsecureProtocol)
+      case _ =>
     }
   }
 }
