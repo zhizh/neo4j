@@ -43,6 +43,7 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.exceptions.ClientException;
 import org.neo4j.driver.exceptions.FatalDiscoveryException;
+import org.neo4j.driver.exceptions.Neo4jException;
 import org.neo4j.driver.exceptions.TransientException;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.logging.InternalLog;
@@ -51,6 +52,7 @@ import org.neo4j.server.queryapi.metrics.QueryAPIMetricsMonitor;
 import org.neo4j.server.queryapi.request.AccessMode;
 import org.neo4j.server.queryapi.request.QueryRequest;
 import org.neo4j.server.queryapi.request.ResultContainer;
+import org.neo4j.server.queryapi.response.HttpErrorResponse;
 import org.neo4j.server.rest.dbms.AuthorizationHeaders;
 
 @Path(QueryResource.FULL_PATH)
@@ -82,8 +84,7 @@ public class QueryResource {
         meterRequest(request);
         var sessionConfig = buildSessionConfig(request, databaseName);
         // The session will be closed after the result set has been serialized, it must not be closed in a
-        // try-with-resources block here
-        // It must be closed only in an exceptional state
+        // try-with-resources block here. It must be closed only in an exceptional state
         var sessionAuthToken = extractAuthToken(rawRequest);
         if (sessionAuthToken == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -96,20 +97,18 @@ public class QueryResource {
             var resultAndSession = new ResultContainer(result, session, request);
             response = Response.accepted(resultAndSession).build();
         } catch (FatalDiscoveryException ex) {
-            response = Response.status(Response.Status.NOT_FOUND)
-                    .entity(fromDriverException(ex))
-                    .build();
+            response = generateResponse(Response.Status.NOT_FOUND, fromDriverException(ex));
         } catch (ClientException | TransientException clientException) {
-            response = Response.status(Response.Status.BAD_REQUEST)
-                    .entity(fromDriverException(clientException))
-                    .build();
+            response = generateResponse(Response.Status.BAD_REQUEST, fromDriverException(clientException));
+        } catch (Neo4jException neo4jException) {
+            response = generateResponse(Response.Status.INTERNAL_SERVER_ERROR, fromDriverException(neo4jException));
         } catch (Exception exception) {
             log.error("Local driver failed to execute query", exception);
-            response = Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(singleError(
+            response = generateResponse(
+                    Response.Status.INTERNAL_SERVER_ERROR,
+                    singleError(
                             Status.General.UnknownError.code().serialize(),
-                            Status.General.UnknownError.code().description()))
-                    .build();
+                            Status.General.UnknownError.code().description()));
         }
 
         if (response.getStatus() != Response.Status.ACCEPTED.getStatusCode()) {
@@ -120,7 +119,6 @@ public class QueryResource {
     }
 
     private void meterRequest(QueryRequest request) {
-
         if (request.accessMode() != null && request.accessMode().equals(AccessMode.READ)) {
             monitor.readRequest();
         }
@@ -176,5 +174,9 @@ public class QueryResource {
 
     public static String absoluteDatabaseTransactionPath(Config config) {
         return config.get(ServerSettings.db_api_path).getPath() + FULL_PATH;
+    }
+
+    private Response generateResponse(Response.Status status, HttpErrorResponse message) {
+        return Response.status(status).entity(message).build();
     }
 }
