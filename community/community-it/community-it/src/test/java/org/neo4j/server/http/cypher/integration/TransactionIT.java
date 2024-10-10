@@ -507,7 +507,7 @@ public class TransactionIT extends AbstractRestFunctionalTestBase {
         assertEquals(initialNodes, countNodes());
 
         // Wait for the transaction to finish. If this gets stuck, the test will timeout in 30s
-        while (txMonitor.getNumberOfActiveTransactions() > 0) {
+        while (transactionManager.getTransactionCount() > 0) {
             Thread.sleep(100);
         }
 
