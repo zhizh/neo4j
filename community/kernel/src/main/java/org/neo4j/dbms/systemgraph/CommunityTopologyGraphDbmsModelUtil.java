@@ -60,7 +60,7 @@ public final class CommunityTopologyGraphDbmsModelUtil {
                     var alias = new NormalizedDatabaseName(databaseId.name());
                     var ref = new Internal(alias, databaseId, true);
                     if (node.getDegree(TopologyGraphDbmsModel.HAS_SHARD, Direction.INCOMING) > 0) {
-                        return ref.asShard(TopologyGraphDbmsModel.readOwningDatabase(node));
+                        return ref.asShard(readOwningDatabase(node));
                     } else {
                         return ref;
                     }
@@ -365,6 +365,17 @@ public final class CommunityTopologyGraphDbmsModelUtil {
             return operation.get();
         } catch (NotFoundException e) {
             return Optional.empty();
+        }
+    }
+
+    public static String readOwningDatabase(Node aliasNode) {
+        var relationships = aliasNode.getRelationships(Direction.INCOMING, TopologyGraphDbmsModel.HAS_SHARD).stream()
+                .map(Relationship::getStartNode)
+                .toList(); // exhaust cursor
+        if (relationships.isEmpty()) {
+            return aliasNode.getProperty(DATABASE_NAME_PROPERTY).toString();
+        } else {
+            return relationships.get(0).getProperty(DATABASE_NAME_PROPERTY).toString();
         }
     }
 }

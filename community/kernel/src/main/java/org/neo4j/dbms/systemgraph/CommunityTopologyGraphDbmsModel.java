@@ -183,8 +183,8 @@ public class CommunityTopologyGraphDbmsModel implements TopologyGraphDbmsModel {
                             Optional<DatabaseReferenceImpl.Internal> internalReference =
                                     CommunityTopologyGraphDbmsModelUtil.createInternalReference(
                                             alias, CommunityTopologyGraphDbmsModelUtil.getDatabaseId(db));
-                            return internalReference.map(
-                                    internal -> internal.asShard(TopologyGraphDbmsModel.readOwningDatabase(db)));
+                            return internalReference.map(internal ->
+                                    internal.asShard(CommunityTopologyGraphDbmsModelUtil.readOwningDatabase(db)));
                         })
                         .stream())
                 .findFirst();
