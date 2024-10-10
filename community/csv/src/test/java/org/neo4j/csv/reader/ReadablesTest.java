@@ -76,6 +76,7 @@ class ReadablesTest {
 
         // THEN
         assertReadText(compressed, text, readMethod);
+        assertReadTextAsInputStream(compressed, text, readMethod);
     }
 
     @ParameterizedTest(name = "read method {index}")
@@ -89,6 +90,7 @@ class ReadablesTest {
 
         // THEN
         assertReadText(compressed, text, readMethod);
+        assertReadTextAsInputStream(compressed, text, readMethod);
     }
 
     @ParameterizedTest(name = "read method {index}")
@@ -190,7 +192,7 @@ class ReadablesTest {
             } while (buffer.hasAvailable());
 
             // and THEN
-            assertEquals(data.toCharArray().length, expected);
+            assertEquals(data.length(), expected);
         }
     }
 
@@ -367,7 +369,7 @@ class ReadablesTest {
     }
 
     private static void assertReadText(CharReadable readable, String text, ReadMethod readMethod) throws IOException {
-        char[] readText = readMethod.read(readable, text.toCharArray().length);
+        char[] readText = readMethod.read(readable, text.length());
         assertArrayEquals(readText, text.toCharArray());
     }
 

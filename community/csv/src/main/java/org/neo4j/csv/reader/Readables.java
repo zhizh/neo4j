@@ -97,15 +97,15 @@ public class Readables {
                 usedCharset = magic.encoding();
             }
             pushbackStream.unread(bytes, read - excessiveBytes, excessiveBytes);
+
+            if (magic == Magic.ZIP) {
+                return zipReadable(pushbackStream, usedCharset, sourceName);
+            } else if (magic == Magic.GZIP) {
+                return gzipReadable(pushbackStream, usedCharset, sourceName, length);
+            }
         }
-        return wrap(
-                new InputStreamReader(pushbackStream, usedCharset) {
-                    @Override
-                    public String toString() {
-                        return sourceName;
-                    }
-                },
-                length);
+
+        return readable(pushbackStream, usedCharset, sourceName, length);
     }
 
     public static CharReadable wrap(String sourceDescription, String data) {
@@ -145,23 +145,28 @@ public class Readables {
         @Override
         public CharReadable apply(final Path path) throws IOException {
             final var input = MagicInputStream.create(adaptPath(path));
+            final var sourceName = pathString(path.toAbsolutePath());
             if (input.magic() == Magic.ZIP) {
                 return input.isDefaultFileSystemBased()
-                        ? zipReadableFromFile(input.path(), charset)
-                        : zipReadable(input, charset);
+                        ? zipReadableFromFile(input.path(), charset, sourceName)
+                        : zipReadable(input, charset, sourceName);
             } else if (input.magic() == Magic.GZIP) {
-                return gzipReadable(input, charset);
+                return gzipReadable(input, charset, sourceName, Files.size(path));
             } else {
-                return readableWithEncoding(input, charset);
+                return readableWithEncoding(input, charset, sourceName);
             }
         }
 
         private Path adaptPath(Path path) {
             return (readIsForSampling && path instanceof StoragePath sp) ? adaptPathForSampling(sp) : path;
         }
+
+        private static String pathString(Path path) {
+            return path instanceof StoragePath ? path.toUri().toString() : path.toString();
+        }
     }
 
-    private static CharReadable zipReadable(MagicInputStream input, Charset charset) throws IOException {
+    private static CharReadable zipReadable(InputStream input, Charset charset, String sourceName) throws IOException {
         // can't use ZipFile unfortunately as the (storage) Path implementation would throw on a toFile call :-(
         final var stream = new ZipInputStream(input);
 
@@ -171,35 +176,22 @@ public class Readables {
                 continue;
             }
 
-            return wrap(
-                    new InputStreamReader(stream, charset) {
-                        @Override
-                        public String toString() {
-                            return pathString(input.path().toAbsolutePath());
-                        }
-                    },
-                    entry.getSize());
+            return readable(stream, charset, sourceName, entry.getSize());
         }
 
         stream.close();
-        throw new IllegalStateException("Couldn't find zip entry when opening the stream at " + input.path());
+        throw new IllegalStateException("Couldn't find zip entry when opening the stream at " + sourceName);
     }
 
-    private static CharReadable zipReadableFromFile(Path path, Charset charset) throws IOException {
+    private static CharReadable zipReadableFromFile(Path path, Charset charset, String sourceName) throws IOException {
         try (var zipFile = new ZipFile(path.toFile())) {
             final var entry = getSingleSuitableEntry(zipFile);
-            return wrap(
-                    new InputStreamReader(openZipInputStream(path, entry), charset) {
-                        @Override
-                        public String toString() {
-                            return pathString(path.toAbsolutePath());
-                        }
-                    },
-                    entry.getSize());
+            return readable(openZipInputStream(path, entry), charset, sourceName, entry.getSize());
         }
     }
 
-    private static CharReadable gzipReadable(MagicInputStream input, Charset charset) throws IOException {
+    private static CharReadable gzipReadable(InputStream input, Charset charset, String sourceName, long fileSize)
+            throws IOException {
         // GZIP isn't an archive like ZIP, so this is purely data that is compressed.
         // Although a very common way of compressing with GZIP is to use TAR which can combine many files into one
         // blob, which is then compressed. If that's the case then the data will look like garbage and the reader
@@ -214,18 +206,11 @@ public class Readables {
             }
         };
 
-        final var path = input.path().toAbsolutePath();
-        InputStreamReader reader = new InputStreamReader(zipStream, charset) {
-            @Override
-            public String toString() {
-                return pathString(path);
-            }
-        };
         // For GZIP there's no reliable way of getting the decompressed file size w/o decompressing the whole file,
         // therefore this compression ratio estimation mechanic is put in place such that at any given time the
         // reader can be queried about its observed compression ratio and the longer the reader goes the more
         // accurate it gets.
-        return new WrappedCharReadable(Files.size(path), reader, pathString(path)) {
+        return new WrappedCharReadable(fileSize, reader(zipStream, charset, sourceName), sourceName) {
             @Override
             public float compressionRatio() {
                 long decompressedPosition = position();
@@ -235,7 +220,7 @@ public class Readables {
         };
     }
 
-    private static CharReadable readableWithEncoding(MagicInputStream input, Charset defaultCharset)
+    private static CharReadable readableWithEncoding(MagicInputStream input, Charset defaultCharset, String sourceName)
             throws IOException {
         final var magic = input.magic();
         var usedCharset = defaultCharset;
@@ -249,19 +234,20 @@ public class Readables {
             usedCharset = magic.encoding();
         }
 
-        final var path = input.path().toAbsolutePath();
-        return wrap(
-                new InputStreamReader(input, usedCharset) {
-                    @Override
-                    public String toString() {
-                        return pathString(path);
-                    }
-                },
-                Files.size(path));
+        return readable(input, usedCharset, sourceName, Files.size(input.path().toAbsolutePath()));
     }
 
-    private static String pathString(Path path) {
-        return path instanceof StoragePath ? path.toUri().toString() : path.toString();
+    private static Reader reader(InputStream input, Charset charset, String sourceName) {
+        return new InputStreamReader(input, charset) {
+            @Override
+            public String toString() {
+                return sourceName;
+            }
+        };
+    }
+
+    private static CharReadable readable(InputStream input, Charset charset, String sourceName, long size) {
+        return wrap(reader(input, charset, sourceName), size);
     }
 
     private static ZipInputStream openZipInputStream(Path path, ZipEntry entry) throws IOException {
