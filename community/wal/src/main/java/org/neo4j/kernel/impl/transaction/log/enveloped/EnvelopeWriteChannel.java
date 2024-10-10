@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.log;
+package org.neo4j.kernel.impl.transaction.log.enveloped;
 
 import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
@@ -39,10 +39,10 @@ import java.util.zip.Checksum;
 import org.neo4j.io.fs.PhysicalLogChannel;
 import org.neo4j.io.fs.StoreChannel;
 import org.neo4j.io.memory.ScopedBuffer;
+import org.neo4j.kernel.impl.transaction.log.LogTracers;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.EnvelopeType;
 import org.neo4j.kernel.impl.transaction.log.rotation.LogRotation;
-import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
 import org.neo4j.util.VisibleForTesting;
 
 /**
@@ -104,7 +104,7 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
     private final Checksum checksum = CHECKSUM_FACTORY.get();
     private final ScopedBuffer scopedBuffer;
     private final LogRotation logRotation;
-    private final DatabaseTracer databaseTracer;
+    private final LogTracers logTracers;
     private final ByteBuffer buffer;
     private final ByteBuffer checksumView;
     private final int segmentBlockSize;
@@ -129,7 +129,7 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
             int segmentBlockSize,
             int initialChecksum,
             long currentIndex,
-            DatabaseTracer databaseTracer,
+            LogTracers logTracers,
             LogRotation logRotation)
             throws IOException {
         this.channel = requireNonNull(channel);
@@ -138,7 +138,7 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
         requirePowerOfTwo(segmentBlockSize);
         this.segmentBlockSize = segmentBlockSize;
         this.logRotation = requireNonNull(logRotation);
-        this.databaseTracer = requireNonNull(databaseTracer);
+        this.logTracers = requireNonNull(logTracers);
         this.buffer = scopedBuffer.getBuffer();
         this.checksumView = buffer.duplicate().order(buffer.order());
         this.currentIndex = currentIndex;
@@ -553,7 +553,7 @@ public class EnvelopeWriteChannel implements PhysicalLogChannel {
     }
 
     private void rotateLogFile() throws IOException {
-        try (var logAppendEvent = databaseTracer.logAppend()) {
+        try (var logAppendEvent = logTracers.logAppend()) {
             logRotation.rotateLogFile(logAppendEvent);
             // and notify the event tracer
             logAppendEvent.setLogRotated(true);

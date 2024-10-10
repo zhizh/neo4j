@@ -26,8 +26,6 @@ import org.neo4j.io.fs.DelegatingStoreChannel;
 import org.neo4j.io.fs.StoreChannel;
 import org.neo4j.kernel.impl.transaction.log.entry.LogFormat;
 import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
-import org.neo4j.kernel.impl.transaction.log.files.ChannelNativeAccessor;
-import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
 
 public class PhysicalLogVersionedStoreChannel extends DelegatingStoreChannel<StoreChannel>
         implements LogVersionedStoreChannel {
@@ -37,14 +35,14 @@ public class PhysicalLogVersionedStoreChannel extends DelegatingStoreChannel<Sto
     private final Path path;
     private final ChannelNativeAccessor nativeChannelAccessor;
     private final boolean raw;
-    private final DatabaseTracer databaseTracer;
+    private final LogTracers databaseTracer;
 
     public PhysicalLogVersionedStoreChannel(
             StoreChannel delegateChannel,
             LogHeader header,
             Path path,
             ChannelNativeAccessor nativeChannelAccessor,
-            DatabaseTracer databaseTracer)
+            LogTracers databaseTracer)
             throws IOException {
         this(
                 delegateChannel,
@@ -62,7 +60,7 @@ public class PhysicalLogVersionedStoreChannel extends DelegatingStoreChannel<Sto
             LogFormat formatVersion,
             Path path,
             ChannelNativeAccessor nativeChannelAccessor,
-            DatabaseTracer databaseTracer)
+            LogTracers databaseTracer)
             throws IOException {
         this(delegateChannel, fileVersion, formatVersion, path, nativeChannelAccessor, databaseTracer, false);
     }
@@ -73,7 +71,7 @@ public class PhysicalLogVersionedStoreChannel extends DelegatingStoreChannel<Sto
             LogFormat formatVersion,
             Path path,
             ChannelNativeAccessor nativeChannelAccessor,
-            DatabaseTracer databaseTracer,
+            LogTracers databaseTracer,
             boolean raw)
             throws IOException {
         super(delegateChannel);

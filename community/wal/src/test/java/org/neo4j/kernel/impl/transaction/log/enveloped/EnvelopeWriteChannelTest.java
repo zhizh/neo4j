@@ -17,18 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.log;
+package org.neo4j.kernel.impl.transaction.log.enveloped;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.util.Arrays.copyOfRange;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.HEADER_SIZE;
 import static org.neo4j.kernel.impl.transaction.log.rotation.LogRotation.NO_ROTATION;
 import static org.neo4j.memory.EmptyMemoryTracker.INSTANCE;
 import static org.neo4j.storageengine.api.TransactionIdStore.BASE_TX_CHECKSUM;
-import static org.neo4j.test.LatestVersions.LATEST_LOG_FORMAT;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -47,14 +45,22 @@ import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.fs.StoreChannel;
 import org.neo4j.io.memory.HeapScopedBuffer;
 import org.neo4j.io.memory.ScopedBuffer;
-import org.neo4j.io.pagecache.tracing.DefaultPageCacheTracer;
 import org.neo4j.kernel.KernelVersion;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.impl.transaction.log.AppendTransactionEvent;
+import org.neo4j.kernel.impl.transaction.log.ChannelNativeAccessor;
+import org.neo4j.kernel.impl.transaction.log.LogAppendEvent;
+import org.neo4j.kernel.impl.transaction.log.LogFileCreateEvent;
+import org.neo4j.kernel.impl.transaction.log.LogFileFlushEvent;
+import org.neo4j.kernel.impl.transaction.log.LogForceEvent;
+import org.neo4j.kernel.impl.transaction.log.LogForceWaitEvent;
+import org.neo4j.kernel.impl.transaction.log.LogTracers;
+import org.neo4j.kernel.impl.transaction.log.LogVersionedStoreChannel;
+import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.EnvelopeType;
-import org.neo4j.kernel.impl.transaction.log.files.LogFileChannelNativeAccessor;
+import org.neo4j.kernel.impl.transaction.log.rotation.CountingLogRotateEvent;
+import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvent;
+import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvents;
 import org.neo4j.kernel.impl.transaction.log.rotation.LogRotation;
-import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
-import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvents;
 import org.neo4j.test.RandomSupport;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.testdirectory.TestDirectoryExtension;
@@ -590,7 +596,7 @@ class EnvelopeWriteChannelTest {
                 segmentSize,
                 buffer,
                 logRotation(fileChannel, header(segmentSize), maxLogFileSize),
-                DatabaseTracer.NULL)) {
+                LogTracers.NULL)) {
             channel.putVersion(KERNEL_VERSION);
             channel.put(byteData, byteData.length);
 
@@ -643,7 +649,7 @@ class EnvelopeWriteChannelTest {
                 segmentSize,
                 buffer,
                 logRotation(fileChannel, header(segmentSize), maxLogFileSize),
-                DatabaseTracer.NULL)) {
+                LogTracers.NULL)) {
             channel.putVersion(KERNEL_VERSION);
             channel.put(byteData, byteData.length);
             channel.endCurrentEntry();
@@ -702,7 +708,7 @@ class EnvelopeWriteChannelTest {
                 segmentSize,
                 buffer(segmentSize),
                 logRotation(fileChannel, header(segmentSize), maxLogFileSize),
-                DatabaseTracer.NULL)) {
+                LogTracers.NULL)) {
             channel.putVersion(KERNEL_VERSION);
             channel.put(byteData, byteData.length);
             channel.putChecksum();
@@ -762,7 +768,7 @@ class EnvelopeWriteChannelTest {
                 segmentSize,
                 buffer,
                 logRotation(fileChannel, header(segmentSize), maxLogFileSize),
-                DatabaseTracer.NULL)) {
+                LogTracers.NULL)) {
             channel.putVersion(KERNEL_VERSION);
             channel.put(byteData, byteData.length);
             channel.endCurrentEntry();
@@ -811,7 +817,7 @@ class EnvelopeWriteChannelTest {
     void spanningOverLogFileIsTraced(int segmentSize) throws IOException {
         final var maxLogFileSize = segmentSize * 4;
         final var byteData = bytes(random, segmentSize * 4);
-        final var tracer = new DefaultTracer(new DefaultPageCacheTracer());
+        final var tracer = new TestLogTracer();
 
         final var fileChannel = storeChannel();
         try (var channel = writeChannel(
@@ -841,7 +847,7 @@ class EnvelopeWriteChannelTest {
                 segmentSize,
                 buffer(segmentSize * 2),
                 logRotation(fileChannel, header(segmentSize), segmentSize * 100),
-                DatabaseTracer.NULL)) {
+                LogTracers.NULL)) {
             channel.putVersion(KERNEL_VERSION);
             channel.putLong(100);
             channel.endCurrentEntry();
@@ -907,6 +913,108 @@ class EnvelopeWriteChannelTest {
                     .as("trying to manually complete an empty envelope")
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage("Closing empty envelope is not allowed.");
+        }
+    }
+
+    private class TestLogTracer implements LogTracers {
+        private final CountingLogRotateEvent countingLogRotateEvent = new CountingLogRotateEvent();
+        private int rotations = 0;
+        private final LogAppendEvent logAppendEvent = new LogAppendEvent() {
+            @Override
+            public void appendedBytes(long bytes) {}
+
+            @Override
+            public void close() {}
+
+            @Override
+            public void setLogRotated(boolean logRotated) {}
+
+            @Override
+            public AppendTransactionEvent beginAppendTransaction(int appendItems) {
+                return null;
+            }
+
+            @Override
+            public LogForceWaitEvent beginLogForceWait() {
+                return null;
+            }
+
+            @Override
+            public LogForceEvent beginLogForce() {
+                return null;
+            }
+
+            @Override
+            public LogRotateEvent beginLogRotate() {
+                rotations++;
+                return countingLogRotateEvent;
+            }
+        };
+
+        @Override
+        public LogFileCreateEvent createLogFile() {
+            return null;
+        }
+
+        @Override
+        public void openLogFile(Path filePath) {}
+
+        @Override
+        public void closeLogFile(Path filePath) {}
+
+        @Override
+        public LogAppendEvent logAppend() {
+            return logAppendEvent;
+        }
+
+        @Override
+        public LogFileFlushEvent flushFile() {
+            return null;
+        }
+
+        @Override
+        public long appendedBytes() {
+            return 0;
+        }
+
+        @Override
+        public long numberOfLogRotations() {
+            return rotations;
+        }
+
+        @Override
+        public long logRotationAccumulatedTotalTimeMillis() {
+            return 0;
+        }
+
+        @Override
+        public long lastLogRotationTimeMillis() {
+            return countingLogRotateEvent.lastLogRotationTimeMillis();
+        }
+
+        @Override
+        public long numberOfFlushes() {
+            return 0;
+        }
+
+        @Override
+        public long lastTransactionLogAppendBatch() {
+            return 0;
+        }
+
+        @Override
+        public long batchesAppended() {
+            return 0;
+        }
+
+        @Override
+        public long rolledbackBatches() {
+            return 0;
+        }
+
+        @Override
+        public long rolledbackBatchedTransactions() {
+            return 0;
         }
     }
 
@@ -1330,10 +1438,10 @@ class EnvelopeWriteChannelTest {
         return new PhysicalLogVersionedStoreChannel(
                 fileSystem.write(logPath),
                 version,
-                LATEST_LOG_FORMAT,
+                LatestVersions.LATEST_LOG_FORMAT,
                 logPath,
-                mock(LogFileChannelNativeAccessor.class),
-                DatabaseTracer.NULL);
+                ChannelNativeAccessor.EMPTY_ACCESSOR,
+                LogTracers.NULL);
     }
 
     private Path logPath(long version) {
@@ -1414,7 +1522,7 @@ class EnvelopeWriteChannelTest {
 
     private EnvelopeWriteChannel writeChannel(
             StoreChannel channel, int segmentSize, int checksum, ScopedBuffer scopedBuffer) throws IOException {
-        return writeChannel(channel, segmentSize, checksum, scopedBuffer, NO_ROTATION, DatabaseTracer.NULL);
+        return writeChannel(channel, segmentSize, checksum, scopedBuffer, NO_ROTATION, LogTracers.NULL);
     }
 
     private EnvelopeWriteChannel writeChannel(
@@ -1422,9 +1530,9 @@ class EnvelopeWriteChannelTest {
             int segmentSize,
             ScopedBuffer scopedBuffer,
             LogRotation logRotation,
-            DatabaseTracer databaseTracer)
+            LogTracers logTracers)
             throws IOException {
-        return writeChannel(channel, segmentSize, BASE_TX_CHECKSUM, scopedBuffer, logRotation, databaseTracer);
+        return writeChannel(channel, segmentSize, BASE_TX_CHECKSUM, scopedBuffer, logRotation, logTracers);
     }
 
     private EnvelopeWriteChannel writeChannel(
@@ -1433,11 +1541,11 @@ class EnvelopeWriteChannelTest {
             int checksum,
             ScopedBuffer scopedBuffer,
             LogRotation logRotation,
-            DatabaseTracer databaseTracer)
+            LogTracers logTracers)
             throws IOException {
         channel.position(segmentSize);
         final var writeChannel = new EnvelopeWriteChannel(
-                channel, scopedBuffer, segmentSize, checksum, FIRST_INDEX - 1, databaseTracer, logRotation);
+                channel, scopedBuffer, segmentSize, checksum, FIRST_INDEX - 1, logTracers, logRotation);
         if (logRotation instanceof LogRotationForChannel rotator) {
             rotator.bindWriteChannel(writeChannel);
         }

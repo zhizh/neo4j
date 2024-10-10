@@ -21,7 +21,6 @@ package org.neo4j.kernel.impl.transaction.log;
 
 import static org.neo4j.storageengine.AppendIndexProvider.BASE_APPEND_INDEX;
 
-import org.neo4j.kernel.impl.transaction.tracing.LogAppendEvent;
 import org.neo4j.kernel.lifecycle.LifecycleAdapter;
 import org.neo4j.storageengine.api.StorageEngineTransaction;
 

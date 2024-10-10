@@ -17,29 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.tracing;
+package org.neo4j.kernel.impl.transaction.log;
 
 /**
- * Represents the event of a log rotation.
+ * Common interface for starting events around log force.
  */
-public interface LogRotateEvent extends AutoCloseable {
-    LogRotateEvent NULL = new LogRotateEvent() {
-        @Override
-        public void rotationCompleted(long rotationMillis) {}
-
-        @Override
-        public void close() {}
-    };
+public interface LogForceEvents {
+    /**
+     * Begin the process of forcing the transaction log file.
+     */
+    LogForceWaitEvent beginLogForceWait();
 
     /**
-     * Notify about completion of rotation that took {@code rotationMillis} to complete
-     * @param rotationMillis transaction log rotation duration
+     * Begin a batched force of the transaction log file.
      */
-    void rotationCompleted(long rotationMillis);
-
-    /**
-     * Marks the end of the log rotation process.
-     */
-    @Override
-    void close();
+    LogForceEvent beginLogForce();
 }

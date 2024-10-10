@@ -17,20 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.log;
+package org.neo4j.kernel.impl.transaction.log.enveloped;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.neo4j.io.ByteUnit.kibiBytes;
 import static org.neo4j.io.ByteUnit.mebiBytes;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogFormat.writeLogHeader;
 import static org.neo4j.memory.EmptyMemoryTracker.INSTANCE;
 import static org.neo4j.storageengine.AppendIndexProvider.BASE_APPEND_INDEX;
 import static org.neo4j.storageengine.api.LogVersionRepository.INITIAL_LOG_VERSION;
-import static org.neo4j.test.LatestVersions.LATEST_KERNEL_VERSION;
-import static org.neo4j.test.LatestVersions.LATEST_LOG_FORMAT;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -38,6 +34,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,12 +47,15 @@ import org.neo4j.io.fs.ReadPastEndException;
 import org.neo4j.io.fs.StoreFileChannel;
 import org.neo4j.io.memory.HeapScopedBuffer;
 import org.neo4j.kernel.KernelVersion;
+import org.neo4j.kernel.impl.transaction.log.ChannelNativeAccessor;
+import org.neo4j.kernel.impl.transaction.log.LogTracers;
+import org.neo4j.kernel.impl.transaction.log.LogVersionBridge;
+import org.neo4j.kernel.impl.transaction.log.LogVersionedStoreChannel;
+import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
 import org.neo4j.kernel.impl.transaction.log.entry.LogFormat;
 import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
-import org.neo4j.kernel.impl.transaction.log.files.LogFileChannelNativeAccessor;
+import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvents;
 import org.neo4j.kernel.impl.transaction.log.rotation.LogRotation;
-import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
-import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvents;
 import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.storageengine.api.StoreId;
 import org.neo4j.test.RandomSupport;
@@ -108,7 +108,7 @@ class EnvelopeFuzzerTest {
                 StoreId.UNKNOWN,
                 segmentSize,
                 initialChecksum,
-                LATEST_KERNEL_VERSION);
+                LatestVersions.LATEST_KERNEL_VERSION);
         writeLogHeader(storeChannel, logHeader, INSTANCE);
         storeChannel.position(segmentSize);
 
@@ -120,10 +120,10 @@ class EnvelopeFuzzerTest {
                 segmentSize,
                 initialChecksum,
                 PREV_INDEX,
-                DatabaseTracer.NULL,
+                LogTracers.NULL,
                 logRotation)) {
             logRotation.bindWriteChannel(envelopeWriteChannel);
-            envelopeWriteChannel.putVersion(LATEST_KERNEL_VERSION.version());
+            envelopeWriteChannel.putVersion(LatestVersions.LATEST_KERNEL_VERSION.version());
 
             for (int i = 0; i < sequence.size(); i++) {
                 DataStep dataStep = sequence.get(i);
@@ -146,7 +146,7 @@ class EnvelopeFuzzerTest {
                 }
                 dataStep.readAndValidate(envelopeReadChannel);
             }
-            assertThatThrownBy(envelopeReadChannel::get)
+            Assertions.assertThatThrownBy(envelopeReadChannel::get)
                     .as("Should not contain more data")
                     .isInstanceOf(ReadPastEndException.class);
         }
@@ -206,10 +206,10 @@ class EnvelopeFuzzerTest {
         return new PhysicalLogVersionedStoreChannel(
                 channel,
                 version,
-                LATEST_LOG_FORMAT,
+                LatestVersions.LATEST_LOG_FORMAT,
                 logPath,
-                mock(LogFileChannelNativeAccessor.class),
-                DatabaseTracer.NULL);
+                ChannelNativeAccessor.EMPTY_ACCESSOR,
+                LogTracers.NULL);
     }
 
     private Path logPath(long version) {
@@ -246,7 +246,7 @@ class EnvelopeFuzzerTest {
                             StoreId.UNKNOWN,
                             segmentSize,
                             previousChecksum,
-                            LATEST_KERNEL_VERSION);
+                            LatestVersions.LATEST_KERNEL_VERSION);
                     writeLogHeader(logChannel, logHeader, INSTANCE);
                     logChannel.position(segmentSize);
 

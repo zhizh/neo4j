@@ -20,7 +20,6 @@
 package org.neo4j.kernel.impl.transaction.tracing;
 
 import org.neo4j.io.pagecache.context.CursorContext;
-import org.neo4j.kernel.impl.transaction.stats.TransactionLogCounters;
 
 /**
  * The TransactionTracer is the root of the tracer hierarchy that gets notified about the life of transactions. The
@@ -28,7 +27,7 @@ import org.neo4j.kernel.impl.transaction.stats.TransactionLogCounters;
  * during commit. Implementers should take great care to make their implementations as fast as possible. Note that
  * tracers are not allowed to throw exceptions.
  */
-public interface TransactionTracer extends TransactionLogCounters {
+public interface TransactionTracer {
     /**
      * A TransactionTracer implementation that does nothing, other than return the NULL variants of the companion
      * interfaces.
@@ -48,51 +47,6 @@ public interface TransactionTracer extends TransactionLogCounters {
         @Override
         public TransactionRollbackEvent beginAsyncRollback() {
             return TransactionRollbackEvent.NULL;
-        }
-
-        @Override
-        public long appendedBytes() {
-            return 0;
-        }
-
-        @Override
-        public long numberOfLogRotations() {
-            return 0;
-        }
-
-        @Override
-        public long logRotationAccumulatedTotalTimeMillis() {
-            return 0;
-        }
-
-        @Override
-        public long lastLogRotationTimeMillis() {
-            return 0;
-        }
-
-        @Override
-        public long numberOfFlushes() {
-            return 0;
-        }
-
-        @Override
-        public long lastTransactionLogAppendBatch() {
-            return 0;
-        }
-
-        @Override
-        public long batchesAppended() {
-            return 0;
-        }
-
-        @Override
-        public long rolledbackBatches() {
-            return 0;
-        }
-
-        @Override
-        public long rolledbackBatchedTransactions() {
-            return 0;
         }
     };
 

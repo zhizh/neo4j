@@ -17,18 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.tracing;
+package org.neo4j.kernel.impl.transaction.log;
 
 /**
- * This represents the actual force call for the transaction log file, and so is a measure of the {@code f(data)sync}
- * system call latency that we experience. Force calls are batched, so a single one might cause multiple transactions
- * to be considered forced.
+ * Represents the complete process of forcing the transaction log file, after transaction commands have been written
+ * to the log. This transaction might not actually end up performing the force itself, but could be included in a
+ * force batch performed by another thread. This is the total force latency that this thread experienced.
  */
-public interface LogForceEvent extends AutoCloseable {
-    LogForceEvent NULL = () -> {};
+public interface LogForceWaitEvent extends AutoCloseable {
+    LogForceWaitEvent NULL = () -> {};
 
     /**
-     * Marks the end of the force call on the transaction log file.
+     * Mark the end of forcing the transaction log.
      */
     @Override
     void close();

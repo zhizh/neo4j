@@ -21,8 +21,12 @@ package org.neo4j.kernel.impl.transaction.tracing;
 
 import java.nio.file.Path;
 import org.neo4j.io.pagecache.context.CursorContext;
+import org.neo4j.kernel.impl.transaction.log.LogAppendEvent;
+import org.neo4j.kernel.impl.transaction.log.LogFileCreateEvent;
+import org.neo4j.kernel.impl.transaction.log.LogFileFlushEvent;
+import org.neo4j.kernel.impl.transaction.log.LogTracers;
 
-public interface DatabaseTracer extends TransactionTracer, CheckPointTracer {
+public interface DatabaseTracer extends TransactionTracer, CheckPointTracer, LogTracers {
     DatabaseTracer NULL = new DatabaseTracer() {
         @Override
         public long numberOfCheckPoints() {
@@ -155,14 +159,4 @@ public interface DatabaseTracer extends TransactionTracer, CheckPointTracer {
             return 0;
         }
     };
-
-    LogFileCreateEvent createLogFile();
-
-    void openLogFile(Path filePath);
-
-    void closeLogFile(Path filePath);
-
-    LogAppendEvent logAppend();
-
-    LogFileFlushEvent flushFile();
 }

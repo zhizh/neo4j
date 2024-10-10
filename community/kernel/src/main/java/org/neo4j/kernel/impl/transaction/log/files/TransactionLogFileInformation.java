@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.function.Supplier;
 import org.neo4j.internal.helpers.collection.LfuCache;
 import org.neo4j.io.fs.ReadPastEndException;
-import org.neo4j.kernel.impl.transaction.log.EnvelopeReadChannel;
 import org.neo4j.kernel.impl.transaction.log.LogFileInformation;
 import org.neo4j.kernel.impl.transaction.log.LogHeaderCache;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
@@ -34,6 +33,7 @@ import org.neo4j.kernel.impl.transaction.log.entry.LogEntryStart;
 import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
 import org.neo4j.kernel.impl.transaction.log.entry.VersionAwareLogEntryReader;
 import org.neo4j.kernel.impl.transaction.log.entry.v57.LogEntryChunkStart;
+import org.neo4j.kernel.impl.transaction.log.enveloped.EnvelopeReadChannel;
 import org.neo4j.util.VisibleForTesting;
 
 public class TransactionLogFileInformation implements LogFileInformation {

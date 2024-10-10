@@ -17,7 +17,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.tracing;
+package org.neo4j.kernel.impl.transaction.log;
+
+import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvent;
+import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvents;
 
 /**
  * Represents the process of turning the state of a committing transaction into a sequence of commands, and appending

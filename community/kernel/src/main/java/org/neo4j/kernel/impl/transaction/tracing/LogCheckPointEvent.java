@@ -20,6 +20,11 @@
 package org.neo4j.kernel.impl.transaction.tracing;
 
 import org.neo4j.io.pagecache.tracing.DatabaseFlushEvent;
+import org.neo4j.kernel.impl.transaction.log.LogForceEvent;
+import org.neo4j.kernel.impl.transaction.log.LogForceEvents;
+import org.neo4j.kernel.impl.transaction.log.LogForceWaitEvent;
+import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvent;
+import org.neo4j.kernel.impl.transaction.log.rotation.LogRotateEvents;
 
 /**
  * Represents the process of appending a check point to the transaction log.

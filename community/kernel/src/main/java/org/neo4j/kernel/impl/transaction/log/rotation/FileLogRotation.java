@@ -31,8 +31,6 @@ import org.neo4j.kernel.impl.transaction.log.files.RotatableFile;
 import org.neo4j.kernel.impl.transaction.log.files.TransactionLogFile;
 import org.neo4j.kernel.impl.transaction.log.files.checkpoint.CheckpointLogFile;
 import org.neo4j.kernel.impl.transaction.log.rotation.monitor.LogRotationMonitor;
-import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvent;
-import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvents;
 import org.neo4j.monitoring.Panic;
 
 /**

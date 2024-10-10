@@ -21,7 +21,6 @@ package org.neo4j.kernel.impl.transaction.log.rotation;
 
 import java.io.IOException;
 import org.neo4j.kernel.KernelVersion;
-import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvents;
 
 /**
  * Used to check if a log rotation is needed, and also to execute a log rotation.

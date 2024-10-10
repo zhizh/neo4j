@@ -23,8 +23,8 @@ import static org.neo4j.storageengine.AppendIndexProvider.BASE_APPEND_INDEX;
 
 import java.util.function.BooleanSupplier;
 import org.neo4j.kernel.impl.api.CompleteTransaction;
+import org.neo4j.kernel.impl.transaction.log.LogAppendEvent;
 import org.neo4j.kernel.impl.transaction.log.TransactionAppender;
-import org.neo4j.kernel.impl.transaction.tracing.LogAppendEvent;
 
 class Worker implements Runnable {
     private final TransactionAppender transactionAppender;

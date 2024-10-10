@@ -17,19 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.tracing;
+package org.neo4j.kernel.impl.transaction.log.enveloped;
 
-/**
- * Common interface for starting events around log force.
- */
-public interface LogForceEvents {
-    /**
-     * Begin the process of forcing the transaction log file.
-     */
-    LogForceWaitEvent beginLogForceWait();
+import org.neo4j.configuration.Config;
+import org.neo4j.kernel.KernelVersion;
+import org.neo4j.kernel.impl.transaction.log.entry.LogFormat;
 
-    /**
-     * Begin a batched force of the transaction log file.
-     */
-    LogForceEvent beginLogForce();
+public class LatestVersions {
+    public static final KernelVersion LATEST_KERNEL_VERSION = KernelVersion.getLatestVersion(Config.defaults());
+    public static final LogFormat LATEST_LOG_FORMAT = LogFormat.fromKernelVersion(LATEST_KERNEL_VERSION);
 }

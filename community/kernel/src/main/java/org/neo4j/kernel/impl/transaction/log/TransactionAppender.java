@@ -21,7 +21,6 @@ package org.neo4j.kernel.impl.transaction.log;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import org.neo4j.kernel.impl.transaction.tracing.LogAppendEvent;
 import org.neo4j.kernel.lifecycle.Lifecycle;
 import org.neo4j.monitoring.DatabaseHealth;
 import org.neo4j.storageengine.api.StorageEngineTransaction;

@@ -29,6 +29,7 @@ import org.eclipse.collections.api.map.primitive.LongObjectMap;
 import org.neo4j.io.fs.ReadableChannel;
 import org.neo4j.io.fs.StoreChannel;
 import org.neo4j.kernel.KernelVersionProvider;
+import org.neo4j.kernel.impl.transaction.log.LogForceEvents;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
 import org.neo4j.kernel.impl.transaction.log.LogVersionBridge;
 import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
@@ -37,7 +38,6 @@ import org.neo4j.kernel.impl.transaction.log.ReadableLogPositionAwareChannel;
 import org.neo4j.kernel.impl.transaction.log.TransactionLogWriter;
 import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
 import org.neo4j.kernel.impl.transaction.log.rotation.LogRotation;
-import org.neo4j.kernel.impl.transaction.tracing.LogForceEvents;
 
 /**
  * Sees a log file as bytes, including taking care of rotation of the file into optimal chunks.

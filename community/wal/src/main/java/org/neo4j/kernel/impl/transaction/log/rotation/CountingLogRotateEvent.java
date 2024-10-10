@@ -17,12 +17,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.api.tracer;
+package org.neo4j.kernel.impl.transaction.log.rotation;
 
 import java.util.concurrent.atomic.AtomicLong;
-import org.neo4j.kernel.impl.transaction.tracing.LogRotateEvent;
 
-class CountingLogRotateEvent implements LogRotateEvent {
+public class CountingLogRotateEvent implements LogRotateEvent {
     private final AtomicLong rotationCounter = new AtomicLong();
     private final AtomicLong accumulatedRotationTimeMillis = new AtomicLong();
     private volatile long lastRotationTimeMillis;
@@ -37,15 +36,15 @@ class CountingLogRotateEvent implements LogRotateEvent {
     @Override
     public void close() {}
 
-    long numberOfLogRotations() {
+    public long numberOfLogRotations() {
         return rotationCounter.get();
     }
 
-    long logRotationAccumulatedTotalTimeMillis() {
+    public long logRotationAccumulatedTotalTimeMillis() {
         return accumulatedRotationTimeMillis.get();
     }
 
-    long lastLogRotationTimeMillis() {
+    public long lastLogRotationTimeMillis() {
         return lastRotationTimeMillis;
     }
 }

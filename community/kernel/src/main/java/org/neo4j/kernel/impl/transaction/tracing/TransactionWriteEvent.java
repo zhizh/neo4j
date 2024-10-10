@@ -19,6 +19,8 @@
  */
 package org.neo4j.kernel.impl.transaction.tracing;
 
+import org.neo4j.kernel.impl.transaction.log.LogAppendEvent;
+
 /**
  * A trace event that represents the commit process of a transaction.
  */

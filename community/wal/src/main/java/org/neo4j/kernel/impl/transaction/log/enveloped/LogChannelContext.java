@@ -17,17 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.tracing;
+package org.neo4j.kernel.impl.transaction.log.enveloped;
 
-/**
- * Represents the serialization and the writing of commands to the transaction log, for a particular transaction.
- */
-public interface AppendTransactionEvent extends AutoCloseable {
-    AppendTransactionEvent NULL = () -> {};
+import java.nio.channels.Channel;
+import java.nio.file.Path;
 
-    /**
-     * Marks the end of the process of serializing the transaction commands.
-     */
-    @Override
-    void close();
-}
+public record LogChannelContext<CHANNEL extends Channel>(CHANNEL channel, Path path, long version) {}

@@ -17,14 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.tracing;
+package org.neo4j.kernel.impl.transaction.log.enveloped;
 
-/**
- * Event for new transaction log file creation
- */
-public interface LogFileCreateEvent extends AutoCloseable {
-    LogFileCreateEvent NULL = () -> {};
+import org.neo4j.kernel.impl.transaction.log.entry.LogHeader;
 
-    @Override
-    void close();
+public interface LogHeaderFactory {
+
+    // intended for cases when only reading the log
+    LogHeaderFactory THROWING_FACTORY = (fileVersion, preFileIndex, preFileChecksum, segmentSize) -> {
+        throw new IllegalStateException("Cannot create log header");
+    };
+
+    LogHeader createLogHeader(long fileVersion, long preFileIndex, int preFileChecksum, int segmentSize);
 }

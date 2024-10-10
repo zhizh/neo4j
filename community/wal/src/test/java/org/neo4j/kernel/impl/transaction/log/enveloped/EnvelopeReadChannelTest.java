@@ -17,14 +17,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.kernel.impl.transaction.log;
+package org.neo4j.kernel.impl.transaction.log.enveloped;
 
 import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.util.Arrays.copyOfRange;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.neo4j.io.ByteUnit.KibiByte;
 import static org.neo4j.io.fs.ChecksumWriter.CHECKSUM_FACTORY;
 import static org.neo4j.kernel.impl.transaction.log.LogVersionBridge.NO_MORE_CHANNELS;
@@ -32,8 +31,6 @@ import static org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.HEAD
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.IGNORE_KERNEL_VERSION;
 import static org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.MAX_ZERO_PADDING_SIZE;
 import static org.neo4j.storageengine.api.TransactionIdStore.BASE_TX_CHECKSUM;
-import static org.neo4j.test.LatestVersions.LATEST_KERNEL_VERSION;
-import static org.neo4j.test.LatestVersions.LATEST_LOG_FORMAT;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,11 +51,13 @@ import org.neo4j.io.fs.ChecksumMismatchException;
 import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.fs.ReadPastEndException;
 import org.neo4j.io.memory.ByteBuffers;
-import org.neo4j.kernel.impl.transaction.log.entry.InvalidLogEnvelopeReadException;
+import org.neo4j.kernel.impl.transaction.log.ChannelNativeAccessor;
+import org.neo4j.kernel.impl.transaction.log.LogTracers;
+import org.neo4j.kernel.impl.transaction.log.LogVersionBridge;
+import org.neo4j.kernel.impl.transaction.log.LogVersionedStoreChannel;
+import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
 import org.neo4j.kernel.impl.transaction.log.entry.LogEnvelopeHeader.EnvelopeType;
 import org.neo4j.kernel.impl.transaction.log.entry.LogFormat;
-import org.neo4j.kernel.impl.transaction.log.files.LogFileChannelNativeAccessor;
-import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
 import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.storageengine.api.StoreId;
 import org.neo4j.test.RandomSupport;
@@ -91,7 +90,13 @@ class EnvelopeReadChannelTest {
             LogFormat.V10.serializeHeader(
                     buffer,
                     LogFormat.V10.newHeader(
-                            42, 1, 10, StoreId.UNKNOWN, segmentSize, previousLogFileChecksum, LATEST_KERNEL_VERSION));
+                            42,
+                            1,
+                            10,
+                            StoreId.UNKNOWN,
+                            segmentSize,
+                            previousLogFileChecksum,
+                            LatestVersions.LATEST_KERNEL_VERSION));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -481,7 +486,12 @@ class EnvelopeReadChannelTest {
             writeZeroSegment(buffer, segmentSize);
 
             final var payloadChecksum = buildChecksum(
-                    checksum, EnvelopeType.FULL, BASE_TX_CHECKSUM, LATEST_KERNEL_VERSION.version(), bytes, START_INDEX);
+                    checksum,
+                    EnvelopeType.FULL,
+                    BASE_TX_CHECKSUM,
+                    LatestVersions.LATEST_KERNEL_VERSION.version(),
+                    bytes,
+                    START_INDEX);
             writeLogEnvelopeHeader(
                     buffer, payloadChecksum, EnvelopeType.FULL, segmentSize, BASE_TX_CHECKSUM, START_INDEX);
             buffer.put(bytes);
@@ -663,7 +673,7 @@ class EnvelopeReadChannelTest {
                     EnvelopeType.FULL,
                     BASE_TX_CHECKSUM,
                     invalid,
-                    LATEST_KERNEL_VERSION.version(),
+                    LatestVersions.LATEST_KERNEL_VERSION.version(),
                     bytes,
                     START_INDEX);
         });
@@ -1221,7 +1231,7 @@ class EnvelopeReadChannelTest {
 
     private int buildChecksum(
             EnvelopeType type, int payloadLength, int previousChecksum, Consumer<ByteBuffer> builder) {
-        final var version = type.isStarting() ? LATEST_KERNEL_VERSION.version() : IGNORE_KERNEL_VERSION;
+        final var version = type.isStarting() ? LatestVersions.LATEST_KERNEL_VERSION.version() : IGNORE_KERNEL_VERSION;
         return buildChecksum(type, payloadLength, version, previousChecksum, builder, START_INDEX);
     }
 
@@ -1277,13 +1287,13 @@ class EnvelopeReadChannelTest {
             int payloadLength,
             int previousChecksum,
             long entryIndex) {
-        final var version = type.isStarting() ? LATEST_KERNEL_VERSION.version() : IGNORE_KERNEL_VERSION;
+        final var version = type.isStarting() ? LatestVersions.LATEST_KERNEL_VERSION.version() : IGNORE_KERNEL_VERSION;
         writeLogEnvelopeHeader(buffer, payloadChecksum, type, payloadLength, version, previousChecksum, entryIndex);
     }
 
     private int writeHeaderAndPayload(
             ByteBuffer buffer, EnvelopeType type, int previousChecksum, byte[] payload, long startIndex) {
-        final var version = type.isStarting() ? LATEST_KERNEL_VERSION.version() : IGNORE_KERNEL_VERSION;
+        final var version = type.isStarting() ? LatestVersions.LATEST_KERNEL_VERSION.version() : IGNORE_KERNEL_VERSION;
         return writeHeaderAndPayload(buffer, type, previousChecksum, version, payload, startIndex);
     }
 
@@ -1356,10 +1366,10 @@ class EnvelopeReadChannelTest {
         return new PhysicalLogVersionedStoreChannel(
                 fileSystem.write(file),
                 0,
-                LATEST_LOG_FORMAT,
+                LatestVersions.LATEST_LOG_FORMAT,
                 file,
-                mock(LogFileChannelNativeAccessor.class),
-                DatabaseTracer.NULL);
+                ChannelNativeAccessor.EMPTY_ACCESSOR,
+                LogTracers.NULL);
     }
 
     private class TwoFileLogVersionBridge implements LogVersionBridge {
