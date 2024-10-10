@@ -213,6 +213,7 @@ import org.neo4j.cypher.internal.logical.plans.QueryExpression
 import org.neo4j.cypher.internal.logical.plans.RelationshipCountFromCountStore
 import org.neo4j.cypher.internal.logical.plans.RelationshipLogicalLeafPlan
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
+import org.neo4j.cypher.internal.logical.plans.RemoteBatchPropertiesWithFilter
 import org.neo4j.cypher.internal.logical.plans.RemoveLabels
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
@@ -1308,13 +1309,18 @@ case class LogicalPlanProducer(
             context,
             Set(hiddenFilter)
           )
-        annotateSelection(
-          Selection(rewrittenExpressionsWithCachedProperties.selections.toSeq, planWithProperties),
-          solved,
-          providedOrderRule,
-          cachedPropertiesPerPlan.get(planWithProperties.id),
-          context
-        )
+        rewrittenExpressionsWithCachedProperties.selections match {
+          case rewrittenSelections: Set[Expression] if rewrittenSelections.nonEmpty =>
+            annotateSelection(
+              Selection(rewrittenExpressionsWithCachedProperties.selections.toSeq, planWithProperties),
+              solved,
+              providedOrderRule,
+              cachedPropertiesPerPlan.get(planWithProperties.id),
+              context
+            )
+          case _ => planWithProperties
+        }
+
       case None => trailPlan
     }
   }
@@ -3663,6 +3669,23 @@ case class LogicalPlanProducer(
       cachedProperties,
       context
     )
+  }
+
+  def planRemoteBatchPropertiesWithFilter(
+    inner: LogicalPlan,
+    properties: Set[CachedProperty],
+    context: LogicalPlanningContext,
+    inlinablePredicates: Seq[Expression],
+    solvedPredicates: Seq[Expression]
+  ): LogicalPlan = {
+    val remoteBatchPropertiesWithFilter =
+      RemoteBatchPropertiesWithFilter(inner, inlinablePredicates.toSet, properties.map(identity))
+    val solved =
+      solveds.get(inner.id).asSinglePlannerQuery.updateTailOrSelf(
+        _.amendQueryGraph(_.addPredicates(solvedPredicates: _*))
+      )
+    val cachedProperties = cachedPropertiesPerPlan.get(inner.id).addAll(properties)
+    annotate(remoteBatchPropertiesWithFilter, solved, ProvidedOrder.empty, cachedProperties, context)
   }
 
   def addMissingStandaloneArgumentPatternNodes(

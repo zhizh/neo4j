@@ -99,6 +99,7 @@ import org.neo4j.cypher.internal.logical.plans.PartitionedScanPlan
 import org.neo4j.cypher.internal.logical.plans.ProcedureCall
 import org.neo4j.cypher.internal.logical.plans.ProjectEndpoints
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
+import org.neo4j.cypher.internal.logical.plans.RemoteBatchPropertiesWithFilter
 import org.neo4j.cypher.internal.logical.plans.RepeatTrail
 import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.Selection
@@ -497,6 +498,8 @@ object CardinalityCostModel {
 
       case Selection(predicate, _) => costPerRowFor(predicate, semanticTable)
 
+      case RemoteBatchPropertiesWithFilter(_, _, properties) => properties.flatMap(_.dependencies).size
+
       case _: AllNodesScan => ALL_SCAN_COST_PER_ROW
 
       case e: OptionalExpand if e.mode == ExpandInto => EXPAND_INTO_COST
@@ -588,8 +591,7 @@ object CardinalityCostModel {
       case _: PartitionedScanPlan =>
         throw new IllegalStateException("partitioned scans should only be planned at physical planning")
 
-      case _: RemoteBatchProperties =>
-        0.9 // TODO
+      case RemoteBatchProperties(_, properties) => properties.flatMap(_.dependencies).size
 
       case _ // Default
         => DEFAULT_COST_PER_ROW

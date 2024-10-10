@@ -23,6 +23,7 @@ import org.neo4j.configuration.GraphDatabaseInternalSettings.RemoteBatchProperti
 import org.neo4j.cypher.internal.compiler.helpers.PropertyAccessHelper
 import org.neo4j.cypher.internal.compiler.helpers.PropertyAccessHelper.ContextualPropertyAccess
 import org.neo4j.cypher.internal.compiler.helpers.PropertyAccessHelper.PropertyAccess
+import org.neo4j.cypher.internal.compiler.helpers.predicatesPushedDownToRemote
 import org.neo4j.cypher.internal.compiler.phases.PlannerContext
 import org.neo4j.cypher.internal.compiler.planner.logical.steps.index.EntityIndexLeafPlanner.IndexCompatiblePredicate
 import org.neo4j.cypher.internal.expressions.CachedProperty
@@ -142,11 +143,13 @@ object RemoteBatchingStrategy {
         context.plannerState.contextualPropertyAccess.horizon
 
       val rewriter = cachedPropertiesRewriter(input, context)
-      val rewrittenSelections = predicatesToSolve.map(_.endoRewrite(rewriter))
+      val rewrittenSelections = predicatesToSolve.map(expr => expr -> expr.endoRewrite(rewriter))
+      val planWithRemainingFiltersTuple =
+        planBatchPropertiesWithFilters(input, context, accessedProperties, rewrittenSelections)
       RemoteBatchingResult(
         rewrittenExpressionsWithCachedProperties =
-          CachePropertiesRewritableExpressions(selections = rewrittenSelections),
-        plan = planBatchProperties(input, context, accessedProperties, rewrittenSelections.toSeq)
+          CachePropertiesRewritableExpressions(selections = planWithRemainingFiltersTuple._2.toSet),
+        plan = planWithRemainingFiltersTuple._1
       )
     }
 
@@ -378,6 +381,60 @@ object RemoteBatchingStrategy {
       accessedProperties: Set[PropertyAccess],
       expressions: Seq[Expression]
     ): LogicalPlan = {
+      val props = propertiesToFetch(input, context, accessedProperties, expressions)
+      if (props.nonEmpty)
+        context.staticComponents.logicalPlanProducer.planRemoteBatchProperties(input, props, context)
+      else input
+    }
+
+    private def planBatchPropertiesWithFilters(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      accessedProperties: Set[PropertyAccess],
+      expressions: Set[(Expression, Expression)]
+    ): (LogicalPlan, Seq[Expression]) = {
+      val (inlinablePreds, nonInlinablePreds) = expressions
+        .partition(exprsToRewrittenExprs => predicatesPushedDownToRemote(exprsToRewrittenExprs._2))
+      val allRewrittenPreds = expressions.map(_._2).toSeq
+      if (inlinablePreds.nonEmpty && context.settings.cachePropertiesForEntitiesWithFilter) {
+        val rewrittenExprs = inlinablePreds.map(_._2).toSeq
+        val solvedExprs = inlinablePreds.map(_._1)
+        val props =
+          propertiesToFetch(
+            input,
+            context,
+            accessedProperties,
+            allRewrittenPreds
+          ) // we still fetch properties even if the corresponding expression isn't pushed down to remote batch properties.
+        if (props.nonEmpty)
+          (
+            context.staticComponents.logicalPlanProducer.planRemoteBatchPropertiesWithFilter(
+              input,
+              props,
+              context,
+              rewrittenExprs,
+              solvedExprs.toSeq
+            ),
+            nonInlinablePreds.map(_._2).toSeq
+          )
+        else
+          (
+            planBatchProperties(input, context, accessedProperties, allRewrittenPreds),
+            allRewrittenPreds
+          )
+      } else
+        (
+          planBatchProperties(input, context, accessedProperties, allRewrittenPreds),
+          allRewrittenPreds
+        )
+    }
+
+    private def propertiesToFetch(
+      input: LogicalPlan,
+      context: LogicalPlanningContext,
+      accessedProperties: Set[PropertyAccess],
+      expressions: Seq[Expression]
+    ): Set[CachedProperty] = {
       val accessedPropertiesMap = accessedProperties.map {
         accessedProperty =>
           accessedProperty.variable -> PropertyKeyName(accessedProperty.propertyName)(InputPosition.NONE)
@@ -386,7 +443,7 @@ object RemoteBatchingStrategy {
       val alreadyCachedProperties =
         context.staticComponents.planningAttributes.cachedPropertiesPerPlan.get(input.id)
 
-      val propertiesToFetch = expressions.folder.treeFold(Set[CachedProperty]()) {
+      expressions.folder.treeFold(Set[CachedProperty]()) {
         case cachedProperty: CachedProperty
           if !alreadyCachedProperties.contains(cachedProperty.entityVariable, cachedProperty.propertyKey) =>
           set =>
@@ -399,10 +456,6 @@ object RemoteBatchingStrategy {
               }
             SkipChildren(set ++ newProps)
       }
-
-      if (propertiesToFetch.nonEmpty)
-        context.staticComponents.logicalPlanProducer.planRemoteBatchProperties(input, propertiesToFetch, context)
-      else input
     }
 
     private def propertyAccessesToPredicatesMap(predicates: Set[Expression]): PropertyAccessInPredicates = {

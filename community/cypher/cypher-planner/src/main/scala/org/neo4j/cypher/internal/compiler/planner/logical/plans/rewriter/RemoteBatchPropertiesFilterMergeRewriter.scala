@@ -19,23 +19,7 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter
 
-import org.neo4j.cypher.internal.expressions.Contains
-import org.neo4j.cypher.internal.expressions.EndsWith
-import org.neo4j.cypher.internal.expressions.Equals
-import org.neo4j.cypher.internal.expressions.Expression
-import org.neo4j.cypher.internal.expressions.GreaterThan
-import org.neo4j.cypher.internal.expressions.GreaterThanOrEqual
-import org.neo4j.cypher.internal.expressions.IsNotNull
-import org.neo4j.cypher.internal.expressions.IsNull
-import org.neo4j.cypher.internal.expressions.LessThan
-import org.neo4j.cypher.internal.expressions.LessThanOrEqual
-import org.neo4j.cypher.internal.expressions.Literal
-import org.neo4j.cypher.internal.expressions.LogicalVariable
-import org.neo4j.cypher.internal.expressions.NotEquals
-import org.neo4j.cypher.internal.expressions.Parameter
-import org.neo4j.cypher.internal.expressions.Property
-import org.neo4j.cypher.internal.expressions.StartsWith
-import org.neo4j.cypher.internal.expressions.Variable
+import org.neo4j.cypher.internal.compiler.helpers.predicatesPushedDownToRemote
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchProperties
 import org.neo4j.cypher.internal.logical.plans.RemoteBatchPropertiesWithFilter
 import org.neo4j.cypher.internal.logical.plans.Selection
@@ -49,40 +33,17 @@ import org.neo4j.cypher.internal.util.topDown
  */
 object RemoteBatchPropertiesFilterMergeRewriter extends Rewriter with TopDownMergeableRewriter {
 
-  private def isNonValidType(expression: Expression): Boolean =
-    expression match {
-      case Contains(lhs, rhs)           => isNonValidType(lhs) && isNonValidType(rhs)
-      case EndsWith(lhs, rhs)           => isNonValidType(lhs) && isNonValidType(rhs)
-      case StartsWith(lhs, rhs)         => isNonValidType(lhs) && isNonValidType(rhs)
-      case LessThan(lhs, rhs)           => isNonValidType(lhs) && isNonValidType(rhs)
-      case LessThanOrEqual(lhs, rhs)    => isNonValidType(lhs) && isNonValidType(rhs)
-      case GreaterThanOrEqual(lhs, rhs) => isNonValidType(lhs) && isNonValidType(rhs)
-      case GreaterThan(lhs, rhs)        => isNonValidType(lhs) && isNonValidType(rhs)
-      case Equals(lhs, rhs)             => isNonValidType(lhs) && isNonValidType(rhs)
-      case NotEquals(lhs, rhs)          => isNonValidType(lhs) && isNonValidType(rhs)
-      case IsNull(expr)                 => isNonValidType(expr)
-      case IsNotNull(expr)              => isNonValidType(expr)
-      case Property(expr, _)            => isNonValidType(expr)
-      case _: Parameter                 => false
-      case _: Variable                  => false
-      case _: Literal                   => false
-      case _                            => true
-    }
-
-  private def isRewritableExpression(expression: Expression, availableSymbols: Set[LogicalVariable]): Boolean =
-    expression.dependencies.size == 1 &&
-      expression.dependencies.subsetOf(availableSymbols) &&
-      expression.subExpressions.exists(_.isInstanceOf[Property]) &&
-      !expression.subExpressions.exists(isNonValidType)
-
   override val innerRewriter: Rewriter = {
     Rewriter.lift {
       case filter @ Selection(
           predicate,
           remoteBatchProperties: RemoteBatchProperties
         ) =>
+        val remoteBatchPropertiesDependencies = remoteBatchProperties.properties.flatMap(_.dependencies)
         val (inlinablePreds, nonInlinablePreds) = predicate.exprs
-          .partition(isRewritableExpression(_, remoteBatchProperties.properties.flatMap(_.dependencies)))
+          .partition(expr =>
+            expr.dependencies.subsetOf(remoteBatchPropertiesDependencies) && predicatesPushedDownToRemote(expr)
+          )
         if (inlinablePreds.nonEmpty) {
           val newPlan = RemoteBatchPropertiesWithFilter(
             remoteBatchProperties.source,
