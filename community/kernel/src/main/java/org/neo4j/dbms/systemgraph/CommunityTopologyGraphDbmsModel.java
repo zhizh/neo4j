@@ -95,11 +95,6 @@ public class CommunityTopologyGraphDbmsModel implements TopologyGraphDbmsModel {
     }
 
     @Override
-    public Set<DatabaseReferenceImpl.SPD> getAllShardedPropertyDatabaseReferences() {
-        return getAllSPDEntityShardReferencesInRoot().collect(Collectors.toUnmodifiableSet());
-    }
-
-    @Override
     public Optional<DatabaseReference> getDatabaseRefByAlias(String databaseName) {
         // A uniqueness constraint at the Cypher level should prevent two references from ever having the same name, but
         // in case they do, we simply prefer the internal reference.
