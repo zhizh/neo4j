@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -608,7 +609,146 @@ class SchemaCommandTest {
                 });
     }
 
-    private void assertIndexName(Optional<String> indexName, String expected) {
+    @Test
+    void schemaTokens() {
+        var id = 1;
+        final var labels = Sets.mutable.<String>empty();
+        final var relationships = Sets.mutable.<String>empty();
+        final var properties = Sets.mutable.<String>empty();
+        final var commands = List.<SchemaCommand>of(
+                new NodeLookup("command" + id++, IF_NOT_EXISTS, Optional.empty()),
+                new RelationshipLookup("command" + id++, IF_NOT_EXISTS, Optional.empty()),
+                new NodeRange(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new RelationshipRange(
+                        "command" + id++,
+                        track(TYPES, relationships, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new NodePoint(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty(),
+                        random.among(POINT_CONFIGS)),
+                new RelationshipPoint(
+                        "command" + id++,
+                        track(TYPES, relationships, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty(),
+                        random.among(POINT_CONFIGS)),
+                new NodeText(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new RelationshipText(
+                        "command" + id++,
+                        track(TYPES, relationships, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new NodeFulltext(
+                        "command" + id++,
+                        trackAll(LABELS, labels, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty(),
+                        random.among(FULLTEXT_CONFIGS)),
+                new RelationshipFulltext(
+                        "command" + id++,
+                        trackAll(TYPES, relationships, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty(),
+                        random.among(FULLTEXT_CONFIGS)),
+                new NodeVector(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.of(VECTOR_V2_DESCRIPTOR),
+                        random.among(VECTOR_V2_CONFIGS)),
+                new RelationshipVector(
+                        "command" + id++,
+                        track(TYPES, relationships, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.of(VECTOR_V2_DESCRIPTOR),
+                        random.among(VECTOR_V2_CONFIGS)),
+                new NodeKey(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new RelationshipKey(
+                        "command" + id++,
+                        track(TYPES, relationships, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new NodeUniqueness(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new RelationshipUniqueness(
+                        "command" + id++,
+                        track(TYPES, relationships, random),
+                        trackAll(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS,
+                        Optional.empty()),
+                new NodeExistence(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS),
+                new RelationshipExistence(
+                        "command" + id++,
+                        track(TYPES, relationships, random),
+                        track(PROPERTIES, properties, random),
+                        IF_NOT_EXISTS),
+                new NodePropertyType(
+                        "command" + id++,
+                        track(LABELS, labels, random),
+                        track(PROPERTIES, properties, random),
+                        random.among(PROPERTY_TYPES),
+                        IF_NOT_EXISTS),
+                new RelationshipPropertyType(
+                        "command" + id,
+                        track(TYPES, relationships, random),
+                        track(PROPERTIES, properties, random),
+                        random.among(PROPERTY_TYPES),
+                        IF_NOT_EXISTS));
+        final var tokens = SchemaTokens.collect(commands);
+        assertThat(tokens.labels()).containsAll(labels);
+        assertThat(tokens.relationships()).containsAll(relationships);
+        assertThat(tokens.properties()).containsAll(properties);
+    }
+
+    private static String track(String[] options, MutableSet<String> tokens, RandomSupport random) {
+        final var option = random.among(options);
+        tokens.add(option);
+        return option;
+    }
+
+    private static List<String> trackAll(String[] options, MutableSet<String> tokens, RandomSupport random) {
+        final var values = listFrom(options, random.nextInt(1, 4), random);
+        tokens.addAll(values);
+        return values;
+    }
+
+    private static void assertIndexName(Optional<String> indexName, String expected) {
         assertThat(indexName).as("should always have a name").isPresent();
         if (expected != null) {
             assertThat(indexName.orElseThrow())
@@ -617,13 +757,13 @@ class SchemaCommandTest {
         }
     }
 
-    private void assertConstraintName(String constraintName, String expected) {
+    private static void assertConstraintName(String constraintName, String expected) {
         if (expected != null) {
             assertThat(constraintName).as("should use the provided name").isEqualTo(expected);
         }
     }
 
-    private void assertIndexProviderDescriptor(
+    private static void assertIndexProviderDescriptor(
             IndexProviderDescriptor actual,
             Optional<IndexProviderDescriptor> provided,
             IndexProviderDescriptor fallbackDescriptor) {
@@ -660,6 +800,10 @@ class SchemaCommandTest {
     }
 
     private <T> List<T> listFrom(T[] items, int count) {
+        return listFrom(items, count, random);
+    }
+
+    private static <T> List<T> listFrom(T[] items, int count, RandomSupport random) {
         final var result = Sets.mutable.<T>withInitialCapacity(count);
         while (result.size() < count) {
             result.add(random.among(items));

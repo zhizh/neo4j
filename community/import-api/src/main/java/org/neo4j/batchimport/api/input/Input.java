@@ -27,6 +27,7 @@ import org.neo4j.batchimport.api.InputIterable;
 import org.neo4j.batchimport.api.InputIterator;
 import org.neo4j.internal.schema.SchemaCommand;
 import org.neo4j.internal.schema.SchemaDescriptor;
+import org.neo4j.internal.schema.SchemaTokens;
 import org.neo4j.token.TokenHolders;
 
 /**
@@ -115,6 +116,13 @@ public interface Input extends AutoCloseable {
      */
     default List<SchemaCommand> schemaCommands() {
         return List.of();
+    }
+
+    /**
+     * @return all the tokens required by the schema entities specified by this input
+     */
+    default SchemaTokens schemaTokens() {
+        return SchemaTokens.collect(schemaCommands());
     }
 
     @Override
