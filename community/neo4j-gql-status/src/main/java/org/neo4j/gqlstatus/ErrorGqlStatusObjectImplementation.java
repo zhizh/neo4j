@@ -151,7 +151,7 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         }
 
         public Builder withClassification(GqlClassification classification) {
-            diagnosticRecordBuilder.withClassification(classification);
+            // TODO: This is a no-op method which will be cleaned up after error migration is ready
             return this;
         }
 
@@ -161,6 +161,7 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         }
 
         public ErrorGqlStatusObject build() {
+            diagnosticRecordBuilder.withClassification(gqlStatusInfoCode.getClassification());
             DiagnosticRecord diagnosticRecord = diagnosticRecordBuilder.build();
             return new ErrorGqlStatusObjectImplementation(gqlStatusInfoCode, paramMap, cause, diagnosticRecord);
         }

@@ -31,6 +31,8 @@ public sealed interface GqlStatusInfo permits GqlStatusInfoCodes {
 
     String getSubCondition();
 
+    GqlClassification getClassification();
+
     GqlStatus getGqlStatus();
 
     String getStatusString();
