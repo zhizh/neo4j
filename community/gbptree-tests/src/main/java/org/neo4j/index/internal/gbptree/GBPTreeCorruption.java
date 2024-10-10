@@ -500,5 +500,5 @@ public final class GBPTreeCorruption {
                 throws IOException;
     }
 
-    interface IndexCorruption<KEY, VALUE> extends GBPTreeUnsafe<KEY, VALUE> {}
+    public interface IndexCorruption<KEY, VALUE> extends GBPTreeUnsafe<KEY, VALUE> {}
 }

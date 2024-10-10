@@ -19,7 +19,6 @@
  */
 package org.neo4j.index.internal.gbptree;
 
-import static java.lang.String.format;
 import static org.neo4j.index.internal.gbptree.TreeNodeUtil.NO_OFFLOAD_ID;
 
 import java.io.PrintStream;
@@ -68,7 +67,7 @@ public class PrintingGBPTreeVisitor<ROOT_KEY, KEY, VALUE> extends GBPTreeVisitor
     public void beginNode(long pageId, boolean isLeaf, long generation, int keyCount) {
         if (printHeader) {
             String treeNodeType = isLeaf ? "leaf" : "internal";
-            out.print(format("{%d,%s,generation=%d,keyCount=%d} ", pageId, treeNodeType, generation, keyCount));
+            out.printf("{%d,%s,generation=%d,keyCount=%d} ", pageId, treeNodeType, generation, keyCount);
         } else {
             out.print("{" + pageId + "} ");
         }

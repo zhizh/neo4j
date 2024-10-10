@@ -554,6 +554,7 @@ class CrashGenerationCleanerTest {
             long base = IdSpace.MIN_TREE_NODE_ID;
             int keyCount;
             KEY newKey = layout.newKey();
+            layout.initializeAsLowest(newKey);
             for (keyCount = 0; internalNode.overflow(cursor, keyCount, newKey) == Overflow.NO; keyCount++) {
                 long child = base + keyCount;
                 long stableGeneration1 = treeState.stableGeneration();

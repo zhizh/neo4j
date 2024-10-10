@@ -464,7 +464,6 @@ class GBPTreeConsistencyChecker<KEY> {
         int pos = 0;
         while (pos < keyCount) {
             KEY readKey = layout.newKey();
-            KeyRange<KEY> childRange;
             long child;
             long childGeneration;
             assertNoCrashOrBrokenPointerInGSPP(
@@ -483,7 +482,7 @@ class GBPTreeConsistencyChecker<KEY> {
             } while (cursor.shouldRetry());
             checkAfterShouldRetry(cursor);
 
-            childRange = range.newSubRange(level, pageId).restrictRight(readKey);
+            var childRange = range.newSubRange(level, pageId).restrictRight(readKey);
             if (pos > 0) {
                 childRange = childRange.restrictLeft(prev);
             }
@@ -510,7 +509,10 @@ class GBPTreeConsistencyChecker<KEY> {
             childGeneration = generationTarget.generation;
         } while (cursor.shouldRetry());
         checkAfterShouldRetry(cursor);
-        var childRange = range.newSubRange(level, pageId).restrictLeft(prev);
+        var childRange = range.newSubRange(level, pageId);
+        if (pos > 0) {
+            childRange = childRange.restrictLeft(prev);
+        }
         childVisitor.accept(pos, child, childGeneration, childRange, true);
     }
 
@@ -538,6 +540,7 @@ class GBPTreeConsistencyChecker<KEY> {
             offloadIds.clear();
             KEY prev = layout.newKey();
             KEY readKey = layout.newKey();
+            layout.initializeAsLowest(readKey);
             boolean first = true;
             try {
                 for (int pos = 0; pos < keyCount; pos++) {

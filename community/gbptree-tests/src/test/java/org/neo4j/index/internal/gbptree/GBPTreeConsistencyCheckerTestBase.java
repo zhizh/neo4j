@@ -24,6 +24,7 @@ import static org.eclipse.collections.impl.factory.Sets.immutable;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.index.internal.gbptree.DataTree.W_BATCHED_SINGLE_THREADED;
+import static org.neo4j.index.internal.gbptree.DataTree.W_SPLIT_KEEP_ALL_RIGHT;
 import static org.neo4j.index.internal.gbptree.GBPTreeOpenOptions.NO_FLUSH_ON_CLOSE;
 import static org.neo4j.index.internal.gbptree.GBPTreeTestUtil.consistencyCheck;
 import static org.neo4j.io.pagecache.context.CursorContext.NULL_CONTEXT;
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.neo4j.internal.helpers.progress.ProgressMonitorFactory;
 import org.neo4j.io.fs.EphemeralFileSystemAbstraction;
 import org.neo4j.io.pagecache.PageCache;
+import org.neo4j.io.pagecache.PagedFile;
 import org.neo4j.io.pagecache.tracing.FileFlushEvent;
 import org.neo4j.test.RandomSupport;
 import org.neo4j.test.extension.EphemeralFileSystemExtension;
@@ -841,6 +843,62 @@ abstract class GBPTreeConsistencyCheckerTestBase<KEY, VALUE> {
         try (GBPTree<KEY, VALUE> index = index().build()) {
             assertReportDirtyOnStartup(index);
         }
+    }
+
+    @Test
+    void shouldNotFailOnZeroKeysInternalNode() throws IOException {
+        try (GBPTree<KEY, VALUE> index = index().build()) {
+            int keyCount = 0;
+            while (getHeight(index) < 2) {
+                try (Writer<KEY, VALUE> writer =
+                        index.writer(W_BATCHED_SINGLE_THREADED | W_SPLIT_KEEP_ALL_RIGHT, NULL_CONTEXT)) {
+                    writer.put(layout.key(keyCount), layout.value(keyCount));
+                    keyCount++;
+                }
+            }
+
+            // with keep all right on split we created tree where the first internal node on the level 1 has one key
+            // and two children
+            // now carefully remove that key and leave only one child in that node
+            // that is still valid structure and consitency check should not fail
+            long firstOnLevelOne =
+                    inspect(index).single().nodesPerLevel().get(1).getFirst();
+            index.unsafe(trimSingleKeyFromInternalNode(firstOnLevelOne), NULL_CONTEXT);
+
+            consistencyCheck(index, new ThrowingConsistencyCheckVisitor() {
+                @Override
+                public void unusedPage(long pageId, Path file) {
+                    // ignore, it's hard to trim node and modify free list at the same time
+                }
+            });
+        }
+    }
+
+    private static GBPTreeUnsafe<Object, Object> trimSingleKeyFromInternalNode(long firstOnLevelOne) {
+        return (pagedFile, layout, leafNode, internalNode, treeState) -> {
+            try (var cursor = pagedFile.io(0, PagedFile.PF_SHARED_WRITE_LOCK, NULL_CONTEXT)) {
+                cursor.next(firstOnLevelOne);
+                assertThat(TreeNodeUtil.keyCount(cursor)).isEqualTo(1);
+                long leafToRemove = GenerationSafePointerPair.pointer(
+                        internalNode.childAt(cursor, 1, treeState.stableGeneration(), treeState.unstableGeneration()));
+                TreeNodeUtil.setKeyCount(cursor, 0);
+                cursor.next(leafToRemove);
+                long leftSibling =
+                        TreeNodeUtil.leftSibling(cursor, treeState.stableGeneration(), treeState.unstableGeneration());
+                long rightSibling =
+                        TreeNodeUtil.rightSibling(cursor, treeState.stableGeneration(), treeState.unstableGeneration());
+                if (TreeNodeUtil.isNode(leftSibling)) {
+                    cursor.next(GenerationSafePointerPair.pointer(leftSibling));
+                    TreeNodeUtil.setRightSibling(
+                            cursor, rightSibling, treeState.stableGeneration(), treeState.unstableGeneration());
+                }
+                if (TreeNodeUtil.isNode(rightSibling)) {
+                    cursor.next(GenerationSafePointerPair.pointer(rightSibling));
+                    TreeNodeUtil.setLeftSibling(
+                            cursor, leftSibling, treeState.stableGeneration(), treeState.unstableGeneration());
+                }
+            }
+        };
     }
 
     private static <KEY, VALUE> GBPTreeCorruption.IndexCorruption<KEY, VALUE> page(

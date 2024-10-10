@@ -78,8 +78,7 @@ public class GBPTreeConsistencyCheckerDynamicSizeTest extends GBPTreeConsistency
             @Override
             public void exception(Exception e) {
                 called.setTrue();
-                assertThat(e.getMessage())
-                        .contains("Tried to read from offload store but page is not an offload page.");
+                assertThat(e).hasMessageContaining("Tried to read from offload store but page is not an offload page.");
             }
         });
         assertCalled(called);

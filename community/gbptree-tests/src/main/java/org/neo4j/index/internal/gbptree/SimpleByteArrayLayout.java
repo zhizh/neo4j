@@ -96,11 +96,14 @@ public class SimpleByteArrayLayout extends TestLayout<RawBytes, RawBytes> {
 
     @Override
     public RawBytes newKey() {
-        return new RawBytes();
+        return new RawBytes(null);
     }
 
     @Override
     public RawBytes copyKey(RawBytes rawBytes, RawBytes into) {
+        if (rawBytes.bytes == null) {
+            throw new IllegalStateException("source key was not initialized before copy");
+        }
         return copyKey(rawBytes, into, rawBytes.bytes.length);
     }
 
@@ -118,6 +121,9 @@ public class SimpleByteArrayLayout extends TestLayout<RawBytes, RawBytes> {
     public int keySize(RawBytes rawBytes) {
         if (rawBytes == null) {
             return -1;
+        }
+        if (rawBytes.bytes == null) {
+            throw new IllegalStateException("key was not initialized");
         }
         return rawBytes.bytes.length;
     }
