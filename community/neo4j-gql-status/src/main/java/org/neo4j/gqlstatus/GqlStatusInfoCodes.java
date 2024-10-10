@@ -312,16 +312,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.WARNING,
             "external auth disabled"),
-    STATUS_01U00(
-            new GqlStatus("01U00"),
-            """
-                    Execution of the procedure { %s } generated the warning { %s }: { %s }.""",
-            new GqlParams.GqlParam[] {
-                GqlParams.StringParam.proc, GqlParams.StringParam.msgTitle, GqlParams.StringParam.msg
-            },
-            emptyMap(),
-            Condition.WARNING,
-            "custom procedure warning cause"),
     STATUS_02000(
             new GqlStatus("02000"),
             """
@@ -1066,14 +1056,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "invalid import value"),
-    STATUS_22N17(
-            new GqlStatus("22N17"),
-            """
-                    Cannot read the specified { %s } component from { %s }.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.component, GqlParams.StringParam.temporal},
-            emptyMap(),
-            Condition.DATA_EXCEPTION,
-            "invalid date, time, or datetime function field name"),
     STATUS_22N18(
             new GqlStatus("22N18"),
             """
@@ -1301,14 +1283,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "parallel runtime disabled"),
-    STATUS_22N45(
-            new GqlStatus("22N45"),
-            """
-                    The { %s } feature is not supported by Neo4j Community Edition.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.feat},
-            emptyMap(),
-            Condition.DATA_EXCEPTION,
-            "feature not supported on Neo4j Community Edition"),
     STATUS_22N46(
             new GqlStatus("22N46"),
             """
@@ -1493,14 +1467,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "index with the same name already exists"),
-    STATUS_22N72(
-            new GqlStatus("22N72"),
-            """
-                    A requested operation can not be performed on the specified index because the index is part of a constraint.""",
-            new GqlParams.GqlParam[] {},
-            emptyMap(),
-            Condition.DATA_EXCEPTION,
-            "index required by existing constraint"),
     STATUS_22N73(
             new GqlStatus("22N73"),
             """
@@ -1802,15 +1768,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "parsing JSON failure"),
-    STATUS_22NFF(
-            new GqlStatus("22NFF"),
-            """
-                    The referent of the specified reference does not exist.""",
-            new GqlParams.GqlParam[] {},
-            emptyMap(),
-            Condition.DATA_EXCEPTION,
-            "referent does not exist"),
-    STATUS_25000(
+   STATUS_25000(
             new GqlStatus("25000"),
             """
                     """,
@@ -3425,14 +3383,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.GENERAL_PROCESSING_EXCEPTION,
             "transaction terminated or closed"),
-    STATUS_50N08(
-            new GqlStatus("50N08"),
-            """
-                    Unable to create { %s }.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.idxDescrOrName},
-            emptyMap(),
-            Condition.GENERAL_PROCESSING_EXCEPTION,
-            "index creation failed"),
     STATUS_50N09(
             new GqlStatus("50N09"),
             """
@@ -4097,14 +4047,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.PROCEDURE_EXCEPTION,
             "invalid procedure execution mode"),
-    STATUS_52N04(
-            new GqlStatus("52N04"),
-            """
-                    Temporarily could not execute the procedure { %s }. Please retry.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.proc},
-            emptyMap(),
-            Condition.PROCEDURE_EXCEPTION,
-            "transient procedure execution error"),
     STATUS_52N05(
             new GqlStatus("52N05"),
             """
@@ -4359,16 +4301,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.PROCEDURE_EXCEPTION,
             "procedure compilation failed"),
-    STATUS_52U00(
-            new GqlStatus("52U00"),
-            """
-                    Execution of the procedure { %s } failed due to { %s }: { %s }""",
-            new GqlParams.GqlParam[] {
-                GqlParams.StringParam.proc, GqlParams.StringParam.msgTitle, GqlParams.StringParam.msg
-            },
-            emptyMap(),
-            Condition.PROCEDURE_EXCEPTION,
-            "custom procedure execution error cause"),
     STATUS_G1000(
             new GqlStatus("G1000"),
             """
