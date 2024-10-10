@@ -136,10 +136,9 @@ class LoadCommandTest {
                                            Configuration file with additional configuration.
                       --expand-commands    Allow command expansion in config value evaluation.
                       --from-path=<path>   Path to directory containing archive(s).
-                                           It is possible to load databases from AWS S3 buckets
-                                             (from Neo4j 5.19), Google Cloud storage buckets
-                                             (from Neo4j 5.21), and Azure buckets (from Neo4j
-                                             5.24).
+                                           It is possible to load databases from AWS S3
+                                             buckets, Google Cloud storage buckets, and Azure
+                                             bucket using the appropriate URI as the path.
                       --from-stdin         Read archive from standard input.
                   -h, --help               Show this help message and exit.
                       --info               Print meta-data information about the archive file,

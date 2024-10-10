@@ -92,8 +92,8 @@ public class LoadCommand extends AbstractAdminCommand {
                 names = "--from-path",
                 paramLabel = "<path>",
                 description = "Path to directory containing archive(s).\n"
-                        + "It is possible to load databases from AWS S3 buckets (from Neo4j 5.19), "
-                        + "Google Cloud storage buckets (from Neo4j 5.21), and Azure buckets (from Neo4j 5.24).")
+                        + "It is possible to load databases from AWS S3 buckets, Google Cloud storage buckets, and "
+                        + "Azure bucket using the appropriate URI as the path.")
         private String path;
 
         @Option(names = "--from-stdin", description = "Read archive from standard input.")
