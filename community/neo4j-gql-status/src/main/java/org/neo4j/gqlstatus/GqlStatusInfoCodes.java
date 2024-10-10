@@ -347,6 +347,14 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             Condition.WARNING,
             "external auth disabled",
             NotificationClassification.SECURITY),
+    STATUS_01N72(
+            new GqlStatus("01N72"),
+            "",
+            new GqlParams.GqlParam[] {},
+            emptyMap(),
+            Condition.WARNING,
+            "query uses an insecure protocol",
+            NotificationClassification.SECURITY),
     STATUS_02000(
             new GqlStatus("02000"),
             """
