@@ -67,9 +67,10 @@ public final class BadCollector implements Collector {
     static final int DUPLICATE_NODES = 0x2;
     static final int EXTRA_COLUMNS = 0x4;
     static final int VIOLATING_NODES = 0x8;
+    static final int VIOLATING_SCHEMA = 0x16;
     static final int BAD_NODES = DUPLICATE_NODES | VIOLATING_NODES;
 
-    static final int COLLECT_ALL = BAD_RELATIONSHIPS | BAD_NODES | EXTRA_COLUMNS;
+    static final int COLLECT_ALL = BAD_RELATIONSHIPS | BAD_NODES | EXTRA_COLUMNS | VIOLATING_SCHEMA;
     public static final long UNLIMITED_TOLERANCE = -1;
     static final int DEFAULT_BACK_PRESSURE_THRESHOLD = 10_000;
 
@@ -155,6 +156,11 @@ public final class BadCollector implements Collector {
     }
 
     @Override
+    public void collectSchemaCommandFailure(EntityType entityType, String failureMessage) {
+        collect(new SchemaCommandFailureReporter(entityType, failureMessage));
+    }
+
+    @Override
     public boolean isCollectingBadRelationships() {
         return collects(BAD_RELATIONSHIPS);
     }
@@ -220,7 +226,7 @@ public final class BadCollector implements Collector {
         private final Object endId;
         private final Group endIdGroup;
 
-        RelationshipsProblemReporter(
+        private RelationshipsProblemReporter(
                 Object startId, Group startIdGroup, Object type, Object endId, Group endIdGroup, Object specificValue) {
             super(BAD_RELATIONSHIPS);
             this.startId = startId;
@@ -263,7 +269,7 @@ public final class BadCollector implements Collector {
         private final Object id;
         private final Group group;
 
-        NodesProblemReporter(Object id, Group group) {
+        private NodesProblemReporter(Object id, Group group) {
             super(DUPLICATE_NODES);
             this.id = id;
             this.group = group;
@@ -286,7 +292,7 @@ public final class BadCollector implements Collector {
         private final String source;
         private final String value;
 
-        ExtraColumnsProblemReporter(long row, String source, String value) {
+        private ExtraColumnsProblemReporter(long row, String source, String value) {
             super(EXTRA_COLUMNS);
             this.row = row;
             this.source = source;
@@ -319,7 +325,7 @@ public final class BadCollector implements Collector {
         private final String constraintDescription;
         private final EntityType entityType;
 
-        EntityViolatingConstraintReporter(
+        private EntityViolatingConstraintReporter(
                 Object id,
                 long actualId,
                 Map<String, Object> properties,
@@ -359,7 +365,7 @@ public final class BadCollector implements Collector {
         private final Object endId;
         private final Group endIdGroup;
 
-        RelationshipViolatingConstraintReporter(
+        private RelationshipViolatingConstraintReporter(
                 Map<String, Object> properties,
                 String constraintDescription,
                 Object startId,
@@ -388,6 +394,25 @@ public final class BadCollector implements Collector {
                     endIdGroup != null ? " (" + endIdGroup + ")" : "",
                     constraintDescription,
                     properties);
+        }
+
+        @Override
+        InputException exception() {
+            return new InputException(message());
+        }
+    }
+
+    private static class SchemaCommandFailureReporter extends ProblemReporter {
+        private final String failureMessage;
+
+        private SchemaCommandFailureReporter(EntityType entityType, String failureMessage) {
+            super(VIOLATING_SCHEMA | (entityType == EntityType.NODE ? BAD_NODES : BAD_RELATIONSHIPS));
+            this.failureMessage = failureMessage;
+        }
+
+        @Override
+        String message() {
+            return failureMessage;
         }
 
         @Override

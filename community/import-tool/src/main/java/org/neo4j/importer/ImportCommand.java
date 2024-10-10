@@ -538,8 +538,7 @@ public class ImportCommand {
                 boolean verbose,
                 Collector badCollector,
                 MemoryTracker memoryTracker,
-                Input input,
-                List<SchemaCommand> schemaCommands)
+                Input input)
                 throws IOException;
 
         private List<SchemaCommand> parseSchemaCommands(FileSystemAbstraction fileSystem, Config config) {
@@ -761,8 +760,7 @@ public class ImportCommand {
                 boolean verbose,
                 Collector badCollector,
                 MemoryTracker memoryTracker,
-                Input input,
-                List<SchemaCommand> schemaCommands)
+                Input input)
                 throws IOException {
             StorageEngineFactory storageEngineFactory = StorageEngineFactory.selectStorageEngine(databaseConfig);
             BatchImporter importer = storageEngineFactory.batchImporter(
@@ -841,8 +839,7 @@ public class ImportCommand {
                 boolean verbose,
                 Collector badCollector,
                 MemoryTracker memoryTracker,
-                Input input,
-                List<SchemaCommand> schemaCommands)
+                Input input)
                 throws IOException {
             StorageEngineFactory storageEngineFactory = StorageEngineFactory.selectStorageEngine(
                             fileSystem, databaseLayout)

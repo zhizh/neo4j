@@ -29,7 +29,6 @@ import static org.neo4j.scheduler.Group.INDEX_POPULATION_WORK;
 
 import java.io.IOException;
 import java.util.List;
-import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.primitive.ObjectFloatMaps;
 import org.neo4j.batchimport.api.IndexesCreator;
 import org.neo4j.collection.Dependencies;
@@ -47,7 +46,6 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
-import org.neo4j.kernel.api.exceptions.index.IndexPopulationFailedKernelException;
 import org.neo4j.kernel.api.index.BulkIndexCreationContext;
 import org.neo4j.kernel.database.MetadataCache;
 import org.neo4j.kernel.impl.api.DatabaseSchemaState;
@@ -122,10 +120,10 @@ public class BulkIndexesCreator implements IndexesCreator {
                             .map(indexingService::completeConfiguration)
                             .toArray(IndexDescriptor[]::new));
 
-            final var failed = Lists.mutable.<IndexPopulationFailedKernelException>empty();
             final var progressTracker = ObjectFloatMaps.mutable.<IndexDescriptor>empty();
             var completed = 0;
-            while (completed < descriptorCount) {
+            var failed = 0;
+            while (completed + failed < descriptorCount) {
                 for (var indexProxy : indexingService.getIndexProxies()) {
                     final var descriptor = indexProxy.getDescriptor();
                     final var latestProgress =
@@ -141,11 +139,13 @@ public class BulkIndexesCreator implements IndexesCreator {
 
                     final var state = indexProxy.getState();
                     if (state == InternalIndexState.FAILED) {
-                        completed++;
-                        failed.add(indexProxy
-                                .getPopulationFailure()
-                                .asIndexPopulationFailure(
-                                        descriptor.schema(), descriptor.userDescription(tokenHolders)));
+                        failed++;
+                        creationListener.onFailure(
+                                descriptor,
+                                indexProxy
+                                        .getPopulationFailure()
+                                        .asIndexPopulationFailure(
+                                                descriptor.schema(), descriptor.userDescription(tokenHolders)));
                     } else if (state == InternalIndexState.ONLINE || latestProgress == 1.0f) {
                         // some proxies are 'tentative' and stay at POPULATING even though they are actually done
                         completed++;
@@ -155,18 +155,13 @@ public class BulkIndexesCreator implements IndexesCreator {
                 sleepIgnoreInterrupt();
             }
 
-            if (!failed.isEmpty()) {
-                final var errors = new IOException("Index creation failed -  %d of %d failed to complete"
-                        .formatted(failed.size(), descriptorCount));
-                failed.forEach(errors::addSuppressed);
-                throw errors;
-            }
-
-            creationListener.onCreationCompleted();
-
-            try (var flushEvent = pageCacheTracer.beginDatabaseFlush()) {
-                indexingService.checkpoint(flushEvent, creationContext);
-                creationListener.onCheckpointingCompleted();
+            final var success = failed == 0;
+            creationListener.onCreationCompleted(success);
+            if (success) {
+                try (var flushEvent = pageCacheTracer.beginDatabaseFlush()) {
+                    indexingService.checkpoint(flushEvent, creationContext);
+                    creationListener.onCheckpointingCompleted();
+                }
             }
         }
     }

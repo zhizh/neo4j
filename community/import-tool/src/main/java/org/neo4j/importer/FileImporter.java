@@ -162,7 +162,7 @@ class FileImporter {
         }
 
         try (OutputStream badOutput = fileSystem.openAsOutputStream(reportFile, false);
-                Collector badCollector = getBadCollector(skipBadEntriesLogging, badOutput)) {
+                Collector badCollector = getBadCollector(badOutput)) {
             // Extract the default time zone from the database configuration
             ZoneId dbTimeZone = databaseConfig.get(db_temporal_timezone);
             Supplier<ZoneId> defaultTimeZone = () -> dbTimeZone;
@@ -226,8 +226,7 @@ class FileImporter {
                     verbose,
                     badCollector,
                     memoryTracker,
-                    input,
-                    schemaCommands);
+                    input);
             success = true;
         } catch (Exception ex) {
             throw andPrintError(databaseLayout.getDatabaseName(), ex, incremental, stdErr);
@@ -384,11 +383,11 @@ class FileImporter {
         return result;
     }
 
-    private Collector getBadCollector(boolean skipBadEntriesLogging, OutputStream badOutput) {
+    private Collector getBadCollector(OutputStream badOutput) {
         return badCollector(
                 badOutput,
                 badTolerance,
-                collect(skipBadRelationships, skipDuplicateNodes, ignoreExtraColumns),
+                collect(skipBadRelationships, skipDuplicateNodes, ignoreExtraColumns, !schemaCommands.isEmpty()),
                 skipBadEntriesLogging);
     }
 

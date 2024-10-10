@@ -25,6 +25,7 @@ import static org.neo4j.internal.batchimport.input.BadCollector.COLLECT_ALL;
 import static org.neo4j.internal.batchimport.input.BadCollector.DEFAULT_BACK_PRESSURE_THRESHOLD;
 import static org.neo4j.internal.batchimport.input.BadCollector.EXTRA_COLUMNS;
 import static org.neo4j.internal.batchimport.input.BadCollector.NO_MONITOR;
+import static org.neo4j.internal.batchimport.input.BadCollector.VIOLATING_SCHEMA;
 
 import java.io.OutputStream;
 import java.util.function.Function;
@@ -57,11 +58,16 @@ public class Collectors {
         return out -> badCollector(out, tolerance, collect, false);
     }
 
-    public static int collect(boolean skipBadRelationships, boolean skipDuplicateNodes, boolean ignoreExtraColumns) {
+    public static int collect(
+            boolean skipBadRelationships,
+            boolean skipDuplicateNodes,
+            boolean ignoreExtraColumns,
+            boolean hasSchemaCommands) {
         return (skipBadRelationships ? BAD_RELATIONSHIPS : 0)
                 // for now, we use the skipDuplicateNodes for both duplicate and violating nodes
                 // We probably need to split this into multiple ones
                 | (skipDuplicateNodes ? BAD_NODES : 0)
-                | (ignoreExtraColumns ? EXTRA_COLUMNS : 0);
+                | (ignoreExtraColumns ? EXTRA_COLUMNS : 0)
+                | (hasSchemaCommands ? VIOLATING_SCHEMA : 0);
     }
 }

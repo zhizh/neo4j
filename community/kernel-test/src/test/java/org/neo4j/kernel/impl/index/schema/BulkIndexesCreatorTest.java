@@ -21,6 +21,7 @@ package org.neo4j.kernel.impl.index.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 import static org.eclipse.collections.impl.factory.Sets.immutable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -54,6 +55,7 @@ import org.neo4j.batchimport.api.IndexImporterFactory.CreationContext;
 import org.neo4j.batchimport.api.IndexesCreator.CreationListener;
 import org.neo4j.common.EntityType;
 import org.neo4j.configuration.Config;
+import org.neo4j.exceptions.KernelException;
 import org.neo4j.graphdb.schema.IndexSetting;
 import org.neo4j.internal.schema.AllIndexProviderDescriptors;
 import org.neo4j.internal.schema.IndexConfig;
@@ -176,7 +178,7 @@ class BulkIndexesCreatorTest {
     }
 
     @Test
-    void createWithError() {
+    void createWithError() throws IOException {
         // WHEN
         final var deltas = ObjectFloatMaps.mutable.<IndexDescriptor>empty();
         final var completed = new MutableBoolean();
@@ -188,33 +190,32 @@ class BulkIndexesCreatorTest {
                 .withIndexType(IndexType.RANGE)
                 .withIndexProvider(TOKEN_DESCRIPTOR)
                 .materialise(0);
-        assertThatThrownBy(() -> indexesCreator.create(
-                        new CreationListener() {
-                            @Override
-                            public void onUpdate(IndexDescriptor indexDescriptor, float percentDelta) {
-                                deltas.updateValue(indexDescriptor, 0.0f, f -> f + percentDelta);
-                            }
+        indexesCreator.create(
+                new CreationListener() {
+                    @Override
+                    public void onUpdate(IndexDescriptor indexDescriptor, float percentDelta) {
+                        deltas.updateValue(indexDescriptor, 0.0f, f -> f + percentDelta);
+                    }
 
-                            @Override
-                            public void onCreationCompleted() {
-                                completed.setTrue();
-                            }
+                    @Override
+                    public void onFailure(IndexDescriptor indexDescriptor, KernelException error) {
+                        assertThat(indexDescriptor).isEqualTo(descriptor);
+                        assertThat(error)
+                                .hasMessageContainingAll(
+                                        "Failed to populate index", "type='RANGE'", "indexProvider='token-lookup-1.0'");
+                    }
 
-                            @Override
-                            public void onCheckpointingCompleted() {
-                                checkPointed.setTrue();
-                            }
-                        },
-                        List.of(descriptor)))
-                .isInstanceOf(IOException.class)
-                .hasMessageContainingAll("Index creation failed", "1 of 1 failed to complete")
-                .satisfies(error -> {
-                    final var suppressed = error.getSuppressed();
-                    assertThat(suppressed).hasSize(1);
-                    assertThat(suppressed[0])
-                            .hasMessageContainingAll(
-                                    "Failed to populate index", "type='RANGE'", "indexProvider='token-lookup-1.0'");
-                });
+                    @Override
+                    public void onCreationCompleted(boolean withSuccess) {
+                        completed.setValue(withSuccess);
+                    }
+
+                    @Override
+                    public void onCheckpointingCompleted() {
+                        checkPointed.setTrue();
+                    }
+                },
+                List.of(descriptor));
 
         assertThat(deltas.get(descriptor))
                 .as("should not have completed the progress")
@@ -227,7 +228,7 @@ class BulkIndexesCreatorTest {
                 .isTrue();
 
         assertThat(completed.booleanValue())
-                .as("should NOT complete the creation steps")
+                .as("should complete the creation steps with failure flag")
                 .isFalse();
         assertThat(checkPointed.booleanValue())
                 .as("should NOT checkpoint on failure")
@@ -247,8 +248,13 @@ class BulkIndexesCreatorTest {
                     }
 
                     @Override
-                    public void onCreationCompleted() {
-                        completed.setTrue();
+                    public void onFailure(IndexDescriptor indexDescriptor, KernelException error) {
+                        fail("should not report any error for %s: %s", indexDescriptor, error);
+                    }
+
+                    @Override
+                    public void onCreationCompleted(boolean withSuccess) {
+                        completed.setValue(withSuccess);
                     }
 
                     @Override

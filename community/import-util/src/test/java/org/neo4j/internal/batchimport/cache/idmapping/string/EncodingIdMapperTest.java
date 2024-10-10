@@ -1013,6 +1013,11 @@ public class EncodingIdMapperTest {
         }
 
         @Override
+        public void collectSchemaCommandFailure(EntityType entityType, String failureMessage) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public long badEntries() {
             throw new UnsupportedOperationException();
         }

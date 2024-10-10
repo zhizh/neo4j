@@ -52,6 +52,13 @@ public interface Collector extends AutoCloseable {
 
     void collectExtraColumns(String source, long row, String value);
 
+    /**
+     * @param entityType the type of entity that relates to the {@link org.neo4j.internal.schema.SchemaCommand} being
+     *                  applied
+     * @param failureMessage the failure message that resulted when applying a {@link org.neo4j.internal.schema.SchemaCommand}
+     */
+    void collectSchemaCommandFailure(EntityType entityType, String failureMessage);
+
     long badEntries();
 
     boolean isCollectingBadRelationships();
@@ -103,6 +110,9 @@ public interface Collector extends AutoCloseable {
                 String type,
                 Object endId,
                 Group endIdGroup) {}
+
+        @Override
+        public void collectSchemaCommandFailure(EntityType entityType, String failureMessage) {}
 
         @Override
         public boolean isCollectingBadRelationships() {
@@ -161,6 +171,11 @@ public interface Collector extends AutoCloseable {
             throw new IllegalStateException(format(
                     "Bad relationship (%s:%s)-[%s]->(%s:%s) with properties %s violating constraint %s",
                     startId, startIdGroup, type, endId, endIdGroup, properties, constraintDescription));
+        }
+
+        @Override
+        public void collectSchemaCommandFailure(EntityType entityType, String failureMessage) {
+            throw new IllegalStateException(failureMessage);
         }
 
         @Override

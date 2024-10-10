@@ -21,6 +21,7 @@ package org.neo4j.batchimport.api;
 
 import java.io.IOException;
 import java.util.List;
+import org.neo4j.exceptions.KernelException;
 import org.neo4j.internal.schema.IndexDescriptor;
 
 /**
@@ -45,12 +46,21 @@ public interface IndexesCreator {
         void onUpdate(IndexDescriptor indexDescriptor, float percentDelta);
 
         /**
-         * When the index creation for all the indexes have been completed
+         * Updates interested parties when the provided {@link IndexDescriptor} failed to be created
+         * @param indexDescriptor the index that failed creation
+         * @param error the error that was raised
          */
-        void onCreationCompleted();
+        void onFailure(IndexDescriptor indexDescriptor, KernelException error);
 
         /**
-         * When the index creation for all the indexes have been check pointed
+         * When the index creation for all the indexes have been completed
+         * @param withSuccess <code>true</code> if the creation process completed successfully
+         */
+        void onCreationCompleted(boolean withSuccess);
+
+        /**
+         * When the index creation for all the indexes have been check pointed. This will only be called if the creation
+         * step completed successfully.
          */
         void onCheckpointingCompleted();
     }
