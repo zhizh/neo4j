@@ -36,7 +36,7 @@ import org.neo4j.io.pagecache.context.CursorContext;
  * Available IDs are cached in their respective slots, based on the number of consecutive IDs they provide.
  */
 class IdCache {
-    private static final int DYNAMIC_CHUNK_SIZE = IndexedIdGenerator.SMALL_CACHE_CAPACITY;
+    static final int DYNAMIC_CHUNK_SIZE = 128;
 
     private final int[] slotSizes;
     private final ConcurrentLongQueue[] queues;
@@ -48,6 +48,7 @@ class IdCache {
     IdCache(IdSlotDistribution.Slot... slots) {
         this.queues = new ConcurrentLongQueue[slots.length];
         this.slotSizes = new int[slots.length];
+        boolean multiSlots = slots.length > 1;
         for (int slotIndex = 0; slotIndex < slots.length; slotIndex++) {
             int slotSize = slotSizes[slotIndex] = slots[slotIndex].slotSize();
             int capacity = slots[slotIndex].capacity();
@@ -56,10 +57,11 @@ class IdCache {
                     slotIndex == 0 || slotSize > slotSizes[slotIndex - 1],
                     "Slot sizes should be provided ordered from smaller to bigger");
 
-            // If the max capacity is larger than the chunk size then use the dynamic cache which
-            // grows and shrinks in increments of chunk size to avoid permanently occupying a large amount of memory.
-            var queue = capacity > DYNAMIC_CHUNK_SIZE
-                    ? new DynamicConcurrentLongQueue(DYNAMIC_CHUNK_SIZE, capacity / DYNAMIC_CHUNK_SIZE)
+            // If the max capacity is larger than the chunk size or if we have multiple slot sizes then use the
+            // dynamic cache which grows and shrinks in increments of chunk size to avoid permanently occupying a
+            // large amount of memory.
+            var queue = multiSlots || capacity > DYNAMIC_CHUNK_SIZE
+                    ? new DynamicConcurrentLongQueue(DYNAMIC_CHUNK_SIZE, capacity)
                     : new MpmcLongQueue(capacity);
             queues[slotIndex] = queue;
         }
@@ -159,14 +161,6 @@ class IdCache {
             this.size.decrementAndGet();
         }
         return id;
-    }
-
-    int availableSpaceById() {
-        int space = 0;
-        for (int i = 0; i < slotSizes.length; i++) {
-            space += queues[i].availableSpace() * slotSizes[i];
-        }
-        return space;
     }
 
     int[] availableSpaceBySlotIndex() {

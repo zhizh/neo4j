@@ -48,9 +48,8 @@ import static org.neo4j.index.internal.gbptree.IndexedIdGeneratorUnsafe.changeHe
 import static org.neo4j.index.internal.gbptree.RecoveryCleanupWorkCollector.immediate;
 import static org.neo4j.internal.id.FreeIds.NO_FREE_IDS;
 import static org.neo4j.internal.id.IdSlotDistribution.SINGLE_IDS;
-import static org.neo4j.internal.id.IdSlotDistribution.diminishingSlotDistribution;
-import static org.neo4j.internal.id.IdSlotDistribution.evenSlotDistribution;
 import static org.neo4j.internal.id.IdSlotDistribution.powerTwoSlotSizesDownwards;
+import static org.neo4j.internal.id.IdSlotDistribution.slotDistribution;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.IDS_PER_ENTRY;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.NO_MONITOR;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.SMALL_CACHE_CAPACITY;
@@ -238,7 +237,7 @@ class IndexedIdGeneratorTest {
     void shouldHandleSlotsLargerThanOne() throws IOException {
         // given
         int[] slotSizes = {1, 2, 4};
-        open(customization().with(diminishingSlotDistribution(slotSizes)));
+        open(customization().with(slotDistribution(slotSizes)));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
 
         // when
@@ -267,7 +266,7 @@ class IndexedIdGeneratorTest {
         // given
         int maxSlotSize = 4;
         open(customization()
-                .with(evenSlotDistribution(powerTwoSlotSizesDownwards(maxSlotSize)))
+                .with(IdSlotDistribution.slotDistribution(powerTwoSlotSizesDownwards(maxSlotSize)))
                 .with(Config.defaults(strictly_prioritize_id_freelist, true)));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
 
@@ -294,7 +293,7 @@ class IndexedIdGeneratorTest {
         // given
         open(customization()
                 .with(Config.defaults(strictly_prioritize_id_freelist, true))
-                .with(diminishingSlotDistribution(powerTwoSlotSizesDownwards(maxSlotSize))));
+                .with(slotDistribution(powerTwoSlotSizesDownwards(maxSlotSize))));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
 
         Race race = new Race().withMaxDuration(3, TimeUnit.SECONDS);
@@ -1070,11 +1069,11 @@ class IndexedIdGeneratorTest {
         open(customization().with(monitor));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
         try (var marker = idGenerator.transactionalMarker(NULL_CONTEXT)) {
-            for (int i = 0; i < SMALL_CACHE_CAPACITY + 10; i++) {
+            for (int i = 0; i < SMALL_CACHE_CAPACITY * 3; i++) {
                 marker.markDeletedAndFree(i);
             }
         }
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < SMALL_CACHE_CAPACITY; i++) {
             idGenerator.nextId(NULL_CONTEXT);
         }
         // Now the cache shouldn't be full and there should be some IDs that maintenance could load
@@ -1137,7 +1136,7 @@ class IndexedIdGeneratorTest {
         enabled.set(true);
         try (OtherThreadExecutor t2 = new OtherThreadExecutor("T2")) {
             Future<Void> nextIdFuture = t2.executeDontWait(() -> {
-                for (int i = 0; i < SMALL_CACHE_CAPACITY + 10; i++) {
+                for (int i = 0; i < SMALL_CACHE_CAPACITY * 2 + 10; i++) {
                     idGenerator.nextId(NULL_CONTEXT);
                 }
                 return null;
@@ -1160,7 +1159,7 @@ class IndexedIdGeneratorTest {
     void shouldAllocateRangesFromHighIdConcurrently(boolean favorSamePage) throws IOException {
         // given
         int[] slotSizes = {1, 2, 4, 8};
-        open(customization().with(diminishingSlotDistribution(slotSizes)));
+        open(customization().with(slotDistribution(slotSizes)));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
         int numThreads = 4;
         BitSet[] allocatedIds = new BitSet[numThreads];
@@ -1200,7 +1199,7 @@ class IndexedIdGeneratorTest {
     @Test
     void shouldSkipLastIdsOfRangeIfAllocatingFromHighIdAcrossPageBoundary() throws IOException {
         // given
-        open(customization().with(diminishingSlotDistribution(powerTwoSlotSizesDownwards(64))));
+        open(customization().with(slotDistribution(powerTwoSlotSizesDownwards(64))));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
         long preId1 = idGenerator.nextConsecutiveIdRange(64, true, NULL_CONTEXT);
         long preId2 = idGenerator.nextConsecutiveIdRange(32, true, NULL_CONTEXT);
@@ -1223,8 +1222,8 @@ class IndexedIdGeneratorTest {
     void shouldHandleClusterLikeStressfullLoad() throws IOException {
         // given
         int maxSlotSize = 16;
-        try (var clusteredIdGenerator =
-                new ClusteredIdGenerator(3, evenSlotDistribution(powerTwoSlotSizesDownwards(maxSlotSize)))) {
+        try (var clusteredIdGenerator = new ClusteredIdGenerator(
+                3, IdSlotDistribution.slotDistribution(powerTwoSlotSizesDownwards(maxSlotSize)))) {
             clusteredIdGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
 
             Race race = new Race().withMaxDuration(5, TimeUnit.SECONDS);
@@ -1685,7 +1684,7 @@ class IndexedIdGeneratorTest {
         // given
         var monitor = mock(IndexedIdGenerator.Monitor.class);
         var slotSizes = new int[] {1, 2, 4, 8};
-        open(customization().with(monitor).with(evenSlotDistribution(IDS_PER_ENTRY, slotSizes)));
+        open(customization().with(monitor).with(slotDistribution(IDS_PER_ENTRY, slotSizes)));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
         for (var size : slotSizes) {
             var id = idGenerator.nextConsecutiveIdRange(size, true, NULL_CONTEXT);
@@ -1707,25 +1706,25 @@ class IndexedIdGeneratorTest {
         // given
         var monitor = mock(IndexedIdGenerator.Monitor.class);
         var slotSizes = new int[] {1, 2, 4, 8};
-        open(customization().with(monitor).with(evenSlotDistribution(IDS_PER_ENTRY, slotSizes)));
+        open(customization().with(monitor).with(slotDistribution(IDS_PER_ENTRY, slotSizes)));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
         long[] initialCacheFillingIds = new long[10_000];
         for (int i = 0; i < initialCacheFillingIds.length; i++) {
-            initialCacheFillingIds[i] = idGenerator.nextId(NULL_CONTEXT);
+            initialCacheFillingIds[i] =
+                    idGenerator.nextConsecutiveIdRange(slotSizes[i % slotSizes.length], true, NULL_CONTEXT);
         }
         long[] testableIds = new long[slotSizes.length];
         for (int i = 0; i < testableIds.length; i++) {
             testableIds[i] = idGenerator.nextConsecutiveIdRange(slotSizes[i], true, NULL_CONTEXT);
         }
         try (var marker = idGenerator.transactionalMarker(NULL_CONTEXT)) {
-            for (var id : initialCacheFillingIds) {
-                marker.markUsed(id);
-                marker.markDeleted(id);
+            for (int i = 0; i < initialCacheFillingIds.length; i++) {
+                var id = initialCacheFillingIds[i];
+                marker.markUsed(id, slotSizes[i % slotSizes.length]);
             }
-        }
-        try (var marker = idGenerator.contextualMarker(NULL_CONTEXT)) {
-            for (var id : initialCacheFillingIds) {
-                marker.markFree(id);
+            for (int i = 0; i < initialCacheFillingIds.length; i++) {
+                var id = initialCacheFillingIds[i];
+                marker.markDeletedAndFree(id, slotSizes[i % slotSizes.length]);
             }
         }
         idGenerator.maintenance(NULL_CONTEXT);
@@ -1814,7 +1813,7 @@ class IndexedIdGeneratorTest {
     void shouldNotLetWastedIdsSurviveClearCache() throws IOException {
         // ID generator w/ slots [4,2,1]
         int[] slotSizes = {1, 2, 4};
-        open(customization().with(evenSlotDistribution(slotSizes)));
+        open(customization().with(IdSlotDistribution.slotDistribution(slotSizes)));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
 
         // Allocate lots of IDs and delete them (enough to fill the cache completely)
@@ -1862,7 +1861,7 @@ class IndexedIdGeneratorTest {
     void shouldNotLetSkippedHighIdsSurviveClearCache() throws IOException {
         // ID generator w/ slots [4,2,1]
         int[] slotSizes = {1, 2, 4};
-        open(customization().with(evenSlotDistribution(slotSizes)));
+        open(customization().with(IdSlotDistribution.slotDistribution(slotSizes)));
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);
 
         // Allocate lots of IDs and delete them (enough to fill the cache completely)
@@ -1957,7 +1956,7 @@ class IndexedIdGeneratorTest {
         // given
         var customization = customization();
         if (idSize > 1) {
-            customization.with(evenSlotDistribution(powerTwoSlotSizesDownwards(idSize)));
+            customization.with(IdSlotDistribution.slotDistribution(powerTwoSlotSizesDownwards(idSize)));
         }
         open(customization);
         idGenerator.start(NO_FREE_IDS, NULL_CONTEXT);

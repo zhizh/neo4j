@@ -21,7 +21,8 @@ package org.neo4j.internal.id.indexed;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.neo4j.internal.id.IdSlotDistribution.diminishingSlotDistribution;
+import static org.neo4j.internal.id.IdSlotDistribution.slotDistribution;
+import static org.neo4j.internal.id.indexed.IdCache.DYNAMIC_CHUNK_SIZE;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.LARGE_CACHE_CAPACITY;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.NO_MONITOR;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.SMALL_CACHE_CAPACITY;
@@ -47,20 +48,6 @@ class IdCacheTest {
     private RandomSupport random;
 
     @Test
-    void shouldReportCorrectSpaceAvailableById() {
-        // given
-        var cache = new IdCache(new IdSlotDistribution.Slot(8, 1), new IdSlotDistribution.Slot(8, 4));
-        assertThat(cache.availableSpaceById()).isEqualTo(40);
-
-        // when
-        cache.offer(1, 4, NO_MONITOR);
-        cache.offer(10, 6, NO_MONITOR);
-
-        // then
-        assertThat(cache.availableSpaceById()).isEqualTo(30);
-    }
-
-    @Test
     void shouldReportCorrectSlotsByAvailableSpace() {
         // given
         var cache = new IdCache(
@@ -68,7 +55,9 @@ class IdCacheTest {
                 new IdSlotDistribution.Slot(8, 2),
                 new IdSlotDistribution.Slot(4, 4));
         assertThat(cache.slotsByAvailableSpace()).isEqualTo(new IdSlotDistribution.Slot[] {
-            new IdSlotDistribution.Slot(8, 1), new IdSlotDistribution.Slot(8, 2), new IdSlotDistribution.Slot(4, 4)
+            new IdSlotDistribution.Slot(DYNAMIC_CHUNK_SIZE, 1),
+            new IdSlotDistribution.Slot(DYNAMIC_CHUNK_SIZE, 2),
+            new IdSlotDistribution.Slot(DYNAMIC_CHUNK_SIZE, 4)
         });
 
         // when
@@ -77,7 +66,9 @@ class IdCacheTest {
 
         // then
         assertThat(cache.slotsByAvailableSpace()).isEqualTo(new IdSlotDistribution.Slot[] {
-            new IdSlotDistribution.Slot(8, 1), new IdSlotDistribution.Slot(7, 2), new IdSlotDistribution.Slot(2, 4)
+            new IdSlotDistribution.Slot(DYNAMIC_CHUNK_SIZE, 1),
+            new IdSlotDistribution.Slot(DYNAMIC_CHUNK_SIZE - 1, 2),
+            new IdSlotDistribution.Slot(DYNAMIC_CHUNK_SIZE - 2, 4)
         });
     }
 
@@ -125,7 +116,7 @@ class IdCacheTest {
     void shouldAcceptIdsOfVariousSizes(int slotSize) {
         // given
         var slotSizes = new int[] {1, 2, 4, 8};
-        var cache = new IdCache(diminishingSlotDistribution(slotSizes).slots(128));
+        var cache = new IdCache(slotDistribution(slotSizes).slots(128));
 
         // when
         var actual = new BitSet();

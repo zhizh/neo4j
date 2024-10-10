@@ -25,30 +25,27 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicReference;
+import org.neo4j.internal.helpers.MathUtil;
 
 class DynamicConcurrentLongQueue implements ConcurrentLongQueue {
-    private final AtomicReference<Chunk> head;
-    private final AtomicReference<Chunk> tail;
-    private final AtomicInteger numChunks = new AtomicInteger(1);
+    private final AtomicReference<Chunk> head = new AtomicReference<>();
+    private final AtomicReference<Chunk> tail = new AtomicReference<>();
+    private final AtomicInteger numChunks = new AtomicInteger();
     private final int chunkSize;
     private final int maxNumChunks;
 
-    DynamicConcurrentLongQueue(int chunkSize, int maxNumChunks) {
+    DynamicConcurrentLongQueue(int chunkSize, int capacity) {
         this.chunkSize = chunkSize;
-        this.maxNumChunks = maxNumChunks;
-
-        var chunk = new Chunk(chunkSize);
-        this.head = new AtomicReference<>(chunk);
-        this.tail = new AtomicReference<>(chunk);
+        this.maxNumChunks = MathUtil.ceil(capacity, chunkSize);
     }
 
     @Override
     public boolean offer(long v) {
         var chunk = tail.get();
-        if (!chunk.offer(v)) {
+        if (chunk == null || !chunk.offer(v)) {
             synchronized (this) {
                 chunk = tail.get();
-                if (!chunk.offer(v)) {
+                if (chunk == null || !chunk.offer(v)) {
                     if (numChunks.get() >= maxNumChunks) {
                         return false;
                     }
@@ -56,7 +53,11 @@ class DynamicConcurrentLongQueue implements ConcurrentLongQueue {
                     var next = new Chunk(chunkSize);
                     var accepted = next.offer(v);
                     assert accepted;
-                    chunk.next.set(next);
+                    if (chunk == null) {
+                        head.set(next);
+                    } else {
+                        chunk.next.set(next);
+                    }
                     tail.set(next);
                     numChunks.incrementAndGet();
                     return true;
@@ -72,6 +73,10 @@ class DynamicConcurrentLongQueue implements ConcurrentLongQueue {
         Chunk next;
         do {
             chunk = head.get();
+            if (chunk == null) {
+                return defaultValue;
+            }
+
             next = chunk.next.get();
             var candidate = chunk.takeOrDefault(defaultValue);
             if (candidate != defaultValue) {
@@ -92,6 +97,9 @@ class DynamicConcurrentLongQueue implements ConcurrentLongQueue {
         Chunk next;
         do {
             chunk = head.get();
+            if (chunk == null) {
+                return Long.MAX_VALUE;
+            }
             next = chunk.next.get();
             var candidate = chunk.takeInRange(minBoundary, maxBoundary);
             if (candidate >= 0 && candidate < maxBoundary) {
@@ -118,6 +126,9 @@ class DynamicConcurrentLongQueue implements ConcurrentLongQueue {
         int size;
         do {
             firstChunk = head.get();
+            if (firstChunk == null) {
+                return 0;
+            }
             size = firstChunk.size();
             var numChunks = this.numChunks.get();
             if (numChunks > 1) {
@@ -132,15 +143,18 @@ class DynamicConcurrentLongQueue implements ConcurrentLongQueue {
     public int availableSpace() {
         int capacity = capacity();
         var lastChunk = tail.get();
+        if (lastChunk == null) {
+            return capacity;
+        }
         int occupied = (numChunks.get() - 1) * chunkSize + lastChunk.occupied();
         return capacity - occupied;
     }
 
     @Override
     public void clear() {
-        var chunk = new Chunk(chunkSize);
-        head.set(chunk);
-        tail.set(chunk);
+        head.set(null);
+        tail.set(null);
+        numChunks.set(0);
     }
 
     private static class Chunk {

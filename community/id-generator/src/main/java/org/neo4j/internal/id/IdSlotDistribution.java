@@ -19,7 +19,6 @@
  */
 package org.neo4j.internal.id;
 
-import static org.neo4j.internal.helpers.Numbers.ceilingPowerOfTwo;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.IDS_PER_ENTRY;
 import static org.neo4j.util.Preconditions.requirePowerOfTwo;
 
@@ -41,35 +40,18 @@ public interface IdSlotDistribution {
         }
     };
 
-    static IdSlotDistribution evenSlotDistribution(int... slotSizes) {
-        return evenSlotDistribution(IDS_PER_ENTRY, slotSizes);
+    static IdSlotDistribution slotDistribution(int... slotSizes) {
+        return slotDistribution(IDS_PER_ENTRY, slotSizes);
     }
 
-    static IdSlotDistribution evenSlotDistribution(int idsPerEntry, int... slotSizes) {
+    static IdSlotDistribution slotDistribution(int idsPerEntry, int... slotSizes) {
         return new BaseIdSlotDistribution(idsPerEntry, slotSizes) {
             @Override
             public Slot[] slots(int capacity) {
                 Slot[] slots = new Slot[slotSizes.length];
-                int capacityPerSlot = ceilingPowerOfTwo(capacity / slotSizes.length);
+                int capacityPerSlot = (int) (capacity / Math.floor(Math.sqrt(slotSizes.length)));
                 for (int i = 0; i < slotSizes.length; i++) {
                     slots[i] = new Slot(capacityPerSlot, slotSizes[i]);
-                }
-                return slots;
-            }
-        };
-    }
-
-    static IdSlotDistribution diminishingSlotDistribution(int... slotSizes) {
-        return diminishingSlotDistribution(IDS_PER_ENTRY, slotSizes);
-    }
-
-    static IdSlotDistribution diminishingSlotDistribution(int idsPerEntry, int... slotSizes) {
-        return new BaseIdSlotDistribution(idsPerEntry, slotSizes) {
-            @Override
-            public Slot[] slots(int capacity) {
-                Slot[] slots = new Slot[slotSizes.length];
-                for (int i = 0; i < slotSizes.length; i++) {
-                    slots[i] = new Slot(capacity / (1 << (i + 1)), slotSizes[i]);
                 }
                 return slots;
             }

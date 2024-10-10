@@ -34,7 +34,7 @@ class DynamicConcurrentLongQueueTest {
     @Test
     void shouldOfferAndTakeOnSingleChunk() {
         // given
-        var queue = new DynamicConcurrentLongQueue(8, 5);
+        var queue = new DynamicConcurrentLongQueue(8, 40);
 
         // when
         int size = 0;
@@ -56,7 +56,7 @@ class DynamicConcurrentLongQueueTest {
     @Test
     void shouldOfferAndTakeOnMultipleChunks() {
         // given
-        var queue = new DynamicConcurrentLongQueue(8, 5);
+        var queue = new DynamicConcurrentLongQueue(8, 40);
 
         // when
         int size = 0;
@@ -78,7 +78,8 @@ class DynamicConcurrentLongQueueTest {
     @Test
     void shouldTakeParallel() {
         // given
-        var queue = new DynamicConcurrentLongQueue(32, 100);
+        int capacity = 32_000;
+        var queue = new DynamicConcurrentLongQueue(32, capacity);
         var items = 32 * 100;
         for (int i = 0; i < items; i++) {
             queue.offer(i);
@@ -123,7 +124,7 @@ class DynamicConcurrentLongQueueTest {
         // given
         var itemsPerThread = 50_000;
         var offerThreads = Math.max(4, Runtime.getRuntime().availableProcessors() / 2);
-        var queue = new DynamicConcurrentLongQueue(20, 20);
+        var queue = new DynamicConcurrentLongQueue(20, 400);
         var items = itemsPerThread * offerThreads;
 
         // when
@@ -143,7 +144,6 @@ class DynamicConcurrentLongQueueTest {
                         }
                         assertThat(offered).isTrue();
                     }
-                    assertSizeAndAvailableSpace(queue);
                 },
                 1);
         var takeInRangeHits = new AtomicInteger();
@@ -172,7 +172,6 @@ class DynamicConcurrentLongQueueTest {
                     takenCount.incrementAndGet();
                 }
             }
-            assertSizeAndAvailableSpace(queue);
         });
         race.goUnchecked();
 
@@ -190,12 +189,25 @@ class DynamicConcurrentLongQueueTest {
         assertThat(takeInRangeMisses.get()).isGreaterThan(0);
     }
 
-    /**
-     * This assertion is used in a concurrent setting which makes it impossible to accurately assert that size + availableSpace == maxCapacity,
-     * so therefor it asserts on both being >= 0. It's very hard to do otherwise.
-     */
-    private static void assertSizeAndAvailableSpace(DynamicConcurrentLongQueue queue) {
-        assertThat(queue.size()).isGreaterThanOrEqualTo(0);
-        assertThat(queue.availableSpace()).isGreaterThanOrEqualTo(0);
+    @Test
+    void shouldClearQueue() {
+        // given
+        int capacity = 256;
+        var queue = new DynamicConcurrentLongQueue(8, capacity);
+        for (int i = 0; i < capacity; i++) {
+            assertThat(queue.offer(i)).isTrue();
+        }
+
+        // when
+        queue.clear();
+        assertThat(queue.takeOrDefault(-1L)).isEqualTo(-1L);
+
+        // then
+        for (int i = 0; i < capacity; i++) {
+            assertThat(queue.offer(i)).isTrue();
+        }
+        for (int i = 0; i < capacity; i++) {
+            assertThat(queue.takeOrDefault(-1)).isEqualTo(i);
+        }
     }
 }

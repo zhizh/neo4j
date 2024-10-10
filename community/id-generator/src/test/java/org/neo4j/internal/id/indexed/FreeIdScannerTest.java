@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Answers.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
 import static org.neo4j.index.internal.gbptree.DataTree.W_BATCHED_SINGLE_THREADED;
-import static org.neo4j.internal.id.IdSlotDistribution.evenSlotDistribution;
+import static org.neo4j.internal.id.IdSlotDistribution.slotDistribution;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.NO_ID;
 import static org.neo4j.internal.id.indexed.IndexedIdGenerator.NO_MONITOR;
 import static org.neo4j.io.pagecache.context.CursorContext.NULL_CONTEXT;
@@ -769,7 +769,7 @@ class FreeIdScannerTest {
         // given
         int generation = 1;
         int[] slotSizes = {1, 2, 4};
-        IdCache cache = new IdCache(evenSlotDistribution(slotSizes).slots(256));
+        IdCache cache = new IdCache(slotDistribution(slotSizes).slots(256));
         FreeIdScanner scanner = scanner(IDS_PER_ENTRY, cache, generation, true);
         long id = 10;
         int size = 4;
@@ -793,7 +793,7 @@ class FreeIdScannerTest {
         // given
         int generation = 1;
         int[] slotSizes = {1, 2, 4};
-        IdCache cache = new IdCache(evenSlotDistribution(slotSizes).slots(256));
+        IdCache cache = new IdCache(slotDistribution(slotSizes).slots(256));
         FreeIdScanner scanner = scanner(IDS_PER_ENTRY, cache, generation, true);
         long id = 10;
         int size = 4;
@@ -898,25 +898,24 @@ class FreeIdScannerTest {
         // given
         int[] slotSizes = {1, 2, 4, 8};
         int cacheCapacity = 256;
-        var cache = new IdCache(evenSlotDistribution(slotSizes).slots(cacheCapacity));
-        int cacheCapacityPerSlot = cacheCapacity / slotSizes.length;
+        Slot[] slots = slotDistribution(slotSizes).slots(cacheCapacity);
+        var cache = new IdCache(slots);
         long generation = 1;
         var scanner = scanner(IDS_PER_ENTRY, cache, generation, true);
         try (var marker = marker(generation, true)) {
-            for (int i = 0; i < cacheCapacityPerSlot * 2; i++) {
+            for (int i = 0; i < slots[0].capacity() * 2; i++) {
                 marker.markDeletedAndFree(i * 2, 1);
             }
         }
         scanner.tryLoadFreeIdsIntoCache(true, true, NULL_CONTEXT);
-        assertThat(cache.availableSpaceBySlotIndex()[0]).isZero();
-        assertThat(reuser.reservedIds.size()).isEqualTo(cacheCapacityPerSlot);
+        assertThat(reuser.reservedIds.size()).isEqualTo(slots[0].capacity());
         assertThat(reuser.unreservedIds.size()).isZero();
 
         // when
         scanner.tryLoadFreeIdsIntoCache(true, true, NULL_CONTEXT);
 
         // then
-        assertThat(reuser.reservedIds.size()).isEqualTo(cacheCapacityPerSlot);
+        assertThat(reuser.reservedIds.size()).isEqualTo(slots[0].capacity());
         assertThat(reuser.unreservedIds.size()).isZero();
     }
 
