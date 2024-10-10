@@ -172,6 +172,7 @@ class NeoBootstrapperTest {
         neoBootstrapper = new CommunityBootstrapperWithoutStartingServer();
         Map<String, String> config = MapUtil.stringMap();
         config.put(BootloaderSettings.max_heap_size.name(), "10B");
+        config.put(GraphDatabaseSettings.pagecache_memory.name(), "" + ByteUnit.mebiBytes(8));
 
         // Mock heap usage and free memory.
         MachineMemory mockedMemory = mock(MachineMemory.class);
