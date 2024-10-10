@@ -383,14 +383,14 @@ public class ProcedureException extends KernelException {
     public static ProcedureException surpressedRegisterFailed(List<Throwable> surpressedExceptions) {
         var exception = surpressedExceptions.get(surpressedExceptions.size() - 1);
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withClassification(ErrorClassification.UNKNOWN)
                 .withParam(GqlParams.StringParam.msgTitle, exception.getClass().getName())
                 .withParam(GqlParams.StringParam.msg, exception.getMessage())
                 .build();
         for (int i = surpressedExceptions.size() - 2; i >= 0; i--) {
             exception = surpressedExceptions.get(i);
             gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
+                    .withClassification(ErrorClassification.UNKNOWN)
                     .withParam(
                             GqlParams.StringParam.msgTitle, exception.getClass().getName())
                     .withParam(GqlParams.StringParam.msg, exception.getMessage())

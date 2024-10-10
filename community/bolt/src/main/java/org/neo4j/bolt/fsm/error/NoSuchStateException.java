@@ -69,10 +69,11 @@ public class NoSuchStateException extends StateMachineException
     public static NoSuchStateException invalidServerStateTransition(
             String msgTitle, String invalidState, StateReference target) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withClassification(ErrorClassification.UNKNOWN)
                 .withParam(GqlParams.StringParam.msgTitle, msgTitle)
                 .withParam(GqlParams.StringParam.msg, invalidState)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N09)
+                        .withClassification(ErrorClassification.DATABASE_ERROR)
                         .withParam(GqlParams.StringParam.boltServerState, invalidState)
                         .build())
                 .build();

@@ -4084,11 +4084,11 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_52N02(
             new GqlStatus("52N02"),
             """
-                    Execution of the procedure { %s } failed.""",
+                    Execution of the procedure { %s } failed due to a client error.""",
             new GqlParams.GqlParam[] {GqlParams.StringParam.proc},
             emptyMap(),
             Condition.PROCEDURE_EXCEPTION,
-            "procedure execution error"),
+            "procedure execution client error"),
     STATUS_52N03(
             new GqlStatus("52N03"),
             """
@@ -4137,6 +4137,14 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.PROCEDURE_EXCEPTION,
             "invalid server id argument to checkConnectivity"),
+    STATUS_52N09(
+            new GqlStatus("52N09"),
+            """
+                    Execution of the procedure { %s } failed due to a database error.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.proc},
+            emptyMap(),
+            Condition.PROCEDURE_EXCEPTION,
+            "procedure execution database error"),
     STATUS_52N10(
             new GqlStatus("52N10"),
             """

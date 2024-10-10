@@ -43,7 +43,7 @@ class ErrorGqlStatusObjectImplementationTest {
 
         assertThat(error.statusDescription())
                 .isEqualTo(
-                        "error: procedure exception - procedure execution error. Execution of the procedure $proc() failed.");
+                        "error: procedure exception - procedure execution client error. Execution of the procedure $proc() failed due to a client error.");
     }
 
     @Test
@@ -55,7 +55,7 @@ class ErrorGqlStatusObjectImplementationTest {
 
         assertThat(error.statusDescription())
                 .isEqualTo(
-                        "error: procedure exception - procedure execution error. Execution of the procedure my_proc() failed.");
+                        "error: procedure exception - procedure execution client error. Execution of the procedure my_proc() failed due to a client error.");
     }
 
     @Test
@@ -66,6 +66,6 @@ class ErrorGqlStatusObjectImplementationTest {
 
         assertThat(error.statusDescription())
                 .isEqualTo(
-                        "error: procedure exception - procedure execution error. Execution of the procedure $proc() failed.");
+                        "error: procedure exception - procedure execution client error. Execution of the procedure $proc() failed due to a client error.");
     }
 }

@@ -205,7 +205,7 @@ public class TransactionCountingStateVisitor extends TxStateVisitor.Delegator {
             Exceptions.throwIfInstanceOf(exception, KernelException.class);
             Exceptions.throwIfUnchecked(exception);
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-                    .withClassification(ErrorClassification.DATABASE_ERROR)
+                    .withClassification(ErrorClassification.UNKNOWN)
                     .build();
             throw new UnspecifiedKernelException(gql, Status.General.UnknownError, exception);
         }

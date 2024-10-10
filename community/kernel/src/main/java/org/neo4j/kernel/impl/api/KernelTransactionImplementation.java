@@ -1028,7 +1028,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         Exceptions.throwIfInstanceOf(exception, TransactionFailureException.class);
         Exceptions.throwIfUnchecked(exception);
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withClassification(ErrorClassification.UNKNOWN)
                 .build();
         throw new TransactionFailureException(gql, Status.General.UnknownError, exception);
     }
@@ -1144,7 +1144,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         Exceptions.throwIfInstanceOf(exception, TransactionFailureException.class);
         Exceptions.throwIfUnchecked(exception);
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withClassification(ErrorClassification.UNKNOWN)
                 .build();
         throw new TransactionFailureException(gql, Status.General.UnknownError, exception);
     }
@@ -1607,11 +1607,8 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
 
     private void assertNoInnerTransactions() throws TransactionFailureException {
         if (getInnerTransactionHandler().hasInnerTransaction()) {
-            var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_2DN01)
+            var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_2DN07)
                     .withClassification(ErrorClassification.CLIENT_ERROR)
-                    .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_2DN07)
-                            .withClassification(ErrorClassification.CLIENT_ERROR)
-                            .build())
                     .build();
             throw new TransactionFailureException(
                     gql,

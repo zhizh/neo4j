@@ -81,7 +81,8 @@ public class QueryRouterException extends GqlRuntimeException implements Status.
                         .withClassification(ErrorClassification.DATABASE_ERROR)
                         .build())
                 .build();
-        return new QueryRouterException(gql, Status.Statement.ExecutionFailed, legacyMessage);
+        // TODO GQLSTATUS temporarily removed because of unclear classification, reintroduce this in 5.26
+        return new QueryRouterException(/*gql,*/ Status.Statement.ExecutionFailed, legacyMessage);
     }
 
     public static QueryRouterException writeDuringLeaderSwitch(Location attempt, Location current) {

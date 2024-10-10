@@ -30,7 +30,8 @@ public class ProfilerStatisticsNotReadyException extends Neo4jException {
             "This result has not been materialised yet. Iterate over it to get profiler stats.";
 
     private ProfilerStatisticsNotReadyException(ErrorGqlStatusObject gqlStatusObject) {
-        super(gqlStatusObject, ERROR_MSG);
+        /// TODO GQLSTATUS temporarily removed because of unclear classification, reintroduce this in 5.26
+        super(/*gqlStatusObject,*/ ERROR_MSG);
     }
 
     public static ProfilerStatisticsNotReadyException invalidUseOfProfile() {

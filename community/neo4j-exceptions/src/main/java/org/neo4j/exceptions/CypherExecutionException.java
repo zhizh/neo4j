@@ -37,18 +37,6 @@ public class CypherExecutionException extends Neo4jException {
         super(gqlStatusObject, message, cause);
     }
 
-    public static CypherExecutionException internalError(String msgTitle, String msg, Throwable cause) {
-        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
-                .withParam(GqlParams.StringParam.msgTitle, msgTitle)
-                .withParam(GqlParams.StringParam.msg, msg)
-                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-                        .withClassification(ErrorClassification.DATABASE_ERROR)
-                        .build())
-                .build();
-        return new CypherExecutionException(gql, msg, cause);
-    }
-
     @Deprecated
     public CypherExecutionException(String message) {
         super(message);
@@ -66,7 +54,8 @@ public class CypherExecutionException extends Neo4jException {
                         .build())
                 .build();
         return new CypherExecutionException(
-                gql,
+                // TODO GQLSTATUS temporarily removed because of unclear classification, reintroduce this in 5.26
+                // gql,
                 """
                 Tried to read a field larger than the current buffer size.
                  Make sure that the field doesn't have an unterminated quote,
@@ -74,12 +63,20 @@ public class CypherExecutionException extends Neo4jException {
                 cause);
     }
 
+    public static CypherExecutionException internalError(String msgTitle, String msg, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
+                .withClassification(ErrorClassification.UNKNOWN)
+                .withParam(GqlParams.StringParam.msgTitle, msgTitle)
+                .withParam(GqlParams.StringParam.msg, msg)
+                .build();
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
     public static CypherExecutionException unexpectedError(Throwable cause) {
-        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
-                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
-                        .build())
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
+                .withClassification(ErrorClassification.UNKNOWN)
+                .withParam(GqlParams.StringParam.msgTitle, "Unexpected error")
+                .withParam(GqlParams.StringParam.msg, cause.getMessage())
                 .build();
         return new CypherExecutionException(gql, cause.getMessage(), cause);
     }
