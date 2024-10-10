@@ -365,7 +365,7 @@ public class ProcedureException extends KernelException {
     }
 
     public static ProcedureException loadFailedSandboxed(DescribedSignature signature) {
-        var gql = GqlHelper.get50N17(String.valueOf(signature.name()));
+        var gql = GqlHelper.get52N34(String.valueOf(signature.name()));
         return new ProcedureException(
                 gql,
                 Status.Procedure.ProcedureRegistrationFailed,
@@ -414,7 +414,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException innerExceptionFailed(Throwable throwable, ProcedureSignature signature) {
         Throwable cause = getRootCause(throwable); // Do we risk losing valuable information here
-        var gql = GqlHelper.get50N16(
+        var gql = GqlHelper.get52N33(
                 String.valueOf(signature.name()), (cause != null ? String.valueOf(cause) : String.valueOf(throwable)));
 
         if (throwable instanceof Status.HasStatus statusException) {
@@ -431,7 +431,7 @@ public class ProcedureException extends KernelException {
     }
 
     public static ProcedureException compilationFailed(String routine, String procedureName, Throwable cause) {
-        var gql = GqlHelper.get51N00_50N18(procedureName, cause.getMessage());
+        var gql = GqlHelper.get51N00_52N35(procedureName, cause.getMessage());
         return new ProcedureException(
                 gql,
                 Status.Procedure.ProcedureRegistrationFailed,
@@ -444,7 +444,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException invocationFailed(String typeAndName, Throwable cause) {
         Throwable rootCause = getRootCause(cause); // Do we risk losing valuable information here
-        var gql = GqlHelper.get50N16(
+        var gql = GqlHelper.get52N33(
                 typeAndName, (rootCause != null ? String.valueOf(rootCause) : String.valueOf(cause)));
         return new ProcedureException(
                 gql,

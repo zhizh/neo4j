@@ -92,16 +92,16 @@ public class GqlHelper {
                 .build();
     }
 
-    public static ErrorGqlStatusObject get50N16(String sig, String msg) {
-        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N16)
+    public static ErrorGqlStatusObject get52N33(String sig, String msg) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N33)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.sig, sig)
                 .withParam(GqlParams.StringParam.msg, msg)
                 .build();
     }
 
-    public static ErrorGqlStatusObject get50N17(String sig) {
-        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N17)
+    public static ErrorGqlStatusObject get52N34(String sig) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N34)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.sig, sig)
                 .build();
@@ -118,10 +118,10 @@ public class GqlHelper {
                 .build();
     }
 
-    public static ErrorGqlStatusObject get51N00_50N18(String procClass, String msg) {
+    public static ErrorGqlStatusObject get51N00_52N35(String procClass, String msg) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
-                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N18)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N35)
                         .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.msg, msg)

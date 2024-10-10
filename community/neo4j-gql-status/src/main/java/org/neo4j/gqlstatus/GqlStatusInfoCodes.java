@@ -1175,7 +1175,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlParams.GqlParam[] {},
             emptyMap(),
             Condition.DATA_EXCEPTION,
-            "unsupported coordinate reference system"),
+            "unknown coordinate reference system"),
     STATUS_22N30(
             new GqlStatus("22N30"),
             """
@@ -1801,7 +1801,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlParams.GqlParam[] {GqlParams.StringParam.value},
             emptyMap(),
             Condition.DATA_EXCEPTION,
-            "parsing JSON exception"),
+            "parsing JSON failure"),
     STATUS_22NFF(
             new GqlStatus("22NFF"),
             """
@@ -2630,7 +2630,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlParams.GqlParam[] {GqlParams.StringParam.variable},
             emptyMap(),
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
-            "variable already defined"),
+            "variable shadowing"),
     STATUS_42N08(
             new GqlStatus("42N08"),
             """
@@ -2924,7 +2924,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlParams.GqlParam[] {},
             emptyMap(),
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
-            "invalid use of UNION"),
+            "invalid use of UNION and CALL IN TRANSACTIONS"),
     STATUS_42N48(
             new GqlStatus("42N48"),
             """
@@ -3489,30 +3489,6 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.GENERAL_PROCESSING_EXCEPTION,
             "unsupported index operation"),
-    STATUS_50N16(
-            new GqlStatus("50N16"),
-            """
-            Failed to invoke procedure/function { %s } caused by: { %s }.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.sig, GqlParams.StringParam.msg},
-            emptyMap(),
-            Condition.GENERAL_PROCESSING_EXCEPTION,
-            "procedure invocation failed"),
-    STATUS_50N17(
-            new GqlStatus("50N17"),
-            """
-            { %s } is unavailable because it is sandboxed. Sandboxing is controlled by the dbms.security.procedures.unrestricted setting. Only un-restrict procedures you can trust with access to database internals.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.sig},
-            emptyMap(),
-            Condition.GENERAL_PROCESSING_EXCEPTION,
-            "procedure invocation failed"),
-    STATUS_50N18(
-            new GqlStatus("50N18"),
-            """
-            Failed to compile procedure/function defined in { %s }: { %s }""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.procClass, GqlParams.StringParam.msg},
-            emptyMap(),
-            Condition.GENERAL_PROCESSING_EXCEPTION,
-            "procedure compilation failed"),
     STATUS_50N21(
             new GqlStatus("50N21"),
             """
@@ -3944,19 +3920,21 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_51N52(
             new GqlStatus("51N52"),
             """
-                    Number of primaries { %s } needs to be at least 1 and may not exceed { %s }.""",
+                    Cannot alter database topology. Number of primaries { %s } needs to be at least 1 and may not exceed { %s }.""",
             new GqlParams.GqlParam[] {GqlParams.NumberParam.count, GqlParams.NumberParam.upper},
             emptyMap(),
             Condition.SYSTEM_CONFIGURATION_OR_OPERATION_EXCEPTION,
-            "cannot alter database topology"),
+            "number primaries out of range") // message sounds a little off for me for these two. maybe "numbe rof
+    // primaries/secondaries ({ %s }) instead?
+    ,
     STATUS_51N53(
             new GqlStatus("51N53"),
             """
-                    Number of secondaries { %s } needs to be at least 0 and may not exceed { %s }.""",
+                    Cannot alter database topology. Number of secondaries { %s } needs to be at least 0 and may not exceed { %s }.""",
             new GqlParams.GqlParam[] {GqlParams.NumberParam.count, GqlParams.NumberParam.upper},
             emptyMap(),
             Condition.SYSTEM_CONFIGURATION_OR_OPERATION_EXCEPTION,
-            "cannot alter database topology"),
+            "number secondaries out of range"),
     STATUS_51N54(
             new GqlStatus("51N54"),
             """
@@ -4091,7 +4069,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
                     Cannot get routing table for { %s } because Bolt is not enabled. Please update your configuration such that 'server.bolt.enabled' is set to true.""",
             new GqlParams.GqlParam[] {GqlParams.StringParam.db},
             emptyMap(),
-            Condition.PROCEDURE_EXCEPTION,
+            Condition.SYSTEM_CONFIGURATION_OR_OPERATION_EXCEPTION,
             "bolt is not enabled"),
     STATUS_52N01(
             new GqlStatus("52N01"),
@@ -4349,6 +4327,30 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.PROCEDURE_EXCEPTION,
             "invalid sequence number"),
+    STATUS_52N33(
+            new GqlStatus("52N33"),
+            """
+                    Failed to invoke procedure/function { %s } caused by: { %s }.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.sig, GqlParams.StringParam.msg},
+            emptyMap(),
+            Condition.PROCEDURE_EXCEPTION,
+            "procedure invocation failed"),
+    STATUS_52N34(
+            new GqlStatus("52N34"),
+            """
+                    { %s } is unavailable because it is sandboxed. Sandboxing is controlled by the dbms.security.procedures.unrestricted setting. Only un-restrict procedures you can trust with access to database internals.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.sig},
+            emptyMap(),
+            Condition.PROCEDURE_EXCEPTION,
+            "procedure sandboxed"),
+    STATUS_52N35(
+            new GqlStatus("52N35"),
+            """
+                    Failed to compile procedure/function defined in { %s }: { %s }""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.procClass, GqlParams.StringParam.msg},
+            emptyMap(),
+            Condition.PROCEDURE_EXCEPTION,
+            "procedure compilation failed"),
     STATUS_52U00(
             new GqlStatus("52U00"),
             """

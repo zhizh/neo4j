@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -277,6 +278,69 @@ public class GqlStatusInfoCodesTest {
         }
     }
 
+    private static class TotalCondition {
+        Condition condition;
+        String subCondition;
+
+        TotalCondition(Condition condition, String subCondition) {
+            this.condition = condition;
+            this.subCondition = subCondition;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(condition, subCondition);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) return false;
+            if (!(obj instanceof TotalCondition tc)) return false;
+            else return tc.condition.equals(condition) && tc.subCondition.equals(subCondition);
+        }
+    }
+
+    @Test
+    void verifyConditionSubconditionIsUnique() {
+        var whiteList = EnumSet.noneOf(GqlStatusInfoCodes.class);
+        whiteList.add(GqlStatusInfoCodes.STATUS_22G12);
+        whiteList.add(GqlStatusInfoCodes.STATUS_22N12);
+        whiteList.add(GqlStatusInfoCodes.STATUS_22N17);
+        var errorMessages = new ArrayList<String>();
+        var knownCombinations = new HashMap<TotalCondition, GqlStatusInfoCodes>();
+        for (var gqlCode : GqlStatusInfoCodes.values()) {
+            if (whiteList.contains(gqlCode)) {
+                continue;
+            }
+            var cond = gqlCode.getCondition();
+            var subCond = gqlCode.getSubCondition();
+            var tc = new TotalCondition(cond, subCond);
+            if (!knownCombinations.keySet().contains(tc)) {
+                knownCombinations.put(tc, gqlCode);
+            } else {
+                errorMessages.add("\n" + gqlCode + " and " + knownCombinations.get(tc));
+            }
+        }
+        if (!errorMessages.isEmpty()) {
+            fail("Condition+SubCondition combinations were not unique:" + errorMessages);
+        }
+    }
+
+    @Test
+    void verifyConditionCorrespondsToUniqueCode() {
+        var condCodeMap = new HashMap<String, Condition>();
+        for (var gqlCode : GqlStatusInfoCodes.values()) {
+            var cond = gqlCode.getCondition();
+            var condCode = gqlCode.getGqlStatus().gqlStatusString().substring(0, 2);
+            if (!condCodeMap.containsKey(condCode)) {
+                condCodeMap.put(condCode, cond);
+            } else if (condCodeMap.get(condCode) != cond) {
+                fail("The condition for " + gqlCode + " is " + cond + " which is different than "
+                        + condCodeMap.get(condCode) + " used elsewhere");
+            }
+        }
+    }
+
     @Test
     void verifyGetMessageHandlesFaultyParameters() {
         String[] badParam = {"AA", "BBB", "CCC", "DDD", "EEE"};
@@ -384,8 +448,8 @@ public class GqlStatusInfoCodesTest {
         byte[] gqlHash = DigestUtils.sha256(gqlBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            -47, 8, -26, -27, -71, 82, -14, -13, -13, 5, 54, 84, 56, -42, -34, 102, -25, -108, 61, 125, 82, 78, -27,
-            -25, -81, -112, 7, 83, -4, 0, -11, 1
+            -15, -119, -112, 61, 81, 117, -63, 63, 30, -30, 96, 47, -58, -93, -67, -112, -77, -99, -125, 91, -39, -87,
+            -94, -101, -95, 104, -85, 57, 98, 34, 106, 75
         };
 
         if (!Arrays.equals(gqlHash, expectedHash)) {
