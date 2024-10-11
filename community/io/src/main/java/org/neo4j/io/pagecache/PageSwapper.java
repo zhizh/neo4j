@@ -130,7 +130,7 @@ public interface PageSwapper extends Closeable {
      * Notification that a page has been evicted, used to clean up state in structures
      * outside the page table.
      */
-    void evicted(long pageId);
+    void evicted(long pageRef, long pageId);
 
     /**
      * Get the file that this PageSwapper represents.

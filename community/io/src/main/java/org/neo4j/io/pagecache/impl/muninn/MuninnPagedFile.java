@@ -897,17 +897,24 @@ final class MuninnPagedFile extends PageList implements PagedFile, Flushable {
      *
      * @param filePageId The id of the file page to evict.
      */
-    private void evictPage(long filePageId) {
+    private void evictPage(long pageRef, long filePageId) {
         int chunkId = computeChunkId(filePageId);
         int chunkIndex = computeChunkIndex(filePageId);
         int[] chunk = translationTable[chunkId];
 
-        int mappedPageId = translationTableGetVolatile(chunk, chunkIndex);
-        long pageRef = deref(mappedPageId);
+        assert checkMemoryState(chunk, chunkIndex, pageRef);
         if (!multiVersioned && contextVersionUpdates) {
             setHighestEvictedTransactionId(getAndResetLastModifiedTransactionId(pageRef));
         }
         translationTableSetVolatile(chunk, chunkIndex, UNMAPPED_TTE);
+    }
+
+    private boolean checkMemoryState(int[] chunk, int chunkIndex, long pageRef) {
+        int latestState = translationTableGetVolatile(chunk, chunkIndex);
+        if (latestState != UNMAPPED_TTE && pageRef == deref(latestState)) {
+            return true;
+        }
+        throw new AssertionError("Locked page ref " + pageRef + " differs from latest memory state: " + latestState);
     }
 
     private void setHighestEvictedTransactionId(long modifiedTransactionId) {

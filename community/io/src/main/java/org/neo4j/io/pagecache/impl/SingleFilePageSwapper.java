@@ -424,10 +424,10 @@ public class SingleFilePageSwapper implements PageSwapper {
     }
 
     @Override
-    public void evicted(long filePageId) {
+    public void evicted(long pageRef, long filePageId) {
         PageEvictionCallback callback = this.onEviction;
         if (callback != null) {
-            callback.onEvict(filePageId);
+            callback.onEvict(pageRef, filePageId);
         }
     }
 

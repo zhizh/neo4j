@@ -471,7 +471,7 @@ class PageList implements PageReferenceTranslator {
                         explicitlyMarkPageUnmodifiedUnderExclusiveLock(pageRef);
                     }
                 }
-                swapper.evicted(filePageId);
+                swapper.evicted(pageRef, filePageId);
             }
         }
         clearBinding(pageRef);

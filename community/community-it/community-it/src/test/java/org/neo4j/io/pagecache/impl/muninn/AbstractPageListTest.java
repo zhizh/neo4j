@@ -1900,7 +1900,7 @@ public class AbstractPageListTest {
         AtomicBoolean evictionNotified = new AtomicBoolean();
         PageSwapper swapper = new DummyPageSwapper("a", 313) {
             @Override
-            public void evicted(long filePageId) {
+            public void evicted(long pageRef, long filePageId) {
                 evictionNotified.set(true);
                 assertThat(filePageId).isEqualTo(42L);
             }
@@ -1921,7 +1921,7 @@ public class AbstractPageListTest {
         AtomicBoolean evictionNotified = new AtomicBoolean();
         PageSwapper swapper = new DummyPageSwapper("a", 313) {
             @Override
-            public void evicted(long filePageId) {
+            public void evicted(long pageRef, long filePageId) {
                 evictionNotified.set(true);
                 assertThat(filePageId).isEqualTo(42L);
             }
@@ -1983,7 +1983,7 @@ public class AbstractPageListTest {
             }
 
             @Override
-            public void evicted(long filePageId) {
+            public void evicted(long pageRef, long filePageId) {
                 evictionNotified.set(true);
             }
         };

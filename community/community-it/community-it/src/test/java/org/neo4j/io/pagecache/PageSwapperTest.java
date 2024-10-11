@@ -74,7 +74,7 @@ public abstract class PageSwapperTest {
     public static final long Y = X ^ (X << 1);
     public static final int Z = 0xfefefefe;
 
-    protected static final PageEvictionCallback NO_CALLBACK = filePageId -> {};
+    protected static final PageEvictionCallback NO_CALLBACK = (pageRef, filePageId) -> {};
 
     public static int RESERVED_BYTES;
     public static int PAYLOAD_SIZE;
@@ -460,23 +460,23 @@ public abstract class PageSwapperTest {
     @Test
     void mustRunEvictionCallbackOnEviction() throws Exception {
         final AtomicLong callbackFilePageId = new AtomicLong();
-        PageEvictionCallback callback = callbackFilePageId::set;
+        PageEvictionCallback callback = (pageRef, filePageId) -> callbackFilePageId.set(filePageId);
         Path file = file("file");
         PageSwapperFactory factory = createSwapperFactory(getFs());
         PageSwapper swapper = createSwapper(factory, file, cachePageSize(), callback, true, false);
-        swapper.evicted(42);
+        swapper.evicted(42, 42);
         assertThat(callbackFilePageId.get()).isEqualTo(42L);
     }
 
     @Test
     void mustNotIssueEvictionCallbacksAfterSwapperHasBeenClosed() throws Exception {
         final AtomicBoolean gotCallback = new AtomicBoolean();
-        PageEvictionCallback callback = filePageId -> gotCallback.set(true);
+        PageEvictionCallback callback = (pageRef, filePageId) -> gotCallback.set(true);
         Path file = file("file");
         PageSwapperFactory factory = createSwapperFactory(getFs());
         PageSwapper swapper = createSwapper(factory, file, cachePageSize(), callback, true, false);
         swapper.close();
-        swapper.evicted(42);
+        swapper.evicted(42, 42);
         assertFalse(gotCallback.get());
     }
 

@@ -59,7 +59,7 @@ public class DummyPageSwapper implements PageSwapper {
     }
 
     @Override
-    public void evicted(long filePageId) {}
+    public void evicted(long pageRef, long filePageId) {}
 
     @Override
     public Path path() {

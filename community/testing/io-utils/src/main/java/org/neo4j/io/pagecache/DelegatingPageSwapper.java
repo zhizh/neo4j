@@ -51,8 +51,8 @@ public class DelegatingPageSwapper implements PageSwapper {
     }
 
     @Override
-    public void evicted(long filePageId) {
-        delegate.evicted(filePageId);
+    public void evicted(long pageRef, long filePageId) {
+        delegate.evicted(pageRef, filePageId);
     }
 
     @Override
