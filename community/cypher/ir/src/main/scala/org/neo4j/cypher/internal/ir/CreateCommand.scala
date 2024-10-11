@@ -35,8 +35,11 @@ sealed trait CreateCommand extends HasMappableExpressions[CreateCommand] {
 /**
  * Create a new node with the provided labels and properties and assign it to the variable 'idName'.
  */
-case class CreateNode(variable: LogicalVariable, labels: Set[LabelName], properties: Option[Expression])
-    extends CreateCommand {
+case class CreateNode(
+  variable: LogicalVariable,
+  labels: Set[LabelName],
+  properties: Option[Expression]
+) extends CreateCommand {
   def dependencies: Set[LogicalVariable] = properties.map(_.dependencies).getOrElse(Set.empty)
 
   override def mapExpressions(f: Expression => Expression): CreateNode = copy(properties = properties.map(f))

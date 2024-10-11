@@ -148,4 +148,12 @@ class ExpressionCanonicalStringValTest extends CypherFunSuite {
       .asCanonicalStringVal should equal("getDegree((node)-[:Rel]->()) = 10")
   }
 
+  test("HasDynamicLabels should render nicely") {
+    HasDynamicLabels(varFor("node"), Seq(varFor("labelName")))(pos)
+      .asCanonicalStringVal should equal("node:$all(labelName)")
+
+    HasDynamicLabels(varFor("node"), Seq(varFor("label1"), varFor("label2")))(pos)
+      .asCanonicalStringVal should equal("node:$all(label1):$all(label2)")
+  }
+
 }

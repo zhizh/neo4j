@@ -665,6 +665,30 @@ case class HasLabel(entity: Expression, label: LazyLabel) extends Predicate {
   override def arguments: Seq[Expression] = Seq(entity)
 }
 
+case class HasDynamicLabels(entity: Expression, labels: Seq[Expression]) extends Predicate {
+
+  def isMatch(ctx: ReadableRow, state: QueryState): IsMatchResult = {
+    entity(ctx, state) match {
+      case IsNoValue() => IsUnknown
+
+      case value =>
+        IsMatchResult(CypherFunctions.hasDynamicLabels(
+          value,
+          labels.iterator.map(_(ctx, state)).toArray,
+          state.cursors.nodeCursor,
+          state.query
+        ))
+    }
+  }
+
+  def rewrite(f: Expression => Expression): Expression =
+    f(HasDynamicLabels(entity.rewrite(f), labels.map(_.rewrite(f))))
+
+  def arguments: collection.Seq[Expression] = entity +: labels
+
+  def children: collection.Seq[AstNode[_]] = entity +: labels
+}
+
 case class HasAnyLabel(entity: Expression, labels: Seq[KeyToken]) extends Predicate {
 
   override def isMatch(ctx: ReadableRow, state: QueryState): IsMatchResult = entity(ctx, state) match {

@@ -85,6 +85,8 @@ import org.neo4j.internal.kernel.api.NodeCursor;
 import org.neo4j.internal.kernel.api.PropertyCursor;
 import org.neo4j.internal.kernel.api.Read;
 import org.neo4j.internal.kernel.api.RelationshipScanCursor;
+import org.neo4j.internal.kernel.api.TokenWrite;
+import org.neo4j.internal.kernel.api.exceptions.schema.IllegalTokenNameException;
 import org.neo4j.kernel.api.StatementConstants;
 import org.neo4j.kernel.api.impl.schema.vector.VectorSimilarity;
 import org.neo4j.kernel.api.vector.VectorCandidate;
@@ -1159,6 +1161,61 @@ public final class CypherFunctions {
         } else {
             throw new CypherTypeException("Expected a Node, got: " + entity);
         }
+    }
+
+    private static boolean hasLabel(
+            VirtualNodeValue node,
+            TextValue textLabel,
+            NodeCursor nodeCursor,
+            org.neo4j.cypher.internal.runtime.QueryContext queryContext)
+            throws IllegalTokenNameException {
+        var validName = TokenWrite.checkValidTokenName(textLabel.stringValue());
+        var tokenId = queryContext.nodeLabel(validName);
+        if (tokenId == TokenConstants.NO_TOKEN) {
+            return false;
+        }
+
+        return queryContext.isLabelSetOnNode(tokenId, node.id(), nodeCursor);
+    }
+
+    @CalledFromGeneratedCode
+    public static boolean hasDynamicLabels(
+            AnyValue entity,
+            AnyValue[] labelNames,
+            NodeCursor nodeCursor,
+            org.neo4j.cypher.internal.runtime.QueryContext queryContext)
+            throws IllegalTokenNameException {
+        assert entity != NO_VALUE : "NO_VALUE checks need to happen outside this call";
+        if (entity instanceof VirtualNodeValue node) {
+            for (var labelName : labelNames) {
+                if (labelName instanceof TextValue textLabel) {
+                    if (!hasLabel(node, textLabel, nodeCursor, queryContext)) {
+                        return false;
+                    }
+                } else if (labelName instanceof SequenceValue labelSequence) {
+                    for (var l : labelSequence) {
+                        if (l instanceof TextValue textLabel) {
+                            if (!hasLabel(node, textLabel, nodeCursor, queryContext)) {
+                                return false;
+                            }
+                        } else {
+                            throw new CypherTypeException(format(
+                                    "Invalid input for function 'hasDynamicLabels()': Expected %s to be a string, but it was `%s`",
+                                    labelName, labelName.getTypeName()));
+                        }
+                    }
+                } else {
+                    throw new CypherTypeException(format(
+                            "Invalid input for function 'hasDynamicLabels()': Expected %s to be a string or list of strings, but it was `%s`",
+                            labelName, labelName.getTypeName()));
+                }
+            }
+        } else {
+            throw new CypherTypeException(format(
+                    "Invalid input for function 'hasDynamicLabels()': Expected %s to be a node, but it was `%s`",
+                    entity, entity.getTypeName()));
+        }
+        return true;
     }
 
     @CalledFromGeneratedCode

@@ -379,6 +379,7 @@ import org.neo4j.cypher.internal.expressions.GreaterThanOrEqual
 import org.neo4j.cypher.internal.expressions.HasALabel
 import org.neo4j.cypher.internal.expressions.HasALabelOrType
 import org.neo4j.cypher.internal.expressions.HasAnyLabel
+import org.neo4j.cypher.internal.expressions.HasDynamicLabels
 import org.neo4j.cypher.internal.expressions.HasLabels
 import org.neo4j.cypher.internal.expressions.HasLabelsOrTypes
 import org.neo4j.cypher.internal.expressions.HasTypes
@@ -1043,11 +1044,16 @@ class AstGenerator(
       relTypes <- oneOrMore(_relTypeName)
     } yield HasTypes(variable, relTypes)(pos)
 
+    def _hasDynamicLabels(): Gen[HasDynamicLabels] = for {
+      labels <- oneOrMore(_stringLit)
+    } yield HasDynamicLabels(variable, labels)(pos)
+
     oneOf(
       _hasLabels(),
       _hasAnyLabel(),
       _hasLabelsOrTypes(),
-      _hasTypes,
+      _hasTypes(),
+      _hasDynamicLabels(),
       lzy(HasALabelOrType(variable)(pos)),
       lzy(HasALabel(variable)(pos))
     )

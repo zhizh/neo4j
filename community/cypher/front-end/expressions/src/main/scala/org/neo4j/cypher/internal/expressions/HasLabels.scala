@@ -45,6 +45,16 @@ case class HasLabels(expression: Expression, labels: Seq[LabelName])(val positio
 }
 
 /*
+ * Checks if expression has all labels
+ */
+case class HasDynamicLabels(expression: Expression, labels: Seq[Expression])(val position: InputPosition)
+    extends LabelCheckExpression {
+
+  override def asCanonicalStringVal =
+    s"${expression.asCanonicalStringVal}${labels.map(_.asCanonicalStringVal).map(e => s":$$all($e)").mkString}"
+}
+
+/*
  * Checks if expression has any of the specified labels
  */
 case class HasAnyLabel(expression: Expression, labels: Seq[LabelName])(val position: InputPosition)

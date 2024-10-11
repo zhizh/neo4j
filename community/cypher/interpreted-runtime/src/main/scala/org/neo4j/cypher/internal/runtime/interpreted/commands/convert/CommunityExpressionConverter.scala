@@ -288,6 +288,7 @@ case class CommunityExpressionConverter(
       case e: internal.expressions.HasALabelOrType  => hasALabelOrType(id, e, self)
       case e: internal.expressions.HasALabel        => hasALabel(id, e, self)
       case e: internal.expressions.HasLabels        => hasLabels(id, e, self)
+      case e: internal.expressions.HasDynamicLabels => hasDynamicLabels(id, e, self)
       case e: internal.expressions.HasAnyLabel =>
         predicates.HasAnyLabel(
           self.toCommandExpression(id, e.expression),
@@ -931,6 +932,16 @@ case class CommunityExpressionConverter(
     }
     commands.predicates.Ands(preds: _*)
   }
+
+  private def hasDynamicLabels(
+    id: Id,
+    e: internal.expressions.HasDynamicLabels,
+    self: ExpressionConverters
+  ): Predicate =
+    predicates.HasDynamicLabels(
+      self.toCommandExpression(id, e.expression),
+      e.labels.map(self.toCommandExpression(id, _))
+    ): Predicate
 
   private def hasTypes(id: Id, e: internal.expressions.HasTypes, self: ExpressionConverters): Predicate = {
     val preds = e.types.map {
