@@ -313,6 +313,27 @@ public class CommunityTopologyGraphDbmsModelIT extends BaseTopologyGraphDbmsMode
         assertThat(result.get()).isEqualTo(driverSettings);
     }
 
+    @Test
+    void shouldReturnExternalDatabaseCredentialsForExternalDatabaseReference() {
+        // given
+        var aliasName = "fooAlias";
+        var remoteAddress = new SocketAddress("my.neo4j.com", 7687);
+        var remoteNeo4j = new RemoteUri("neo4j", List.of(remoteAddress), null);
+        var fooId = randomUUID();
+        createExternalReferenceForDatabase(tx, aliasName, "foo", remoteNeo4j, fooId);
+
+        // when
+        var result = dbmsModel()
+                .getExternalDatabaseCredentials(
+                        new DatabaseReferenceImpl.External(name("foo"), name(aliasName), remoteNeo4j, fooId));
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.map(ExternalDatabaseCredentials::username)).hasValue("username");
+        assertThat(result.map(ExternalDatabaseCredentials::password)).hasValue("password".getBytes());
+        assertThat(result.map(ExternalDatabaseCredentials::iv)).hasValue("i_vector".getBytes());
+    }
+
     @ParameterizedTest
     @MethodSource("aliasProperties")
     void canReturnPropertiesForExternalDatabaseReference(Map<String, Object> properties) {
