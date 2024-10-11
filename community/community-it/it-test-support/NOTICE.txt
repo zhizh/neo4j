@@ -158,6 +158,7 @@ Bouncy Castle License
   Bouncy Castle Provider
 
 Common Development and Distribution License Version 1.1
+  Java Architecture for XML Binding
   javax.annotation API
 
 Eclipse Distribution License - v 1.0
@@ -202,6 +203,7 @@ GNU General Public License, version 2 with the Classpath Exception
   HK2 Implementation Utilities
   Jakarta Annotations API
   jakarta.ws.rs-api
+  Java Architecture for XML Binding
   javax.annotation API
   javax.inject:1 as OSGi bundle
   jersey-container-servlet
@@ -254,6 +256,10 @@ HK2 Implementation Utilities
 
 Jakarta Annotations API
   Eclipse Public License v2.0
+  GNU General Public License, version 2 with the Classpath Exception
+
+Java Architecture for XML Binding
+  Common Development and Distribution License Version 1.1
   GNU General Public License, version 2 with the Classpath Exception
 
 ServiceLocator Default Implementation
