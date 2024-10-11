@@ -70,6 +70,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntSupplier;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -107,6 +108,7 @@ import org.neo4j.io.pagecache.context.VersionContext;
 import org.neo4j.io.pagecache.context.VersionContextSupplier;
 import org.neo4j.io.pagecache.impl.FileIsNotMappedException;
 import org.neo4j.io.pagecache.impl.SingleFilePageSwapperFactory;
+import org.neo4j.io.pagecache.impl.muninn.multiversion.SingleThreadedTestContextFactory;
 import org.neo4j.io.pagecache.tracing.DatabaseFlushEvent;
 import org.neo4j.io.pagecache.tracing.DefaultPageCacheTracer;
 import org.neo4j.io.pagecache.tracing.DelegatingPageCacheTracer;
@@ -118,6 +120,7 @@ import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.PageReferenceTranslator;
 import org.neo4j.io.pagecache.tracing.PinEvent;
 import org.neo4j.io.pagecache.tracing.PinPageFaultEvent;
+import org.neo4j.io.pagecache.tracing.VectoredPageFaultEvent;
 import org.neo4j.io.pagecache.tracing.cursor.DefaultPageCursorTracer;
 import org.neo4j.io.pagecache.tracing.cursor.PageCursorTracer;
 import org.neo4j.io.pagecache.tracing.recording.RecordingPageCacheTracer;
@@ -2895,6 +2898,44 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache> {
         }
     }
 
+    private static class TestVectoredPageFaultEvent implements VectoredPageFaultEvent {
+
+        private final AtomicInteger invocationCounter = new AtomicInteger();
+        private volatile Throwable faultException;
+
+        TestVectoredPageFaultEvent() {}
+
+        @Override
+        public EvictionEvent beginEviction(long cachePageId) {
+            return EvictionEvent.NULL;
+        }
+
+        @Override
+        public void addBytesRead(long bytes) {}
+
+        @Override
+        public void freeListSize(int freeListSize) {
+            if (invocationCounter.incrementAndGet() > 2) {
+                throw new RuntimeException("Exception on vectored page fault.");
+            }
+        }
+
+        @Override
+        public void setException(Throwable throwable) {
+            faultException = throwable;
+        }
+
+        @Override
+        public void close() {}
+
+        @Override
+        public void addPagesFaulted(int numberOfPages, long[] pageRefs, PageReferenceTranslator referenceTranslator) {}
+
+        public Throwable getFaultException() {
+            return faultException;
+        }
+    }
+
     private class MultiChunkSwapperFilePageSwapperFactory extends SingleFilePageSwapperFactory {
         MultiChunkSwapperFilePageSwapperFactory(PageCacheTracer pageCacheTracer) {
             super(MuninnPageCacheTest.this.fs, pageCacheTracer, EmptyMemoryTracker.INSTANCE);
@@ -2987,6 +3028,32 @@ public class MuninnPageCacheTest extends PageCacheTest<MuninnPageCache> {
             }
             assertThat(tracer.faults()).isEqualTo(faultsAfterTouch);
         }
+    }
+
+    @Test
+    void exceptionOnTouchIsHandledGracefully() throws IOException {
+        Path file = file("a");
+        int toTouch = 128;
+        var tracer = new DefaultPageCacheTracer(false);
+        var testVectoredPageFaultEvent = new TestVectoredPageFaultEvent();
+        var pageCursorTracer = new DefaultPageCursorTracer(tracer, "testTracer") {
+
+            @Override
+            public VectoredPageFaultEvent beginVectoredPageFault(PageSwapper pageSwapper) {
+                return testVectoredPageFaultEvent;
+            }
+        };
+        getPageCache(fs, 1000, tracer);
+        var fileSize = toTouch * 4;
+        generateFile(file, fileSize);
+        var testContextFactory = new SingleThreadedTestContextFactory(NULL);
+
+        assertThatThrownBy(() -> {
+                    try (var pf = map(file, filePageSize)) {
+                        pf.touch(0, toTouch, testContextFactory.create(pageCursorTracer));
+                    }
+                })
+                .hasMessageContaining("Exception on vectored page fault.");
     }
 
     @Test

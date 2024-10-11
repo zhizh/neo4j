@@ -1147,17 +1147,15 @@ final class MuninnPagedFile extends PageList implements PagedFile, Flushable {
         } catch (Throwable throwable) {
             faultEvent.setException(throwable);
             // mark pages as unmapped
-            for (int i = 0; i < numberOfPages; i++) {
+            for (int i = 0; i < pageRefs.length && pageRefs[i] != 0; i++) {
                 int chunkId = computeChunkId(filePageId + i);
                 int chunkIndex = computeChunkIndex(filePageId + i);
                 translationTableSetVolatile(translationTable[chunkId], chunkIndex, UNMAPPED_TTE);
             }
             throw throwable;
         } finally {
-            for (int i = 0; i < numberOfPages; i++) {
-                if (pageRefs[i] != 0) {
-                    PageList.unlockExclusive(pageRefs[i]);
-                }
+            for (int i = 0; i < pageRefs.length && pageRefs[i] != 0; i++) {
+                PageList.unlockExclusive(pageRefs[i]);
             }
             for (int i = 0; i < numberOfPages; i++) {
                 if (latches[i] != null) {
