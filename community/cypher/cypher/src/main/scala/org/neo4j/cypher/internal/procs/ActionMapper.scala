@@ -37,7 +37,6 @@ import org.neo4j.cypher.internal.ast.AlterAliasAction
 import org.neo4j.cypher.internal.ast.AlterDatabaseAction
 import org.neo4j.cypher.internal.ast.AlterUserAction
 import org.neo4j.cypher.internal.ast.AssignImmutablePrivilegeAction
-import org.neo4j.cypher.internal.ast.AssignImmutableRoleAction
 import org.neo4j.cypher.internal.ast.AssignPrivilegeAction
 import org.neo4j.cypher.internal.ast.AssignRoleAction
 import org.neo4j.cypher.internal.ast.CompositeDatabaseManagementActions
@@ -46,7 +45,6 @@ import org.neo4j.cypher.internal.ast.CreateCompositeDatabaseAction
 import org.neo4j.cypher.internal.ast.CreateConstraintAction
 import org.neo4j.cypher.internal.ast.CreateDatabaseAction
 import org.neo4j.cypher.internal.ast.CreateElementAction
-import org.neo4j.cypher.internal.ast.CreateImmutableRoleAction
 import org.neo4j.cypher.internal.ast.CreateIndexAction
 import org.neo4j.cypher.internal.ast.CreateNodeLabelAction
 import org.neo4j.cypher.internal.ast.CreatePropertyKeyAction
@@ -58,7 +56,6 @@ import org.neo4j.cypher.internal.ast.DropAliasAction
 import org.neo4j.cypher.internal.ast.DropCompositeDatabaseAction
 import org.neo4j.cypher.internal.ast.DropConstraintAction
 import org.neo4j.cypher.internal.ast.DropDatabaseAction
-import org.neo4j.cypher.internal.ast.DropImmutableRoleAction
 import org.neo4j.cypher.internal.ast.DropIndexAction
 import org.neo4j.cypher.internal.ast.DropRoleAction
 import org.neo4j.cypher.internal.ast.DropUserAction
@@ -75,11 +72,9 @@ import org.neo4j.cypher.internal.ast.MatchAction
 import org.neo4j.cypher.internal.ast.MergeAdminAction
 import org.neo4j.cypher.internal.ast.ReadAction
 import org.neo4j.cypher.internal.ast.RemoveImmutablePrivilegeAction
-import org.neo4j.cypher.internal.ast.RemoveImmutableRoleAction
 import org.neo4j.cypher.internal.ast.RemoveLabelAction
 import org.neo4j.cypher.internal.ast.RemovePrivilegeAction
 import org.neo4j.cypher.internal.ast.RemoveRoleAction
-import org.neo4j.cypher.internal.ast.RenameImmutableRoleAction
 import org.neo4j.cypher.internal.ast.RenameRoleAction
 import org.neo4j.cypher.internal.ast.RenameUserAction
 import org.neo4j.cypher.internal.ast.ServerManagementAction
@@ -159,18 +154,13 @@ object ActionMapper {
     case AlterUserAction           => security.PrivilegeAction.ALTER_USER
     case DropUserAction            => security.PrivilegeAction.DROP_USER
 
-    case AllRoleActions            => security.PrivilegeAction.ROLE_MANAGEMENT
-    case ShowRoleAction            => security.PrivilegeAction.SHOW_ROLE
-    case CreateRoleAction          => security.PrivilegeAction.CREATE_ROLE
-    case CreateImmutableRoleAction => security.PrivilegeAction.CREATE_IMMUTABLE_ROLE
-    case RenameRoleAction          => security.PrivilegeAction.RENAME_ROLE
-    case RenameImmutableRoleAction => security.PrivilegeAction.RENAME_IMMUTABLE_ROLE
-    case DropRoleAction            => security.PrivilegeAction.DROP_ROLE
-    case DropImmutableRoleAction   => security.PrivilegeAction.DROP_IMMUTABLE_ROLE
-    case AssignRoleAction          => security.PrivilegeAction.ASSIGN_ROLE
-    case AssignImmutableRoleAction => security.PrivilegeAction.ASSIGN_IMMUTABLE_ROLE
-    case RemoveRoleAction          => security.PrivilegeAction.REMOVE_ROLE
-    case RemoveImmutableRoleAction => security.PrivilegeAction.REMOVE_IMMUTABLE_ROLE
+    case AllRoleActions   => security.PrivilegeAction.ROLE_MANAGEMENT
+    case ShowRoleAction   => security.PrivilegeAction.SHOW_ROLE
+    case CreateRoleAction => security.PrivilegeAction.CREATE_ROLE
+    case RenameRoleAction => security.PrivilegeAction.RENAME_ROLE
+    case DropRoleAction   => security.PrivilegeAction.DROP_ROLE
+    case AssignRoleAction => security.PrivilegeAction.ASSIGN_ROLE
+    case RemoveRoleAction => security.PrivilegeAction.REMOVE_ROLE
 
     case AllDatabaseManagementActions       => security.PrivilegeAction.DATABASE_MANAGEMENT
     case CreateDatabaseAction               => security.PrivilegeAction.CREATE_DATABASE

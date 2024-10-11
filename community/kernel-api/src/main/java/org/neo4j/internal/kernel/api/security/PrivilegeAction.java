@@ -21,7 +21,6 @@ package org.neo4j.internal.kernel.api.security;
 
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
 public enum PrivilegeAction {
     // Database actions
@@ -94,15 +93,10 @@ public enum PrivilegeAction {
 
     SHOW_ROLE,
     CREATE_ROLE,
-    CREATE_IMMUTABLE_ROLE,
     RENAME_ROLE,
-    RENAME_IMMUTABLE_ROLE,
     DROP_ROLE,
-    DROP_IMMUTABLE_ROLE,
     ASSIGN_ROLE,
-    ASSIGN_IMMUTABLE_ROLE,
     REMOVE_ROLE,
-    REMOVE_IMMUTABLE_ROLE,
 
     SHOW_PRIVILEGE,
     ASSIGN_PRIVILEGE,
@@ -380,21 +374,6 @@ public enum PrivilegeAction {
      */
     public boolean satisfies(PrivilegeAction action) {
         return this == action;
-    }
-
-    public boolean isUnassignable() {
-        return unassignableActions().stream().anyMatch(this::satisfies);
-    }
-
-    public static Set<PrivilegeAction> unassignableActions() {
-        return Set.of(
-                ASSIGN_IMMUTABLE_PRIVILEGE,
-                REMOVE_IMMUTABLE_PRIVILEGE,
-                CREATE_IMMUTABLE_ROLE,
-                RENAME_IMMUTABLE_ROLE,
-                DROP_IMMUTABLE_ROLE,
-                ASSIGN_IMMUTABLE_ROLE,
-                REMOVE_IMMUTABLE_ROLE);
     }
 
     @Override
