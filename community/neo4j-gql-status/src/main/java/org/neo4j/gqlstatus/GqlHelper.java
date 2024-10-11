@@ -92,6 +92,102 @@ public class GqlHelper {
                 .build();
     }
 
+    private static ErrorGqlStatusObject getGql22N77(
+            String entityType, long entityId, String tokenType, String token, String[] propKeyList) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N77)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.entityType, entityType)
+                .withParam(GqlParams.NumberParam.entityId, entityId)
+                .withParam(GqlParams.StringParam.tokenType, tokenType)
+                .withParam(GqlParams.StringParam.token, token)
+                .withParam(GqlParams.ListParam.propKeyList, List.of(propKeyList))
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql22N77_nodes(long nodeId, String token, String[] propKeyList) {
+        return getGql22N77("NODE", nodeId, "label", token, propKeyList);
+    }
+
+    public static ErrorGqlStatusObject getGql22N77_relationships(
+            long relationshipId, String token, String[] propKeyList) {
+        return getGql22N77("RELATIONSHIP", relationshipId, "type", token, propKeyList);
+    }
+
+    public static ErrorGqlStatusObject getGql42N45(int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N45)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .atPosition(line, column, offset)
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql42001_42I06(
+            String input, List<String> valueList, int line, int column, int offset) {
+        return getGql42001_42I06_withCause(input, valueList, line, column, offset, null);
+    }
+
+    public static ErrorGqlStatusObject getGql42001_42I06_withCause(
+            String input, List<String> valueList, int line, int column, int offset, ErrorGqlStatusObject cause) {
+        var gqlBuilder = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I06)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .atPosition(line, column, offset)
+                .withParam(GqlParams.StringParam.input, input)
+                .withParam(GqlParams.ListParam.valueList, valueList);
+        var causeChain = cause != null ? gqlBuilder.withCause(cause).build() : gqlBuilder.build();
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .atPosition(line, column, offset)
+                .withCause(causeChain)
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql42001_42I20(
+            String input, String labelExpr, int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .atPosition(line, column, offset)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I20)
+                        .withParam(GqlParams.StringParam.input, input)
+                        .withParam(GqlParams.StringParam.labelExpr, labelExpr)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .atPosition(line, column, offset)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql42001_42I29(
+            String input, String replacement, int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .atPosition(line, column, offset)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I29)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .atPosition(line, column, offset)
+                        .withParam(GqlParams.StringParam.input, input)
+                        .withParam(GqlParams.StringParam.replacement, replacement)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql42001_42N45(int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .atPosition(line, column, offset)
+                .withCause(getGql42N45(line, column, offset))
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql42001_42I47(String msg, int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .atPosition(line, column, offset)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I47)
+                        .withParam(GqlParams.StringParam.msg, msg)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .atPosition(line, column, offset)
+                        .build())
+                .build();
+    }
+
     public static ErrorGqlStatusObject get52N33(String sig, String msg) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N33)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
@@ -133,27 +229,6 @@ public class GqlHelper {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-    }
-
-    private static ErrorGqlStatusObject getGql22N77(
-            String entityType, long entityId, String tokenType, String token, String[] propKeyList) {
-        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N77)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
-                .withParam(GqlParams.StringParam.entityType, entityType)
-                .withParam(GqlParams.NumberParam.entityId, entityId)
-                .withParam(GqlParams.StringParam.tokenType, tokenType)
-                .withParam(GqlParams.StringParam.token, token)
-                .withParam(GqlParams.ListParam.propKeyList, List.of(propKeyList))
-                .build();
-    }
-
-    public static ErrorGqlStatusObject getGql22N77_nodes(long nodeId, String token, String[] propKeyList) {
-        return getGql22N77("NODE", nodeId, "label", token, propKeyList);
-    }
-
-    public static ErrorGqlStatusObject getGql22N77_relationships(
-            long relationshipId, String token, String[] propKeyList) {
-        return getGql22N77("RELATIONSHIP", relationshipId, "type", token, propKeyList);
     }
 
     public static ErrorGqlStatusObject getGql52N02_52N11(String procedure) {

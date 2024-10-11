@@ -126,6 +126,7 @@ import org.neo4j.cypher.internal.util.symbols.CTPath
 import org.neo4j.cypher.internal.util.symbols.CTRelationship
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.symbols.CypherType
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.kernel.database.NormalizedDatabaseName
 
@@ -1235,7 +1236,8 @@ case class SetClause(items: Seq[SetItem])(val position: InputPosition) extends U
         case x => Seq(x)
       }
       val replacement = prettifier.prettifySetItems(setItems)
-      SemanticError(mixingIsWithMultipleLabelsMessage(name, replacement), position)
+      val gql = GqlHelper.getGql42001_42I29(name, replacement, position.line, position.column, position.offset)
+      SemanticError(gql, mixingIsWithMultipleLabelsMessage(name, replacement), position)
     }
   }
 }
@@ -1292,7 +1294,8 @@ case class Remove(items: Seq[RemoveItem])(val position: InputPosition) extends U
         case x => Seq(x)
       }
       val replacement = prettifier.prettifyRemoveItems(removeItems)
-      SemanticError(mixingIsWithMultipleLabelsMessage(name, replacement), position)
+      val gql = GqlHelper.getGql42001_42I29(name, replacement, position.line, position.column, position.offset)
+      SemanticError(gql, mixingIsWithMultipleLabelsMessage(name, replacement), position)
     }
   }
 }

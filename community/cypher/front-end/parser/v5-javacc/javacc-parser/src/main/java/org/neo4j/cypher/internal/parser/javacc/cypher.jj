@@ -72,6 +72,7 @@ import org.neo4j.cypher.internal.parser.common.ast.factory.ShowCommandFilterType
 import org.neo4j.cypher.internal.parser.common.ast.factory.SimpleEither;
 import org.neo4j.cypher.internal.parser.common.InvalidUnicodeLiteral;
 import org.neo4j.cypher.internal.parser.common.deprecation.DeprecatedChars;
+import org.neo4j.gqlstatus.GqlHelper;
 
 public class Cypher<STATEMENTS,
                     STATEMENT,
@@ -1601,7 +1602,8 @@ STATEMENTS Statements() throws Exception:
         Token t = e.currentToken.next;
         if ( e.getMessage().contains( "Encountered \"<EOF>\"" ) )
         {
-            throw exceptionFactory.syntaxException( t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage, e.currentToken.image ), e,
+            var gqlCause = GqlHelper.getGql42N45(t.endLine, t.endColumn + 1, t.endOffset + 1);
+            throw exceptionFactory.syntaxException(gqlCause, t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage, e.currentToken.image ), e,
                                                    t.endOffset + 1, t.endLine, t.endColumn + 1 );
         }
         else

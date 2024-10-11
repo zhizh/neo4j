@@ -151,6 +151,7 @@ import org.neo4j.cypher.internal.util.symbols.CTTime
 import org.neo4j.cypher.internal.util.symbols.CypherType
 import org.neo4j.cypher.internal.util.symbols.StorableType.storableType
 import org.neo4j.cypher.internal.util.symbols.TypeSpec
+import org.neo4j.gqlstatus.GqlHelper
 
 object SemanticExpressionCheck extends SemanticAnalysisTooling {
 
@@ -829,12 +830,16 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
       .foldSemanticCheck(disjunction => { (state: SemanticState) =>
         val isNode = state.expressionType(entity).actual == CTNode.invariant
         val sanitizedLabelExpression = stringifier.stringifyLabelExpression(labelExpression.replaceColonSyntax)
-        val errorMessage = SemanticPatternCheck.legacyRelationshipDisjunctionError(
-          sanitizedLabelExpression,
-          labelExpression.containsIs,
-          isNode
+        SemanticCheckResult.error(
+          state,
+          SemanticError.legacyRelationShipDisjunction(
+            sanitizedLabelExpression,
+            stringifier.stringifyLabelExpression(labelExpression),
+            labelExpression.containsIs,
+            isNode,
+            disjunction.position
+          )
         )
-        SemanticCheckResult.error(state, SemanticError(errorMessage, disjunction.position))
       })
 
   def checkLabelExpression(entityType: Option[EntityType], labelExpression: LabelExpression): SemanticCheck = {
@@ -842,26 +847,41 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
     lazy val colonDisjunctions = labelExpression.folder.findAllByClass[LabelExpression.ColonDisjunction]
     lazy val legacySymbols = colonConjunctions ++ colonDisjunctions
     when(entityType.contains(NODE_TYPE) && colonDisjunctions.nonEmpty) {
-      error(s"Label expressions are not allowed to contain '|:'.", colonDisjunctions.head.position)
+      SemanticCheck.error(SemanticError.relationShipDisjunction(
+        stringifier.stringifyLabelExpression(labelExpression),
+        isNode = true,
+        colonDisjunctions.head.position
+      ))
     } chain
       when(entityType.contains(RELATIONSHIP_TYPE) && colonConjunctions.nonEmpty) {
-        error(
-          "Relationship types in a relationship type expressions may not be combined using ':'",
+        SemanticCheck.error(SemanticError.relationShipDisjunction(
+          stringifier.stringifyLabelExpression(labelExpression),
+          isNode = false,
           colonConjunctions.head.position
-        )
+        ))
       } ifOkChain
       when(
         // if we have a colon conjunction, this implies a node, so we can search the label expression with that in mind
         colonConjunctions.nonEmpty && labelExpression.containsGpmSpecificLabelExpression
       ) {
         val sanitizedLabelExpression = stringifier.stringifyLabelExpression(labelExpression.replaceColonSyntax)
-        error(
-          if (labelExpression.containsIs)
-            s"Mixing the IS keyword with colon (':') between labels is not allowed. This expression could be expressed as IS $sanitizedLabelExpression."
-          else
+        if (labelExpression.containsIs) {
+          error(
+            GqlHelper.getGql42001_42I29(
+              String.valueOf(labelExpression),
+              sanitizedLabelExpression,
+              legacySymbols.head.position.line,
+              legacySymbols.head.position.column,
+              legacySymbols.head.position.offset
+            ),
+            s"Mixing the IS keyword with colon (':') between labels is not allowed. This expression could be expressed as IS $sanitizedLabelExpression.",
+            legacySymbols.head.position
+          )
+        } else
+          error(
             s"Mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels is not allowed. Please only use one set of symbols. This expression could be expressed as :$sanitizedLabelExpression.",
-          legacySymbols.head.position
-        )
+            legacySymbols.head.position
+          )
       } chain
       checkValidLabels(labelExpression.flatten, labelExpression.position)
   }

@@ -35,6 +35,7 @@ import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.InternalNotificationLogger
 import org.neo4j.cypher.internal.util.Neo4jCypherExceptionFactory
 import org.neo4j.exceptions.SyntaxException
+import org.neo4j.gqlstatus.GqlHelper
 
 import java.util.Locale
 
@@ -129,7 +130,9 @@ class PreParser(
   ): PreParsedQuery = {
     val exceptionFactory = new Neo4jASTExceptionFactory(Neo4jCypherExceptionFactory(queryText, None))
     if (queryText.isEmpty) {
+      val gql = GqlHelper.getGql42001_42N45(0, 0, 1)
       throw exceptionFactory.syntaxException(
+        gql,
         new IllegalStateException(PreParserResult.getEmptyQueryExceptionMsg),
         1,
         0,

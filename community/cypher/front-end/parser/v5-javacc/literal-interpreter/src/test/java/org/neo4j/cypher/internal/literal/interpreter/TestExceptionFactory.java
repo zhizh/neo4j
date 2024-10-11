@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.literal.interpreter;
 
 import java.util.List;
 import org.neo4j.cypher.internal.parser.common.ast.factory.ASTExceptionFactory;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 
 public class TestExceptionFactory implements ASTExceptionFactory {
     @Override
@@ -29,8 +30,24 @@ public class TestExceptionFactory implements ASTExceptionFactory {
         return new Exception("SyntaxException!", source);
     }
 
+    public Exception syntaxException(
+            ErrorGqlStatusObject gqlStatusObject,
+            String got,
+            List<String> expected,
+            Exception source,
+            int offset,
+            int line,
+            int column) {
+        return new Exception("SyntaxException!", source);
+    }
+
     @Override
     public Exception syntaxException(Exception source, int offset, int line, int column) {
+        return new Exception("SyntaxException!", source);
+    }
+
+    public Exception syntaxException(
+            ErrorGqlStatusObject gqlStatusObject, Exception source, int offset, int line, int column) {
         return new Exception("SyntaxException!", source);
     }
 }

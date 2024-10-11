@@ -20,6 +20,7 @@ import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.frontend.SemanticAnalysisTestSuiteWithDefaultQuery
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.TestName
+import org.neo4j.gqlstatus.GqlHelper
 
 abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(statement: ChangeStatement)
     extends SemanticAnalysisTestSuiteWithDefaultQuery
@@ -66,13 +67,21 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
 
   test("n IS A:B") {
     runSemanticAnalysis().errors shouldEqual Seq(
-      SemanticError(multipleAssignmentErrorMessage("n IS A, n IS B"), errorPosition)
+      SemanticError(
+        GqlHelper.getGql42001_42I29("SET", "n IS A, n IS B", 1, 16, 15),
+        multipleAssignmentErrorMessage("n IS A, n IS B"),
+        errorPosition
+      )
     )
   }
 
   test("n IS A, m:A:B") {
     runSemanticAnalysis().errors shouldEqual Seq(
-      SemanticError(multipleAssignmentErrorMessage("n IS A, m IS A, m IS B"), errorPosition)
+      SemanticError(
+        GqlHelper.getGql42001_42I29("SET", "n IS A, m IS A, m IS B", 1, 16, 15),
+        multipleAssignmentErrorMessage("n IS A, m IS A, m IS B"),
+        errorPosition
+      )
     )
   }
 
@@ -92,6 +101,7 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
   test("n IS A, m:$(\"Label1\"):B:$(\"Label2\")") {
     runSemanticAnalysis().errors shouldEqual Seq(
       SemanticError(
+        GqlHelper.getGql42001_42I29("SET", "n IS A, m IS $(\"Label1\"), m IS B, m IS $(\"Label2\")", 1, 16, 15),
         multipleAssignmentErrorMessage("n IS A, m IS $(\"Label1\"), m IS B, m IS $(\"Label2\")"),
         errorPosition
       )
@@ -168,6 +178,7 @@ class LabelExpressionInSetSemanticAnalysisTest
   test("n:A, n.prop = 1, m += $map, m:B:C, n IS B:C") {
     runSemanticAnalysis().errors shouldEqual Seq(
       SemanticError(
+        GqlHelper.getGql42001_42I29("SET", "n IS A, n.prop = 1, m += $map, m IS B, m IS C, n IS B, n IS C", 1, 16, 15),
         multipleAssignmentErrorMessage("n IS A, n.prop = 1, m += $map, m IS B, m IS C, n IS B, n IS C"),
         errorPosition
       )
@@ -185,6 +196,7 @@ class LabelExpressionInRemoveSemanticAnalysisTest
   test("n:A, n.prop, m:B:C, n IS B:C") {
     runSemanticAnalysis().errors shouldEqual Seq(
       SemanticError(
+        GqlHelper.getGql42001_42I29("REMOVE", "n IS A, n.prop, m IS B, m IS C, n IS B, n IS C", 1, 16, 15),
         multipleAssignmentErrorMessage("n IS A, n.prop, m IS B, m IS C, n IS B, n IS C"),
         errorPosition
       )

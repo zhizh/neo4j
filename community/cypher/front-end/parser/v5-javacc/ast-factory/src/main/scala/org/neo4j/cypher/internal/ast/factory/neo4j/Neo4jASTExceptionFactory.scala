@@ -19,6 +19,8 @@ package org.neo4j.cypher.internal.ast.factory.neo4j
 import org.neo4j.cypher.internal.parser.common.ast.factory.ASTExceptionFactory
 import org.neo4j.cypher.internal.util.CypherExceptionFactory
 import org.neo4j.cypher.internal.util.InputPosition
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
+import org.neo4j.gqlstatus.GqlHelper
 
 import java.util
 
@@ -49,8 +51,52 @@ class Neo4jASTExceptionFactory(inner: CypherExceptionFactory) extends ASTExcepti
             System.lineSeparator() + exp.map("  " + _).mkString(System.lineSeparator())
         ).result()
 
-    inner.syntaxException(message, InputPosition(offset, line, column))
+    inner.syntaxException(
+      GqlHelper.getGql42001_42I06(got, expected, line, column, offset),
+      message,
+      InputPosition(offset, line, column)
+    )
   }
+
+  override def syntaxException(
+    gqlStatusObject: ErrorGqlStatusObject,
+    got: String,
+    expected: util.List[String],
+    source: Exception,
+    offset: Int,
+    line: Int,
+    column: Int
+  ): Exception = {
+    val exp: Seq[String] = asScala(expected).toSeq
+
+    val message =
+      new StringBuilder("Invalid input '")
+        .append(got)
+        .append("':")
+        .append(" expected").append(
+          if (exp.size == 1)
+            " " + exp.head
+          else if (exp.size < 5)
+            " " + exp.init.mkString(", ") + " or " + exp.last
+          else
+            System.lineSeparator() + exp.map("  " + _).mkString(System.lineSeparator())
+        ).result()
+
+    inner.syntaxException(
+      GqlHelper.getGql42001_42I06_withCause(got, expected, line, column, offset, gqlStatusObject),
+      message,
+      InputPosition(offset, line, column)
+    )
+  }
+
+  override def syntaxException(
+    gqlStatusObject: ErrorGqlStatusObject,
+    source: Exception,
+    offset: Int,
+    line: Int,
+    column: Int
+  ): Exception =
+    inner.syntaxException(gqlStatusObject, source.getMessage, InputPosition(offset, line, column))
 
   override def syntaxException(source: Exception, offset: Int, line: Int, column: Int): Exception =
     inner.syntaxException(source.getMessage, InputPosition(offset, line, column))

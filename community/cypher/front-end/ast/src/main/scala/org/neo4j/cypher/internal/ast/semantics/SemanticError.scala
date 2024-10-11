@@ -20,6 +20,7 @@ import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
@@ -57,6 +58,49 @@ object SemanticError {
       pos
     )
   }
+
+  def legacyRelationShipDisjunction(
+    sanitizedLabelExpression: String,
+    labelExpression: String,
+    containsIs: Boolean,
+    isNode: Boolean = false,
+    position: InputPosition
+  ): SemanticError = {
+    val isOrColon = if (containsIs) "IS " else ":"
+    val msg = if (isNode) {
+      s"""Label expressions are not allowed to contain '|:'.
+         |If you want to express a disjunction of labels, please use `$isOrColon$sanitizedLabelExpression` instead""".stripMargin
+    } else {
+      s"""The semantics of using colon in the separation of alternative relationship types in conjunction with
+         |the use of variable binding, inlined property predicates, or variable length is no longer supported.
+         |Please separate the relationships types using `$isOrColon$sanitizedLabelExpression` instead.""".stripMargin
+    }
+    val gql = GqlHelper.getGql42001_42I20(
+      if (isNode) "|:" else ":",
+      labelExpression,
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, msg, position)
+  }
+
+  def relationShipDisjunction(labelExpression: String, isNode: Boolean, position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql42001_42I20(
+      if (isNode) "|:" else ":",
+      labelExpression,
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(
+      gql,
+      if (isNode) "Label expressions are not allowed to contain '|:'."
+      else "Relationship types in a relationship type expressions may not be combined using ':'",
+      position
+    )
+  }
+
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

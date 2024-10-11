@@ -433,22 +433,6 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
       case _ => SemanticCheck.success
     }
 
-  def legacyRelationshipDisjunctionError(
-    sanitizedLabelExpression: String,
-    containsIs: Boolean,
-    isNode: Boolean = false
-  ): String = {
-    val isOrColon = if (containsIs) "IS " else ":"
-    if (isNode) {
-      s"""Label expressions are not allowed to contain '|:'.
-         |If you want to express a disjunction of labels, please use `$isOrColon$sanitizedLabelExpression` instead""".stripMargin
-    } else {
-      s"""The semantics of using colon in the separation of alternative relationship types in conjunction with
-         |the use of variable binding, inlined property predicates, or variable length is no longer supported.
-         |Please separate the relationships types using `$isOrColon$sanitizedLabelExpression` instead.""".stripMargin
-    }
-  }
-
   private def check(ctx: SemanticContext, x: RelationshipPattern): SemanticCheck = {
     def checkNotUndirectedWhenCreating: SemanticCheck = {
       ctx match {
@@ -495,10 +479,13 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
       maybeOffendingLabelExpression.foldSemanticCheck { illegalColonDisjunction =>
         val sanitizedLabelExpression = stringifier.stringifyLabelExpression(maybeLabelExpression.get
           .replaceColonSyntax)
-        error(
-          legacyRelationshipDisjunctionError(sanitizedLabelExpression, maybeLabelExpression.get.containsIs),
+        SemanticCheck.error(SemanticError.legacyRelationShipDisjunction(
+          sanitizedLabelExpression,
+          stringifier.stringifyLabelExpression(maybeLabelExpression.get),
+          maybeLabelExpression.get.containsIs,
+          isNode = false,
           illegalColonDisjunction.position
-        )
+        ))
       }
     }
 

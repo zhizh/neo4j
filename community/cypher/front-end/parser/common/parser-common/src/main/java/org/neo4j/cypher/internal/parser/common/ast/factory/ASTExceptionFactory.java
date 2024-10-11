@@ -20,11 +20,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 
 public interface ASTExceptionFactory {
+    Exception syntaxException(
+            ErrorGqlStatusObject gqlCause,
+            String got,
+            List<String> expected,
+            Exception source,
+            int offset,
+            int line,
+            int column);
+
     Exception syntaxException(String got, List<String> expected, Exception source, int offset, int line, int column);
 
     Exception syntaxException(Exception source, int offset, int line, int column);
+
+    Exception syntaxException(ErrorGqlStatusObject gqlStatusObject, Exception source, int offset, int line, int column);
 
     // Exception messages
     String invalidDropCommand = "Unsupported drop constraint command: Please delete the constraint by name instead";
