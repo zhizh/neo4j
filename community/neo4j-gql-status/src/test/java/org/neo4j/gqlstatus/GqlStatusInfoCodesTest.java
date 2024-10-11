@@ -305,7 +305,6 @@ public class GqlStatusInfoCodesTest {
         var whiteList = EnumSet.noneOf(GqlStatusInfoCodes.class);
         whiteList.add(GqlStatusInfoCodes.STATUS_22G12);
         whiteList.add(GqlStatusInfoCodes.STATUS_22N12);
-        whiteList.add(GqlStatusInfoCodes.STATUS_22N17);
         var errorMessages = new ArrayList<String>();
         var knownCombinations = new HashMap<TotalCondition, GqlStatusInfoCodes>();
         for (var gqlCode : GqlStatusInfoCodes.values()) {

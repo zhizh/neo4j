@@ -56,7 +56,6 @@ public class IllegalStructArgumentException extends PackstreamStructException {
 
     public static IllegalStructArgumentException protocolError(String fieldName, PackstreamReaderException cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N06)
-                .withCause(cause.gqlStatusObject())
                 .build();
         return new IllegalStructArgumentException(gql, fieldName, cause);
     }
