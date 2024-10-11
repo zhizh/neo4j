@@ -48,14 +48,11 @@ public class CypherExecutionException extends Neo4jException {
 
     public static CypherExecutionException csvBufferSizeOverflow(Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N49)
-                        .withClassification(ErrorClassification.DATABASE_ERROR)
                         .build())
                 .build();
         return new CypherExecutionException(
-                // TODO GQLSTATUS temporarily removed because of unclear classification, reintroduce this in 5.26
-                // gql,
+                gql,
                 """
                 Tried to read a field larger than the current buffer size.
                  Make sure that the field doesn't have an unterminated quote,

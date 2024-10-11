@@ -19,7 +19,6 @@
  */
 package org.neo4j.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -30,15 +29,12 @@ public class ProfilerStatisticsNotReadyException extends Neo4jException {
             "This result has not been materialised yet. Iterate over it to get profiler stats.";
 
     private ProfilerStatisticsNotReadyException(ErrorGqlStatusObject gqlStatusObject) {
-        /// TODO GQLSTATUS temporarily removed because of unclear classification, reintroduce this in 5.26
-        super(/*gqlStatusObject,*/ ERROR_MSG);
+        super(gqlStatusObject, ERROR_MSG);
     }
 
     public static ProfilerStatisticsNotReadyException invalidUseOfProfile() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N53)
-                        .withClassification(ErrorClassification.DATABASE_ERROR)
                         .build())
                 .build();
         return new ProfilerStatisticsNotReadyException(gql);

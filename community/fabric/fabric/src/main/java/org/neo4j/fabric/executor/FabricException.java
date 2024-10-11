@@ -179,14 +179,11 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
 
     public static FabricException executeQueryInClosedTransaction() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N07)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N05)
-                        .withClassification(ErrorClassification.DATABASE_ERROR)
                         .build())
                 .build();
-        // TODO GQLSTATUS temporarily removed because of unclear classification, reintroduce this in 5.26
         return new FabricException(
-                /*gql,*/ Status.Statement.ExecutionFailed, "Trying to execute query in a closed transaction");
+                gql, Status.Statement.ExecutionFailed, "Trying to execute query in a closed transaction");
     }
 
     @Override
