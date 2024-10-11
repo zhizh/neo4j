@@ -96,18 +96,21 @@ public class CommunityTopologyGraphDbmsModel implements TopologyGraphDbmsModel {
 
     @Override
     public Optional<DatabaseReference> getDatabaseRefByAlias(String databaseName) {
+        var normalizedDatabaseName = new NormalizedDatabaseName(databaseName).name();
         // A uniqueness constraint at the Cypher level should prevent two references from ever having the same name, but
         // in case they do, we simply prefer the internal reference.
         return Optional.<DatabaseReference>empty()
-                .or(() -> getCompositeDatabaseReferenceInRoot(databaseName))
-                .or(() -> getSPDEntityShardReferenceInRoot(databaseName))
-                .or(() -> getSPDPropertyShardReferenceInRoot(databaseName))
-                .or(() -> CommunityTopologyGraphDbmsModelUtil.getInternalDatabaseReference(tx, databaseName))
-                .or(() -> CommunityTopologyGraphDbmsModelUtil.getExternalDatabaseReference(tx, databaseName));
+                .or(() -> getCompositeDatabaseReferenceInRoot(normalizedDatabaseName))
+                .or(() -> getSPDEntityShardReferenceInRoot(normalizedDatabaseName))
+                .or(() -> getSPDPropertyShardReferenceInRoot(normalizedDatabaseName))
+                .or(() -> CommunityTopologyGraphDbmsModelUtil.getInternalDatabaseReference(tx, normalizedDatabaseName))
+                .or(() -> CommunityTopologyGraphDbmsModelUtil.getExternalDatabaseReference(tx, normalizedDatabaseName));
     }
 
     @Override
     public Optional<DriverSettings> getDriverSettings(String databaseName, String namespace) {
+        databaseName = new NormalizedDatabaseName(databaseName).name();
+        namespace = new NormalizedDatabaseName(namespace).name();
         return tx.findNodes(REMOTE_DATABASE_LABEL, NAME_PROPERTY, databaseName, NAMESPACE_PROPERTY, namespace).stream()
                 .findFirst()
                 .flatMap(CommunityTopologyGraphDbmsModelUtil::getDriverSettings);
@@ -115,6 +118,8 @@ public class CommunityTopologyGraphDbmsModel implements TopologyGraphDbmsModel {
 
     @Override
     public Optional<Map<String, Object>> getAliasProperties(String databaseName, String namespace) {
+        databaseName = new NormalizedDatabaseName(databaseName).name();
+        namespace = new NormalizedDatabaseName(namespace).name();
         return tx.findNodes(DATABASE_NAME_LABEL, NAME_PROPERTY, databaseName, NAMESPACE_PROPERTY, namespace).stream()
                 .findFirst()
                 .flatMap(CommunityTopologyGraphDbmsModelUtil::getAliasProperties);
