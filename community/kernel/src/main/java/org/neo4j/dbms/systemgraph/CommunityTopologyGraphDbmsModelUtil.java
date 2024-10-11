@@ -55,16 +55,10 @@ public final class CommunityTopologyGraphDbmsModelUtil {
     static Stream<Internal> getAllPrimaryStandardDatabaseReferencesInRoot(Transaction tx) {
         return tx.findNodes(TopologyGraphDbmsModel.DATABASE_LABEL).stream()
                 .filter(node -> !node.hasProperty(TopologyGraphDbmsModel.DATABASE_VIRTUAL_PROPERTY))
-                .map(node -> {
-                    var databaseId = getDatabaseId(node);
-                    var alias = new NormalizedDatabaseName(databaseId.name());
-                    var ref = new Internal(alias, databaseId, true);
-                    if (node.getDegree(TopologyGraphDbmsModel.HAS_SHARD, Direction.INCOMING) > 0) {
-                        return ref.asShard(readOwningDatabase(node));
-                    } else {
-                        return ref;
-                    }
-                });
+                .filter(node -> node.getDegree(TopologyGraphDbmsModel.HAS_SHARD, Direction.INCOMING) == 0
+                        && node.getDegree(TopologyGraphDbmsModel.HAS_SHARD, Direction.OUTGOING) == 0)
+                .map(node -> new Internal(
+                        new NormalizedDatabaseName(getDatabaseId(node).name()), getDatabaseId(node), true));
     }
 
     static NormalizedDatabaseName getNameProperty(String labelName, Node node) {

@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.neo4j.configuration.helpers.RemoteUri;
 import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.kernel.database.DatabaseReference;
 import org.neo4j.kernel.database.DatabaseReferenceImpl;
 import org.neo4j.kernel.database.NamedDatabaseId;
 import org.neo4j.kernel.database.NormalizedDatabaseName;
@@ -212,21 +213,27 @@ public class CommunityTopologyGraphDbmsModelIT extends BaseTopologyGraphDbmsMode
         createInternalReferenceForDatabase(tx, bar.name(), true, bar);
 
         // then
-        var fooRef = new DatabaseReferenceImpl.SPD(
-                name(foo),
-                foo,
-                Map.of(
-                        0, new DatabaseReferenceImpl.SPDShard(name(foo0), foo0, true, foo.name()),
-                        1, new DatabaseReferenceImpl.SPDShard(name(foo1), foo1, true, foo.name())));
-        var barRef = new DatabaseReferenceImpl.SPD(
-                name(bar),
-                bar,
-                Map.of(
-                        0, new DatabaseReferenceImpl.SPDShard(name(bar0), bar0, true, bar.name()),
-                        1, new DatabaseReferenceImpl.SPDShard(name(bar1), bar1, true, bar.name()),
-                        2, new DatabaseReferenceImpl.SPDShard(name(bar2), bar2, true, bar.name()),
-                        3, new DatabaseReferenceImpl.SPDShard(name(bar3), bar3, true, bar.name())));
+        var foo0Ref = new DatabaseReferenceImpl.SPDShard(name(foo0), foo0, true, foo.name());
+        var foo1Ref = new DatabaseReferenceImpl.SPDShard(name(foo1), foo1, true, foo.name());
+        var fooShards = Map.<Integer, DatabaseReference>of(
+                0, foo0Ref,
+                1, foo1Ref);
+        var fooRef = new DatabaseReferenceImpl.SPD(name(foo), foo, fooShards);
+        var bar0Ref = new DatabaseReferenceImpl.SPDShard(name(bar0), bar0, true, bar.name());
+        var bar1Ref = new DatabaseReferenceImpl.SPDShard(name(bar1), bar1, true, bar.name());
+        var bar2Ref = new DatabaseReferenceImpl.SPDShard(name(bar2), bar2, true, bar.name());
+        var bar3Ref = new DatabaseReferenceImpl.SPDShard(name(bar3), bar3, true, bar.name());
+        var barShards = Map.<Integer, DatabaseReference>of(
+                0, bar0Ref,
+                1, bar1Ref,
+                2, bar2Ref,
+                3, bar3Ref);
+        var barRef = new DatabaseReferenceImpl.SPD(name(bar), bar, barShards);
 
+        assertThat(dbmsModel().getAllDatabaseReferences())
+                .containsExactlyInAnyOrder(fooRef, foo0Ref, foo1Ref, barRef, bar0Ref, bar1Ref, bar2Ref, bar3Ref);
+        assertThat(dbmsModel().getAllInternalDatabaseReferences())
+                .containsExactlyInAnyOrder(fooRef, foo0Ref, foo1Ref, barRef, bar0Ref, bar1Ref, bar2Ref, bar3Ref);
         assertThat(dbmsModel().getDatabaseRefByAlias(foo.name())).hasValue(fooRef);
         assertThat(dbmsModel().getDatabaseRefByAlias(bar.name())).hasValue(barRef);
         assertThat(dbmsModel().getDatabaseRefByAlias(foo0.name()))
