@@ -87,7 +87,8 @@ object InternalNotification {
     "ExternalAuthNotEnabled",
     "AggregationSkippedNull",
     "DeprecatedOptionInOptionMap",
-    "DeprecatedBooleanCoercion"
+    "DeprecatedBooleanCoercion",
+    "InsecureProtocol"
   )
 
   def allNotificationsAsJavaIterable(): lang.Iterable[String] = allNotifications.asJava
