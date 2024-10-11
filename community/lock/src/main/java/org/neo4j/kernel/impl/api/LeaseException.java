@@ -22,7 +22,6 @@ package org.neo4j.kernel.impl.api;
 import static org.neo4j.kernel.api.exceptions.Status.Cluster.NotALeader;
 import static org.neo4j.kernel.api.exceptions.Status.Cluster.ReplicationFailure;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlRuntimeException;
@@ -56,28 +55,24 @@ public class LeaseException extends GqlRuntimeException implements Status.HasSta
 
     public static LeaseException failedToAcquireLease(Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N33)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
         return new LeaseException(gql, "Failed to acquire lease", cause, ReplicationFailure);
     }
 
     public static LeaseException localInstanceLostLease() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N07)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new LeaseException(gql, "Local instance lost lease.", NotALeader);
     }
 
     public static LeaseException takenByAnotherCandidate() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N07)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new LeaseException(gql, "Failed to acquire lease since it was taken by another candidate", NotALeader);
     }
 
     public static LeaseException notOnALeader() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N07)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new LeaseException(gql, NOT_ON_LEADER_ERROR_MESSAGE, NotALeader);
     }

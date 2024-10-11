@@ -78,7 +78,6 @@ import org.neo4j.cypher.internal.util.symbols.ZonedDateTimeType;
 import org.neo4j.cypher.internal.util.symbols.ZonedTimeType;
 import org.neo4j.exceptions.CypherTypeException;
 import org.neo4j.exceptions.InvalidArgumentException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.NodeCursor;
@@ -280,9 +279,7 @@ public final class CypherFunctions {
             mode = RoundingMode.valueOf(((StringValue) modeValue).stringValue());
         } catch (IllegalArgumentException e) {
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
                     .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N26)
-                            .withClassification(ErrorClassification.CLIENT_ERROR)
                             .build())
                     .build();
             throw new InvalidArgumentException(

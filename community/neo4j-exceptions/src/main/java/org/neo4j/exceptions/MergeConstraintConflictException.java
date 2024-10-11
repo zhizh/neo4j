@@ -21,7 +21,6 @@ package org.neo4j.exceptions;
 
 import static java.lang.String.format;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -40,9 +39,7 @@ public class MergeConstraintConflictException extends Neo4jException {
 
     public static MergeConstraintConflictException nodeConflict(String node) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22G12)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N41)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.variable, node)
                         .build())
                 .build();
@@ -55,9 +52,7 @@ public class MergeConstraintConflictException extends Neo4jException {
 
     public static MergeConstraintConflictException relationshipConflict(String relationship) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22G12)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N42)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.variable, relationship)
                         .build())
                 .build();

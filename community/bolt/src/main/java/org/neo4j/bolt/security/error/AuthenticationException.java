@@ -20,7 +20,6 @@
 package org.neo4j.bolt.security.error;
 
 import java.io.IOException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
@@ -68,7 +67,6 @@ public class AuthenticationException extends IOException implements Status.HasSt
 
     public static AuthenticationException unauthorized() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new AuthenticationException(gql, Status.Security.Unauthorized);
     }

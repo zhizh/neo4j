@@ -20,7 +20,6 @@
 package org.neo4j.kernel.api.exceptions;
 
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -40,9 +39,7 @@ public class ReadOnlyDbException extends KernelException {
 
     public static ReadOnlyDbException databaseIsReadOnly() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N08)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new ReadOnlyDbException(gql);
     }
 }

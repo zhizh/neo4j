@@ -21,7 +21,6 @@ package org.neo4j.dbms.routing;
 
 import static java.lang.String.format;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlException;
@@ -45,7 +44,6 @@ public class RoutingException extends GqlException implements Status.HasStatus {
 
     public static RoutingException policyDefinitionNotFound(String policyName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N15)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.routingPolicy, policyName)
                 .build();
         return new RoutingException(

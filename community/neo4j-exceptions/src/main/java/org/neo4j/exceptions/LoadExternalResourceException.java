@@ -20,7 +20,6 @@
 package org.neo4j.exceptions;
 
 import java.net.URL;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -91,9 +90,7 @@ public class LoadExternalResourceException extends Neo4jException {
 
     private static ErrorGqlStatusObject unableToLoadExternalResourceErrorObject(String url) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N43)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.url, url)
                         .build())
                 .build();

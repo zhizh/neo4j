@@ -19,7 +19,6 @@
  */
 package org.neo4j.graphdb.security;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlRuntimeException;
@@ -60,29 +59,24 @@ public class AuthorizationViolationException extends GqlRuntimeException impleme
 
     public static AuthorizationViolationException authorizationViolation(String message) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new AuthorizationViolationException(gql, message);
     }
 
     public static AuthorizationViolationException permissionDeniedUnauthorized() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new AuthorizationViolationException(gql, PERMISSION_DENIED, Status.Security.Unauthorized);
     }
 
     public static AuthorizationViolationException permissionDeniedForbidden() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new AuthorizationViolationException(gql, PERMISSION_DENIED, Status.Security.Forbidden);
     }
 
     public static AuthorizationViolationException updatesWhenImpersonating() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new AuthorizationViolationException(
                 gql, "Not allowed to run updating system commands when impersonating a user.");
@@ -90,14 +84,12 @@ public class AuthorizationViolationException extends GqlRuntimeException impleme
 
     public static AuthorizationViolationException revokingImmutablePrivileges() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new AuthorizationViolationException(gql, "Immutable privileges cannot be revoked.");
     }
 
     public static AuthorizationViolationException grantingImmutablePrivileges(String action) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new AuthorizationViolationException(gql, String.format("Permission cannot be granted for %s.", action));
     }

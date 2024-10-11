@@ -22,7 +22,6 @@ package org.neo4j.internal.kernel.api.exceptions;
 import static org.neo4j.kernel.api.exceptions.Status.Transaction.LeaseExpired;
 
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -74,9 +73,7 @@ public class TransactionFailureException extends KernelException {
 
     public static TransactionFailureException leaseExpired(int currentLeaseId, int leaseId) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N08)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
-
         return new TransactionFailureException(
                 gql,
                 LeaseExpired,
@@ -87,7 +84,6 @@ public class TransactionFailureException extends KernelException {
 
     public static TransactionFailureException invalidatedLease() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N08)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
         return new TransactionFailureException(gql, LeaseExpired, "The lease has been invalidated");
     }

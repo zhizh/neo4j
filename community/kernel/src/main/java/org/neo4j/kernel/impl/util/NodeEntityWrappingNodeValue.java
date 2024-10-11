@@ -25,7 +25,6 @@ import static org.neo4j.values.AnyValueWriter.EntityMode.REFERENCE;
 import java.util.ArrayList;
 import java.util.List;
 import org.neo4j.exceptions.StoreFailureException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.Label;
@@ -126,7 +125,6 @@ public class NodeEntityWrappingNodeValue extends NodeValue implements WrappingEn
                 }
             } catch (NotFoundException | IllegalStateException | StoreFailureException e) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(
                         gql, NodeEntity.isDeletedInCurrentTransaction(node), e);
@@ -152,7 +150,6 @@ public class NodeEntityWrappingNodeValue extends NodeValue implements WrappingEn
                 }
             } catch (NotFoundException | IllegalStateException | StoreFailureException e) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(
                         gql, NodeEntity.isDeletedInCurrentTransaction(node), e);
@@ -174,7 +171,6 @@ public class NodeEntityWrappingNodeValue extends NodeValue implements WrappingEn
                 }
             } catch (NotFoundException | IllegalStateException | StoreFailureException e) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(
                         gql, NodeEntity.isDeletedInCurrentTransaction(node), e);
@@ -204,7 +200,6 @@ public class NodeEntityWrappingNodeValue extends NodeValue implements WrappingEn
                 }
             } catch (NotFoundException | IllegalStateException | StoreFailureException e) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(
                         gql, NodeEntity.isDeletedInCurrentTransaction(node), e);

@@ -22,7 +22,6 @@ package org.neo4j.internal.kernel.api.helpers.traversal.productgraph;
 import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
 import org.neo4j.exceptions.EntityNotFoundException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.KernelReadTracer;
@@ -191,7 +190,6 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
             read.singleNode(nodeId, node);
             if (!node.next()) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new EntityNotFoundException(gql, "Node " + nodeId + " was unexpectedly deleted");
             }

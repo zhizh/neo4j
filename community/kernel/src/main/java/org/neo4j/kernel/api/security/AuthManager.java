@@ -21,7 +21,6 @@ package org.neo4j.kernel.api.security;
 
 import java.util.Map;
 import org.neo4j.exceptions.InvalidArgumentException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -65,7 +64,6 @@ public abstract class AuthManager extends LifecycleAdapter {
         @Override
         public LoginContext impersonate(LoginContext originalAuth, String userToImpersonate) {
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N30)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
                     .withParam(GqlParams.StringParam.item, "Impersonation")
                     .withParam(GqlParams.StringParam.context, "a database with auth disabled")
                     .build();

@@ -37,7 +37,6 @@ import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.helpers.SocketAddress;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -117,7 +116,6 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
     private void assertNotInPanic() throws RoutingException {
         if (panicReason != null) {
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N32)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
                     .build();
             throw new RoutingException(gql, Routing.DbmsInPanic, panicReason.toString());
         }
@@ -191,7 +189,6 @@ public class DefaultRoutingService implements RoutingService, PanicEventHandler 
     private void assertBoltConnectorEnabled(DatabaseReference databaseReference) throws RoutingException {
         if (!boltEnabled.get()) {
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N70)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
                     .withParam(
                             GqlParams.StringParam.db, databaseReference.alias().name())
                     .build();

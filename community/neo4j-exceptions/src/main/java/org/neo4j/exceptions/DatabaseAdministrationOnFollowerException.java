@@ -19,7 +19,6 @@
  */
 package org.neo4j.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -38,7 +37,6 @@ public class DatabaseAdministrationOnFollowerException extends CypherExecutionEx
     public static DatabaseAdministrationOnFollowerException notALeader(
             String command, String startOfLegacyMessage, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N29)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.cmd, command)
                 .build();
 

@@ -21,7 +21,6 @@ package org.neo4j.internal.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -77,7 +76,6 @@ public class CreateConstraintFailureException extends SchemaKernelException {
     public static CreateConstraintFailureException constraintCreationFailed(
             ConstraintDescriptor constraint, String constraintString, ErrorGqlStatusObject gqlCause, Throwable cause) {
         var errorGqlStatusObjectBuilder = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N11)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(
                         GqlParams.StringParam.constrDescrOrName,
                         constraint.getName() != null ? constraint.getName() : constraintString);

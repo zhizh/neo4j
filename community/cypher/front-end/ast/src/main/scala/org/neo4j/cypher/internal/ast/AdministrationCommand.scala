@@ -68,7 +68,6 @@ import org.neo4j.cypher.internal.util.symbols.CTList
 import org.neo4j.cypher.internal.util.symbols.CTMap
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTString
-import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
@@ -193,10 +192,8 @@ sealed trait WriteAdministrationCommand extends AdministrationCommand {
     def numPrimaryGreaterThanZero(topology: Topology): SemanticCheck =
       if (topology.primaries.exists(_ < 1)) {
         val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .atPosition(position.line, position.column, position.offset)
           .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N52)
-            .withClassification(ErrorClassification.CLIENT_ERROR)
             .atPosition(position.line, position.column, position.offset)
             .withParam(GqlParams.NumberParam.count, topology.primaries.get)
             .withParam(GqlParams.NumberParam.upper, 11)
@@ -214,10 +211,8 @@ sealed trait WriteAdministrationCommand extends AdministrationCommand {
     def numSecondaryPositive(topology: Topology): SemanticCheck =
       if (topology.secondaries.exists(_ < 0)) {
         val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .atPosition(position.line, position.column, position.offset)
           .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N53)
-            .withClassification(ErrorClassification.CLIENT_ERROR)
             .atPosition(position.line, position.column, position.offset)
             .withParam(GqlParams.NumberParam.count, topology.primaries.get)
             .withParam(GqlParams.NumberParam.upper, 20)

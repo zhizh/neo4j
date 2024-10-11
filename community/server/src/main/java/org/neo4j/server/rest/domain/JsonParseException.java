@@ -19,7 +19,6 @@
  */
 package org.neo4j.server.rest.domain;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
@@ -41,12 +40,9 @@ public class JsonParseException extends GqlException implements Status.HasStatus
 
     public static JsonParseException jsonParsingException(int line, int column, String message, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N95)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .atPosition(line, column, -1)
                         .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA8)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
                                 .withParam(
                                         GqlParams.StringParam.value,
                                         String.format("%s [line: %d, column: %d]", message, line, column))
@@ -66,11 +62,8 @@ public class JsonParseException extends GqlException implements Status.HasStatus
 
     public static JsonParseException jsonParsingException(Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N95)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA8)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
                                 .withParam(
                                         GqlParams.StringParam.value,
                                         String.format(ErrorMessageHolder.getOldCauseMessage(cause)))

@@ -21,7 +21,6 @@ package org.neo4j.graphdb;
 
 import static java.lang.String.format;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlRuntimeException;
@@ -48,7 +47,6 @@ public class WriteOperationsNotAllowedException extends GqlRuntimeException impl
 
     public static WriteOperationsNotAllowedException notALeader(String currentRole) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N07)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new WriteOperationsNotAllowedException(
                 gql, format(NOT_LEADER_ERROR_MSG, currentRole), Status.Cluster.NotALeader);

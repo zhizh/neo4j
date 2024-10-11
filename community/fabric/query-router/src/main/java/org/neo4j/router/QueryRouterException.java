@@ -20,7 +20,6 @@
 package org.neo4j.router;
 
 import org.neo4j.fabric.executor.Location;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
@@ -84,7 +83,6 @@ public class QueryRouterException extends GqlRuntimeException implements Status.
 
     public static QueryRouterException writeDuringLeaderSwitch(Location attempt, Location current) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N34)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
         return new QueryRouterException(
                 gql,

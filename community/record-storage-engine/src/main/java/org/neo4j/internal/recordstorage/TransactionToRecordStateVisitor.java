@@ -23,7 +23,6 @@ import java.util.OptionalLong;
 import org.eclipse.collections.api.IntIterable;
 import org.eclipse.collections.api.set.primitive.LongSet;
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.Upgrade;
@@ -228,7 +227,6 @@ class TransactionToRecordStateVisitor extends TxStateVisitor.Adapter {
         } catch (SchemaRuleNotFoundException e) {
             if (transientMissingSchema) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new TransactionConflictException(
                         gql,

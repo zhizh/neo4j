@@ -21,7 +21,6 @@ package org.neo4j.internal.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -53,21 +52,18 @@ public class IndexNotFoundKernelException extends KernelException {
 
     public static IndexNotFoundKernelException indexIsStillPopulating(String indexPopulationJobDescription) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N63)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
         return new IndexNotFoundKernelException(gql, "Index is still populating: " + indexPopulationJobDescription);
     }
 
     public static IndexNotFoundKernelException indexIsStillPopulating(IndexDescriptor descriptor) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N63)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
         return new IndexNotFoundKernelException(gql, descriptor + " is still populating");
     }
 
     public static IndexNotFoundKernelException indexDroppedWhileSampling() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N64)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new IndexNotFoundKernelException(gql, "Index dropped while sampling.");
     }

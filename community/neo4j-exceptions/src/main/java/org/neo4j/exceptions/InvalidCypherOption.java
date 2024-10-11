@@ -22,7 +22,6 @@ package org.neo4j.exceptions;
 import static java.lang.String.format;
 
 import java.util.Arrays;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -42,9 +41,7 @@ public class InvalidCypherOption extends InvalidArgumentException {
     public static InvalidCypherOption invalidCombination(
             String optionName1, String option1, String optionName2, String option2) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N08)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.option1, optionName1 + ": " + option1)
                         .withParam(GqlParams.StringParam.option2, optionName2 + ": " + option2)
                         .build())
@@ -55,9 +52,7 @@ public class InvalidCypherOption extends InvalidArgumentException {
 
     public static InvalidCypherOption parallelRuntimeIsDisabled() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N44)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         return new InvalidCypherOption(
@@ -66,9 +61,7 @@ public class InvalidCypherOption extends InvalidArgumentException {
 
     public static InvalidCypherOption invalidOption(String input, String name, String... validOptions) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N10)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.input, input)
                         .withParam(GqlParams.StringParam.option, name)
                         .withParam(
@@ -85,9 +78,7 @@ public class InvalidCypherOption extends InvalidArgumentException {
 
     public static InvalidCypherOption conflictingOptionForName(String name) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N09)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.option, name)
                         .build())
                 .build();
@@ -96,9 +87,7 @@ public class InvalidCypherOption extends InvalidArgumentException {
 
     public static InvalidCypherOption unsupportedOptions(String... keys) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N07)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(
                                 GqlParams.ListParam.optionList,
                                 Arrays.stream(keys).toList())

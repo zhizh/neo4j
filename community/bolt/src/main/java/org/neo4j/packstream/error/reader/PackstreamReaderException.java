@@ -20,7 +20,6 @@
 package org.neo4j.packstream.error.reader;
 
 import java.util.Set;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -47,7 +46,6 @@ public class PackstreamReaderException extends PackstreamException {
         // DRI-003 (When it gets wrapped in an IllegalStructArgumentException
         // it will get the GQL code 08N06 with this (22N54) as a cause)
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N54)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.mapKey, key)
                 .build();
         return new PackstreamReaderException(gql, "Duplicate map key: \"" + key + "\"");
@@ -55,9 +53,7 @@ public class PackstreamReaderException extends PackstreamException {
 
     public static PackstreamReaderException unknownDriverInterfaceType(long type, Set<Long> expectedType) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N01)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.value, "driver interface type")
                         .withParam(
                                 GqlParams.ListParam.valueTypeList,

@@ -24,7 +24,6 @@ import static org.neo4j.values.storable.Values.EMPTY_TEXT_ARRAY;
 import static org.neo4j.values.virtual.VirtualValues.EMPTY_MAP;
 
 import org.eclipse.collections.api.set.primitive.IntSet;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.NodeCursor;
@@ -236,7 +235,6 @@ public final class ValuePopulation {
         if (!nodeCursor.next()) {
             if (!dbAccess.nodeDeletedInThisTransaction(id)) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(gql, false);
             } else {
@@ -289,7 +287,6 @@ public final class ValuePopulation {
         if (!relCursor.next()) {
             if (!dbAccess.relationshipDeletedInThisTransaction(id)) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(gql, false);
             } else {

@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.api.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -35,9 +34,7 @@ public class ComponentInjectionException extends ProcedureException {
     public static ComponentInjectionException unsupportedInjectableComponentType(
             String procClass, String procField, String procFieldType) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N02)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.procField, procField)
                         .withParam(GqlParams.StringParam.procFieldType, procFieldType)

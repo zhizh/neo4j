@@ -60,7 +60,6 @@ import org.neo4j.dbms.identity.ServerIdentity;
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.exceptions.UnspecifiedKernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.NotInTransactionException;
@@ -1028,7 +1027,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         Exceptions.throwIfInstanceOf(exception, TransactionFailureException.class);
         Exceptions.throwIfUnchecked(exception);
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-                .withClassification(ErrorClassification.UNKNOWN)
                 .build();
         throw new TransactionFailureException(gql, Status.General.UnknownError, exception);
     }
@@ -1144,7 +1142,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         Exceptions.throwIfInstanceOf(exception, TransactionFailureException.class);
         Exceptions.throwIfUnchecked(exception);
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-                .withClassification(ErrorClassification.UNKNOWN)
                 .build();
         throw new TransactionFailureException(gql, Status.General.UnknownError, exception);
     }
@@ -1240,7 +1237,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             throw e;
         } catch (Throwable throwable) {
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_40N01)
-                    .withClassification(ErrorClassification.DATABASE_ERROR)
                     .build();
             throw new UnspecifiedKernelException(gql, Status.Transaction.TransactionRollbackFailed, throwable);
         } finally {
@@ -1608,7 +1604,6 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private void assertNoInnerTransactions() throws TransactionFailureException {
         if (getInnerTransactionHandler().hasInnerTransaction()) {
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_2DN07)
-                    .withClassification(ErrorClassification.CLIENT_ERROR)
                     .build();
             throw new TransactionFailureException(
                     gql,

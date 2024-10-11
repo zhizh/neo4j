@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
 import org.apache.lucene.search.Query;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -110,7 +109,6 @@ class VectorIndexReader extends AbstractLuceneIndexReader {
             final var queryVector = nearestNeighbour.query();
             if (dimensions.isPresent() && queryVector.length != dimensions.getAsInt()) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N65)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.idx, indexName())
                         .withParam(GqlParams.NumberParam.dim1, queryVector.length)
                         .withParam(GqlParams.NumberParam.dim2, dimensions.getAsInt())

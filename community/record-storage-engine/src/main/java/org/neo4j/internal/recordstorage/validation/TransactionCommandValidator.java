@@ -36,7 +36,6 @@ import java.util.Map;
 import org.eclipse.collections.api.set.primitive.MutableLongSet;
 import org.eclipse.collections.impl.factory.primitive.LongSets;
 import org.neo4j.configuration.Config;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.recordstorage.Command;
@@ -104,7 +103,6 @@ public class TransactionCommandValidator implements CommandVisitor, TransactionV
             throw tce;
         } catch (Exception e) {
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                    .withClassification(ErrorClassification.TRANSIENT_ERROR)
                     .build();
             throw new TransactionConflictException(gql, e);
         } finally {
@@ -263,7 +261,6 @@ public class TransactionCommandValidator implements CommandVisitor, TransactionV
         if (failFast) {
             if (!validationLockClient.tryExclusiveLock(PAGE, resourceId)) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new TransactionConflictException(gql, storeType.getDatabaseFile(), pageId);
             }
@@ -274,7 +271,6 @@ public class TransactionCommandValidator implements CommandVisitor, TransactionV
             if (versionContext.invisibleHeadObserved()) {
                 transactionMonitor.transactionValidationFailure(storeType.getDatabaseFile());
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new TransactionConflictException(gql, storeType.getDatabaseFile(), versionContext, pageId);
             }

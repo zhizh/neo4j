@@ -22,7 +22,6 @@ package org.neo4j.fabric.executor;
 import static org.neo4j.kernel.api.exceptions.Status.Transaction.InvalidBookmark;
 
 import org.neo4j.configuration.GraphDatabaseSettings;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
@@ -95,7 +94,6 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
 
     public static FabricException noLeaderAddress(String dbName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N00)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .withParam(GqlParams.StringParam.db, dbName)
                 .build();
         return new FabricException(
@@ -107,7 +105,6 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
 
     public static FabricException sessionDbNotLeader(String dbName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N01)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.db, dbName)
                 .withParam(GqlParams.StringParam.cfgSetting, ROUTING_ENABLED_SETTING)
                 .build();
@@ -125,7 +122,6 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
 
     public static FabricException routingDisabled(String dbName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N02)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.db, dbName)
                 .withParam(GqlParams.StringParam.cfgSetting, ROUTING_ENABLED_SETTING)
                 .build();
@@ -143,7 +139,6 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
 
     public static FabricException failedToParseBookmark(Exception exception) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N12)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new FabricException(
                 gql,
@@ -154,7 +149,6 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
 
     public static FabricException writeDuringLeaderSwitch(Location attempt, Location current) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N34)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
         return new FabricException(
                 gql,
@@ -167,7 +161,6 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
 
     public static FabricException databaseLocationChanged(String dbName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N35)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .withParam(GqlParams.StringParam.db, dbName)
                 .build();
         return new FabricException(

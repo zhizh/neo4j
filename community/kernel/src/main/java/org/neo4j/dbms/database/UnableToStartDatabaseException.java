@@ -22,7 +22,6 @@ package org.neo4j.dbms.database;
 import static java.lang.String.format;
 
 import org.neo4j.dbms.api.DatabaseManagementException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -55,7 +54,6 @@ public class UnableToStartDatabaseException extends DatabaseManagementException 
     public static UnableToStartDatabaseException unableToStartDb(NamedDatabaseId namedDatabaseId, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N40)
                 .withParam(GqlParams.StringParam.db, namedDatabaseId.name())
-                .withClassification(ErrorClassification.DATABASE_ERROR)
                 .build();
 
         return new UnableToStartDatabaseException(

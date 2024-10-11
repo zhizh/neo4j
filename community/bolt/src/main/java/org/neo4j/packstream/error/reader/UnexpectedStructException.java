@@ -19,7 +19,6 @@
  */
 package org.neo4j.packstream.error.reader;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -52,9 +51,7 @@ public class UnexpectedStructException extends PackstreamReaderException {
 
     public static UnexpectedStructException unexpectedStruct(StructHeader header) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N97)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.value, String.format("0x%02X", header.tag()))
                         .build())
                 .build();

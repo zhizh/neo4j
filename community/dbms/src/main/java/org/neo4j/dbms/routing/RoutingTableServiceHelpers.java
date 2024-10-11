@@ -26,7 +26,6 @@ import static org.neo4j.values.storable.Values.NO_VALUE;
 import java.util.Optional;
 import org.neo4j.configuration.helpers.SocketAddress;
 import org.neo4j.configuration.helpers.SocketAddressParser;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -61,9 +60,7 @@ public class RoutingTableServiceHelpers {
         }
 
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N16)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N10)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         throw new RoutingException(

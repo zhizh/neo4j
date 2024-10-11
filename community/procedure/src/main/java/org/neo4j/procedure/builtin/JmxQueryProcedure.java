@@ -38,7 +38,6 @@ import javax.management.RuntimeMBeanException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 import org.neo4j.collection.ResourceRawIterator;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -103,7 +102,6 @@ public class JmxQueryProcedure extends CallableProcedure.BasicProcedure {
                     };
                 } catch (JMException e) {
                     var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N25)
-                            .withClassification(ErrorClassification.DATABASE_ERROR)
                             .withParam(GqlParams.StringParam.param, name.getCanonicalName())
                             .build();
                     throw new ProcedureException(

@@ -30,7 +30,6 @@ import static org.neo4j.values.storable.Values.NO_VALUE;
 import java.util.Map;
 import org.neo4j.common.EntityType;
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.ConstraintViolationException;
@@ -174,7 +173,6 @@ public class NodeEntity extends AbstractNodeEntity implements RelationshipFactor
             } catch (org.neo4j.internal.kernel.api.exceptions.TransactionFailureException ex) {
                 ex.addSuppressed(e);
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_40N01)
-                        .withClassification(ErrorClassification.DATABASE_ERROR)
                         .build();
                 throw new TransactionFailureException(
                         gql, "Fail to rollback transaction.", ex, Status.Transaction.TransactionRollbackFailed);

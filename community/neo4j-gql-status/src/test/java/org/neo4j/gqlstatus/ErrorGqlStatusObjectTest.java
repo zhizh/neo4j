@@ -40,19 +40,6 @@ class ErrorGqlStatusObjectTest {
     }
 
     @Test
-    void classificationShouldBePropagatedToGetClassification() {
-        ErrorGqlStatusObject gqlObjectWithClassification = ErrorGqlStatusObjectImplementation.from(
-                        GqlStatusInfoCodes.STATUS_22N08)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
-                .build();
-
-        assertEquals(ErrorClassification.TRANSIENT_ERROR, gqlObjectWithClassification.getClassification());
-
-        ErrorGqlStatusObject exception = new ExceptionWithoutCause(gqlObjectWithClassification, "old message");
-        assertEquals(ErrorClassification.TRANSIENT_ERROR, exception.getClassification());
-    }
-
-    @Test
     void testGetOldCauseMessage() {
         var gql1 = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N08)
                 .withParam(GqlParams.StringParam.option1, "blabla")

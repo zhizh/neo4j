@@ -22,7 +22,6 @@ package org.neo4j.exceptions;
 import static java.lang.System.lineSeparator;
 
 import java.util.Optional;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -86,9 +85,7 @@ public class SyntaxException extends Neo4jException {
 
     public static SyntaxException invalidShortestPathException(String start) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N33)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         return new SyntaxException(

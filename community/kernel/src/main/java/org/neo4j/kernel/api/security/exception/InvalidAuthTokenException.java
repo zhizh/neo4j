@@ -21,7 +21,6 @@ package org.neo4j.kernel.api.security.exception;
 
 import static java.lang.String.format;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlException;
@@ -45,25 +44,20 @@ public class InvalidAuthTokenException extends GqlException implements Status.Ha
 
     public static InvalidAuthTokenException unsupportedAuthenticationToken(String explanation) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new InvalidAuthTokenException(gql, format("Unsupported authentication token%s", explanation));
     }
 
     public static InvalidAuthTokenException parameterNotProvided(String parameter) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new InvalidAuthTokenException(gql, String.format(PARAMETER_NOT_PROVIDED_TEMPLATE, parameter));
     }
 
     public static InvalidAuthTokenException wrongTypeForParameter(
             String parameter, String expectedType, String actualType) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new InvalidAuthTokenException(
                 gql,
                 String.format(THE_VALUE_ASSOCIATED_WITH_THE_PARAMETER_TEMPLATE, parameter, expectedType, actualType));
@@ -71,27 +65,21 @@ public class InvalidAuthTokenException extends GqlException implements Status.Ha
 
     public static InvalidAuthTokenException wrongType(String parameter, String expectedType, String actualType) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new InvalidAuthTokenException(
                 gql, String.format(WRONG_TYPE_TEMPLATE, parameter, expectedType, actualType));
     }
 
     public static InvalidAuthTokenException valueMustBeMap(String key, String valueType) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new InvalidAuthTokenException(
                 gql, "The value associated with the key `" + key + "` must be a Map but was: " + valueType);
     }
 
     public static InvalidAuthTokenException tokenError(String token, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NFF)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new InvalidAuthTokenException(gql, cause.getMessage() + ": " + token);
     }
 

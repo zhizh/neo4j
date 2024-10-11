@@ -19,7 +19,6 @@
  */
 package org.neo4j.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -47,9 +46,7 @@ public class RuntimeUnsupportedException extends Neo4jException {
 
     public static RuntimeUnsupportedException unsupportedRuntimeInThisVersion(String runtime) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N27)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.item, runtime)
                         .withParam(GqlParams.StringParam.edition, "community edition")
                         .build())
@@ -60,9 +57,7 @@ public class RuntimeUnsupportedException extends Neo4jException {
 
     public static RuntimeUnsupportedException invalidParallelRuntimeConfiguration(String settingName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N47)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         return new RuntimeUnsupportedException(
@@ -85,9 +80,7 @@ public class RuntimeUnsupportedException extends Neo4jException {
 
     private static ErrorGqlStatusObject unsupportedParallelRuntimeGqlStatusObject() {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N46)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
     }

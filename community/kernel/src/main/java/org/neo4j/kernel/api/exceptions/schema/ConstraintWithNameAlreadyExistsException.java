@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.api.exceptions.schema;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -38,7 +37,6 @@ public class ConstraintWithNameAlreadyExistsException extends SchemaRuleWithName
 
     public static ConstraintWithNameAlreadyExistsException duplicatedConstraintName(String constraintName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N67)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.constr, constraintName)
                 .build();
         return new ConstraintWithNameAlreadyExistsException(gql, constraintName);

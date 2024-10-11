@@ -169,7 +169,6 @@ import org.neo4j.cypher.internal.util.StepSequencer
 import org.neo4j.cypher.internal.util.attribution.SequentialIdGen
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.PRIMARY_PROPERTY
 import org.neo4j.exceptions.InvalidSemanticsException
-import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
@@ -1443,9 +1442,7 @@ case object UnsupportedSystemCommand extends Phase[PlannerContext, BaseState, Lo
 
   override def process(from: BaseState, context: PlannerContext): LogicalPlanState = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-      .withClassification(ErrorClassification.CLIENT_ERROR)
       .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
-        .withClassification(ErrorClassification.CLIENT_ERROR)
         .withParam(GqlParams.StringParam.input, from.queryText)
         .build).build
     throw new InvalidSemanticsException(

@@ -20,7 +20,6 @@
 package org.neo4j.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -43,7 +42,6 @@ public class ConflictingConstraintException extends SchemaKernelException {
     public static ConflictingConstraintException conflictingConstraint(
             ConstraintDescriptor constraintWithSameSchema, TokenNameLookup token) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N66)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.constrDescrOrName, constraintWithSameSchema.userDescription(token))
                 .build();
         return new ConflictingConstraintException(gql, constraintWithSameSchema, token);

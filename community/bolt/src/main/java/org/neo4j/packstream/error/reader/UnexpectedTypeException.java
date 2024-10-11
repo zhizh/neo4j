@@ -20,7 +20,6 @@
 package org.neo4j.packstream.error.reader;
 
 import java.util.List;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
@@ -71,7 +70,6 @@ public class UnexpectedTypeException extends PackstreamReaderException
         return new UnexpectedTypeException(
                 // Code 22N01. It might get wrapped in IllegalStructArgumentException with code 08N06
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N01)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.value, value)
                         .withParam(GqlParams.ListParam.valueTypeList, expectedValueTypeList)
                         .withParam(GqlParams.StringParam.valueType, String.valueOf(actual))
@@ -93,7 +91,6 @@ public class UnexpectedTypeException extends PackstreamReaderException
         // Code 22N01. It might get wrapped in IllegalStructArgumentException with code 08N06
         return new UnexpectedTypeException(
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N01)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.value, String.valueOf(actual.getValue()))
                         .withParam(GqlParams.ListParam.valueTypeList, List.of(expected.toString()))
                         .withParam(

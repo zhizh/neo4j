@@ -21,7 +21,6 @@ package org.neo4j.kernel.api.exceptions.schema;
 
 import org.neo4j.common.TokenNameLookup;
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -60,7 +59,6 @@ public class DropConstraintFailureException extends SchemaKernelException {
 
     public static DropConstraintFailureException constraintDropFailed(String constraintName, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N12)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.constrDescrOrName, constraintName)
                 .build();
 
@@ -70,7 +68,6 @@ public class DropConstraintFailureException extends SchemaKernelException {
     public static DropConstraintFailureException constraintDropFailed(
             ConstraintDescriptor constraint, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N12)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.constrDescrOrName, constraint.getName())
                 .build();
 

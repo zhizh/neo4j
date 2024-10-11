@@ -20,7 +20,6 @@
 package org.neo4j.exceptions;
 
 import java.util.List;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -53,9 +52,7 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException unknownNormalForm(String normalForm) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N49)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.input, normalForm)
                         .build())
                 .build();
@@ -65,9 +62,7 @@ public class InvalidArgumentException extends Neo4jException {
     public static InvalidArgumentException incompleteSpatialValue(
             String crs, String mandatoryKeys, List<String> mandatoryKeysList) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N18)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.crs, String.valueOf(crs))
                         .withParam(GqlParams.ListParam.mapKeyList, mandatoryKeysList)
                         .build())
@@ -77,9 +72,7 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException invalidSpatialValueCombination() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N22)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         return new InvalidArgumentException(gql, "Cannot specify both CRS and SRID");
@@ -88,9 +81,7 @@ public class InvalidArgumentException extends Neo4jException {
     public static InvalidArgumentException timezoneAndOffsetMismatch(
             String zoneName, String offset, List<String> validOffsets, String matcherGroup) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N04)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.input, zoneName)
                         .withParam(GqlParams.StringParam.context, String.valueOf(offset))
                         .withParam(GqlParams.ListParam.inputList, validOffsets)
@@ -101,9 +92,7 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException temporalSelectionConflict(String fieldName, String component) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22007)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N14)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.temporal, fieldName)
                         .withParam(GqlParams.StringParam.component, component)
                         .build())
@@ -114,9 +103,7 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException invalidCoordinateNames() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N19)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         return new InvalidArgumentException(
@@ -125,9 +112,7 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException pointWithWrongDimensions(int expectedDimension, int actualDimension) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N20)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.NumberParam.dim1, expectedDimension)
                         .withParam(GqlParams.NumberParam.value, actualDimension)
                         .withParam(GqlParams.NumberParam.dim2, actualDimension)
@@ -144,7 +129,6 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException bothAllowedAndDeniedDbs() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N85)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new InvalidArgumentException(gql, "Can't specify both allowed and denied databases");
     }

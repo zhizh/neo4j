@@ -19,7 +19,6 @@
  */
 package org.neo4j.internal.kernel.api.exceptions.schema;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -31,7 +30,6 @@ public final class TokenLengthLimitExceededException extends GqlRuntimeException
     public TokenLengthLimitExceededException(String tokenName, String tokenType, int maxLength) {
         this(
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I50)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.input, tokenName)
                         .withParam(GqlParams.StringParam.tokenType, tokenType)
                         .withParam(GqlParams.NumberParam.value, maxLength)

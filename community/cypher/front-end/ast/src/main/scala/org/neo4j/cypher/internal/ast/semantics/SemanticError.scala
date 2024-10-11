@@ -17,7 +17,6 @@
 package org.neo4j.cypher.internal.ast.semantics
 
 import org.neo4j.cypher.internal.util.InputPosition
-import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
@@ -44,10 +43,8 @@ object SemanticError {
 
   def invalidUseOfGraphFunction(graphFunction: String, pos: InputPosition): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-      .withClassification(ErrorClassification.CLIENT_ERROR)
       .atPosition(pos.line, pos.column, pos.offset)
       .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N75)
-        .withClassification(ErrorClassification.CLIENT_ERROR)
         .atPosition(pos.line, pos.column, pos.offset)
         .withParam(GqlParams.StringParam.fun, graphFunction)
         .build())

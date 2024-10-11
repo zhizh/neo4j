@@ -42,7 +42,6 @@ import org.neo4j.dbms.database.readonly.DatabaseReadOnlyChecker;
 import org.neo4j.dbms.identity.ServerIdentity;
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel;
 import org.neo4j.function.Factory;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.DatabaseShutdownException;
@@ -336,7 +335,6 @@ public class KernelTransactions extends LifecycleAdapter
         } catch (InterruptedException ie) {
             Thread.interrupted();
             var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N06)
-                    .withClassification(ErrorClassification.DATABASE_ERROR)
                     .build();
             throw new TransactionFailureException(
                     gql, "Fail to start new transaction.", ie, Status.Transaction.TransactionStartFailed);

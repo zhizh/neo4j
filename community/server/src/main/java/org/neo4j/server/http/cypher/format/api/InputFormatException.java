@@ -19,7 +19,6 @@
  */
 package org.neo4j.server.http.cypher.format.api;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -51,9 +50,7 @@ public class InputFormatException extends RuntimeException implements ErrorGqlSt
     public static InputFormatException jsonParingException(String message, Throwable cause) {
         return new InputFormatException(
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N95)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
                                 .build())
                         .build(),
                 message,
@@ -63,9 +60,7 @@ public class InputFormatException extends RuntimeException implements ErrorGqlSt
     public static InputFormatException jsonMappingException(String message, Throwable cause) {
         return new InputFormatException(
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N96)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
                                 .build())
                         .build(),
                 message,
@@ -89,9 +84,7 @@ public class InputFormatException extends RuntimeException implements ErrorGqlSt
 
     public static InputFormatException emptyInputString(String requiredOption, String message) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N06)
-                        .withParam(GqlParams.StringParam.option, requiredOption)
                         .build())
                 .build();
         throw new InputFormatException(gql, message);
@@ -100,9 +93,7 @@ public class InputFormatException extends RuntimeException implements ErrorGqlSt
     public static InputFormatException wrongFirstFieldDuringDeserialization(String expectedField, String actualValue) {
         return new InputFormatException(
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N98)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
                                 .withParam(GqlParams.StringParam.field, expectedField)
                                 .withParam(GqlParams.StringParam.value, actualValue)
                                 .build())
@@ -115,9 +106,7 @@ public class InputFormatException extends RuntimeException implements ErrorGqlSt
     public static InputFormatException wrongTokenDuringDeserialization(String expectedTokens, String foundTokens) {
         return new InputFormatException(
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N11)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N99)
-                                .withClassification(ErrorClassification.CLIENT_ERROR)
                                 .withParam(GqlParams.StringParam.token, expectedTokens)
                                 .withParam(GqlParams.StringParam.value, foundTokens)
                                 .build())

@@ -23,7 +23,6 @@ import static org.neo4j.memory.HeapEstimator.shallowSizeOfInstance;
 import static org.neo4j.values.AnyValueWriter.EntityMode.REFERENCE;
 
 import java.util.function.Consumer;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.Node;
@@ -82,7 +81,6 @@ public class RelationshipEntityWrappingValue extends RelationshipValue implement
                     // then we'll have to tell the client that their transaction conflicted,
                     // and that they need to retry it.
                     var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                            .withClassification(ErrorClassification.TRANSIENT_ERROR)
                             .build();
                     throw new ReadAndDeleteTransactionConflictException(
                             gql, RelationshipEntity.isDeletedInCurrentTransaction(relationship));
@@ -280,7 +278,6 @@ public class RelationshipEntityWrappingValue extends RelationshipValue implement
                 }
             } catch (IllegalStateException e) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(
                         gql, RelationshipEntity.isDeletedInCurrentTransaction(relationship), e);
@@ -302,7 +299,6 @@ public class RelationshipEntityWrappingValue extends RelationshipValue implement
                 }
             } catch (NotFoundException | IllegalStateException e) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(
                         gql, RelationshipEntity.isDeletedInCurrentTransaction(relationship), e);
@@ -336,7 +332,6 @@ public class RelationshipEntityWrappingValue extends RelationshipValue implement
                 }
             } catch (NotFoundException | IllegalStateException e) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .withClassification(ErrorClassification.TRANSIENT_ERROR)
                         .build();
                 throw new ReadAndDeleteTransactionConflictException(
                         gql, RelationshipEntity.isDeletedInCurrentTransaction(relationship), e);

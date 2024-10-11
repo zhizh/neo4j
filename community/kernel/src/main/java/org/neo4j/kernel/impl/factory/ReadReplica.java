@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.impl.factory;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.WriteOperationsNotAllowedException;
@@ -33,7 +32,6 @@ public class ReadReplica implements AccessCapability {
     @Override
     public void assertCanWrite() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N08)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         throw new WriteOperationsNotAllowedException(
                 gql,

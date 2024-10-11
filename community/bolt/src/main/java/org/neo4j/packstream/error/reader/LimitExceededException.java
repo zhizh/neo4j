@@ -19,7 +19,6 @@
  */
 package org.neo4j.packstream.error.reader;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
@@ -52,7 +51,6 @@ public class LimitExceededException extends PackstreamReaderException
 
     public static LimitExceededException protocolMessageLengthLimitOverflow(long limit, long actual) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N56)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.NumberParam.boltMsgLenLimit, limit)
                 .build();
         return new LimitExceededException(gql, limit, actual);

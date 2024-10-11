@@ -20,7 +20,6 @@
 package org.neo4j.packstream.error.reader;
 
 import java.util.List;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -52,7 +51,6 @@ public class UnexpectedTypeMarkerException extends UnexpectedTypeException {
         return new UnexpectedTypeMarkerException(
                 // Code 22N01. It might get wrapped in IllegalStructArgumentException with code 08N06
                 ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N01)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.value, value)
                         .withParam(GqlParams.ListParam.valueTypeList, List.of(String.valueOf(expected)))
                         .withParam(GqlParams.StringParam.valueType, String.valueOf(actual))

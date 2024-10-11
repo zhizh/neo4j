@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -49,7 +48,6 @@ public class DeadlockDetectedException extends TransientTransactionFailureExcept
 
     public static DeadlockDetectedException deadlockDetected(String legacyMessage) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N05)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .build();
 
         return new DeadlockDetectedException(gql, legacyMessage);

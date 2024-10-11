@@ -19,7 +19,6 @@
  */
 package org.neo4j.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -62,7 +61,6 @@ public class CypherExecutionException extends Neo4jException {
 
     public static CypherExecutionException internalError(String msgTitle, String msg, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                .withClassification(ErrorClassification.UNKNOWN)
                 .withParam(GqlParams.StringParam.msgTitle, msgTitle)
                 .withParam(GqlParams.StringParam.msg, msg)
                 .build();
@@ -71,7 +69,6 @@ public class CypherExecutionException extends Neo4jException {
 
     public static CypherExecutionException unexpectedError(Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                .withClassification(ErrorClassification.UNKNOWN)
                 .withParam(GqlParams.StringParam.msgTitle, "Unexpected error")
                 .withParam(GqlParams.StringParam.msg, cause.getMessage())
                 .build();

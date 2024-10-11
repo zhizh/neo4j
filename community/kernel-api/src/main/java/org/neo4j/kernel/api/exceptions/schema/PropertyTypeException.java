@@ -24,7 +24,6 @@ import static org.neo4j.internal.kernel.api.exceptions.schema.ConstraintValidati
 
 import org.neo4j.common.EntityType;
 import org.neo4j.common.TokenNameLookup;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -84,7 +83,6 @@ public class PropertyTypeException extends ConstraintValidationException {
         final var schema = descriptor.schema();
         final boolean isNode = schema.entityType() == EntityType.NODE;
         ErrorGqlStatusObject gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N78)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.entityType, isNode ? "NODE" : "RELATIONSHIP")
                 .withParam(GqlParams.NumberParam.entityId, entityId)
                 .withParam(GqlParams.StringParam.tokenType, isNode ? "label" : "type")

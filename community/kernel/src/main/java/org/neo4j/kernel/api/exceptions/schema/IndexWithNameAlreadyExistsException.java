@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.api.exceptions.schema;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -35,7 +34,6 @@ public class IndexWithNameAlreadyExistsException extends SchemaRuleWithNameAlrea
 
     public static IndexWithNameAlreadyExistsException duplicateIndexName(String name) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N71)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.idx, name)
                 .build();
         return new IndexWithNameAlreadyExistsException(gql, name);

@@ -23,7 +23,6 @@ import static java.lang.String.format;
 
 import java.util.Arrays;
 import java.util.List;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlHelper;
@@ -57,7 +56,7 @@ public class IllegalStructArgumentException extends PackstreamStructException {
 
     public static IllegalStructArgumentException protocolError(String fieldName, PackstreamReaderException cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N06)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(cause.gqlStatusObject())
                 .build();
         return new IllegalStructArgumentException(gql, fieldName, cause);
     }
@@ -94,11 +93,9 @@ public class IllegalStructArgumentException extends PackstreamStructException {
     public static IllegalStructArgumentException invalidCoordinateArguments(
             String fieldName, String valueType, double[] coordinates, String message, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N24)
                         .withParam(GqlParams.StringParam.valueType, valueType)
                         .withParam(GqlParams.StringParam.coordinates, Arrays.toString(coordinates))
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         return new IllegalStructArgumentException(gql, fieldName, message, cause);
@@ -107,7 +104,6 @@ public class IllegalStructArgumentException extends PackstreamStructException {
     public static IllegalStructArgumentException invalidTemporalComponent(
             String fieldName, long epochSecond, long nanos, Throwable cause) {
         ErrorGqlStatusObject gqlCause = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N15)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.component, fieldName)
                 .withParam(GqlParams.StringParam.temporal, epochSecond + "+" + nanos)
                 .build();
@@ -142,7 +138,6 @@ public class IllegalStructArgumentException extends PackstreamStructException {
             Number actualValue,
             String message) {
         var gql = GqlHelper.getGql08N06(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N03)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.component, fieldName)
                 .withParam(GqlParams.StringParam.valueType, expectedType)
                 .withParam(GqlParams.NumberParam.lower, lowerLimit)

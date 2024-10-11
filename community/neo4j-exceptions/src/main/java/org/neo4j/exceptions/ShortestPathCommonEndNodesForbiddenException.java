@@ -19,7 +19,6 @@
  */
 package org.neo4j.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
@@ -40,9 +39,7 @@ public class ShortestPathCommonEndNodesForbiddenException extends CypherExecutio
 
     public static ShortestPathCommonEndNodesForbiddenException shortestPathCommonEndNodes() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N23)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
-
         return new ShortestPathCommonEndNodesForbiddenException(gql);
     }
 }

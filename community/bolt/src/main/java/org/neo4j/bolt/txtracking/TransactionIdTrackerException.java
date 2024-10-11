@@ -21,7 +21,6 @@ package org.neo4j.bolt.txtracking;
 
 import static org.neo4j.kernel.api.exceptions.Status.Transaction.BookmarkTimeout;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -57,7 +56,6 @@ public class TransactionIdTrackerException extends GqlRuntimeException implement
     public static TransactionIdTrackerException unreachableDatabaseVersion(
             AbstractDatabase db, long lastTransactionId, long oldestAcceptableTxId, Throwable cause) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N13)
-                .withClassification(ErrorClassification.TRANSIENT_ERROR)
                 .withParam(GqlParams.StringParam.db, db.getNamedDatabaseId().name())
                 .withParam(GqlParams.StringParam.transactionId1, String.valueOf(oldestAcceptableTxId))
                 .withParam(GqlParams.StringParam.transactionId2, String.valueOf(lastTransactionId))

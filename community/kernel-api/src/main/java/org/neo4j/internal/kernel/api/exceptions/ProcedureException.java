@@ -23,7 +23,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 import java.util.List;
 import org.neo4j.exceptions.KernelException;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlHelper;
@@ -65,9 +64,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException noSuchProcedure(QualifiedName name) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procFun, name.toString())
                         .build())
                 .build();
@@ -82,9 +79,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException noSuchProcedure(int id) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procFun, Integer.toString(id))
                         .build())
                 .build();
@@ -97,9 +92,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException noSuchFunction(int id) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procFun, Integer.toString(id))
                         .build())
                 .build();
@@ -112,7 +105,6 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException noSuchProcedureOrFunction(String name) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N08)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.procFun, name)
                 .build();
         return new ProcedureException(
@@ -124,9 +116,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException noSuchConstituentGraph(String graphName, String ctxDatabaseName) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42002)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N01)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.graph, graphName)
                         .withParam(GqlParams.StringParam.db, ctxDatabaseName)
                         .build())
@@ -139,7 +129,6 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException faultyClassFieldAnnotationStatic(String procField, String procClass) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N01)
                         .withParam(GqlParams.StringParam.procField, procField)
                         .withParam(GqlParams.StringParam.procClass, procClass)
@@ -157,9 +146,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException unableToAccessFieldInjection(String procClass, String procField) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N03)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.procField, procField)
                         .build())
@@ -174,9 +161,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException unableToAccessField(String procClass, String procField) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N03)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.procField, procField)
                         .build())
@@ -191,9 +176,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException missingClassFieldAnnotation(String procClass, String procField) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N04)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.procField, procField)
                         .build())
@@ -210,9 +193,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException faultyClassFieldAnnotation(String procClass, String procField) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N05)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.procField, procField)
                         .build())
@@ -227,9 +208,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException missingArgumentAnnotation(int position, String procMethod) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N06)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.NumberParam.pos, position)
                         .withParam(GqlParams.StringParam.procMethod, procMethod)
                         .build())
@@ -246,9 +225,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException missingArgumentName(int position, String procMethod) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N06)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.NumberParam.pos, position)
                         .withParam(GqlParams.StringParam.procMethod, procMethod)
                         .build())
@@ -266,9 +243,7 @@ public class ProcedureException extends KernelException {
     public static ProcedureException invalidOrderingOfDefaultArguments(
             int position, String parameterValue, String procMethod) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N07)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procFun, "procedure")
                         .build())
                 .build();
@@ -285,9 +260,7 @@ public class ProcedureException extends KernelException {
     public static ProcedureException duplicatedAnnotatedMethods(String procClass, String className) {
 
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N08)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .build())
                 .build();
@@ -301,9 +274,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException missingAnnotatedMethods(String procClass) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N08)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .build())
                 .build();
@@ -319,9 +290,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException methodMustBeVoid(String procClass, String procMethod, String returnType) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N09)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.procMethod, procMethod)
                         .build())
@@ -337,9 +306,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException aggregationMethodNotPublic(String procClass, String procMethod) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N09)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procClass, procClass)
                         .withParam(GqlParams.StringParam.procMethod, procMethod)
                         .build())
@@ -354,9 +321,7 @@ public class ProcedureException extends KernelException {
 
     public static ProcedureException nonReloadableNamespaces(List<String> nonReloadableNamespaces, Status statusCode) {
         ErrorGqlStatusObject gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N16)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N23)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.ListParam.namespaceList, nonReloadableNamespaces)
                         .build())
                 .build();
@@ -383,14 +348,12 @@ public class ProcedureException extends KernelException {
     public static ProcedureException surpressedRegisterFailed(List<Throwable> surpressedExceptions) {
         var exception = surpressedExceptions.get(surpressedExceptions.size() - 1);
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                .withClassification(ErrorClassification.UNKNOWN)
                 .withParam(GqlParams.StringParam.msgTitle, exception.getClass().getName())
                 .withParam(GqlParams.StringParam.msg, exception.getMessage())
                 .build();
         for (int i = surpressedExceptions.size() - 2; i >= 0; i--) {
             exception = surpressedExceptions.get(i);
             gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N00)
-                    .withClassification(ErrorClassification.UNKNOWN)
                     .withParam(
                             GqlParams.StringParam.msgTitle, exception.getClass().getName())
                     .withParam(GqlParams.StringParam.msg, exception.getMessage())
@@ -398,7 +361,6 @@ public class ProcedureException extends KernelException {
                     .build();
         }
         gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(gql)
                 .build();
 

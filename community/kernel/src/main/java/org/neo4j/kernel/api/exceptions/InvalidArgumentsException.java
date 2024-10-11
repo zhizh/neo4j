@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel.api.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlException;
@@ -51,11 +50,9 @@ public class InvalidArgumentsException extends GqlException implements Status.Ha
 
     public static InvalidArgumentsException requiresPositiveInteger(String option, int value) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N02)
                         .withParam(GqlParams.StringParam.option, option)
                         .withParam(GqlParams.NumberParam.value, value)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         return new InvalidArgumentsException(

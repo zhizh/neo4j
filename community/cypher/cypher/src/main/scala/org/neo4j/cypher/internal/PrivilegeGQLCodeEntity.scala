@@ -20,7 +20,6 @@
 package org.neo4j.cypher.internal
 
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.DATABASE_LABEL
-import org.neo4j.gqlstatus.ErrorClassification
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlParams
@@ -55,17 +54,14 @@ object PrivilegeGQLCodeEntity {
     privilegeGQLCodeEntity match {
       case PrivilegeGQLCodeEntity.User() =>
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N09)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .withParam(GqlParams.StringParam.user, value)
           .build()
       case PrivilegeGQLCodeEntity.Role() =>
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N10)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .withParam(GqlParams.StringParam.role, value)
           .build()
       case PrivilegeGQLCodeEntity.Database() =>
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N51)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .withParam(GqlParams.StringParam.db, value)
           .build()
     }
@@ -78,17 +74,14 @@ object PrivilegeGQLCodeEntity {
     privilegeGQLCodeEntity match {
       case PrivilegeGQLCodeEntity.User() =>
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N12)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .withParam(GqlParams.StringParam.user, value)
           .build()
       case PrivilegeGQLCodeEntity.Role() =>
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N13)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .withParam(GqlParams.StringParam.role, value)
           .build()
       case PrivilegeGQLCodeEntity.Database() =>
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N11)
-          .withClassification(ErrorClassification.CLIENT_ERROR)
           .withParam(GqlParams.StringParam.db, value)
           .build()
 
