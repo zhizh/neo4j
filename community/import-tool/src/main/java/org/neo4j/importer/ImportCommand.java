@@ -394,7 +394,7 @@ public class ImportCommand {
                         "Relationship CSV header and data. Multiple files will be logically seen as one big file from the perspective of the importer. "
                                 + "The first line must contain the header. Multiple data sources like these can be specified in one import, where each data source has "
                                 + "its own header. Files can also be specified using regular expressions.\n"
-                                + "It is possible to import files from AWS S3 buckets (from Neo4j 5.19), Google Cloud storage buckets (from Neo4j 5.21), and Azure buckets (from Neo4j 5.24).")
+                                + "It is possible to import files from AWS S3 buckets, Google Cloud storage buckets, and Azure buckets using the appropriate URI as the path.")
         private List<RelationshipFilesGroup> relationships = new ArrayList<>();
 
         @Option(
