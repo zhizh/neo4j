@@ -385,7 +385,7 @@ public interface Status {
                 NotificationCategory.UNRECOGNIZED),
         InsecureProtocol(
                 ClientNotification,
-                "The query uses an insecure protocol.",
+                "The query uses an insecure protocol. Please consider using 'https' instead.",
                 SeverityLevel.WARNING,
                 NotificationCategory.SECURITY);
 

@@ -158,7 +158,7 @@ class CSVResources(resourceManager: ResourceManager) extends ExternalCSVResource
   private def checkForUnsecureProtocols(uri: URI, state: QueryState): Unit = {
     val scheme = uri.getScheme.toLowerCase(Locale.ROOT)
     scheme match {
-      case "http" | "ftp"=>
+      case "http" | "ftp" =>
         state.newRuntimeNotification(InsecureProtocol)
       case _ =>
     }

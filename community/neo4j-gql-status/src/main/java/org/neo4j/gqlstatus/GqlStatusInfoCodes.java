@@ -349,7 +349,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             NotificationClassification.SECURITY),
     STATUS_01N72(
             new GqlStatus("01N72"),
-            "",
+            "Please consider using 'https' instead.",
             new GqlParams.GqlParam[] {},
             emptyMap(),
             Condition.WARNING,
