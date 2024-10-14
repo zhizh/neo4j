@@ -1013,9 +1013,20 @@ public final class PackstreamBuf implements ReferenceCounted {
         }
 
         var heap = payload.getBytes(STRING_CHARSET);
+        return this.writeString(payload.getBytes(STRING_CHARSET));
+    }
 
-        this.writeMarker(STRING_TYPES, heap.length);
-        this.delegate.writeBytes(heap);
+    private PackstreamBuf writeString(byte[] payload) {
+        return this.writeString(payload, 0, payload.length);
+    }
+
+    public PackstreamBuf writeString(byte[] payload, int offset, int length) {
+        if (payload == null) {
+            throw new NullPointerException("payload cannot be null");
+        }
+
+        this.writeMarker(STRING_TYPES, length);
+        this.delegate.writeBytes(payload, offset, length);
         return this;
     }
 
