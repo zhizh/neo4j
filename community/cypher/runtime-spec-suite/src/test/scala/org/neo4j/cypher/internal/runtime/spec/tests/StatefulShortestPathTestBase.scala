@@ -3039,6 +3039,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached node properties on NFA predicate expression variables") {
+    // Parallel runtime doesn't support changes in tx state
+    assume(!isParallel)
+
     val (n1, n2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-->(n1)-->(n2:T)
@@ -3085,6 +3088,8 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached node properties on NFA predicate expression variables as MRE") {
+    // Parallel runtime doesn't support changes in tx state
+    assume(!isParallel)
     val (n1, n2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-->(n1)-->(n2:T)
@@ -3131,6 +3136,8 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached relationship properties on NFA predicate expression variables") {
+    // Parallel runtime doesn't support changes in tx state
+    assume(!isParallel)
     val (r1, r2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-[r1]->()-[r2]->(:T)
@@ -3177,6 +3184,9 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached relationship properties on NFA predicate expression variables as MRE") {
+    // Parallel runtime doesn't support changes in tx state
+    assume(!isParallel)
+
     val (r1, r2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-[r1]->()-[r2]->(:T)
