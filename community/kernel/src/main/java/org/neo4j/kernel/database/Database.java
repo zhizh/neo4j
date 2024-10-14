@@ -185,6 +185,7 @@ import org.neo4j.monitoring.Monitors;
 import org.neo4j.resources.CpuClock;
 import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.storageengine.api.CommandReaderFactory;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
 import org.neo4j.storageengine.api.MetadataProvider;
 import org.neo4j.storageengine.api.StorageEngine;
 import org.neo4j.storageengine.api.StorageEngineFactory;
@@ -605,6 +606,11 @@ public class Database extends AbstractDatabase {
         life.add(onStop(() -> this.executionEngine.clearQueryCaches()));
 
         databaseDependencies.resolveDependency(DbmsDiagnosticsManager.class).dumpDatabaseDiagnostics(this);
+
+        String format = storageEngine.retrieveStoreId().getFormatName();
+        if (storageEngineFactory.isDeprecated(format)) {
+            internalLog.warn(DeprecatedFormatWarning.getFormatWarning(databaseLayout.getDatabaseName(), format));
+        }
     }
 
     @Override

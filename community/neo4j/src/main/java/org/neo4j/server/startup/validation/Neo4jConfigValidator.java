@@ -25,9 +25,12 @@ import java.util.List;
 import java.util.function.Supplier;
 import org.neo4j.cli.CommandFailedException;
 import org.neo4j.configuration.Config;
+import org.neo4j.configuration.GraphDatabaseSettings;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.logging.Neo4jLogMessage;
 import org.neo4j.logging.Neo4jMessageSupplier;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
+import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.util.VisibleForTesting;
 
 public class Neo4jConfigValidator implements ConfigValidator {
@@ -47,6 +50,11 @@ public class Neo4jConfigValidator implements ConfigValidator {
             // and we'll record log messages and catch any exceptions here.
             var config = configSupplier.get();
             var logger = new IssueCollectingLogger(issues);
+
+            var format = config.get(GraphDatabaseSettings.db_format);
+            if (StorageEngineFactory.isFormatDeprecated(format)) {
+                logger.warn(DeprecatedFormatWarning.getConfigFormatWarning(format));
+            }
 
             // Will replay logging calls to our logger
             config.setLogger(logger);
