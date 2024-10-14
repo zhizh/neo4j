@@ -586,6 +586,17 @@ object SemanticError {
     SemanticError(gql, s"`GRANT`, `DENY` and `REVOKE` are not supported for `$cmd`", position)
   }
 
+
+  def unableToRouteUseClauseError(legacyMessage: String, position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N04)
+      .withParam(GqlParams.StringParam.clause, "`USE` clause")
+      .build()
+    SemanticError(
+      gql,
+      legacyMessage,
+      position
+    )
+  }
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

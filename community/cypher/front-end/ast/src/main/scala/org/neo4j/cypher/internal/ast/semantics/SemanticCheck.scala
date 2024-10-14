@@ -196,6 +196,13 @@ object SemanticCheckResult {
     position: InputPosition
   ): SemanticCheckResult =
     error(state, SemanticError.accessingMultipleGraphsError(legacyMessage, position))
+
+  def unableToRouteUseClauseError(
+    state: SemanticState,
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheckResult =
+    error(state, SemanticError.unableToRouteUseClauseError(legacyMessage, position))
 }
 
 trait SemanticCheckContext {

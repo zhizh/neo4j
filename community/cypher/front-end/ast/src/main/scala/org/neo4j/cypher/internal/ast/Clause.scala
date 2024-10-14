@@ -466,7 +466,11 @@ final case class UseGraph(graphReference: GraphReference)(val position: InputPos
     )
 
   private def unsupported(): SemanticCheck = SemanticCheck.fromFunctionWithContext { (semanticState, context) =>
-    SemanticCheckResult.error(semanticState, context.errorMessageProvider.createUseClauseUnsupportedError(), position)
+    SemanticCheckResult.unableToRouteUseClauseError(
+      semanticState,
+      context.errorMessageProvider.createUseClauseUnsupportedError(),
+      position
+    )
   }
 
   private def checkMultiGraphSelector: SemanticCheck = {
