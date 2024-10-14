@@ -422,13 +422,19 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
     ctx.constraintType() match {
       case c: ConstraintIsUniqueContext =>
         if (ctx.commandNodePattern() != null && (c.RELATIONSHIP() != null || c.REL() != null)) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "node pattern",
+            ConstraintType.REL_UNIQUE.description(),
+            List("relationship patterns"),
             s"'${ConstraintType.REL_UNIQUE.description()}' does not allow node patterns",
             inputPosition(ctx.commandNodePattern().getStart)
           )
         }
         if (ctx.commandRelPattern() != null && c.NODE() != null) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "relationship pattern",
+            ConstraintType.NODE_UNIQUE.description(),
+            List("node patterns"),
             s"'${ConstraintType.NODE_UNIQUE.description()}' does not allow relationship patterns",
             inputPosition(ctx.commandRelPattern().getStart)
           )
@@ -436,13 +442,19 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
         checkForInvalidOthers(c.ASSERT(), c.REQUIRE())
       case c: ConstraintKeyContext =>
         if (ctx.commandNodePattern() != null && (c.RELATIONSHIP() != null || c.REL() != null)) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "node pattern",
+            ConstraintType.REL_KEY.description(),
+            List("relationship patterns"),
             s"'${ConstraintType.REL_KEY.description()}' does not allow node patterns",
             inputPosition(ctx.commandNodePattern().getStart)
           )
         }
         if (ctx.commandRelPattern() != null && c.NODE() != null) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "relationship pattern",
+            ConstraintType.NODE_KEY.description(),
+            List("node patterns"),
             s"'${ConstraintType.NODE_KEY.description()}' does not allow relationship patterns",
             inputPosition(ctx.commandRelPattern().getStart)
           )
@@ -496,12 +508,18 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
     if (relPattern != null) {
       val errorMessageEnd = "does not allow relationship patterns"
       if (ctx.KEY() != null) {
-        _errors :+= exceptionFactory.syntaxException(
+        _errors :+= exceptionFactory.invalidInputException(
+          "relationship pattern",
+          ConstraintType.NODE_KEY.description(),
+          List("node patterns"),
           s"'${ConstraintType.NODE_KEY.description()}' $errorMessageEnd",
           inputPosition(relPattern.getStart)
         )
       } else if (ctx.UNIQUE() != null) {
-        _errors :+= exceptionFactory.syntaxException(
+        _errors :+= exceptionFactory.invalidInputException(
+          "relationship pattern",
+          ConstraintType.NODE_UNIQUE.description(),
+          List("node patterns"),
           s"'${ConstraintType.NODE_UNIQUE.description()}' $errorMessageEnd",
           inputPosition(relPattern.getStart)
         )

@@ -1766,7 +1766,10 @@ final case class AlterRemoteDatabaseAlias(
         val isLocalAlias = targetName.isDefined && url.isEmpty
         val isRemoteAlias = url.isDefined || username.isDefined || password.isDefined || driverSettings.isDefined
         if (isLocalAlias && isRemoteAlias) {
-          error(
+          invalidInputError(
+            Prettifier.escapeName(aliasName),
+            "database alias",
+            List("url of a remote alias target"),
             s"Failed to alter the specified database alias '${Prettifier.escapeName(aliasName)}': url needs to be defined to alter a remote alias target.",
             position
           )

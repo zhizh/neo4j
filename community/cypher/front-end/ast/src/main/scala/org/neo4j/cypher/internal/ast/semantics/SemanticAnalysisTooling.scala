@@ -319,8 +319,21 @@ trait SemanticAnalysisTooling {
   def error(gqlStatusObject: ErrorGqlStatusObject, msg: String, position: InputPosition): SemanticCheck =
     SemanticCheck.error(SemanticError(gqlStatusObject, msg, position))
 
-  def unsupportedRequestErrorOnSystemDatabase(thing: String, msg: String, position: InputPosition): SemanticCheck =
-    SemanticCheck.error(SemanticError.unsupportedRequestOnSystemDatabase(thing, msg, position))
+  def unsupportedRequestErrorOnSystemDatabase(
+    thing: String,
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheck =
+    SemanticCheck.error(SemanticError.unsupportedRequestOnSystemDatabase(thing, legacyMessage, position))
+
+  def invalidInputError(
+    wrongInput: String,
+    forField: String,
+    expectedInput: List[String],
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheck =
+    SemanticCheck.error(SemanticError.invalidInput(wrongInput, forField, expectedInput, legacyMessage, position))
 
   def warn(notification: InternalNotification): SemanticCheck = SemanticCheck.warn(notification)
 

@@ -316,26 +316,38 @@ final class Cypher25SyntaxChecker(exceptionFactory: CypherExceptionFactory) exte
     ctx.constraintType() match {
       case c: ConstraintIsUniqueContext =>
         if (ctx.commandNodePattern() != null && (c.RELATIONSHIP() != null || c.REL() != null)) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "node pattern",
+            ConstraintType.REL_UNIQUE.description(),
+            List("relationship patterns"),
             s"'${ConstraintType.REL_UNIQUE.description()}' does not allow node patterns",
             inputPosition(ctx.commandNodePattern().getStart)
           )
         }
         if (ctx.commandRelPattern() != null && c.NODE() != null) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "relationship pattern",
+            ConstraintType.NODE_UNIQUE.description(),
+            List("node patterns"),
             s"'${ConstraintType.NODE_UNIQUE.description()}' does not allow relationship patterns",
             inputPosition(ctx.commandRelPattern().getStart)
           )
         }
       case c: ConstraintKeyContext =>
         if (ctx.commandNodePattern() != null && (c.RELATIONSHIP() != null || c.REL() != null)) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "node pattern",
+            ConstraintType.REL_KEY.description(),
+            List("relationship patterns"),
             s"'${ConstraintType.REL_KEY.description()}' does not allow node patterns",
             inputPosition(ctx.commandNodePattern().getStart)
           )
         }
         if (ctx.commandRelPattern() != null && c.NODE() != null) {
-          _errors :+= exceptionFactory.syntaxException(
+          _errors :+= exceptionFactory.invalidInputException(
+            "relationship pattern",
+            ConstraintType.NODE_KEY.description(),
+            List("node patterns"),
             s"'${ConstraintType.NODE_KEY.description()}' does not allow relationship patterns",
             inputPosition(ctx.commandRelPattern().getStart)
           )

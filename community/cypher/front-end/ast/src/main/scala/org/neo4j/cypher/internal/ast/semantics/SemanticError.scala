@@ -247,7 +247,7 @@ object SemanticError {
     )
   }
 
-  def unsupportedRequestOnSystemDatabase(thing: String, msg: String, pos: InputPosition): SemanticError = {
+  def unsupportedRequestOnSystemDatabase(thing: String, legacyMessage: String, pos: InputPosition): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
       .withCause(
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
@@ -257,7 +257,30 @@ object SemanticError {
       .build()
     SemanticError(
       gql,
-      msg,
+      legacyMessage,
+      pos
+    )
+  }
+
+  def invalidInput(
+    wrongInput: String,
+    forField: String,
+    expectedInput: List[String],
+    legacyMessage: String,
+    pos: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .withCause(
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N04)
+          .withParam(GqlParams.StringParam.input, wrongInput)
+          .withParam(GqlParams.StringParam.context, forField)
+          .withParam(GqlParams.ListParam.inputList, java.util.List.of(expectedInput))
+          .build()
+      )
+      .build()
+    SemanticError(
+      gql,
+      legacyMessage,
       pos
     )
   }
