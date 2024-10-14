@@ -109,6 +109,52 @@ public class StreamingIT {
     }
 
     @ProtocolTest
+    void shouldDiscardNResults(BoltWire wire, @Authenticated TransportConnection connection) throws IOException {
+        // begin a transaction
+        connection.send(wire.begin());
+        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+
+        // execute a query
+        connection.send(wire.run("UNWIND range(30, 40) AS x RETURN x"));
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesSuccess(meta ->
+                        Assertions.assertThat(meta).containsEntry("qid", 0L).containsKeys("fields", "t_first"));
+
+        // request 5 records
+        connection.send(wire.pull(5));
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesRecord(Values.longValue(30L))
+                .receivesRecord(Values.longValue(31L))
+                .receivesRecord(Values.longValue(32L))
+                .receivesRecord(Values.longValue(33L))
+                .receivesRecord(Values.longValue(34L))
+                .receivesSuccess(meta -> Assertions.assertThat(meta).containsEntry("has_more", true));
+
+        // request 2 more records
+        connection.send(wire.discard(2));
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesSuccess(meta -> Assertions.assertThat(meta).containsEntry("has_more", true));
+
+        // request 3 more records and provide qid
+        connection.send(wire.pull(3L, 0));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesRecord(Values.longValue(37L))
+                .receivesRecord(Values.longValue(38L))
+                .receivesRecord(Values.longValue(39L))
+                .receivesSuccess(meta -> Assertions.assertThat(meta).containsEntry("has_more", true));
+
+        // request 10 more records, only 1 more record is available
+        connection.send(wire.discard(10L));
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesSuccess(meta -> Assertions.assertThat(meta).containsKey("t_last"));
+
+        // rollback the transaction
+        connection.send(wire.rollback());
+        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+    }
+
+    @ProtocolTest
     void shouldSendAndReceiveStatementIds(BoltWire wire, @Authenticated TransportConnection connection)
             throws IOException {
         // begin a transaction
