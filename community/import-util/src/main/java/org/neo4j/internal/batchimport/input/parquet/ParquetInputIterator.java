@@ -45,7 +45,9 @@ class ParquetInputIterator implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {}
+    public void close() throws IOException {
+        reader.close();
+    }
 
     public boolean next(ParquetInputChunk chunk) throws IOException {
         return chunk.readWith(reader);

@@ -21,6 +21,7 @@ package org.neo4j.internal.batchimport.input.parquet;
 
 import blue.strategic.parquet.Hydrator;
 import blue.strategic.parquet.ParquetReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.ZoneId;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.neo4j.batchimport.api.input.IdType;
 import org.neo4j.batchimport.api.input.InputEntityVisitor;
 import org.neo4j.internal.batchimport.input.Groups;
@@ -47,7 +49,7 @@ import org.neo4j.values.storable.TimeValue;
 /**
  * There should be a 1:1 match between Reader and file for now.
  */
-class ParquetDataReader {
+class ParquetDataReader implements Closeable {
 
     private final Iterator<List<Object>> data;
     private final ParquetData parquetDataFile;
@@ -59,6 +61,7 @@ class ParquetDataReader {
     private final String relationshipStartIdGroupName;
     private final String relationshipEndIdGroupName;
     private final List<ParquetColumn> columns;
+    private final Stream<List<Object>> dataStream;
 
     ParquetDataReader(
             ParquetData parquetDataFile,
@@ -90,26 +93,25 @@ class ParquetDataReader {
                     .findFirst()
                     .map(ParquetColumn::groupName)
                     .orElse(null);
-            data = ParquetReader.stream(ParquetReader.spliterator(
-                            ParquetReader.makeInputFile(path.toFile()),
-                            columns -> new Hydrator<List<Object>, List<Object>>() {
-                                @Override
-                                public List<Object> start() {
-                                    return new ArrayList<>();
-                                }
+            this.dataStream = ParquetReader.stream(ParquetReader.spliterator(
+                    ParquetReader.makeInputFile(path.toFile()), columns -> new Hydrator<List<Object>, List<Object>>() {
+                        @Override
+                        public List<Object> start() {
+                            return new ArrayList<>();
+                        }
 
-                                @Override
-                                public List<Object> add(List<Object> target, String heading, Object value) {
-                                    target.add(value);
-                                    return target;
-                                }
+                        @Override
+                        public List<Object> add(List<Object> target, String heading, Object value) {
+                            target.add(value);
+                            return target;
+                        }
 
-                                @Override
-                                public List<Object> finish(List<Object> target) {
-                                    return target;
-                                }
-                            }))
-                    .iterator();
+                        @Override
+                        public List<Object> finish(List<Object> target) {
+                            return target;
+                        }
+                    }));
+            data = dataStream.iterator();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -262,5 +264,10 @@ class ParquetDataReader {
 
     private Collection<String> readLabelFromEntry(Object readDatum) {
         return filterEmptyLabelsAndTrim(Arrays.asList(readDatum.toString().split(arrayDelimiter)));
+    }
+
+    @Override
+    public void close() throws IOException {
+        dataStream.close();
     }
 }
