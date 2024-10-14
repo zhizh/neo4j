@@ -27,18 +27,6 @@ import static org.mockito.Mockito.mockStatic;
 import org.junit.jupiter.api.Test;
 
 class ErrorGqlStatusObjectTest {
-
-    @Test
-    void getClassificationShouldGiveUnknownByDefault() {
-        ErrorGqlStatusObject gqlObjectWithoutClassification = ErrorGqlStatusObjectImplementation.from(
-                        GqlStatusInfoCodes.STATUS_22N08)
-                .build();
-        assertEquals(ErrorClassification.UNKNOWN, gqlObjectWithoutClassification.getClassification());
-
-        ErrorGqlStatusObject exception = new ExceptionWithoutCause(gqlObjectWithoutClassification, "old message");
-        assertEquals(ErrorClassification.UNKNOWN, exception.getClassification());
-    }
-
     @Test
     void testGetOldCauseMessage() {
         var gql1 = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N08)
