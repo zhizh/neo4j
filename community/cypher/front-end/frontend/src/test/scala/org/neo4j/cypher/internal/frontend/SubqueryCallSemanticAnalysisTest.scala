@@ -24,6 +24,8 @@ import org.neo4j.cypher.internal.util.ErrorMessageProvider
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.SubqueryVariableShadowing
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class SubqueryCallSemanticAnalysisTest
     extends CypherFunSuite
@@ -603,6 +605,9 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .build(),
           messageProvider.createMultipleGraphReferencesError("y"),
           InputPosition(31, 5, 3)
         )
@@ -627,6 +632,9 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .build(),
           messageProvider.createMultipleGraphReferencesError("y"),
           InputPosition(28, 5, 3)
         )

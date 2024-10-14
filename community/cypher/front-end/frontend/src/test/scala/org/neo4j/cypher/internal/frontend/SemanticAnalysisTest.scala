@@ -31,6 +31,8 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
@@ -590,6 +592,10 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(
         SemanticError(
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+              .build())
+            .build(),
           messageProvider.createMultipleGraphReferencesError("comp.c1"),
           InputPosition(16, 1, 17)
         )
@@ -724,6 +730,9 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(
         SemanticError(
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .build(),
           messageProvider.createMultipleGraphReferencesError("y"),
           InputPosition(22, 5, 1)
         )
@@ -750,6 +759,9 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(
         SemanticError(
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .build(),
           messageProvider.createMultipleGraphReferencesError("B"),
           InputPosition(29, 5, 5)
         )
@@ -776,6 +788,9 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(
         SemanticError(
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .build(),
           messageProvider.createMultipleGraphReferencesError("B"),
           InputPosition(27, 5, 5)
         )
