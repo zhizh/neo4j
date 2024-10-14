@@ -214,6 +214,11 @@ public class DelegatingStorageEngineFactory implements StorageEngineFactory {
     }
 
     @Override
+    public boolean isDeprecated(String formatName) {
+        return delegate.isDeprecated(formatName);
+    }
+
+    @Override
     public StoreFormatLimits limitsForFormat(String formatName, boolean includeFormatsUnderDevelopment)
             throws IllegalStateException {
         return delegate.limitsForFormat(formatName, includeFormatsUnderDevelopment);

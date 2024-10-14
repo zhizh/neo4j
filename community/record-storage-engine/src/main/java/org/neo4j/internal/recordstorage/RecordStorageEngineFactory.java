@@ -316,6 +316,16 @@ public class RecordStorageEngineFactory implements StorageEngineFactory {
     }
 
     @Override
+    public boolean isDeprecated(String formatName) {
+        return Iterables.stream(RecordFormatSelector.allFormats())
+                .filter(format -> format.getFormatFamily().name().equals(formatName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No format found for " + formatName))
+                .getFormatFamily()
+                .isDeprecated();
+    }
+
+    @Override
     public StoreFormatLimits limitsForFormat(String formatName, boolean includeFormatsUnderDevelopment) {
         // Including only for migration formats
         Optional<RecordFormats> format = Iterables.stream(RecordFormatSelector.allFormats())

@@ -222,6 +222,14 @@ public interface StorageEngineFactory {
     Set<String> supportedFormats(boolean includeFormatsUnderDevelopment);
 
     /**
+     * Checks if the given store format is deprecated
+     * @param formatName the name for the specific format to check
+     * @return true if the specific format is deprecated, false if it's still supported
+     * @throws IllegalArgumentException if no store format exists with the given name
+     */
+    boolean isDeprecated(String formatName);
+
+    /**
      * Get the id limits supported by a format
      * @param formatName format to check limits for
      * @param includeFormatsUnderDevelopment true if this check should include formats under development
@@ -591,9 +599,30 @@ public interface StorageEngineFactory {
                                         .collect(Collectors.joining(", "))));
     }
 
+    /**
+     * Checks if the given store format is deprecated
+     *
+     * @param formatName the name for the specific format to check
+     * @return true if the specific format is deprecated, false if it's still supported or no store format exists with the given name
+     */
+    static boolean isFormatDeprecated(String formatName) {
+        try {
+            return findEngineForFormatOrThrow(formatName, true).isDeprecated(formatName);
+        } catch (IllegalArgumentException ignored) {
+            // No storage engine found/loaded on the classpath for the given format.
+            // Likely a test scenario with fake formats, or format not on classpath.
+            // Actual unknown formats for a specific engine will fail at a later stage.
+            return false;
+        }
+    }
+
     private static StorageEngineFactory findEngineForFormatOrThrow(Configuration configuration) {
         String name = configuration.get(GraphDatabaseSettings.db_format);
         boolean includeDevFormats = configuration.get(GraphDatabaseInternalSettings.include_versions_under_development);
+        return findEngineForFormatOrThrow(name, includeDevFormats);
+    }
+
+    private static StorageEngineFactory findEngineForFormatOrThrow(String name, boolean includeDevFormats) {
         return allAvailableStorageEngines().stream()
                 .filter(engine -> engine.supportedFormat(name, includeDevFormats))
                 .findFirst()

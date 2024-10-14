@@ -24,11 +24,11 @@ package org.neo4j.kernel.impl.store.format;
  * Two formats in different versions should have same format family.
  * Family is one of the criteria that will determine if migration between formats is possible.
  */
-public record FormatFamily(String name, int rank) {
-    public static final FormatFamily STANDARD = new FormatFamily("standard", 0);
-    public static final FormatFamily ALIGNED = new FormatFamily("aligned", 1);
-    public static final FormatFamily HIGH_LIMIT = new FormatFamily("high_limit", 2);
-    public static final FormatFamily MULTIVERSION = new FormatFamily("multiversion", 3);
+public record FormatFamily(String name, int rank, boolean isDeprecated) {
+    public static final FormatFamily STANDARD = new FormatFamily("standard", 0, true);
+    public static final FormatFamily ALIGNED = new FormatFamily("aligned", 1, false);
+    public static final FormatFamily HIGH_LIMIT = new FormatFamily("high_limit", 2, true);
+    public static final FormatFamily MULTIVERSION = new FormatFamily("multiversion", 3, false);
 
     /**
      * Check if this format family is higher ranked than another format family.
