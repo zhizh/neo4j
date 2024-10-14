@@ -82,6 +82,7 @@ import org.neo4j.memory.MemoryPools;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.monitoring.Monitors;
 import org.neo4j.scheduler.JobScheduler;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.time.Clocks;
 
@@ -497,6 +498,16 @@ public class ConsistencyCheckService {
             life.add(onShutdown(reportLogProvider::close));
             final var reportFileLog = reportLogProvider.getLog(getClass());
             final var reportLog = new DuplicatingLog(outLog, reportFileLog);
+
+            try (var cursorContext = contextFactory.create("consistencyCheck")) {
+                String format = storageEngineFactory
+                        .retrieveStoreId(fileSystem, databaseLayout, pageCache, cursorContext)
+                        .getFormatName();
+                String databaseName = databaseLayout.getDatabaseName();
+                if (storageEngineFactory.isDeprecated(format)) {
+                    outLog.warn(DeprecatedFormatWarning.getFormatWarning(databaseName, format));
+                }
+            }
 
             // instantiate kernel extensions and the StaticIndexProviderMapFactory thing
             final var jobScheduler = life.add(JobSchedulerFactory.createInitialisedScheduler());

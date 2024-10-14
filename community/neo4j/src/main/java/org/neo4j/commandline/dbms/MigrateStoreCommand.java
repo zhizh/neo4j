@@ -89,6 +89,7 @@ import org.neo4j.memory.MemoryTracker;
 import org.neo4j.monitoring.Monitors;
 import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.service.Services;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.token.TokenHolders;
 import picocli.CommandLine.Command;
@@ -230,6 +231,10 @@ public class MigrateStoreCommand extends AbstractAdminCommand {
                                         .fromConfig(config)
                                         .set(GraphDatabaseSettings.db_format, formatForDb)
                                         .build());
+
+                        if (formatForDb != null && targetStorageEngineFactory.isDeprecated(formatForDb)) {
+                            resultLog.warn(DeprecatedFormatWarning.getTargetFormatWarning(formatForDb));
+                        }
 
                         var indexProviderMap = getIndexProviderMap(
                                 fs,
