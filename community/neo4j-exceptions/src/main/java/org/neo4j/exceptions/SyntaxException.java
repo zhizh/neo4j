@@ -122,6 +122,17 @@ public class SyntaxException extends Neo4jException {
         return new SyntaxException(gql, legacyMessage, query, offset);
     }
 
+    public static SyntaxException invalidNestedUseClause(
+            String db1, String db2, String legacyMessage, String query, int offset) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N74)
+                        .withParam(GqlParams.StringParam.db1, db1)
+                        .withParam(GqlParams.StringParam.db2, db2)
+                        .build())
+                .build();
+        return new SyntaxException(gql, legacyMessage, query, offset);
+    }
+
     @Override
     public Status status() {
         return Status.Statement.SyntaxError;

@@ -322,7 +322,9 @@ case class FabricStitcher(
     )
 
   private def failInvalidOverride(use: Use): Nothing =
-    throw new SyntaxException(
+    throw SyntaxException.invalidNestedUseClause(
+      Use.show(use), // TODO: verify this
+      "???", // TODO: what is the other database name
       s"""Nested subqueries must use the same graph as their parent query.
          |Attempted to access graph ${Use.show(use)}""".stripMargin,
       queryString,
