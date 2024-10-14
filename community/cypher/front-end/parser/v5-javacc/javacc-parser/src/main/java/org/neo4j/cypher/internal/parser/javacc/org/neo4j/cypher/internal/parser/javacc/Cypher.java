@@ -46,6 +46,7 @@ import org.neo4j.cypher.internal.parser.common.ast.factory.ShowCommandFilterType
 import org.neo4j.cypher.internal.parser.common.ast.factory.SimpleEither;
 import org.neo4j.cypher.internal.parser.common.InvalidUnicodeLiteral;
 import org.neo4j.cypher.internal.parser.common.deprecation.DeprecatedChars;
+import org.neo4j.gqlstatus.GqlHelper;
 
 public class Cypher<STATEMENTS,
                     STATEMENT,
@@ -287,7 +288,8 @@ stmts.add( x );
 Token t = e.currentToken.next;
         if ( e.getMessage().contains( "Encountered \"<EOF>\"" ) )
         {
-            throw exceptionFactory.syntaxException( t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage, e.currentToken.image ), e,
+            var gqlCause = GqlHelper.getGql42N45(t.endLine, t.endColumn + 1, t.endOffset + 1);
+            throw exceptionFactory.syntaxException(gqlCause, t.image, ParseExceptions.expected( e.expectedTokenSequences, e.tokenImage, e.currentToken.image ), e,
                                                    t.endOffset + 1, t.endLine, t.endColumn + 1 );
         }
         else
@@ -51195,17 +51197,17 @@ if (DeprecatedChars.containsDeprecatedChar(t.image)) {
     return false;
   }
 
-  private boolean jj_3R_489()
- {
-    if (jj_scan_token(NEQ)) return true;
-    if (jj_3R_134()) return true;
-    return false;
-  }
-
   private boolean jj_3_1()
  {
     if (jj_scan_token(SEMICOLON)) return true;
     if (jj_3R_85()) return true;
+    return false;
+  }
+
+  private boolean jj_3R_489()
+ {
+    if (jj_scan_token(NEQ)) return true;
+    if (jj_3R_134()) return true;
     return false;
   }
 

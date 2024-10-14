@@ -45,6 +45,7 @@ import org.neo4j.cypher.internal.parser.common.ast.factory.ShowCommandFilterType
 import org.neo4j.cypher.internal.parser.common.ast.factory.SimpleEither;
 import org.neo4j.cypher.internal.parser.common.InvalidUnicodeLiteral;
 import org.neo4j.cypher.internal.parser.common.deprecation.DeprecatedChars;
+import org.neo4j.gqlstatus.GqlHelper;
 
 /** Token Manager. */
 @SuppressWarnings ("unused")
