@@ -46,13 +46,13 @@ public interface ConstituentTransactionFactory {
 
             @Override
             public ConstituentTransaction transactionFor(DatabaseReference databaseReference) {
-                throw new InvalidSemanticsException(
+                throw InvalidSemanticsException.accessingMultipleGraphsOnlySupportedOnCompositeDatabases(
                         "Multiple graph references in the same query is not supported on standard databases. This capability is supported on composite databases only.");
             }
 
             @Override
             public DatabaseReferenceImpl.Composite sessionDatabase() {
-                throw new InvalidSemanticsException(
+                throw InvalidSemanticsException.accessingMultipleGraphsOnlySupportedOnCompositeDatabases(
                         "Multiple graph references in the same query is not supported on standard databases. This capability is supported on composite databases only.");
             }
         };

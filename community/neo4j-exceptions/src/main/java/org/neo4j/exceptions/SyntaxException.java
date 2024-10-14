@@ -113,6 +113,15 @@ public class SyntaxException extends Neo4jException {
                         variable));
     }
 
+    public static SyntaxException accessingMultipleGraphsOnlySupportedOnCompositeDatabases(
+            String legacyMessage, String query, int offset) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+                        .build())
+                .build();
+        return new SyntaxException(gql, legacyMessage, query, offset);
+    }
+
     @Override
     public Status status() {
         return Status.Statement.SyntaxError;

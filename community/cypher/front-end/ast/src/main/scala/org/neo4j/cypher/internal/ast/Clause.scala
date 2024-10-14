@@ -560,7 +560,7 @@ final case class UseGraph(graphReference: GraphReference)(val position: InputPos
           if (existingTarget.equals(graphReference)) {
             SemanticCheckResult.success(semanticState)
           } else {
-            SemanticCheckResult.error(
+            SemanticCheckResult.accessingMultipleGraphsError(
               semanticState,
               context.errorMessageProvider.createMultipleGraphReferencesError(graphReference.print),
               position

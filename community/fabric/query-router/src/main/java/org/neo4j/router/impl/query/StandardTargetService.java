@@ -79,8 +79,9 @@ public class StandardTargetService implements TargetService {
                 var normalizedDatabaseName =
                         new NormalizedDatabaseName(catalogName.get().qualifiedNameString());
                 if (!sessionDatabase.fullName().name().equals(normalizedDatabaseName.name())) {
-                    throw new InvalidSemanticsException(MessageUtilProvider.createMultipleGraphReferencesError(
-                            normalizedDatabaseName.name(), false));
+                    throw InvalidSemanticsException.accessingMultipleGraphsOnlySupportedOnCompositeDatabases(
+                            MessageUtilProvider.createMultipleGraphReferencesError(
+                                    normalizedDatabaseName.name(), false));
                 }
             }
             return catalogName;

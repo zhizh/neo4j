@@ -525,6 +525,15 @@ object SemanticError {
       "It may be possible to rewrite the query by extracting these grouping/aggregation expressions into a preceding WITH clause. " +
       s"Illegal expression(s): ${variables.mkString(", ")}"
 
+  def accessingMultipleGraphsError(legacyMessage: String, position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build()).build();
+    SemanticError(
+      gql,
+      legacyMessage,
+      position
+    )
+  }
   def numberTooLarge(numberType: String, value: String, position: InputPosition): SemanticError = {
     val gql = GqlHelper.getGql22003(value, position.line, position.column, position.offset)
     SemanticError(gql, s"$numberType is too large", position)

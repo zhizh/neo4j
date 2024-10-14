@@ -189,6 +189,13 @@ object SemanticCheckResult {
     val newState = state.addNotification(notification)
     SemanticCheckResult(newState, Seq.empty)
   }
+
+  def accessingMultipleGraphsError(
+    state: SemanticState,
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheckResult =
+    error(state, SemanticError.accessingMultipleGraphsError(legacyMessage, position))
 }
 
 trait SemanticCheckContext {

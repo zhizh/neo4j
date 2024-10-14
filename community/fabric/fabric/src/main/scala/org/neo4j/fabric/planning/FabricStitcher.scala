@@ -315,7 +315,7 @@ case class FabricStitcher(
     )
 
   private def failMultipleGraphs(use: Use): Nothing =
-    throw new SyntaxException(
+    throw SyntaxException.accessingMultipleGraphsOnlySupportedOnCompositeDatabases(
       MessageUtilProvider.createMultipleGraphReferencesError(Use.show(use)),
       queryString,
       use.position.offset

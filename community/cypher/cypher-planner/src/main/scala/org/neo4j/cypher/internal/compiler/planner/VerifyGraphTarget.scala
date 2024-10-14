@@ -114,7 +114,7 @@ case object VerifyGraphTarget extends VisitorPhase[PlannerContext, BaseState] wi
               // If an explicit graph selection is combined with ambient one and both target different graphs,
               // it makes the query effectively a composite one.
               case GraphNameWithContext(graphName, true) =>
-                throw new InvalidSemanticsException(
+                throw InvalidSemanticsException.accessingMultipleGraphsOnlySupportedOnCompositeDatabases(
                   MessageUtilProvider.createMultipleGraphReferencesError(graphName.qualifiedNameString)
                 )
               // If we are here it means that the query came from the Core API, because Query router would send
