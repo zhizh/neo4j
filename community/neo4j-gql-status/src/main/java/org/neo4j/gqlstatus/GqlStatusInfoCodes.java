@@ -3774,7 +3774,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.GENERAL_PROCESSING_EXCEPTION,
             "remote execution error",
-            ErrorClassification.CLIENT_ERROR),
+            ErrorClassification.UNKNOWN),
     STATUS_50N05(
             new GqlStatus("50N05"),
             """
