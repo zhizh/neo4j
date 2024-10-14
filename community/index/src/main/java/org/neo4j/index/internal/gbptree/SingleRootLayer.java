@@ -67,7 +67,7 @@ class SingleRootLayer<KEY, VALUE> extends RootLayer<SingleRoot, KEY, VALUE> {
     @Override
     void initialize(Root root, CursorContext cursorContext) throws IOException {
         setRoot(root, cursorContext);
-        support.readMeta(cursorContext).verify(layout, null, treeNodeSelector);
+        support.readMeta(cursorContext).verify(layout, (Layout<?, ?>) null, treeNodeSelector);
     }
 
     @Override

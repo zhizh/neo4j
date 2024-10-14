@@ -32,7 +32,7 @@ import org.eclipse.collections.api.set.ImmutableSet;
 import org.neo4j.internal.helpers.progress.ProgressMonitorFactory;
 import org.neo4j.io.pagecache.PageCache;
 
-class GBPTreeTestUtil {
+public class GBPTreeTestUtil {
     static <KEY> boolean contains(List<KEY> expectedKeys, KEY key, Comparator<KEY> comparator) {
         return expectedKeys.stream().map(bind(comparator::compare, key)).anyMatch(Predicate.isEqual(0));
     }

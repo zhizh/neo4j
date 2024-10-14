@@ -52,6 +52,10 @@ public interface GBPTreeVisitor<ROOT_KEY, DATA_KEY, DATA_VALUE> extends IdProvid
 
     void endTree(boolean dataTree);
 
+    default boolean visitHistory() {
+        return false;
+    }
+
     void historyStart();
 
     void historyEnd();

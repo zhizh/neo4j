@@ -490,7 +490,7 @@ public final class GBPTreeCorruption {
         return treeState.unstableGeneration() - 1;
     }
 
-    interface PageCorruption<KEY, VALUE> {
+    public interface PageCorruption<KEY, VALUE> {
         void corrupt(
                 PageCursor pageCursor,
                 Layout<KEY, VALUE> layout,

@@ -199,8 +199,11 @@ public class Meta {
         return read(ByteBuffer.wrap(buffer).order(cursor.getByteOrder()));
     }
 
-    public void verify(Layout<?, ?> dataLayout, RootLayerConfiguration<?> rootLayerConfiguration) {
-        verify(dataLayout, rootLayerConfiguration.rootLayout(), DefaultTreeNodeSelector.selector());
+    public void verify(
+            Layout<?, ?> dataLayout,
+            RootLayerConfiguration<?> rootLayerConfiguration,
+            TreeNodeSelector treeNodeSelector) {
+        verify(dataLayout, rootLayerConfiguration.rootLayout(), treeNodeSelector);
     }
 
     public void verify(Layout<?, ?> dataLayout, Layout<?, ?> rootLayout, TreeNodeSelector treeNodeSelector) {
