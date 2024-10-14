@@ -96,6 +96,7 @@ import org.neo4j.logging.internal.SimpleLogService;
 import org.neo4j.memory.EmptyMemoryTracker;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.scheduler.JobScheduler;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.util.VisibleForTesting;
 import picocli.CommandLine;
@@ -449,6 +450,9 @@ public class ImportCommand {
         protected void doExecute(
                 boolean incremental, String format, boolean overwriteDestination, Base.MaybeLocker maybeLockChecker) {
             try {
+                if (format != null && StorageEngineFactory.isFormatDeprecated(format)) {
+                    ctx.out().println("WARNING: " + DeprecatedFormatWarning.getTargetFormatWarning(format));
+                }
                 final var databaseConfig = loadNeo4jConfig(format);
                 DatabaseLayout databaseLayout = Neo4jLayout.of(databaseConfig).databaseLayout(database.name());
 
