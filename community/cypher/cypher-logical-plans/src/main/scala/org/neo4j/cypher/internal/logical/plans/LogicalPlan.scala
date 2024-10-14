@@ -2151,7 +2151,8 @@ case class VarExpand(
   length: VarPatternLength,
   mode: ExpansionMode = ExpandAll,
   override val nodePredicates: Seq[VariablePredicate] = Seq.empty,
-  override val relationshipPredicates: Seq[VariablePredicate] = Seq.empty
+  override val relationshipPredicates: Seq[VariablePredicate] = Seq.empty,
+  matchMode: TraversalMatchMode = TraversalMatchMode.Trail
 )(implicit idGen: IdGen) extends AbstractVarExpand(from, types, to, nodePredicates, relationshipPredicates, idGen) {
   override def withLhs(newLHS: LogicalPlan)(idGen: IdGen): LogicalUnaryPlan = copy(source = newLHS)(idGen)
   override val availableSymbols: Set[LogicalVariable] = source.availableSymbols + relName + to

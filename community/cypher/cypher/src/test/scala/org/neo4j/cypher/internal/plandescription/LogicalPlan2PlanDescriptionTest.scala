@@ -6720,7 +6720,8 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           VarPatternLength(1, Some(1)),
           ExpandAll,
           Seq(nodePredicate),
-          Seq(relationshipPredicate)
+          Seq(relationshipPredicate),
+          TraversalMatchMode.Trail
         ),
         1.0
       ),

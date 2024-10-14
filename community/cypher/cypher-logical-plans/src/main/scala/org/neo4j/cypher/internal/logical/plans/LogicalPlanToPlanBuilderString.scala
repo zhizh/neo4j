@@ -320,7 +320,20 @@ object LogicalPlanToPlanBuilderString {
         val relName = escapeIdentifier(rel.name)
         val toName = escapeIdentifier(to.name)
         s""" "($fromName)$dirStrA[$relName$typeStr]$dirStrB($toName)" """.trim
-      case VarExpand(_, from, dir, pDir, types, to, relName, length, mode, nodePredicates, relationshipPredicates) =>
+      case VarExpand(
+          _,
+          from,
+          dir,
+          pDir,
+          types,
+          to,
+          relName,
+          length,
+          mode,
+          nodePredicates,
+          relationshipPredicates,
+          matchMode
+        ) =>
         val (dirStrA, dirStrB) = arrows(dir)
         val typeStr = relTypeStr(types)
         val lenStr = s"${length.min}..${length.max.getOrElse("")}"
@@ -328,7 +341,8 @@ object LogicalPlanToPlanBuilderString {
         val pDirStr = s", projectedDir = ${objectName(pDir)}"
         val nPredStr = variablePredicates(nodePredicates, "nodePredicates")
         val rPredStr = variablePredicates(relationshipPredicates, "relationshipPredicates")
-        s""" "(${from.name})$dirStrA[${relName.name}$typeStr*$lenStr]$dirStrB(${to.name})"$modeStr$pDirStr$nPredStr$rPredStr """.trim
+        val matchModeString = s", matchMode = ${objectName(matchMode)}"
+        s""" "(${from.name})$dirStrA[${relName.name}$typeStr*$lenStr]$dirStrB(${to.name})"$modeStr$pDirStr$nPredStr$rPredStr$matchModeString """.trim
 
       case PathPropagatingBFS(
           _,

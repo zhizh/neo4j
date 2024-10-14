@@ -2530,7 +2530,8 @@ case class LogicalPlan2PlanDescription(
           length,
           mode,
           nodePredicates,
-          relationshipPredicates
+          relationshipPredicates,
+          _
         ) =>
         val expandDescription = expandExpressionDescription(
           fromName,

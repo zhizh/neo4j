@@ -638,7 +638,7 @@ object ReadFinder {
       case OptionalExpand(_, _, _, relTypes, to, relName, mode, _) =>
         processExpand(relTypes, to, relName, mode)
 
-      case VarExpand(_, _, _, _, relTypes, to, relName, _, mode, _, _) =>
+      case VarExpand(_, _, _, _, relTypes, to, relName, _, mode, _, _, _) =>
         // Note: nodePredicates and relPredicates are matched further down already, since
         //  they are VariablePredicates.
         // relName is actually a List of relationships but we can consider it to be a Relationship Variable when doing eagerness analysis

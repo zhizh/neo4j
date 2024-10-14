@@ -526,14 +526,16 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
     expandMode: ExpansionMode = ExpandAll,
     projectedDir: SemanticDirection = OUTGOING,
     nodePredicates: Seq[Predicate] = Seq.empty,
-    relationshipPredicates: Seq[Predicate] = Seq.empty
+    relationshipPredicates: Seq[Predicate] = Seq.empty,
+    matchMode: TraversalMatchMode = TraversalMatchMode.Trail
   ): IMPL = {
     expandExpr(
       pattern,
       expandMode,
       projectedDir,
       nodePredicates.map(_.asVariablePredicate),
-      relationshipPredicates.map(_.asVariablePredicate)
+      relationshipPredicates.map(_.asVariablePredicate),
+      matchMode
     )
   }
 
@@ -542,7 +544,8 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
     expandMode: ExpansionMode = ExpandAll,
     projectedDir: SemanticDirection = OUTGOING,
     nodePredicates: Seq[VariablePredicate] = Seq.empty,
-    relationshipPredicates: Seq[VariablePredicate] = Seq.empty
+    relationshipPredicates: Seq[VariablePredicate] = Seq.empty,
+    matchMode: TraversalMatchMode = TraversalMatchMode.Trail
   ): IMPL = {
     val p = patternParser.parse(pattern)
     newRelationship(varFor(p.relName))
@@ -568,7 +571,8 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
             varPatternLength,
             expandMode,
             nodePredicates,
-            relationshipPredicates
+            relationshipPredicates,
+            matchMode
           )(_)
         ))
     }

@@ -66,6 +66,7 @@ import org.neo4j.cypher.internal.logical.plans.RightOuterHashJoin
 import org.neo4j.cypher.internal.logical.plans.RollUpApply
 import org.neo4j.cypher.internal.logical.plans.Selection
 import org.neo4j.cypher.internal.logical.plans.SemiApply
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.logical.plans.Union
 import org.neo4j.cypher.internal.logical.plans.UnwindCollection
 import org.neo4j.cypher.internal.logical.plans.ValueHashJoin
@@ -397,7 +398,8 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
       varLength,
       ExpandAll,
       Seq(VariablePredicate(exprVar(0, "r_NODES"), trueLiteral)),
-      Seq(VariablePredicate(exprVar(1, "r_EDGES"), trueLiteral))
+      Seq(VariablePredicate(exprVar(1, "r_EDGES"), trueLiteral)),
+      TraversalMatchMode.Trail
     )
 
     // when
@@ -443,7 +445,8 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
       varLength,
       ExpandInto,
       Seq(VariablePredicate(exprVar(0, "r_NODES"), trueLiteral)),
-      Seq(VariablePredicate(exprVar(1, "r_EDGES"), trueLiteral))
+      Seq(VariablePredicate(exprVar(1, "r_EDGES"), trueLiteral)),
+      TraversalMatchMode.Trail
     )
 
     // when

@@ -69,6 +69,7 @@ import org.neo4j.cypher.internal.logical.plans.LogicalPlanToPlanBuilderString
 import org.neo4j.cypher.internal.logical.plans.Prober
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath.Selector
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.UpperBound.Limited
 import org.neo4j.cypher.internal.util.attribution.Id
@@ -236,6 +237,32 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
           .build(),
         ExpandAll,
         false
+      )
+      .allNodeScan("a")
+      .build()
+  )
+
+  testPlan(
+    "statefulShortestPath with non-default match mode",
+    new TestPlanBuilder()
+      .produceResults("a", "b")
+      .statefulShortestPath(
+        "a",
+        "b",
+        "",
+        None,
+        Set.empty,
+        Set.empty,
+        Set("b_expr" -> "b"),
+        Set("r_expr" -> "r"),
+        StatefulShortestPath.Selector.Shortest(1),
+        new TestNFABuilder(0, "a")
+          .addTransition(0, 1, "(a)-[r_expr]->(b_expr)")
+          .setFinalState(1)
+          .build(),
+        ExpandAll,
+        false,
+        matchMode = TraversalMatchMode.Walk
       )
       .allNodeScan("a")
       .build()
@@ -463,7 +490,7 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
     "expand",
     new TestPlanBuilder()
       .produceResults("x")
-      .expand("(x)-[r*0..0]->(y)", expandMode = ExpandAll, projectedDir = OUTGOING)
+      .expand("(x)-[r*0..0]->(y)", expandMode = ExpandAll, projectedDir = OUTGOING, matchMode = TraversalMatchMode.Walk)
       .expand("(x)<-[r*0..1]-(y)", expandMode = ExpandAll, projectedDir = OUTGOING)
       .expand("(x)-[r*2..5]-(y)", expandMode = ExpandAll, projectedDir = OUTGOING)
       .expand("(x)-[r:REL*1..2]-(y)", expandMode = ExpandAll, projectedDir = OUTGOING)
@@ -508,7 +535,8 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
         expandMode = ExpandAll,
         projectedDir = OUTGOING,
         nodePredicates = Seq(),
-        relationshipPredicates = Seq(VariablePredicate(varFor("r"), isNotNull(prop(endNode("r"), "foo"))))
+        relationshipPredicates = Seq(VariablePredicate(varFor("r"), isNotNull(prop(endNode("r"), "foo")))),
+        matchMode = TraversalMatchMode.Walk
       )
       .nodeByLabelScan("start", "A", IndexOrderNone)
       .build()

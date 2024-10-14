@@ -1161,7 +1161,8 @@ class SlottedPipeMapper(
           VarPatternLength(min, max),
           expansionMode,
           nodePredicates,
-          relationshipPredicates
+          relationshipPredicates,
+          _
         ) =>
         val shouldExpandAll = expansionMode match {
           case ExpandAll  => true

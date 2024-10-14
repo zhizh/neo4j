@@ -570,7 +570,7 @@ object VariableRefRewriter extends Rewriter {
           p.copy(variable = varRef(variable))(SameId(p.id))
         case p @ PartitionedUnwindCollection(_, variable, _) =>
           p.copy(variable = varRef(variable))(SameId(p.id))
-        case p @ VarExpand(_, from, _, _, _, to, rel, _, _, _, _) =>
+        case p @ VarExpand(_, from, _, _, _, to, rel, _, _, _, _, _) =>
           p.copy(from = varRef(from), to = varRef(to), relName = varRef(rel))(SameId(p.id))
         case other => other
       }

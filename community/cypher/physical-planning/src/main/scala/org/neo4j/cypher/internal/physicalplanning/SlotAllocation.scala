@@ -864,7 +864,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         // we do not need to record the argument here.
         slots.newLong(rel, nullable = true, CTRelationship)
 
-      case VarExpand(_, _, _, _, _, to, relationship, _, expansionMode, _, _) =>
+      case VarExpand(_, _, _, _, _, to, relationship, _, expansionMode, _, _, _) =>
         if (expansionMode == ExpandAll) {
           slots.newLong(to, nullable, CTNode)
         }
