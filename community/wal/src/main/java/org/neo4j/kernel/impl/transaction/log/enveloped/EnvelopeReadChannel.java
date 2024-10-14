@@ -108,7 +108,7 @@ public class EnvelopeReadChannel implements ReadableLogChannel {
     protected long currentSegment;
     protected EnvelopeType payloadType;
     protected long currentIndex;
-    private byte payloadVersion;
+    protected byte payloadVersion;
     protected int payloadStartOffset;
     protected int payloadEndOffset;
     private volatile boolean closed;

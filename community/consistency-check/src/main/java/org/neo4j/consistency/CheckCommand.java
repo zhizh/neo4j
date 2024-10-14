@@ -85,7 +85,7 @@ public class CheckCommand extends AbstractAdminCommand {
 
     @Option(
             names = "--check-tx-logs",
-            fallbackValue = "false",
+            fallbackValue = "true",
             hidden = true,
             description = "Hidden option to be used by upgrade-tests. "
                     + "Checks that the transaction log content and headers are correct in respect to version changes "
@@ -223,7 +223,7 @@ public class CheckCommand extends AbstractAdminCommand {
                             .runFullConsistencyCheck();
 
                     if (result.isSuccessful() && additionalTxLogCheck) {
-                        TransactionLogChecker.verifyCorrectTransactionLogUpgrades(ctx.fs(), layout);
+                        TransactionLogChecker.verifyCorrectTransactionLogUpgrades(ctx.fs(), layout, config);
                     }
                     return result;
                 } catch (ConsistencyCheckIncompleteException e) {
