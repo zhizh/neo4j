@@ -56,11 +56,22 @@ import org.neo4j.io.fs.FileSystemAbstraction;
 import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.io.locker.FileLockException;
+import org.neo4j.io.pagecache.PageCache;
+import org.neo4j.io.pagecache.context.CursorContext;
+import org.neo4j.io.pagecache.tracing.PageCacheTracer;
+import org.neo4j.kernel.impl.pagecache.ConfiguringPageCacheFactory;
+import org.neo4j.kernel.impl.scheduler.JobSchedulerFactory;
 import org.neo4j.kernel.impl.storemigration.StoreMigrator;
 import org.neo4j.kernel.impl.util.Validators;
 import org.neo4j.logging.InternalLog;
+import org.neo4j.logging.NullLog;
 import org.neo4j.memory.EmptyMemoryTracker;
+import org.neo4j.memory.MemoryPools;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.scheduler.JobScheduler;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
+import org.neo4j.storageengine.api.StorageEngineFactory;
+import org.neo4j.time.Clocks;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Parameters;
 
@@ -170,6 +181,7 @@ public class DumpCommand extends AbstractAdminCommand {
 
                     try (Closeable ignored = LockChecker.checkDatabaseLock(databaseLayout)) {
                         checkDbState(fs, databaseLayout, config, memoryTracker, databaseName, log);
+                        logFormatDeprecationWarning(log, databaseLayout, config, fs);
                         dump(dumper, databaseLayout, databaseName, storagePath);
                     } catch (FileLockException e) {
                         throw new CommandFailedException(
@@ -222,6 +234,35 @@ public class DumpCommand extends AbstractAdminCommand {
         return createPrefilledConfigBuilder()
                 .set(GraphDatabaseSettings.read_only_database_default, true)
                 .build();
+    }
+
+    private static void logFormatDeprecationWarning(
+            InternalLog log, DatabaseLayout databaseLayout, Config config, FileSystemAbstraction fs) {
+        try (JobScheduler jobScheduler = JobSchedulerFactory.createInitialisedScheduler();
+                PageCache pageCache = getPageCache(config, fs, jobScheduler)) {
+            StorageEngineFactory storageEngineFactory =
+                    StorageEngineFactory.selectStorageEngine(fs, databaseLayout, config);
+            String format = storageEngineFactory
+                    .retrieveStoreId(fs, databaseLayout, pageCache, CursorContext.NULL_CONTEXT)
+                    .getFormatName();
+            if (storageEngineFactory.isDeprecated(format)) {
+                log.warn(DeprecatedFormatWarning.getFormatWarning(databaseLayout.getDatabaseName(), format));
+            }
+        } catch (IOException e) {
+            throw new CommandFailedException("Unable to find store id");
+        }
+    }
+
+    private static PageCache getPageCache(Config config, FileSystemAbstraction fs, JobScheduler jobScheduler) {
+        ConfiguringPageCacheFactory pageCacheFactory = new ConfiguringPageCacheFactory(
+                fs,
+                config,
+                PageCacheTracer.NULL,
+                NullLog.getInstance(),
+                jobScheduler,
+                Clocks.nanoClock(),
+                new MemoryPools());
+        return pageCacheFactory.getOrCreatePageCache();
     }
 
     record FailedDump(String dbName, Exception e) {}

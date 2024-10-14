@@ -228,7 +228,7 @@ public class LoadDumpExecutorTest {
                 .build();
 
         LoadDumpExecutor loadDumpExecutor = new LoadDumpExecutor(
-                config, testDirectory.getFileSystem(), System.err, loader, DumpFormatSelector::decompress);
+                config, testDirectory.getFileSystem(), System.err, System.out, loader, DumpFormatSelector::decompress);
 
         ThrowingSupplier<InputStream, IOException> dumpInputStreamSupplier = () -> Files.newInputStream(archive);
 

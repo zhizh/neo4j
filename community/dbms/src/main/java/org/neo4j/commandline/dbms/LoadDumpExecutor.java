@@ -43,6 +43,8 @@ import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.io.locker.FileLockException;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
+import org.neo4j.storageengine.api.StorageEngineFactory;
 
 public class LoadDumpExecutor {
 
@@ -52,6 +54,7 @@ public class LoadDumpExecutor {
     private final FileSystemAbstraction fs;
 
     private final PrintStream errorOutput;
+    private final PrintStream infoOutput;
 
     private final Loader loader;
     private final DecompressionSelector decompressionSelector;
@@ -60,11 +63,13 @@ public class LoadDumpExecutor {
             Config config,
             FileSystemAbstraction fs,
             PrintStream errorOutput,
+            PrintStream infoOutput,
             Loader loader,
             DecompressionSelector decompressionSelector) {
         this.config = config;
         this.fs = fs;
         this.errorOutput = errorOutput;
+        this.infoOutput = infoOutput;
         this.loader = loader;
         this.decompressionSelector = decompressionSelector;
     }
@@ -88,6 +93,12 @@ public class LoadDumpExecutor {
         }
 
         StoreVersionLoader.Result result = loader.getStoreVersion(fs, config, databaseLayout, contextFactory);
+        if (result.currentFormat != null) {
+            String format = result.currentFormat.getFormatName();
+            if (StorageEngineFactory.isFormatDeprecated(format)) {
+                infoOutput.println("WARNING: " + DeprecatedFormatWarning.getFormatWarning(database, format));
+            }
+        }
         if (result.migrationNeeded) {
             errorOutput.printf(
                     "The loaded database '%s' is not on a supported version (current format: %s introduced in %s). "

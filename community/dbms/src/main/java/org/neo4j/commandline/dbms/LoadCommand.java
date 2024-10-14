@@ -248,7 +248,7 @@ public class LoadCommand extends AbstractAdminCommand {
 
     protected void loadDump(Set<DumpInfo> dbNames, Config config, FileSystemAbstraction fs) throws IOException {
         LoadDumpExecutor loadDumpExecutor =
-                new LoadDumpExecutor(config, fs, ctx.err(), createLoader(fs), LoadCommand::decompress);
+                new LoadDumpExecutor(config, fs, ctx.err(), ctx.out(), createLoader(fs), LoadCommand::decompress);
 
         List<FailedLoad> failedLoads = new ArrayList<>();
         for (DumpInfo dbName : dbNames) {
