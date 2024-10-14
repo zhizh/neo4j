@@ -20,6 +20,9 @@ import org.neo4j.exceptions.ArithmeticException
 import org.neo4j.exceptions.Neo4jException
 import org.neo4j.exceptions.SyntaxException
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 trait CypherExceptionFactory {
   def arithmeticException(message: String, cause: Exception): RuntimeException
@@ -32,6 +35,20 @@ trait CypherExceptionFactory {
   def syntaxException(message: String, pos: InputPosition): RuntimeException
   def syntaxException(gqlStatusObject: ErrorGqlStatusObject, message: String, pos: InputPosition): RuntimeException
 
+  def unsupportedRequestOnSystemDatabaseException(
+    thing: String,
+    legacyMessage: String,
+    pos: InputPosition
+  ): RuntimeException = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .withCause(
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
+          .withParam(GqlParams.StringParam.input, thing)
+          .build()
+      )
+      .build();
+    syntaxException(gql, legacyMessage, pos);
+  }
 }
 
 case class Neo4jCypherExceptionFactory(queryText: String, preParserOffset: Option[InputPosition])

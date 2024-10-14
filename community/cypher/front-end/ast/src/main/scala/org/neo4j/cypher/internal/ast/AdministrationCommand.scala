@@ -142,17 +142,41 @@ sealed trait ReadAdministrationCommand extends AdministrationCommand {
       }
       invalid.map {
         case exp: ExistsExpression =>
-          error("The EXISTS expression is not valid on SHOW commands.", exp.position)
+          unsupportedRequestErrorOnSystemDatabase(
+            "EXISTS expression on SHOW commands",
+            "The EXISTS expression is not valid on SHOW commands.",
+            exp.position
+          )
         case exp: CollectExpression =>
-          error("The COLLECT expression is not valid on SHOW commands.", exp.position)
+          unsupportedRequestErrorOnSystemDatabase(
+            "COLLECT expression on SHOW commands",
+            "The COLLECT expression is not valid on SHOW commands.",
+            exp.position
+          )
         case exp: CountExpression =>
-          error("The COUNT expression is not valid on SHOW commands.", exp.position)
+          unsupportedRequestErrorOnSystemDatabase(
+            "COUNT expression on SHOW commands",
+            "The COUNT expression is not valid on SHOW commands.",
+            exp.position
+          )
         case exp: PatternExpression =>
-          error("Pattern expressions are not valid on SHOW commands.", exp.position)
+          unsupportedRequestErrorOnSystemDatabase(
+            "Pattern expressions on SHOW commands",
+            "Pattern expressions are not valid on SHOW commands.",
+            exp.position
+          )
         case exp: PatternComprehension =>
-          error("Pattern comprehensions are not valid on SHOW commands.", exp.position)
+          unsupportedRequestErrorOnSystemDatabase(
+            "Pattern comprehensions on SHOW commands",
+            "Pattern comprehensions are not valid on SHOW commands.",
+            exp.position
+          )
         case exp =>
-          error("Subquery expressions are not valid on SHOW commands.", exp.position)
+          unsupportedRequestErrorOnSystemDatabase(
+            "Subquery expressions on SHOW commands",
+            "Subquery expressions are not valid on SHOW commands.",
+            exp.position
+          )
       }.getOrElse(success)
     }
 

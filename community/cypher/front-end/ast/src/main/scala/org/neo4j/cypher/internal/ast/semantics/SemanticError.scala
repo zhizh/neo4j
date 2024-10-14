@@ -247,6 +247,20 @@ object SemanticError {
     )
   }
 
+  def unsupportedRequestOnSystemDatabase(thing: String, msg: String, pos: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .withCause(
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
+          .withParam(GqlParams.StringParam.input, thing)
+          .build()
+      )
+      .build()
+    SemanticError(
+      gql,
+      msg,
+      pos
+    )
+  }
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

@@ -169,9 +169,6 @@ import org.neo4j.cypher.internal.util.StepSequencer
 import org.neo4j.cypher.internal.util.attribution.SequentialIdGen
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.PRIMARY_PROPERTY
 import org.neo4j.exceptions.InvalidSemanticsException
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlParams
-import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 /**
  * This planner takes on queries that run at the DBMS level for multi-database administration.
@@ -1360,27 +1357,35 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
       // Non-administration commands that are allowed on system database, e.g. SHOW PROCEDURES YIELD ...
       case q @ SingleQuery(clauses) if checkClausesAllowedOnSystem(clauses) =>
         q.folder.treeExists {
-          case p: PatternExpression => throw context.cypherExceptionFactory.syntaxException(
+          case p: PatternExpression => throw context.cypherExceptionFactory.unsupportedRequestOnSystemDatabaseException(
+              "Pattern expression",
               "You cannot include a pattern expression on a system database",
               p.position
             )
-          case p: PatternComprehension => throw context.cypherExceptionFactory.syntaxException(
+          case p: PatternComprehension =>
+            throw context.cypherExceptionFactory.unsupportedRequestOnSystemDatabaseException(
+              "Pattern comprehension",
               "You cannot include a pattern comprehension on a system database",
               p.position
             )
-          case c: CollectExpression => throw context.cypherExceptionFactory.syntaxException(
+          case c: CollectExpression => throw context.cypherExceptionFactory.unsupportedRequestOnSystemDatabaseException(
+              "COLLECT expression",
               "You cannot include a COLLECT expression on a system database",
               c.position
             )
-          case c: CountExpression => throw context.cypherExceptionFactory.syntaxException(
+          case c: CountExpression => throw context.cypherExceptionFactory.unsupportedRequestOnSystemDatabaseException(
+              "COUNT expression",
               "You cannot include a COUNT expression on a system database",
               c.position
             )
-          case c: ExistsExpression => throw context.cypherExceptionFactory.syntaxException(
+          case c: ExistsExpression => throw context.cypherExceptionFactory.unsupportedRequestOnSystemDatabaseException(
+              "EXISTS expression",
               "You cannot include an EXISTS expression on a system database",
               c.position
             )
-          case c: SubqueryExpression => throw context.cypherExceptionFactory.syntaxException(
+          case c: SubqueryExpression =>
+            throw context.cypherExceptionFactory.unsupportedRequestOnSystemDatabaseException(
+              "Subquery expression",
               "You cannot include a subquery expression on a system database",
               c.position
             )
@@ -1397,7 +1402,8 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           case _ => List.empty
         }
         if (unsupportedCommandClauses.nonEmpty) {
-          throw new InvalidSemanticsException(
+          throw InvalidSemanticsException.unsupportedRequestOnSystemDatabase(
+            unsupportedCommandClauses.sorted.mkString(", "),
             s"The following commands are not allowed on a system database: ${unsupportedCommandClauses.sorted.mkString(", ")}."
           )
         }
@@ -1409,7 +1415,8 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           case c: Clause     => acc => SkipChildren(acc :+ c.name)
         }
         if (unsupportedClauses.nonEmpty) {
-          throw new InvalidSemanticsException(
+          throw InvalidSemanticsException.unsupportedRequestOnSystemDatabase(
+            unsupportedClauses.sorted.mkString(", "),
             s"The following unsupported clauses were used: ${unsupportedClauses.sorted.mkString(", ")}. \n" + systemDbProcedureRules
           )
         }
@@ -1418,7 +1425,8 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           case _: CallClause => ()
         }
         if (callCount > 1) {
-          throw new InvalidSemanticsException(
+          throw InvalidSemanticsException.unsupportedRequestOnSystemDatabase(
+            "More than one CALL clause",
             s"The given query uses $callCount CALL clauses (${callCount - 1} too many). \n" + systemDbProcedureRules
           )
         }
@@ -1441,12 +1449,8 @@ case object UnsupportedSystemCommand extends Phase[PlannerContext, BaseState, Lo
   override def postConditions: Set[StepSequencer.Condition] = Set.empty
 
   override def process(from: BaseState, context: PlannerContext): LogicalPlanState = {
-    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
-        .withParam(GqlParams.StringParam.input, from.queryText)
-        .build).build
-    throw new InvalidSemanticsException(
-      gql,
+    throw InvalidSemanticsException.unsupportedRequestOnSystemDatabase(
+      from.queryText,
       s"Not a recognised system command or procedure. " +
         s"This Cypher command can only be executed in a user database: ${from.queryText}"
     )

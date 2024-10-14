@@ -319,6 +319,9 @@ trait SemanticAnalysisTooling {
   def error(gqlStatusObject: ErrorGqlStatusObject, msg: String, position: InputPosition): SemanticCheck =
     SemanticCheck.error(SemanticError(gqlStatusObject, msg, position))
 
+  def unsupportedRequestErrorOnSystemDatabase(thing: String, msg: String, position: InputPosition): SemanticCheck =
+    SemanticCheck.error(SemanticError.unsupportedRequestOnSystemDatabase(thing, msg, position))
+
   def warn(notification: InternalNotification): SemanticCheck = SemanticCheck.warn(notification)
 
   def possibleTypes(expression: Expression): TypeGenerator =
