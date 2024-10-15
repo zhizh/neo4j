@@ -19,11 +19,10 @@
  */
 package org.neo4j.cypher.internal.optionsmap
 
-import Ordering.comparatorToOrdering
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.MapValueOps.Ops
 import org.neo4j.cypher.internal.runtime.IndexProviderContext
-import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.graphdb.schema.IndexSetting
 import org.neo4j.graphdb.schema.IndexSettingImpl.FULLTEXT_ANALYZER
@@ -55,6 +54,8 @@ import org.neo4j.values.virtual.VirtualValues
 import java.lang.String.CASE_INSENSITIVE_ORDER
 
 import scala.collection.immutable.SortedSet
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.math.Ordering.comparatorToOrdering
 
 trait IndexOptionsConverter[T] extends OptionsConverter[T] {
   protected def context: IndexProviderContext
@@ -65,11 +66,14 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
     indexType: IndexType,
     version: CypherVersion
   ): (Option[IndexProviderDescriptor], IndexConfig) = {
-
-    if (options.exists { case (k, _) => !k.equalsIgnoreCase("indexProvider") && !k.equalsIgnoreCase("indexConfig") }) {
-      throw new InvalidArgumentsException(
-        s"Failed to create $schemaType: Invalid option provided, valid options are `indexProvider` and `indexConfig`."
-      )
+    var optionName = ""
+    if (
+      options.exists { case (k, _) =>
+        optionName = k
+        !optionName.equalsIgnoreCase("indexProvider") && !optionName.equalsIgnoreCase("indexConfig")
+      }
+    ) {
+      throw InvalidArgumentsException.invalidIndexOptionValue(optionName, schemaType)
     }
     val maybeIndexProvider = options.getOption("indexprovider")
     // If there are mandatory options we should call convert with empty options to throw expected errors
@@ -102,7 +106,7 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
     case _ =>
       val pp = new PrettyPrinter
       indexProvider.writeTo(pp)
-      val gql = getGql22N27(
+      val gql = GqlHelper.getGql22N27(
         pp.value,
         GqlParams.StringParam.cmd.process("indexProvider"),
         java.util.List.of("STRING")
@@ -124,30 +128,60 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
     SPATIAL_WGS84_3D_MAX
   )
 
-  protected def checkForPointConfigValues(pp: PrettyPrinter, itemsMap: MapValue, schemaType: String): Unit =
+  def getValidConfigNames(idxType: IndexType): java.util.List[String] = {
+    idxType match {
+      case IndexType.FULLTEXT => validFulltextConfigSettingNames.toList.asJava
+      case IndexType.VECTOR   => validVectorConfigSettingNames.toList.asJava
+      case IndexType.POINT    => validPointConfigSettingNames.toList.asJava
+      case _ => java.util.List.of("no values") // this should not happen if the method is called correctly
+    }
+  }
+
+  protected def checkForPointConfigValues(
+    originIndexType: IndexType,
+    pp: PrettyPrinter,
+    itemsMap: MapValue,
+    schemaType: String
+  ): Unit =
     if (itemsMap.exists { case (p, _) => validPointConfigSettingNames.contains(p) }) {
-      foundPointConfigValues(pp, itemsMap, schemaType)
+      foundPointConfigValues(originIndexType, pp, itemsMap, schemaType)
     }
 
-  protected def foundPointConfigValues(pp: PrettyPrinter, itemsMap: MapValue, schemaType: String): Unit = {
-    throw new InvalidArgumentsException(
-      s"""${invalidConfigValueString(pp, itemsMap, schemaType)}, contains spatial config settings options.
-         |To create point index, please use 'CREATE POINT INDEX ...'.""".stripMargin
-    )
+  protected def foundPointConfigValues(
+    originIndexType: IndexType,
+    pp: PrettyPrinter,
+    itemsMap: MapValue,
+    schemaType: String
+  ): Unit = {
+    throw InvalidArgumentsException.pointOptionsInConfig(pp, itemsMap, schemaType, getValidConfigNames(originIndexType))
   }
 
   protected val validFulltextConfigSettingNames: SortedSet[String] =
     indexSettingsToCaseInsensitiveNames(FULLTEXT_ANALYZER, FULLTEXT_EVENTUALLY_CONSISTENT)
 
-  protected def checkForFulltextConfigValues(pp: PrettyPrinter, itemsMap: MapValue, schemaType: String): Unit =
+  protected def checkForFulltextConfigValues(
+    originIndexType: IndexType,
+    pp: PrettyPrinter,
+    itemsMap: MapValue,
+    schemaType: String
+  ): Unit =
     if (itemsMap.exists { case (p, _) => validFulltextConfigSettingNames.contains(p) }) {
-      foundFulltextConfigValues(pp, itemsMap, schemaType)
+      foundFulltextConfigValues(originIndexType, pp, itemsMap, schemaType)
     }
 
-  protected def foundFulltextConfigValues(pp: PrettyPrinter, itemsMap: MapValue, schemaType: String): Unit = {
-    throw new InvalidArgumentsException(
-      s"""${invalidConfigValueString(pp, itemsMap, schemaType)}, contains fulltext config options.
-         |To create fulltext index, please use 'CREATE FULLTEXT INDEX ...'.""".stripMargin
+  protected def foundFulltextConfigValues(
+    originIndexType: IndexType,
+    pp: PrettyPrinter,
+    itemsMap: MapValue,
+    schemaType: String
+  ): Unit = {
+    val prettyVal = new PrettyPrinter()
+    itemsMap.writeTo(prettyVal)
+    throw InvalidArgumentsException.fulltextOptionsInConfig(
+      pp,
+      itemsMap,
+      schemaType,
+      getValidConfigNames(originIndexType)
     )
   }
 
@@ -160,15 +194,28 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
       VECTOR_HNSW_EF_CONSTRUCTION
     )
 
-  protected def checkForVectorConfigValues(pp: PrettyPrinter, itemsMap: MapValue, schemaType: String): Unit =
+  protected def checkForVectorConfigValues(
+    originIndexType: IndexType,
+    pp: PrettyPrinter,
+    itemsMap: MapValue,
+    schemaType: String
+  ): Unit =
     if (itemsMap.exists { case (p, _) => validVectorConfigSettingNames.contains(p) }) {
-      foundVectorConfigValues(pp, itemsMap, schemaType)
+
+      foundVectorConfigValues(originIndexType, pp, itemsMap, schemaType)
     }
 
-  private def foundVectorConfigValues(pp: PrettyPrinter, itemsMap: MapValue, schemaType: String): Unit = {
-    throw new InvalidArgumentsException(
-      s"""${invalidConfigValueString(pp, itemsMap, schemaType)}, contains vector config options.
-         |To create vector index, please use 'CREATE VECTOR INDEX ...'.""".stripMargin
+  private def foundVectorConfigValues(
+    originIndexType: IndexType,
+    pp: PrettyPrinter,
+    itemsMap: MapValue,
+    schemaType: String
+  ): Unit = {
+    throw InvalidArgumentsException.vectorOptionsInConfig(
+      pp,
+      itemsMap,
+      schemaType,
+      getValidConfigNames(originIndexType)
     )
   }
 
@@ -183,24 +230,35 @@ trait IndexOptionsConverter[T] extends OptionsConverter[T] {
   protected def assertEmptyConfig(
     config: AnyValue,
     schemaType: String,
-    indexType: String
+    indexType: IndexType
   ): IndexConfig = {
     // no available config settings, throw nice error when existing config settings for other index types
+
+    val indexString = indexType match {
+      case IndexType.TEXT   => "text"
+      case IndexType.LOOKUP => "lookup"
+      case IndexType.RANGE  => "range"
+      case _                => indexType.toString.toLowerCase
+    }
+
     val pp = new PrettyPrinter()
     config match {
       case itemsMap: MapValue if !itemsMap.isEmpty =>
-        checkForFulltextConfigValues(pp, itemsMap, schemaType)
-        checkForPointConfigValues(pp, itemsMap, schemaType)
-        checkForVectorConfigValues(pp, itemsMap, schemaType)
+        checkForFulltextConfigValues(
+          null,
+          pp,
+          itemsMap,
+          schemaType
+        )
+        checkForPointConfigValues(indexType, pp, itemsMap, schemaType)
+        checkForVectorConfigValues(indexType, pp, itemsMap, schemaType)
 
         itemsMap.writeTo(pp)
-        throw new InvalidArgumentsException(
-          s"""Could not create $schemaType with specified index config '${pp.value()}': $indexType indexes have no valid config values.""".stripMargin
-        )
+        throw InvalidArgumentsException.invalidIndexConfig(schemaType, pp.value(), indexString)
       case _: MapValue => IndexConfig.empty
       case unknown =>
         unknown.writeTo(pp)
-        val gql = getGql22N27(
+        val gql = GqlHelper.getGql22N27(
           pp.value,
           GqlParams.StringParam.cmd.process("indexConfig"),
           java.util.List.of("MAP")

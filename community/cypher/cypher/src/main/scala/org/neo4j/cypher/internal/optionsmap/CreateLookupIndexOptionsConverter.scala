@@ -47,7 +47,7 @@ case class CreateLookupIndexOptionsConverter(context: IndexProviderContext)
     schemaType: String,
     indexProvider: Option[IndexProviderDescriptor]
   ): IndexConfig =
-    assertEmptyConfig(config, schemaType, "lookup")
+    assertEmptyConfig(config, schemaType, IndexType.LOOKUP)
 
   override def operation: String = s"create $schemaType"
 }

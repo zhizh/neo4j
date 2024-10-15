@@ -22,9 +22,11 @@ package org.neo4j.exceptions;
 import java.util.List;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
+import org.neo4j.messages.MessageUtil;
 
 public class InvalidArgumentException extends Neo4jException {
     @Deprecated
@@ -131,5 +133,28 @@ public class InvalidArgumentException extends Neo4jException {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N85)
                 .build();
         return new InvalidArgumentException(gql, "Can't specify both allowed and denied databases");
+    }
+
+    public static InvalidArgumentException invalidEncryptionVersion(String version, List<String> allowedVersions) {
+        var gql = GqlHelper.getGql42001_22N04(version, "encryption version", allowedVersions);
+        var innerException = new IllegalArgumentException("The encryption version specified is not available.");
+        return new InvalidArgumentException(gql, innerException.getMessage(), innerException);
+    }
+
+    public static InvalidArgumentException invalidURLScheme(String url, List<String> allowedSchemes) {
+        var gql = GqlHelper.getGql42001_22N04(url, "URL scheme", allowedSchemes);
+        return new InvalidArgumentException(gql, MessageUtil.invalidScheme(url, allowedSchemes));
+    }
+
+    public static InvalidArgumentException insecureURLScheme(String url, List<String> allowedSchemes) {
+        var gql = GqlHelper.getGql42001_22N04(url, "URL scheme", allowedSchemes);
+        return new InvalidArgumentException(gql, MessageUtil.insecureScheme(url, allowedSchemes));
+    }
+
+    public static InvalidArgumentException incorrectPasswordFormat() {
+        var innerException = new IllegalArgumentException(
+                "Incorrect format of encrypted password. Correct format is '<encryption-version>,<hash>,<salt>'.");
+        var gql = GqlHelper.getGql42001_22N04("*", "password format", List.of("'<encryption-version>,<hash>,<salt>'"));
+        return new InvalidArgumentException(gql, innerException.getMessage(), innerException);
     }
 }

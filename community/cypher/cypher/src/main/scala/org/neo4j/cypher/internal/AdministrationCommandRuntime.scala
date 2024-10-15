@@ -160,7 +160,7 @@ object AdministrationCommandRuntime {
     try {
       Values.utf8Value(SystemGraphCredential.serialize(password))
     } catch {
-      case e: IllegalArgumentException => throw new InvalidArgumentException(e.getMessage, e)
+      case e: InvalidArgumentException => throw e
     }
 
   protected case class PasswordExpression(

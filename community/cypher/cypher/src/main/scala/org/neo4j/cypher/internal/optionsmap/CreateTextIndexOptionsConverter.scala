@@ -47,7 +47,7 @@ case class CreateTextIndexOptionsConverter(context: IndexProviderContext)
     schemaType: String,
     indexProvider: Option[IndexProviderDescriptor]
   ): IndexConfig =
-    assertEmptyConfig(config, schemaType, "text")
+    assertEmptyConfig(config, schemaType, IndexType.TEXT)
 
   override def operation: String = s"create $schemaType"
 }

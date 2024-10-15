@@ -68,7 +68,7 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
   test("n IS A:B") {
     runSemanticAnalysis().errors shouldEqual Seq(
       SemanticError(
-        GqlHelper.getGql42001_42I29("SET", "n IS A, n IS B", 1, 16, 15),
+        GqlHelper.getGql42001_42I29(statement.toString, "n IS A, n IS B", 1, 16, 15),
         multipleAssignmentErrorMessage("n IS A, n IS B"),
         errorPosition
       )
@@ -78,7 +78,7 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
   test("n IS A, m:A:B") {
     runSemanticAnalysis().errors shouldEqual Seq(
       SemanticError(
-        GqlHelper.getGql42001_42I29("SET", "n IS A, m IS A, m IS B", 1, 16, 15),
+        GqlHelper.getGql42001_42I29(statement.toString, "n IS A, m IS A, m IS B", 1, 16, 15),
         multipleAssignmentErrorMessage("n IS A, m IS A, m IS B"),
         errorPosition
       )
@@ -101,7 +101,13 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
   test("n IS A, m:$(\"Label1\"):B:$(\"Label2\")") {
     runSemanticAnalysis().errors shouldEqual Seq(
       SemanticError(
-        GqlHelper.getGql42001_42I29("SET", "n IS A, m IS $(\"Label1\"), m IS B, m IS $(\"Label2\")", 1, 16, 15),
+        GqlHelper.getGql42001_42I29(
+          statement.toString,
+          "n IS A, m IS $(\"Label1\"), m IS B, m IS $(\"Label2\")",
+          1,
+          16,
+          15
+        ),
         multipleAssignmentErrorMessage("n IS A, m IS $(\"Label1\"), m IS B, m IS $(\"Label2\")"),
         errorPosition
       )

@@ -149,6 +149,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.NonFatal
 
 sealed class TransactionBoundQueryContext(
@@ -216,13 +217,15 @@ sealed class TransactionBoundQueryContext(
 
       if (!providerIndexType.equals(indexType)) {
         val indexProviders =
-          schemaWrite.indexProvidersByType(indexType).asScala.toList.map(_.name()).sorted.mkString("['", "', '", "']")
+          schemaWrite.indexProvidersByType(indexType).asScala.toList.map(_.name()).sorted
         val indexDescription =
           if (providerIndexType.isLookup) "token lookup" else providerIndexType.name().toLowerCase(Locale.ROOT)
-        throw new InvalidArgumentsException(
-          s"""Could not create $schemaDescription with specified index provider '$providerString'.
-             |To create $indexDescription index, please use 'CREATE $providerIndexType INDEX ...'.
-             |The available index providers for the given type: $indexProviders.""".stripMargin
+        throw InvalidArgumentsException.invalidIndexProviderSuggestIndex(
+          schemaDescription,
+          providerString,
+          indexDescription,
+          String.valueOf(providerIndexType),
+          indexProviders.asJava
         )
       }
 
@@ -230,23 +233,14 @@ sealed class TransactionBoundQueryContext(
     } catch {
       case e: IndexProviderNotFoundException =>
         val indexProviders =
-          schemaWrite.indexProvidersByType(indexType).asScala.toList.map(_.name()).mkString("['", "', '", "']")
+          schemaWrite.indexProvidersByType(indexType).asScala.toList.map(_.name()).sorted
         // Throw nicer error on old providers in Cypher 5
-        val message =
-          if (
-            version == CypherVersion.Cypher5 && (
-              providerString.equalsIgnoreCase("native-btree-1.0") ||
-                providerString.equalsIgnoreCase("lucene+native-3.0")
-            )
-          )
-            s"""Could not create $schemaDescription with specified index provider '$providerString'.
-               |Invalid index type b-tree, use range, point or text index instead.
-               |The available index providers for the given type: $indexProviders.""".stripMargin
-          else
-            s"""Could not create $schemaDescription with specified index provider '$providerString'.
-               |The available index providers for the given type: $indexProviders.""".stripMargin
-
-        throw new InvalidArgumentsException(message, e)
+        throw InvalidArgumentsException.invalidIndexProvider(
+          version == CypherVersion.Cypher5,
+          schemaDescription,
+          providerString,
+          indexProviders.asJava
+        )
     }
   }
 

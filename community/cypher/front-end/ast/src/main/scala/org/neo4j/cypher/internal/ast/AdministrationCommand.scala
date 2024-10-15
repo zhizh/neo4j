@@ -72,6 +72,8 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
+import scala.jdk.CollectionConverters.SeqHasAsJava
+
 sealed trait AdministrationCommand extends StatementWithGraph with SemanticAnalysisTooling {
 
   def name: String
@@ -478,6 +480,12 @@ case class RemoveAuth(all: Boolean, auths: List[Expression]) {
 // Only used during parsing
 case class Auth(provider: String, authAttributes: List[AuthAttribute])(val position: InputPosition) extends ASTNode
 
+object allAuthAttr {
+
+  val allAuthsAttributes: List[AuthAttribute] =
+    List(Password(null, false)(null), PasswordChange(false)(null), AuthId(null)(null))
+}
+
 sealed trait AuthImpl extends ASTNode with SemanticAnalysisTooling {
   def authAttributes: List[AuthAttribute]
   def provider: String
@@ -501,8 +509,22 @@ sealed trait AuthImpl extends ASTNode with SemanticAnalysisTooling {
 
   protected def noUnsupportedAttributes(func: AuthAttribute => Boolean): SemanticCheck = {
     authAttributes.find(func) match {
-      case Some(unsupported) =>
-        error(s"Auth provider `$provider` does not allow `${unsupported.name}` clause.", unsupported.position)
+      case Some(unsupported) => {
+        val supportedFunc: AuthAttribute => Boolean = x => !func(x)
+
+        val supported =
+          allAuthAttr.allAuthsAttributes.filter(supportedFunc).map(attr =>
+            attr.name
+          ) // TODO do you agree that this filtering should be inside the "case"? A little inefficient but only occurs when we have unsupported, better than doing outside. Also do we even want to give the allowed commands like this if they are passed?
+
+        val pos = unsupported.position
+        val expected = if (supported.isEmpty) java.util.List.of("no clause")
+        else
+          supported.map(
+            String.valueOf(_)
+          ).asJava
+        SemanticCheck.error(SemanticError.authForbidsClauseError(provider, unsupported.name, expected, pos))
+      }
       case None => success
     }
   }
@@ -828,7 +850,12 @@ sealed abstract class PrivilegeCommand(
     privilegeType match {
       case GraphPrivilege(action, _) => action match {
           case ReadAction | TraverseAction | MatchAction => SemanticCheck.success
-          case _ => error(s"${action.name} is not supported for property value access rules.", position)
+          case _ =>
+            SemanticCheck.error(SemanticError.unsupportedActionAccess(
+              action.name,
+              java.util.List.of(ReadAction.name, TraverseAction.name, MatchAction.name),
+              position
+            ))
         }
       case _ => error("Not supported.", position) // We should never end up here
     }
@@ -1657,13 +1684,14 @@ final case class CreateRemoteDatabaseAlias(
       )
     case _ => AliasDriverSettingsCheck.findInvalidDriverSettings(driverSettings) match {
         case Some(expr: ExistsExpression) =>
-          error(AliasDriverSettingsCheck.existsErrorMessage, expr.position)
+          SemanticCheck.error(SemanticError.existsInDriverSettings(expr.position))
         case Some(expr: CountExpression) =>
-          error(AliasDriverSettingsCheck.countErrorMessage, expr.position)
+          SemanticCheck.error(SemanticError.countInDriverSettings(expr.position))
         case Some(expr: CollectExpression) =>
-          error(AliasDriverSettingsCheck.collectErrorMessage, expr.position)
+          SemanticCheck.error(SemanticError.collectInDriverSettings(expr.position))
         case Some(expr) =>
-          error(AliasDriverSettingsCheck.genericErrorMessage, expr.position)
+          SemanticCheck.error(SemanticError.genericDriverSettingsFail(expr.position))
+        // Apparently this should not happen, but if you have a better message do tell
         case _ => super.semanticCheck chain checkIsStringLiteralOrParameter(
             "username",
             username
@@ -1702,13 +1730,13 @@ final case class AlterRemoteDatabaseAlias(
       case Some(expr) =>
         expr match {
           case _: ExistsExpression =>
-            error(AliasDriverSettingsCheck.existsErrorMessage, expr.position)
+            SemanticCheck.error(SemanticError.existsInDriverSettings(expr.position))
           case _: CountExpression =>
-            error(AliasDriverSettingsCheck.countErrorMessage, expr.position)
+            SemanticCheck.error(SemanticError.countInDriverSettings(expr.position))
           case _: CollectExpression =>
-            error(AliasDriverSettingsCheck.collectErrorMessage, expr.position)
+            SemanticCheck.error(SemanticError.collectInDriverSettings(expr.position))
           case _ =>
-            error(AliasDriverSettingsCheck.genericErrorMessage, expr.position)
+            SemanticCheck.error(SemanticError.genericDriverSettingsFail(expr.position))
         }
       case _ =>
         val isLocalAlias = targetName.isDefined && url.isEmpty

@@ -77,8 +77,8 @@ case class CreatePointIndexOptionsConverter(context: IndexProviderContext)
     config match {
       case itemsMap: MapValue if itemsMap.isEmpty => IndexConfig.empty
       case itemsMap: MapValue =>
-        checkForFulltextConfigValues(new PrettyPrinter(), itemsMap, schemaType)
-        checkForVectorConfigValues(new PrettyPrinter(), itemsMap, schemaType)
+        checkForFulltextConfigValues(IndexType.POINT, new PrettyPrinter(), itemsMap, schemaType)
+        checkForVectorConfigValues(IndexType.POINT, new PrettyPrinter(), itemsMap, schemaType)
 
         val map = itemsMap.foldLeft(Map[String, Object]()) {
           // Allow both list and array

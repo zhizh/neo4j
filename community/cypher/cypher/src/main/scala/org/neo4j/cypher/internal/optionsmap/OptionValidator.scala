@@ -24,7 +24,7 @@ import org.neo4j.configuration.GraphDatabaseInternalSettings
 import org.neo4j.configuration.GraphDatabaseSettings
 import org.neo4j.cypher.internal.MapValueOps.Ops
 import org.neo4j.dbms.systemgraph.allocation.DatabaseAllocationHints
-import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.kernel.api.exceptions.InvalidArgumentsException
 import org.neo4j.storageengine.api.StorageEngineFactory
 import org.neo4j.storageengine.api.StorageEngineFactory.allAvailableStorageEngines
@@ -40,6 +40,7 @@ import java.util.Locale
 import java.util.UUID
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 sealed trait OptionValidator[T] {
 
@@ -86,7 +87,7 @@ trait StringOptionValidator extends OptionValidator[String] {
       case _ =>
         val pp = new PrettyPrinter
         value.writeTo(pp)
-        val gql = getGql22N27(pp.value, KEY, java.util.List.of("STRING"))
+        val gql = GqlHelper.getGql22N27(pp.value, KEY, java.util.List.of("STRING"))
         throw new InvalidArgumentsException(gql, s"Could not $operation with specified $KEY '$value', String expected.")
     }
   }
@@ -119,9 +120,7 @@ object ExistingDataOption extends StringOptionValidator {
 
   override protected def validateContent(value: String, config: Option[Config])(implicit operation: String): Unit = {
     if (!value.equalsIgnoreCase(VALID_VALUE)) {
-      throw new InvalidArgumentsException(
-        s"Could not $operation with specified $KEY '$value'. Expected '$VALID_VALUE'."
-      )
+      throw InvalidArgumentsException.unrecognisedOptionGivenValue(operation, value, KEY, VALID_VALUE, true)
     }
   }
 }
@@ -134,9 +133,7 @@ object ExistingSeedInstanceOption extends StringOptionValidator {
       UUID.fromString(value)
     } catch {
       case _: IllegalArgumentException =>
-        throw new InvalidArgumentsException(
-          s"Could not $operation with specified $KEY '$value'. Expected server uuid string."
-        )
+        throw InvalidArgumentsException.unrecognisedOptionGivenValue(operation, value, KEY, "server uuid string", false)
     }
 }
 
@@ -148,9 +145,7 @@ object ExistingSeedServerOption extends StringOptionValidator {
       UUID.fromString(value)
     } catch {
       case _: IllegalArgumentException =>
-        throw new InvalidArgumentsException(
-          s"Could not $operation with specified $KEY '$value'. Expected server uuid string."
-        )
+        throw InvalidArgumentsException.unrecognisedOptionGivenValue(operation, value, KEY, "server uuid string", false)
     }
 }
 
@@ -169,13 +164,10 @@ object StoreFormatOption extends StringOptionValidator {
       StorageEngineFactory.selectStorageEngine(selectEngineConfig)
     } catch {
       case _: Exception =>
-        val allFormats = allAvailableStorageEngines().asScala
+        val allFormatsList: java.util.List[String] = allAvailableStorageEngines().asScala
           .flatMap(sef => sef.supportedFormats(false).asScala.toSeq.sorted)
-          .toSeq.distinct
-          .mkString("'", "', '", "'")
-        throw new InvalidArgumentsException(
-          s"Could not $operation with specified $KEY '$value'. Unknown format, supported formats are " + allFormats
-        )
+          .toSeq.distinct.asJava
+        throw InvalidArgumentsException.invalidOptionFormat(operation, KEY, value, allFormatsList)
     }
   }
 }
@@ -212,9 +204,7 @@ object ExistingMetadataOption extends StringOptionValidator {
 
   override protected def validateContent(value: String, config: Option[Config])(implicit operation: String): Unit = {
     if (!value.equalsIgnoreCase(VALID_VALUE)) {
-      throw new InvalidArgumentsException(
-        s"Could not $operation with specified $KEY '$value'. Expected '$VALID_VALUE'."
-      )
+      throw InvalidArgumentsException.unrecognisedOptionGivenValue(operation, KEY, value, VALID_VALUE, true)
     }
   }
 }
@@ -233,9 +223,7 @@ object LogEnrichmentOption extends StringOptionValidator {
 
   override protected def validateContent(value: String, config: Option[Config])(implicit operation: String): Unit = {
     if (!validValues.exists(value.equalsIgnoreCase)) {
-      throw new InvalidArgumentsException(
-        s"Could not $operation with specified $KEY '$value', Expected one of ${validValues.mkString("'", "', '", "'")}"
-      )
+      throw InvalidArgumentsException.unrecognisedOptionGivenValue(operation, KEY, value, validValues.asJava)
     }
   }
 
@@ -249,7 +237,7 @@ object AllocationHintsOption extends MapOptionValidator {
       try {
         DatabaseAllocationHints.validate(k, v)
       } catch {
-        case e: IllegalArgumentException =>
+        case e: IllegalArgumentException => // TODO should not this have gql-code too?
           throw new InvalidArgumentsException(s"Could not $operation with specified $KEY '$value'. ${e.getMessage}'")
       }
     })

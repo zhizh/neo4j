@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.evaluator.StaticEvaluation
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.Parameter
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlHelper.getGql22N27
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.internal.kernel.api.Procedures
@@ -46,6 +46,7 @@ import org.neo4j.values.virtual.VirtualValues
 import java.util.Locale
 
 import scala.jdk.CollectionConverters.IterableHasAsScala
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 class AliasMapSettingsEvaluator(procedures: Procedures) {
   private val evaluator = StaticEvaluation.from(procedures)
@@ -75,7 +76,8 @@ class AliasMapSettingsEvaluator(procedures: Procedures) {
         (param: ExpressionMapOrParamValue) => {
           val pp = new PrettyPrinter
           param.toOption.get.writeTo(pp)
-          val gql = getGql22N27(pp.value, GqlParams.StringParam.cmd.process("DRIVER"), java.util.List.of("MAP"))
+          val gql =
+            GqlHelper.getGql22N27(pp.value, GqlParams.StringParam.cmd.process("DRIVER"), java.util.List.of("MAP"))
           throw new InvalidArgumentsException(
             gql,
             s"Failed to $operation: Invalid driver settings '${param.toOption.get}'. Expected a map value."
@@ -139,8 +141,10 @@ object AliasMapSettingsEvaluator {
     val invalidKeys = settings.keySet().asScala.toSet.diff(validKeys)
 
     if (invalidKeys.nonEmpty) {
-      throw new InvalidArgumentsException(
-        s"Failed to $operation: Invalid driver setting(s) provided: ${invalidKeys.mkString(", ")}. Valid driver settings are: ${validKeys.mkString(", ")}"
+      throw InvalidArgumentsException.invalidDriverSettings(
+        operation,
+        invalidKeys.mkString(", "),
+        validKeys.toList.asJava
       )
     }
     def throwExceptionWhenInvalidValue(
@@ -152,7 +156,7 @@ object AliasMapSettingsEvaluator {
       val pp = new PrettyPrinter
       invalidValue.writeTo(pp)
 
-      val gql = getGql22N27(pp.value, key, java.util.List.of(expectedCypherType))
+      val gql = GqlHelper.getGql22N27(pp.value, key, java.util.List.of(expectedCypherType))
       throw new InvalidArgumentsException(
         gql,
         s"Failed to $operation: Invalid driver settings value for '$key'. Expected $expectedType value."
@@ -182,8 +186,11 @@ object AliasMapSettingsEvaluator {
               loggingLevel.toUpper
             } catch {
               case _: IllegalArgumentException =>
-                throw new InvalidArgumentsException(
-                  s"Failed to $operation: Invalid driver settings value for '$logging_level'. Expected one of ${Level.values().mkString(", ")}."
+                throw InvalidArgumentsException.unexpectedDriverSettingValue(
+                  operation,
+                  String.valueOf(loggingLevel),
+                  logging_level,
+                  Level.values().map(value => String.valueOf(value)).toList.asJava
                 )
             }
           )

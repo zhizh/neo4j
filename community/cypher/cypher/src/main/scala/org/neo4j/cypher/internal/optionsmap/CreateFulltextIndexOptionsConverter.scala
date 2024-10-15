@@ -73,8 +73,8 @@ case class CreateFulltextIndexOptionsConverter(context: IndexProviderContext)
     config match {
       case itemsMap: MapValue if itemsMap.isEmpty => IndexConfig.empty
       case itemsMap: MapValue =>
-        checkForPointConfigValues(new PrettyPrinter(), itemsMap, schemaType)
-        checkForVectorConfigValues(new PrettyPrinter(), itemsMap, schemaType)
+        checkForPointConfigValues(IndexType.FULLTEXT, new PrettyPrinter(), itemsMap, schemaType)
+        checkForVectorConfigValues(IndexType.FULLTEXT, new PrettyPrinter(), itemsMap, schemaType)
 
         val hm = new java.util.HashMap[String, Object]()
         itemsMap.foreach {

@@ -84,9 +84,9 @@ case class CreateVectorIndexOptionsConverter(context: IndexProviderContext, late
     ): Unit = {
       validationRecords.get(UNRECOGNIZED_SETTING).asScala.foreach {
         case fulltextSetting if validFulltextConfigSettingNames.contains(fulltextSetting.settingName) =>
-          foundFulltextConfigValues(pp, itemsMap, schemaType)
+          foundFulltextConfigValues(IndexType.VECTOR, pp, itemsMap, schemaType)
         case pointSetting if validPointConfigSettingNames.contains(pointSetting.settingName) =>
-          foundPointConfigValues(pp, itemsMap, schemaType)
+          foundPointConfigValues(IndexType.VECTOR, pp, itemsMap, schemaType)
         case unrecognized => throw new InvalidArgumentsException(
             invalidConfigValueString(pp, itemsMap, schemaType) +
               s". '${unrecognized.settingName}' is an unrecognized setting. Supported: " +

@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.ast
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
 import org.neo4j.cypher.internal.ast.semantics.SemanticCheckContext
 import org.neo4j.cypher.internal.ast.semantics.SemanticCheckResult
@@ -58,9 +59,16 @@ import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.cypher.internal.util.symbols.CTList
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.GqlHelper
 import org.scalatest.prop.TableDrivenPropertyChecks._
 
 import java.nio.charset.StandardCharsets
+
+import scala.reflect.runtime.currentMirror
+import scala.reflect.runtime.universe.ClassSymbol
+import scala.reflect.runtime.universe.Type
+import scala.reflect.runtime.universe.termNames
+import scala.reflect.runtime.universe.typeOf
 
 class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestSupport {
   private val p = InputPosition.withLength(0, 0, 0, 0)
@@ -74,6 +82,52 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       .withFeature(SemanticFeature.MultipleDatabases)
 
   // Privilege command tests
+
+  object attrLoader {
+
+    def loadAuthAttributes(): List[AuthAttribute] = {
+      loadSubClassesRec(typeOf[AuthAttribute])
+    }
+
+    def loadSubClassesRec(tpe: Type): List[AuthAttribute] = {
+      val clazz = tpe.typeSymbol.asClass
+      clazz.knownDirectSubclasses
+
+      val subclasses: List[AuthAttribute] = clazz.knownDirectSubclasses.collect {
+        case subclass if subclass.isClass && subclass.asClass.isTrait => loadSubClassesRec(subclass.typeSignature)
+        case subclass if subclass.isClass && !subclass.asClass.isTrait && !subclass.isAbstract =>
+          val classMirror = currentMirror.reflectClass(subclass.asClass)
+
+          val constructorSymbol = subclass.asClass.primaryConstructor.asMethod
+          val constructorMirror = classMirror.reflectConstructor(constructorSymbol)
+          val mockedParams = mockParams(subclass.asClass)
+          Set(constructorMirror(mockedParams: _*).asInstanceOf[AuthAttribute])
+      }.toList.flatten
+      subclasses
+    }
+
+    def mockParams(sub: ClassSymbol): List[Any] = {
+      sub.typeSignature.decl(termNames.CONSTRUCTOR).asMethod.paramLists.flatten.map { param =>
+        param.typeSignature match {
+          case t if t =:= typeOf[Int]     => 0
+          case t if t =:= typeOf[Boolean] => false
+          case t if t =:= typeOf[Double]  => 0.0
+          case t if t =:= typeOf[Long]    => 0L
+          case t if t =:= typeOf[String]  => null
+          case t if t <:< typeOf[AnyRef]  => null // For reference types, pass null
+          case _                          => null // Fallback for any unexpected types
+        }
+      }
+    }
+  }
+
+  test("allAuthAttributes should be up to date") {
+    val allAuthAttributes = attrLoader.loadAuthAttributes().map(_.name).toSet
+    assertEquals(
+      allAuthAttributes,
+      allAuthAttr.allAuthsAttributes.map(_.name).toSet
+    ) // Note: if this fails allAuthAttributes in Administration is probably out of date
+  }
 
   test("it should not be possible to administer privileges pertaining to an unassignable action") {
 
@@ -1262,8 +1316,22 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos1
     ).errors
+    val gql2 =
+      GqlHelper.getGql42001_22N04(
+        "SET ID",
+        "auth provider 'native' attribute",
+        java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+        2,
+        0,
+        0
+      )
     val error2 =
-      SemanticCheckResult.error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos2).errors
+      SemanticCheckResult.error(
+        gql2,
+        initialState,
+        "Auth provider `native` does not allow `SET ID` clause.",
+        pos2
+      ).errors
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2
   }
 
@@ -1278,8 +1346,21 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
     val error1 =
       SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider `foo`.", pos1).errors
+    val gql2 = GqlHelper.getGql42001_22N04(
+      "SET PASSWORD",
+      "auth provider 'foo' attribute",
+      java.util.List.of("SET ID"),
+      2,
+      0,
+      0
+    )
     val error2 =
-      SemanticCheckResult.error(initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
+      SemanticCheckResult.error(
+        gql2,
+        initialState,
+        "Auth provider `foo` does not allow `SET PASSWORD` clause.",
+        pos2
+      ).errors
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2
   }
 
@@ -1497,9 +1578,10 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       List(Auth("foo", List(authId("bar")(pos1), password(password)(pos2)))(pos)),
       None
     )(p)
-
+    val gql =
+      GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider 'foo' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
+      .error(gql, initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
   }
 
   test("CREATE USER foo SET AUTH PROVIDER 'native' { SET ID 'bar' SET PASSWORD 'password' }") {
@@ -1510,9 +1592,16 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       List(Auth("native", List(authId("bar")(pos1), password(password)(pos2)))(pos)),
       None
     )(p)
-
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET ID",
+      "auth provider 'native' attribute",
+      java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+      1,
+      0,
+      0
+    )
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
+      .error(gql, initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
   }
 
   test("CREATE USER foo SET AUTH PROVIDER 'foo' { SET ID 'bar' SET PASSWORD CHANGE REQUIRED }") {
@@ -1523,9 +1612,17 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       List(Auth("foo", List(authId("bar")(pos1), passwordChange(requireChange = true)(pos2)))(pos)),
       None
     )(p)
-
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET PASSWORD CHANGE [NOT] REQUIRED",
+      "auth provider 'foo' attribute",
+      java.util.List.of("SET ID"),
+      2,
+      0,
+      0
+    )
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
+        gql,
         initialState,
         "Auth provider `foo` does not allow `SET PASSWORD CHANGE [NOT] REQUIRED` clause.",
         pos2
@@ -1564,8 +1661,21 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
         "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
         pos3
       ).errors
+    val gql2 = GqlHelper.getGql42001_22N04(
+      "SET ID",
+      "auth provider 'native' attribute",
+      java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+      1,
+      0,
+      0
+    )
     val error2 =
-      SemanticCheckResult.error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
+      SemanticCheckResult.error(
+        gql2,
+        initialState,
+        "Auth provider `native` does not allow `SET ID` clause.",
+        pos1
+      ).errors
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2
   }
 
@@ -1583,8 +1693,16 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       None
     )(p)
 
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET ID",
+      "auth provider 'native' attribute",
+      java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+      1,
+      0,
+      0
+    )
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
+      .error(gql, initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
   }
 
   test(
@@ -1600,9 +1718,10 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       )(pos3)),
       None
     )(p)
-
+    val gql =
+      GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider 'foo' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
+      .error(gql, initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
   }
 
   test("CREATE USER foo SET AUTH '' { SET PASSWORD '' }") {
@@ -1616,8 +1735,15 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
     val error1 =
       SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider ``.", pos1).errors
+    val gql2 =
+      GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider '' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     val error2 =
-      SemanticCheckResult.error(initialState, "Auth provider `` does not allow `SET PASSWORD` clause.", pos2).errors
+      SemanticCheckResult.error(
+        gql2,
+        initialState,
+        "Auth provider `` does not allow `SET PASSWORD` clause.",
+        pos2
+      ).errors
     val error3 = SemanticCheckResult.error(
       initialState,
       "Invalid input. Auth provider is not allowed to be an empty string.",
@@ -1650,8 +1776,15 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
     val error1 =
       SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider ``.", pos1).errors
+    val gql2 =
+      GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider '' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     val error2 =
-      SemanticCheckResult.error(initialState, "Auth provider `` does not allow `SET PASSWORD` clause.", pos2).errors
+      SemanticCheckResult.error(
+        gql2,
+        initialState,
+        "Auth provider `` does not allow `SET PASSWORD` clause.",
+        pos2
+      ).errors
     val error3 = SemanticCheckResult.error(
       initialState,
       "Invalid input. Auth provider is not allowed to be an empty string.",
@@ -1769,8 +1902,17 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql =
+      GqlHelper.getGql42001_22N04(
+        "SET ID",
+        "auth provider 'native' attribute",
+        java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+        1,
+        0,
+        0
+      )
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
+      .error(gql, initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
   }
 
   test("ALTER USER foo SET AUTH PROVIDER 'foo' { SET PASSWORD 'password' }") {
@@ -1783,8 +1925,21 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql1 = GqlHelper.getGql42001_22N04(
+      "SET PASSWORD",
+      "auth provider 'foo' attribute",
+      java.util.List.of("SET ID"),
+      2,
+      0,
+      0
+    )
     val error1 =
-      SemanticCheckResult.error(initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
+      SemanticCheckResult.error(
+        gql1,
+        initialState,
+        "Auth provider `foo` does not allow `SET PASSWORD` clause.",
+        pos2
+      ).errors
     val error2 =
       SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider `foo`.", pos1).errors
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2
@@ -1980,8 +2135,10 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql =
+      GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider 'foo' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
+      .error(gql, initialState, "Auth provider `foo` does not allow `SET PASSWORD` clause.", pos2).errors
   }
 
   test("ALTER USER foo SET AUTH PROVIDER 'native' { SET ID 'bar' SET PASSWORD 'password' }") {
@@ -1994,8 +2151,16 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET ID",
+      "auth provider 'native' attribute",
+      java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+      1,
+      0,
+      0
+    )
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
+      .error(gql, initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
   }
 
   test("ALTER USER foo SET AUTH PROVIDER 'foo' { SET ID 'bar' SET PASSWORD CHANGE NOT REQUIRED }") {
@@ -2008,8 +2173,17 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET PASSWORD CHANGE [NOT] REQUIRED",
+      "auth provider 'foo' attribute",
+      java.util.List.of("SET ID"),
+      2,
+      0,
+      0
+    )
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
+        gql,
         initialState,
         "Auth provider `foo` does not allow `SET PASSWORD CHANGE [NOT] REQUIRED` clause.",
         pos2
@@ -2026,8 +2200,16 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET ID",
+      "auth provider 'native' attribute",
+      java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+      1,
+      0,
+      0
+    )
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
+      .error(gql, initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
   }
 
   test(
@@ -2045,8 +2227,16 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET ID",
+      "auth provider 'native' attribute",
+      java.util.List.of("SET PASSWORD", "SET PASSWORD CHANGE [NOT] REQUIRED"),
+      1,
+      0,
+      0
+    )
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
+      .error(gql, initialState, "Auth provider `native` does not allow `SET ID` clause.", pos1).errors
   }
 
   test(
@@ -2064,8 +2254,16 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql = GqlHelper.getGql42001_22N04(
+      "SET PASSWORD CHANGE [NOT] REQUIRED",
+      "auth provider 'foo' attribute",
+      java.util.List.of("SET ID"),
+      2,
+      0,
+      0
+    )
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Auth provider `foo` does not allow `SET PASSWORD CHANGE [NOT] REQUIRED` clause.", pos2)
+      .error(gql, initialState, "Auth provider `foo` does not allow `SET PASSWORD CHANGE [NOT] REQUIRED` clause.", pos2)
       .errors
   }
 
@@ -2079,8 +2277,15 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql1 =
+      GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider '' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     val error1 =
-      SemanticCheckResult.error(initialState, "Auth provider `` does not allow `SET PASSWORD` clause.", pos2).errors
+      SemanticCheckResult.error(
+        gql1,
+        initialState,
+        "Auth provider `` does not allow `SET PASSWORD` clause.",
+        pos2
+      ).errors
     val error2 = SemanticCheckResult.error(
       initialState,
       "Invalid input. Auth provider is not allowed to be an empty string.",
@@ -2088,7 +2293,10 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     ).errors
     val error3 =
       SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider ``.", pos1).errors
-    alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2 ++ error3
+    alterUser.semanticCheck.run(
+      initialState,
+      SemanticCheckContext.default
+    ).errors shouldBe error1 ++ error2 ++ error3 // shouldBe error1 ++ error2 ++ error3
   }
 
   test("ALTER USER foo SET AUTH PROVIDER '' { SET ID '' }") {
@@ -2115,8 +2323,15 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       RemoveAuth(all = false, List.empty)
     )(p)
 
+    val gql1 =
+      GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider '' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     val error1 =
-      SemanticCheckResult.error(initialState, "Auth provider `` does not allow `SET PASSWORD` clause.", pos2).errors
+      SemanticCheckResult.error(
+        gql1,
+        initialState,
+        "Auth provider `` does not allow `SET PASSWORD` clause.",
+        pos2
+      ).errors
     val error2 = SemanticCheckResult.error(
       initialState,
       "Invalid input. Auth provider is not allowed to be an empty string.",
@@ -2259,7 +2474,16 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     val error1 = SemanticCheckResult.error(initialState, "Duplicate `SET AUTH 'foo'` clause.", pos3).errors
+    val gql2 = GqlHelper.getGql42001_22N04(
+      "SET PASSWORD CHANGE [NOT] REQUIRED",
+      "auth provider 'foo' attribute",
+      java.util.List.of("SET ID"),
+      1,
+      0,
+      0
+    )
     val error2 = SemanticCheckResult.error(
+      gql2,
       initialState,
       "Auth provider `foo` does not allow `SET PASSWORD CHANGE [NOT] REQUIRED` clause.",
       pos1

@@ -22,6 +22,7 @@ package org.neo4j.gqlstatus;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImplementation
@@ -39,6 +40,19 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         this.gqlStatusInfoCode = gqlStatusInfoCode;
         this.cause = Optional.ofNullable(cause);
         this.paramMap = Map.copyOf(parameters);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ErrorGqlStatusObjectImplementation gql
+                && Objects.equals(gqlStatusInfoCode, gql.gqlStatusInfoCode)
+                && Objects.equals(diagnosticRecord, gql.diagnosticRecord)
+                && Objects.equals(cause, gql.cause)
+                && Objects.equals(paramMap, gql.paramMap)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static Builder from(GqlStatusInfoCodes gqlStatusInfo) {

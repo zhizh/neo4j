@@ -28,6 +28,7 @@ import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.lang.codec.Hex;
 import org.apache.shiro.lang.util.ByteSource;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.neo4j.exceptions.InvalidArgumentException;
 import org.neo4j.kernel.impl.security.Credential;
 
 public class SystemGraphCredential implements Credential {
@@ -98,7 +99,7 @@ public class SystemGraphCredential implements Credential {
         return String.join(CREDENTIAL_SEPARATOR, algorithm, encodedPassword, encodedSalt, iterations);
     }
 
-    public static String serialize(byte[] encodedCredential) throws IllegalArgumentException {
+    public static String serialize(byte[] encodedCredential) throws InvalidArgumentException {
         Pattern validEncryptedPassword =
                 Pattern.compile(String.join(CREDENTIAL_SEPARATOR, "^([0-9])", "([A-Fa-f0-9]+)", "([A-Fa-f0-9]+)"));
         String encryptedPasswordString = new String(encodedCredential, StandardCharsets.UTF_8);
@@ -111,7 +112,10 @@ public class SystemGraphCredential implements Credential {
             SecureHasherConfiguration configuration = SecureHasherConfigurations.configurations.get(version);
 
             if (configuration == null) {
-                throw new IllegalArgumentException("The encryption version specified is not available.");
+                throw InvalidArgumentException.invalidEncryptionVersion(
+                        version,
+                        SecureHasherConfigurations.configurations.keySet().stream()
+                                .toList());
             }
 
             return String.join(
@@ -121,8 +125,7 @@ public class SystemGraphCredential implements Credential {
                     salt,
                     String.valueOf(configuration.iterations));
         } else {
-            throw new IllegalArgumentException(
-                    "Incorrect format of encrypted password. Correct format is '<encryption-version>,<hash>,<salt>'.");
+            throw InvalidArgumentException.incorrectPasswordFormat();
         }
     }
 

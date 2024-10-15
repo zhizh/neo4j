@@ -68,10 +68,7 @@ sealed trait SchemaCommand extends StatementWithGraph with SemanticAnalysisTooli
       if ops.view.filterKeys(k =>
         !k.equalsIgnoreCase("indexProvider") && !k.equalsIgnoreCase("indexConfig")
       ).nonEmpty =>
-      error(
-        s"Failed to create $schemaString: Invalid option provided, valid options are `indexProvider` and `indexConfig`.",
-        position
-      )
+      SemanticCheck.error(SemanticError.invalidOption(schemaString, String.valueOf(options), position))
     case _ => SemanticCheck.success
   }
 
@@ -416,11 +413,7 @@ sealed trait CreateLookupIndex extends CreateIndex {
       val (validFunction, entityIndexDescription) =
         if (isNodeIndex) (Labels.name, indexType.nodeDescription)
         else (Type.name, indexType.relDescription)
-
-      error(
-        s"Failed to create $entityIndexDescription: Function '$name' is not allowed, valid function is '$validFunction'.",
-        position
-      )
+      SemanticCheck.error(SemanticError.invalidFunctionForIndex(entityIndexDescription, name, validFunction, position))
     case _ =>
       checkOptionsMap(indexType.allDescription, options) chain
         super.semanticCheck chain

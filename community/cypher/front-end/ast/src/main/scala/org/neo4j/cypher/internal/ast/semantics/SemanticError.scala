@@ -44,6 +44,96 @@ object SemanticError {
 
   def unapply(errorDef: SemanticErrorDef): Option[(String, InputPosition)] = Some((errorDef.msg, errorDef.position))
 
+  def invalidOption(schemaString: String, invalidOptions: String, position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql42001_22N04(
+      invalidOptions,
+      GqlParams.StringParam.input.process("OPTIONS"),
+      java.util.List.of("indexProvider", "indexConfig"),
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(
+      gql,
+      s"Failed to create $schemaString: Invalid option provided, valid options are `indexProvider` and `indexConfig`.",
+      position
+    )
+  }
+
+  def authForbidsClauseError(
+    provider: String,
+    unsupportedClause: String,
+    expected: java.util.List[String],
+    position: InputPosition
+  ): SemanticError = {
+    val gql = GqlHelper.getGql42001_22N04(
+      unsupportedClause,
+      "auth provider " + GqlParams.StringParam.input.process(provider) + " attribute",
+      expected,
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(
+      gql,
+      s"Auth provider `$provider` does not allow `$unsupportedClause` clause.",
+      position
+    )
+  }
+
+  def unsupportedActionAccess(
+    actionName: String,
+    expectedActions: java.util.List[String],
+    position: InputPosition
+  ): SemanticError = {
+    val gql = GqlHelper.getGql42001_22N04(
+      actionName,
+      "property value access rules",
+      expectedActions,
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, s"$actionName is not supported for property value access rules.", position)
+  }
+
+  def yieldMissingColumn(
+    originalName: String,
+    expectedColumns: java.util.List[String],
+    position: InputPosition
+  ): SemanticError = {
+    val gql = GqlHelper.getGql42001_22N04(
+      originalName,
+      "column name",
+      expectedColumns,
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, s"Trying to YIELD non-existing column: `$originalName`", position)
+  }
+
+  def invalidFunctionForIndex(
+    entityIndexDescription: String,
+    name: String,
+    validFunction: String,
+    position: InputPosition
+  ): SemanticError = {
+    val gql = GqlHelper.getGql42001_22N04(
+      name,
+      "function name",
+      java.util.List.of(validFunction),
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(
+      gql,
+      s"Failed to create $entityIndexDescription: Function '$name' is not allowed, valid function is '$validFunction'.",
+      position
+    )
+  }
+
   def invalidUseOfGraphFunction(graphFunction: String, pos: InputPosition): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
       .atPosition(pos.line, pos.column, pos.offset)
@@ -57,6 +147,54 @@ object SemanticError {
       s"`$graphFunction` is only allowed at the first position of a USE clause.",
       pos
     )
+  }
+  val existsErrorMessage = "The EXISTS expression is not valid in driver settings."
+  val countErrorMessage = "The COUNT expression is not valid in driver settings."
+  val collectErrorMessage = "The COLLECT expression is not valid in driver settings."
+  val genericErrorMessage = "This expression is not valid in driver settings."
+
+  def existsInDriverSettings(position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql22N81(
+      GqlParams.StringParam.cmd.process("EXISTS"),
+      "driver settings",
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, existsErrorMessage, position)
+  }
+
+  def countInDriverSettings(position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql22N81(
+      GqlParams.StringParam.cmd.process("COUNT"),
+      "driver settings",
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, countErrorMessage, position)
+  }
+
+  def collectInDriverSettings(position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql22N81(
+      GqlParams.StringParam.cmd.process("COLLECT"),
+      "driver settings",
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, collectErrorMessage, position)
+  }
+
+  def genericDriverSettingsFail(position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql22N81(
+      GqlParams.StringParam.cmd.process("EXISTS"),
+      "driver settings",
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, genericErrorMessage, position)
   }
 
   def cannotUseJoinHint(hint: UsingJoinHint, prettifiedHint: String): SemanticError = {

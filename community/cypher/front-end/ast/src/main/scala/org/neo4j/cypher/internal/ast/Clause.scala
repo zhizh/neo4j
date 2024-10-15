@@ -130,7 +130,10 @@ import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.kernel.database.NormalizedDatabaseName
 
+import java.util.stream.Collectors
+
 import scala.annotation.tailrec
+import scala.jdk.CollectionConverters.IterableHasAsJava
 
 sealed trait Clause extends ASTNode with SemanticCheckable with SemanticAnalysisTooling {
   def name: String
@@ -2105,11 +2108,19 @@ object CommandClause {
 case class CommandResultItem(originalName: String, aliasedVariable: LogicalVariable)(val position: InputPosition)
     extends ASTNode with SemanticAnalysisTooling {
 
-  def semanticCheck(columns: Map[String, CypherType]): SemanticCheck =
+  def semanticCheck(columns: Map[String, CypherType]): SemanticCheck = {
+
     columns
       .get(originalName)
       .map { typ => declareVariable(aliasedVariable, typ): SemanticCheck }
-      .getOrElse(error(s"Trying to YIELD non-existing column: `$originalName`", position))
+      .getOrElse({
+        SemanticCheck.error(SemanticError.yieldMissingColumn(
+          originalName,
+          columns.keys.toList.asJavaCollection.stream().collect(Collectors.toList()),
+          position
+        ))
+      })
+  }
 }
 
 // Column name together with the column type

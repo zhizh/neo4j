@@ -40,10 +40,9 @@ case class PropertyExistenceOrTypeConstraintOptionsConverter(
     config: Option[Config],
     cypherVersion: CypherVersion
   ): OptionsConverterResult[CreateWithNoOptions] = {
-    if (!options.isEmpty)
-      throw new InvalidArgumentsException(
-        s"Could not create $entity property $constraintType constraint: property $constraintType constraints have no valid options values."
-      )
+    if (!options.isEmpty) {
+      throw InvalidArgumentsException.noValidPropertyConstraintOptions(entity, constraintType)
+    }
     ParsedOptions(CreateWithNoOptions())
   }
 

@@ -46,7 +46,7 @@ abstract class CreateRangeOptionsConverter(schemaType: String)
     schemaType: String,
     indexProvider: Option[IndexProviderDescriptor]
   ): IndexConfig =
-    assertEmptyConfig(config, schemaType, "range")
+    assertEmptyConfig(config, schemaType, IndexType.RANGE)
 
   override def operation: String = s"create $schemaType"
 }
