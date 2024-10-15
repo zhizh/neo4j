@@ -29,9 +29,11 @@ import org.neo4j.annotations.api.PublicApi;
 public interface ErrorGqlStatusObject extends CommonGqlStatusObject {
     String DEFAULT_STATUS_CODE = GqlStatusInfoCodes.STATUS_50N42.getStatusString();
 
-    String DEFAULT_STATUS_DESCRIPTION = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
-            .build()
-            .statusDescription();
+    String DEFAULT_STATUS_DESCRIPTION = String.format(
+            "%s. %s",
+            Condition.createStandardDescription(
+                    GqlStatusInfoCodes.STATUS_50N42.getCondition(), GqlStatusInfoCodes.STATUS_50N42.getSubCondition()),
+            GqlStatusInfoCodes.STATUS_50N42.getMessage(Map.of()));
 
     ErrorGqlStatusObject gqlStatusObject();
 

@@ -88,6 +88,14 @@ class ErrorGqlStatusObjectTest {
         }
     }
 
+    @Test
+    void testDefaultStatusDescription() {
+        var errorWithoutGql = new ExceptionWithoutCause(null, "message");
+        assertEquals(
+                "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.",
+                errorWithoutGql.statusDescription());
+    }
+
     static class ExceptionWithoutCause extends GqlException {
         private final ErrorGqlStatusObject gqlStatusObject;
         private final String oldMessage;
