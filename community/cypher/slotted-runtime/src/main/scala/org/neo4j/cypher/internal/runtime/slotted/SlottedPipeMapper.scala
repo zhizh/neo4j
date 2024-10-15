@@ -1162,7 +1162,7 @@ class SlottedPipeMapper(
           expansionMode,
           nodePredicates,
           relationshipPredicates,
-          _
+          matchMode
         ) =>
         val shouldExpandAll = expansionMode match {
           case ExpandAll  => true
@@ -1195,7 +1195,8 @@ class SlottedPipeMapper(
           shouldExpandAll,
           slots,
           predicates,
-          argumentSize = argumentSize
+          argumentSize,
+          matchMode
         )(id)
 
       case BFSPruningVarExpand(

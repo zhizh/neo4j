@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
 import org.neo4j.collection.trackable.HeapTrackingCollections
 import org.neo4j.cypher.internal.expressions.SemanticDirection
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.IsNoValue
@@ -28,6 +29,7 @@ import org.neo4j.cypher.internal.runtime.RelationshipContainer
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.VarLengthExpandPipe.projectBackwards
 import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.exceptions.InternalException
+import org.neo4j.memory.EmptyMemoryTracker
 import org.neo4j.values.virtual.VirtualNodeValue
 import org.neo4j.values.virtual.VirtualValues
 
@@ -42,6 +44,7 @@ case class VarLengthExpandPipe(
   min: Int,
   max: Option[Int],
   nodeInScope: Boolean,
+  traversalMatchMode: TraversalMatchMode,
   filteringStep: TraversalPredicates = TraversalPredicates.NONE
 )(val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
 
@@ -53,9 +56,9 @@ case class VarLengthExpandPipe(
   ): ClosingIterator[(VirtualNodeValue, RelationshipContainer)] = {
     val memoryTracker = state.memoryTrackerForOperatorProvider.memoryTrackerForOperator(id.x)
     val stack = HeapTrackingCollections.newArrayDeque[(VirtualNodeValue, RelationshipContainer)](
-      memoryTracker
+      EmptyMemoryTracker.INSTANCE
     )
-    stack.push((node, RelationshipContainer.empty(memoryTracker)))
+    stack.push((node, RelationshipContainer.empty(memoryTracker, traversalMatchMode)))
 
     new ClosingIterator[(VirtualNodeValue, RelationshipContainer)] {
       def next(): (VirtualNodeValue, RelationshipContainer) = {
@@ -73,7 +76,7 @@ case class VarLengthExpandPipe(
             )
             val otherNode = VirtualValues.node(relationships.otherNodeId(node.id()))
             if (filteringStep.filterRelationship(row, state, rel, node, otherNode)) {
-              if (!rels.contains(rel) && filteringStep.filterNode(row, state, otherNode)) {
+              if (rels.canAdd(rel) && filteringStep.filterNode(row, state, otherNode)) {
                 stack.push((otherNode, rels.append(rel)))
               }
             }

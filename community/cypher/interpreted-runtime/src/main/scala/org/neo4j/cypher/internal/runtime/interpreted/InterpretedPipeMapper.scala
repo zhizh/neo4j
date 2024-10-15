@@ -1246,7 +1246,7 @@ case class InterpretedPipeMapper(
           expansionMode,
           nodePredicates,
           relationshipPredicates,
-          _
+          matchMode
         ) =>
         val predicate = createTraversalPredicates(id, nodePredicates, relationshipPredicates)
 
@@ -1266,6 +1266,7 @@ case class InterpretedPipeMapper(
           min,
           max,
           nodeInScope,
+          matchMode,
           predicate
         )(id = id)
 

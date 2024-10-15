@@ -19,31 +19,66 @@
  */
 package org.neo4j.cypher.internal.runtime
 
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.memory.MemoryTracker
 import org.neo4j.values.virtual.ListValue
 import org.neo4j.values.virtual.VirtualRelationshipValue
 import org.neo4j.values.virtual.VirtualValues.EMPTY_LIST
 
-/**
- * Utility class that has constant time `append`, `contains`, and `size` methods
- */
-class RelationshipContainer private (val asList: ListValue, val size: Int, set: HeapTrackingLongImmutableSet) {
-
-  def append(rel: VirtualRelationshipValue): RelationshipContainer = {
-    new RelationshipContainer(asList.append(rel), size + 1, set + rel.id())
-  }
-  def contains(rel: VirtualRelationshipValue): Boolean = set.contains(rel.id())
-  def contains(relId: Long): Boolean = set.contains(relId)
-
-  def reverse: RelationshipContainer = new RelationshipContainer(asList.reverse(), size, set)
-
-  def close(): Unit = {
-    set.close()
-  }
+trait RelationshipContainer extends AutoCloseable {
+  def append(rel: VirtualRelationshipValue): RelationshipContainer
+  def canAdd(rel: VirtualRelationshipValue): Boolean
+  def canAdd(relId: Long): Boolean
+  def reverse: RelationshipContainer
+  def size: Int
+  def asList: ListValue
 }
 
 object RelationshipContainer {
 
-  def empty(memoryTracker: MemoryTracker) =
-    new RelationshipContainer(EMPTY_LIST, 0, HeapTrackingLongImmutableSet.emptySet(memoryTracker))
+  /**
+   * Utility class that has constant time `append`, `contains`, and `size` methods
+   */
+  private class TrailModeRelationshipContainer private[RelationshipContainer] (
+    val asList: ListValue,
+    val size: Int,
+    set: HeapTrackingLongImmutableSet
+  ) extends RelationshipContainer {
+
+    override def append(rel: VirtualRelationshipValue): RelationshipContainer = {
+      new TrailModeRelationshipContainer(asList.append(rel), size + 1, set + rel.id())
+    }
+    override def canAdd(rel: VirtualRelationshipValue): Boolean = !set.contains(rel.id())
+    override def canAdd(relId: Long): Boolean = !set.contains(relId)
+
+    override def reverse: RelationshipContainer = new TrailModeRelationshipContainer(asList.reverse(), size, set)
+
+    override def close(): Unit = {
+      set.close()
+    }
+  }
+
+  private class WalkModeRelationshipContainer private[RelationshipContainer] (val asList: ListValue, val size: Int)
+      extends RelationshipContainer {
+
+    override def append(rel: VirtualRelationshipValue): RelationshipContainer = {
+      new WalkModeRelationshipContainer(asList.append(rel), size + 1)
+    }
+    override def canAdd(rel: VirtualRelationshipValue): Boolean = true
+    override def canAdd(relId: Long): Boolean = true
+
+    override def reverse: RelationshipContainer = new WalkModeRelationshipContainer(asList.reverse(), size)
+
+    override def close(): Unit = {
+      // nothing to close
+    }
+  }
+
+  def empty(memoryTracker: MemoryTracker, traversalMatchMode: TraversalMatchMode): RelationshipContainer =
+    traversalMatchMode match {
+      case TraversalMatchMode.Walk =>
+        new WalkModeRelationshipContainer(EMPTY_LIST, 0)
+      case TraversalMatchMode.Trail =>
+        new TrailModeRelationshipContainer(EMPTY_LIST, 0, HeapTrackingLongImmutableSet.emptySet(memoryTracker))
+    }
 }

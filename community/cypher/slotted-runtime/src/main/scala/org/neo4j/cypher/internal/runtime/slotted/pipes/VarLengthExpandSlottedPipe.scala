@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 
 import org.neo4j.collection.trackable.HeapTrackingCollections
 import org.neo4j.cypher.internal.expressions.SemanticDirection
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.physicalplanning.Slot
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
 import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor
@@ -58,7 +59,8 @@ case class VarLengthExpandSlottedPipe(
   shouldExpandAll: Boolean,
   slots: SlotConfiguration,
   predicates: TraversalPredicates,
-  argumentSize: SlotConfiguration.Size
+  argumentSize: SlotConfiguration.Size,
+  traversalMatchMode: TraversalMatchMode
 )(val id: Id = Id.INVALID_ID) extends PipeWithSource(source) {
   type LNode = Long
 
@@ -89,12 +91,12 @@ case class VarLengthExpandSlottedPipe(
     val stackOfNodes = HeapTrackingCollections.newLongStack(memoryTracker)
     val stackOfRelContainers = HeapTrackingCollections.newArrayDeque[RelationshipContainer](memoryTracker)
     stackOfNodes.push(node)
-    stackOfRelContainers.push(RelationshipContainer.empty(memoryTracker))
+    stackOfRelContainers.push(RelationshipContainer.empty(memoryTracker, traversalMatchMode))
 
     new ClosingIterator[(LNode, (Int, ListValue))] {
       override def next(): (LNode, (Int, ListValue)) = {
         val fromNode = stackOfNodes.pop()
-        val rels = stackOfRelContainers.pop()
+        val rels: RelationshipContainer = stackOfRelContainers.pop()
         if (rels.size < maxDepth.getOrElse(Int.MaxValue)) {
           val relationships: RelationshipIterator =
             state.query.getRelationshipsForIds(fromNode, dir, types.types(state.query))
@@ -102,9 +104,7 @@ case class VarLengthExpandSlottedPipe(
           // relationships get immediately exhausted. Therefore we do not need a ClosingIterator here.
           while (relationships.hasNext) {
             val relId = relationships.next()
-            val relationshipIsUniqueInPath = !rels.contains(relId)
-
-            if (relationshipIsUniqueInPath) {
+            if (rels.canAdd(relId)) {
               // Before expanding, check that both the relationship and node in question fulfil the predicate
               val rel = state.query.relationshipById(
                 relId,

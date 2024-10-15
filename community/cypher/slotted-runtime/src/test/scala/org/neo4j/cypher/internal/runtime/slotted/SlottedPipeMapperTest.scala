@@ -58,6 +58,7 @@ import org.neo4j.cypher.internal.logical.plans.Projection
 import org.neo4j.cypher.internal.logical.plans.Selection
 import org.neo4j.cypher.internal.logical.plans.SingleQueryExpression
 import org.neo4j.cypher.internal.logical.plans.Sort
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.logical.plans.UnwindCollection
 import org.neo4j.cypher.internal.logical.plans.VarExpand
 import org.neo4j.cypher.internal.options.CypherVersion
@@ -547,7 +548,8 @@ class SlottedPipeMapperTest extends CypherFunSuite with LogicalPlanningTestSuppo
       shouldExpandAll = true,
       varExpandSlots,
       TraversalPredicates.NONE,
-      Size(1, 0)
+      Size(1, 0),
+      TraversalMatchMode.Trail
     )())
   }
 
@@ -614,7 +616,8 @@ class SlottedPipeMapperTest extends CypherFunSuite with LogicalPlanningTestSuppo
         shouldExpandAll = false,
         varExpandSlots,
         TraversalPredicates.NONE,
-        Size(3, 0)
+        Size(3, 0),
+        TraversalMatchMode.Trail
       )()
     )
   }
