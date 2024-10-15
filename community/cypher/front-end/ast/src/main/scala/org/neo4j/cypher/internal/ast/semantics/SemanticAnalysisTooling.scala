@@ -320,11 +320,11 @@ trait SemanticAnalysisTooling {
     SemanticCheck.error(SemanticError(gqlStatusObject, msg, position))
 
   def unsupportedRequestErrorOnSystemDatabase(
-    thing: String,
+    invalidInput: String,
     legacyMessage: String,
     position: InputPosition
   ): SemanticCheck =
-    SemanticCheck.error(SemanticError.unsupportedRequestOnSystemDatabase(thing, legacyMessage, position))
+    SemanticCheck.error(SemanticError.unsupportedRequestOnSystemDatabase(invalidInput, legacyMessage, position))
 
   def invalidInputError(
     wrongInput: String,

@@ -247,11 +247,15 @@ object SemanticError {
     )
   }
 
-  def unsupportedRequestOnSystemDatabase(thing: String, legacyMessage: String, pos: InputPosition): SemanticError = {
+  def unsupportedRequestOnSystemDatabase(
+    invalidInput: String,
+    legacyMessage: String,
+    pos: InputPosition
+  ): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
       .withCause(
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
-          .withParam(GqlParams.StringParam.input, thing)
+          .withParam(GqlParams.StringParam.input, invalidInput)
           .build()
       )
       .build()

@@ -68,10 +68,11 @@ public class InvalidSemanticsException extends Neo4jException {
         return new InvalidSemanticsException(gql, legacyMessage);
     }
 
-    public static InvalidSemanticsException unsupportedRequestOnSystemDatabase(String thing, String legacyMessage) {
+    public static InvalidSemanticsException unsupportedRequestOnSystemDatabase(
+            String invalidInput, String legacyMessage) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
-                        .withParam(GqlParams.StringParam.input, thing)
+                        .withParam(GqlParams.StringParam.input, invalidInput)
                         .build())
                 .build();
         return new InvalidSemanticsException(gql, legacyMessage);

@@ -39,14 +39,14 @@ trait CypherExceptionFactory {
   def syntaxException(gqlStatusObject: ErrorGqlStatusObject, message: String, pos: InputPosition): RuntimeException
 
   def unsupportedRequestOnSystemDatabaseException(
-    thing: String,
+    invalidInput: String,
     legacyMessage: String,
     pos: InputPosition
   ): RuntimeException = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
       .withCause(
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N17)
-          .withParam(GqlParams.StringParam.input, thing)
+          .withParam(GqlParams.StringParam.input, invalidInput)
           .build()
       )
       .build()
