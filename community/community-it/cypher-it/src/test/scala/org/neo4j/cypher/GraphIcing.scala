@@ -34,6 +34,7 @@ import org.neo4j.graphdb.schema.IndexType
 import org.neo4j.graphdb.schema.PropertyType
 import org.neo4j.internal.helpers.NameUtil
 import org.neo4j.internal.helpers.collection.Iterables
+import org.neo4j.internal.kernel.api.security.LoginContext
 import org.neo4j.internal.kernel.api.security.LoginContext.AUTH_DISABLED
 import org.neo4j.internal.schema.IndexProviderDescriptor
 import org.neo4j.kernel.GraphDatabaseQueryService
@@ -717,7 +718,11 @@ trait GraphIcing {
     // Transaction methods
 
     // Runs code inside of a transaction. Will mark the transaction as successful if no exception is thrown
-    def inTx[T](f: InternalTransaction => T, txType: Type = Type.IMPLICIT): T = withTx(f, txType)
+    def inTx[T](
+      f: InternalTransaction => T,
+      txType: Type = Type.IMPLICIT,
+      loginContext: LoginContext = AUTH_DISABLED
+    ): T = withTx(f, txType, loginContext)
 
     def inTx[T](f: => T): T = inTx(_ => f, Type.IMPLICIT)
 
@@ -746,8 +751,12 @@ trait GraphIcing {
     }
 
     // Runs code inside of a transaction. Will mark the transaction as successful if no exception is thrown
-    def withTx[T](f: InternalTransaction => T, txType: Type = Type.IMPLICIT): T = {
-      val tx = graphService.beginTransaction(txType, AUTH_DISABLED)
+    def withTx[T](
+      f: InternalTransaction => T,
+      txType: Type = Type.IMPLICIT,
+      loginContext: LoginContext = AUTH_DISABLED
+    ): T = {
+      val tx = graphService.beginTransaction(txType, loginContext)
       try {
         val result = f(tx)
         // HACK: A lot of tests do not close the result but relies on implicit closing
@@ -770,8 +779,8 @@ trait GraphIcing {
 
     }
 
-    def rollback[T](f: InternalTransaction => T): T = {
-      val tx = graphService.beginTransaction(Type.IMPLICIT, AUTH_DISABLED)
+    def rollback[T](f: InternalTransaction => T, loginContext: LoginContext = AUTH_DISABLED): T = {
+      val tx = graphService.beginTransaction(Type.IMPLICIT, loginContext)
       try {
         val result = f(tx)
         tx.rollback()
