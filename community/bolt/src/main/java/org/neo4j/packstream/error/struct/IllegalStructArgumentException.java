@@ -91,7 +91,7 @@ public class IllegalStructArgumentException extends PackstreamStructException {
 
     public static IllegalStructArgumentException invalidCoordinateArguments(
             String fieldName, String valueType, double[] coordinates, String message, Throwable cause) {
-        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N06)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N24)
                         .withParam(GqlParams.StringParam.valueType, valueType)
                         .withParam(GqlParams.StringParam.coordinates, Arrays.toString(coordinates))
