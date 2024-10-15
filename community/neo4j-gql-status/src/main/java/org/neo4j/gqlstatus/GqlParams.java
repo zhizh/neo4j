@@ -190,6 +190,7 @@ public class GqlParams {
 
     public enum ListParam implements GqlParam, HasJoinStyle {
         characterRangeList(new NELIST().withInner(StringParam.characterRange.processor)),
+        hintList(new NELIST().withInner(StringParam.hint.processor)),
         inputList(new NELIST().withInner(StringParam.input.processor)),
         labelList(new NELIST().withInner(StringParam.label.processor)),
         mapKeyList(new NELIST().withInner(StringParam.mapKey.processor)),

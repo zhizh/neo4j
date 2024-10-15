@@ -148,9 +148,7 @@ object VerifyBestPlan {
     if (hints.nonEmpty) {
       // we were unable to plan hash join on some requested nodes
       if (context.settings.useErrorsOverWarnings) {
-        // TODO: Is this correct param value?
-        val hintString = hints.map(prettifier.asString).mkString(", ");
-        throw JoinHintException.unableToPlanHashJoin(hintString, plan.toString)
+        throw JoinHintException.unableToPlanHashJoin(hints.map(prettifier.asString).toSeq.asJava, plan.toString)
       } else {
         hints.foreach { hint =>
           context.staticComponents.notificationLogger.log(

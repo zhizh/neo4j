@@ -3459,11 +3459,11 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_42N76(
             new GqlStatus("42N76"),
             """
-                    The hint { %s } cannot be fulfilled.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.hint},
-            emptyMap(),
+                    The hint(s) { %s } cannot be fulfilled.""",
+            new GqlParams.GqlParam[] {GqlParams.ListParam.hintList},
+            Map.of(GqlParams.ListParam.hintList, GqlParams.JoinStyle.ANDED),
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
-            "unfulfillable hint",
+            "unfulfillable hints",
             ErrorClassification.CLIENT_ERROR),
     STATUS_42N77(
             new GqlStatus("42N77"),

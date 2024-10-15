@@ -24,6 +24,8 @@ import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
+import scala.jdk.CollectionConverters.SeqHasAsJava
+
 sealed trait SemanticErrorDef {
   def msg: String
   def position: InputPosition
@@ -59,7 +61,7 @@ object SemanticError {
 
   def cannotUseJoinHint(hint: UsingJoinHint, prettifiedHint: String): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N76)
-      .withParam(GqlParams.StringParam.hint, prettifiedHint)
+      .withParam(GqlParams.ListParam.hintList, Seq(prettifiedHint).asJava)
       .atPosition(hint.position.line, hint.position.column, hint.position.offset)
       .build()
     SemanticError(gql, "Cannot use join hint for single node pattern.", hint.position)

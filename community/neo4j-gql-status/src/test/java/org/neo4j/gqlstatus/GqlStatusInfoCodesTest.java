@@ -447,8 +447,8 @@ public class GqlStatusInfoCodesTest {
         byte[] gqlHash = DigestUtils.sha256(gqlBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            23, -122, -86, -91, -57, -113, 68, -120, -115, -103, 109, 83, -9, 95, -69, 0, -64, 49, -13, -28, 49, 18,
-            -28, -106, -73, -75, -110, -39, -73, 122, 85, 89
+            -31, -99, -69, 22, 74, 111, 19, -58, -40, -121, -120, -43, 113, 107, 45, -115, 58, -46, 65, -51, 112, 48,
+            104, 7, 6, 11, 21, 80, -119, -107, 23, -80
         };
 
         if (!Arrays.equals(gqlHash, expectedHash)) {
