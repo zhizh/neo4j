@@ -340,7 +340,7 @@ private class DefaultExpressionStringifier(
         s"${inner(ast)(arg)}$l"
 
       case HasAnyDynamicLabel(arg, labels) =>
-        val l = labels.map(apply).map(l => s":$$any($l)").mkString
+        val l = labels.map(apply).map(l => s"$$any($l)").mkString(":", "|", "")
         s"${inner(ast)(arg)}$l"
 
       case HasALabel(arg) =>
