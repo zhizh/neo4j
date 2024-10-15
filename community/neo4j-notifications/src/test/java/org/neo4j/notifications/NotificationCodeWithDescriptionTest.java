@@ -1696,7 +1696,7 @@ class NotificationCodeWithDescriptionTest {
                 NotificationClassification.SECURITY,
                 "01N72",
                 new DiagnosticRecord(warning, NotificationClassification.SECURITY, -1, -1, -1, Map.of()).asMap(),
-                "warn: query uses an insecure protocol. Please consider using 'https' instead.");
+                "warn: insecure URL protocol. Query uses an insecure protocol. Consider using 'https' instead.");
     }
 
     @Test
@@ -1843,8 +1843,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            19, 30, -75, 97, 9, 29, 32, 97, -68, 18, -86, 73, -14, -104, -22, -73, -97, 49, 25, -87, -65, -47, 29, 126,
-            -119, 50, -91, 87, 34, -31, -99, 84
+            69, -110, -29, 93, 12, 13, -1, -80, -46, 19, 27, 69, -117, 15, -81, -37, -63, -55, -63, 10, -34, -35, -122,
+            60, -20, 92, 67, -112, 82, -28, 111, -118
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {

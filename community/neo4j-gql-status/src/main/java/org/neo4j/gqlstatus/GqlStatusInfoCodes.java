@@ -349,11 +349,11 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             NotificationClassification.SECURITY),
     STATUS_01N72(
             new GqlStatus("01N72"),
-            "Please consider using 'https' instead.",
+            "Query uses an insecure protocol. Consider using 'https' instead.",
             new GqlParams.GqlParam[] {},
             emptyMap(),
             Condition.WARNING,
-            "query uses an insecure protocol",
+            "insecure URL protocol",
             NotificationClassification.SECURITY),
     STATUS_02000(
             new GqlStatus("02000"),
