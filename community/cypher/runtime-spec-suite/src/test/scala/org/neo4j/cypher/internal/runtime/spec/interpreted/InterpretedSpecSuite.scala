@@ -22,6 +22,7 @@ package org.neo4j.cypher.internal.runtime.spec.interpreted
 import org.neo4j.cypher.internal.CommunityRuntimeContext
 import org.neo4j.cypher.internal.InterpretedRuntime
 import org.neo4j.cypher.internal.logical.plans.TransactionConcurrency
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.runtime.spec.COMMUNITY
 import org.neo4j.cypher.internal.runtime.spec.interpreted.InterpretedSpecSuite.SIZE_HINT
 import org.neo4j.cypher.internal.runtime.spec.tests.AggregationTestBase
@@ -252,7 +253,12 @@ class InterpretedOptionalExpandAllTest
 
 class InterpretedOptionalExpandIntoTest
     extends OptionalExpandIntoTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
-class InterpretedVarExpandAllTest extends VarLengthExpandTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
+
+class InterpretedVarExpandTrailTest
+    extends VarLengthExpandTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT, TraversalMatchMode.Trail)
+
+class InterpretedVarExpandWalkTest
+    extends VarLengthExpandTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT, TraversalMatchMode.Walk)
 
 class InterpretedPruningVarExpandTest
     extends PruningVarLengthExpandTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
