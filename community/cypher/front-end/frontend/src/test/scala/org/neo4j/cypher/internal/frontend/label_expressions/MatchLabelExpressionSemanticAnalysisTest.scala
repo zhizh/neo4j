@@ -744,4 +744,26 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   test("MATCH (n)-[:$(['Foo', 'Bar'])]-() RETURN *") {
     runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
   }
+
+  test("MATCH (n)-[:!$('R')]-() RETURN *") {
+    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    result.state.semantics().notifications.map(_.notificationName) shouldBe empty
+  }
+
+  test("MATCH (n)-[:A&$('R')]-() RETURN *") {
+    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    result.state.semantics().notifications.map(_.notificationName) shouldBe empty
+  }
+
+  test("MATCH (n)-[:$('R2')&$('R')]-() RETURN *") {
+    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    result.state.semantics().notifications.map(_.notificationName) shouldBe empty
+  }
+
+  test("MATCH (n)-[:A&!%]-() RETURN *") {
+    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    result.state.semantics().notifications.map(_.notificationName) shouldBe Set(
+      "UnsatisfiableRelationshipTypeExpression"
+    )
+  }
 }

@@ -26,6 +26,8 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.Conjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
+import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.bottomUp
@@ -91,13 +93,13 @@ sealed trait LabelExpression extends ASTNode {
    * CREATE, MATCH, MERGE, SET and REMOVE clauses at this time.
    */
   def containsDynamicLabelOrTypeExpression: Boolean = this match {
-    case conj: ColonConjunction =>
+    case conj: BinaryLabelExpression =>
       conj.lhs.containsDynamicLabelOrTypeExpression || conj.rhs.containsDynamicLabelOrTypeExpression
-    case conj: Conjunctions =>
-      conj.children.exists(expr => expr.containsDynamicLabelOrTypeExpression)
-    case _: Leaf        => false
-    case _: DynamicLeaf => true
-    case _              => false
+    case conj: MultiOperatorLabelExpression => conj.children.exists(expr => expr.containsDynamicLabelOrTypeExpression)
+    case Negation(e, _)                     => e.containsDynamicLabelOrTypeExpression
+    case _: Leaf                            => false
+    case _: Wildcard                        => false
+    case _: DynamicLeaf                     => true
   }
 
   def replaceColonSyntax: LabelExpression = this.endoRewrite(bottomUp({

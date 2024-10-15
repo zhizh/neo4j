@@ -503,7 +503,7 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
 
     def unsatisfiableRelTypeExpression(labelExpression: LabelExpression): SemanticCheck = {
       val allowsForOneRelationship = SolvableLabelExpression.from(labelExpression).containsSolutionsForRelationship
-      when(!allowsForOneRelationship) {
+      when(!allowsForOneRelationship && !labelExpression.containsDynamicLabelOrTypeExpression) {
         warn(UnsatisfiableRelationshipTypeExpression(
           labelExpression.position,
           stringifier.stringifyLabelExpression(labelExpression)
