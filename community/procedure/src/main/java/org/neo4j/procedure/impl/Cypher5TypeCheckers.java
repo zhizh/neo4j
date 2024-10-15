@@ -189,10 +189,7 @@ public class Cypher5TypeCheckers {
             } else if (rawType == Map.class) {
                 Type type = pt.getActualTypeArguments()[0];
                 if (type != String.class) {
-                    throw new ProcedureException(
-                            Status.Procedure.ProcedureRegistrationFailed,
-                            "Maps are required to have `String` keys - but this map has `%s` keys.",
-                            type.getTypeName());
+                    throw ProcedureException.invalidMapKeyType(type.getTypeName());
                 }
                 return TO_MAP;
             }
@@ -285,11 +282,7 @@ public class Cypher5TypeCheckers {
                 try {
                     return Optional.of(parser.apply(defaultValue));
                 } catch (Exception e) {
-                    throw new ProcedureException(
-                            Status.Procedure.ProcedureRegistrationFailed,
-                            "Default value `%s` could not be parsed as a %s",
-                            defaultValue,
-                            type.toString());
+                    throw ProcedureException.invalidDefaultValueType(defaultValue, type.toString());
                 }
             }
         }

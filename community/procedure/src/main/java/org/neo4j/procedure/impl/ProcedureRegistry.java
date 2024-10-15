@@ -85,18 +85,13 @@ public class ProcedureRegistry {
         validateSignature(descriptiveName, signature.outputSignature(), "output");
 
         if (!signature.isVoid() && signature.outputSignature().isEmpty()) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Procedures with zero output fields must be declared as VOID");
+            throw ProcedureException.classNotVoid(descriptiveName);
         }
 
         var supportedScopes = signature.supportedQueryLanguages();
         for (var scope : supportedScopes) {
             if (procedures.contains(name, scope)) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Unable to register procedure, because the name `%s` is already in use.",
-                        name);
+                throw ProcedureException.procedureNameAlreadyInUse(name.toString());
             }
         }
 
@@ -115,17 +110,11 @@ public class ProcedureRegistry {
 
         for (var scope : supportedScopes) {
             if (aggregationFunctions.contains(name, scope)) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Unable to register function, because the name `%s` is already in use as an aggregation function.",
-                        name);
+                throw ProcedureException.aggregationFunctionNameAlreadyInUseAsAggregationFunction(name.toString());
             }
 
             if (functions.contains(name, scope)) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Unable to register function, because the name `%s` is already in use.",
-                        name);
+                throw ProcedureException.functionNameAlreadyInUse(name.toString());
             }
         }
 
@@ -144,17 +133,11 @@ public class ProcedureRegistry {
 
         for (var scope : supportedScopes) {
             if (functions.contains(name, scope)) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Unable to register aggregation function, because the name `%s` is already in use as a function.",
-                        name);
+                throw ProcedureException.aggregationFunctionNameAlreadyInUseAsFunction(name.toString());
             }
 
             if (aggregationFunctions.contains(name, scope)) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Unable to register aggregation function, because the name `%s` is already in use.",
-                        name);
+                throw ProcedureException.aggregationFunctionNameAlreadyInUse(name.toString());
             }
         }
 
@@ -166,12 +149,7 @@ public class ProcedureRegistry {
         Set<String> names = new HashSet<>();
         for (FieldSignature field : fields) {
             if (!names.add(field.name())) {
-                throw new ProcedureException(
-                        Status.Procedure.ProcedureRegistrationFailed,
-                        "Procedure `%s` cannot be registered, because it contains a duplicated " + fieldType
-                                + " field, '%s'. " + "You need to rename or remove one of the duplicate fields.",
-                        descriptiveName,
-                        field.name());
+                throw ProcedureException.duplicateFieldName(descriptiveName, fieldType, field.name());
             }
         }
     }

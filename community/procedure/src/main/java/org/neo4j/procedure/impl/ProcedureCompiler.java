@@ -41,7 +41,6 @@ import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
 import org.neo4j.kernel.api.QueryLanguage;
 import org.neo4j.kernel.api.exceptions.ComponentInjectionException;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.procedure.CallableProcedure;
 import org.neo4j.kernel.api.procedure.CallableUserAggregationFunction;
 import org.neo4j.kernel.api.procedure.CallableUserFunction;
@@ -458,27 +457,16 @@ class ProcedureCompiler {
                     update.getReturnType().getSimpleName());
         }
         if (!isPublic(create.getModifiers())) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Aggregation method '%s' in %s must be public.",
-                    create.getName(),
-                    definition.getSimpleName());
+            throw ProcedureException.aggregationMethodNotPublic(definition.getSimpleName(), create.getName());
         }
         if (!isPublic(aggregator.getModifiers())) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Aggregation class '%s' must be public.",
-                    aggregator.getSimpleName());
+            throw ProcedureException.aggregationClassNotPublic(aggregator.getSimpleName());
         }
         if (!isPublic(update.getModifiers())) {
-            throw ProcedureException.aggregationMethodNotPublic(aggregator.getSimpleName(), update.getName());
+            throw ProcedureException.aggregationUpdateMethodNotPublic(aggregator.getSimpleName(), update.getName());
         }
         if (!isPublic(result.getModifiers())) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Aggregation result method '%s' in %s must be public.",
-                    result.getName(),
-                    aggregator.getSimpleName());
+            throw ProcedureException.aggregationResultMethodNotPublic(aggregator.getSimpleName(), result.getName());
         }
 
         List<FieldSignature> inputSignature = inputSignatureDeterminer.signatureFor(update);
@@ -566,11 +554,7 @@ class ProcedureCompiler {
             }
         }
         if (!hasValidConstructor) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureRegistrationFailed,
-                    "Unable to find a usable public no-argument constructor in the class `%s`. "
-                            + "Please add a valid, public constructor, recompile the class and try again.",
-                    procDefinition.getSimpleName());
+            throw ProcedureException.unableToFindPublicConstructor(procDefinition.getSimpleName());
         }
     }
 

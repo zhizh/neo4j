@@ -304,7 +304,7 @@ public class ProcedureException extends KernelException {
                 returnType);
     }
 
-    public static ProcedureException aggregationMethodNotPublic(String procClass, String procMethod) {
+    public static ProcedureException aggregationUpdateMethodNotPublic(String procClass, String procMethod) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N09)
                         .withParam(GqlParams.StringParam.procClass, procClass)
@@ -317,6 +317,184 @@ public class ProcedureException extends KernelException {
                 "Aggregation update method '%s' in %s must be public.",
                 procMethod,
                 procClass);
+    }
+
+    public static ProcedureException aggregationMethodNotPublic(String procClass, String procMethod) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N10)
+                        .withParam(GqlParams.StringParam.procClass, procClass)
+                        .withParam(GqlParams.StringParam.procMethod, procMethod)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Aggregation method '%s' in %s must be public.",
+                procMethod,
+                procClass);
+    }
+
+    public static ProcedureException aggregationResultMethodNotPublic(String procClass, String procMethod) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N10)
+                        .withParam(GqlParams.StringParam.procClass, procClass)
+                        .withParam(GqlParams.StringParam.procMethod, procMethod)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Aggregation result method '%s' in %s must be public.",
+                procMethod,
+                procClass);
+    }
+
+    public static ProcedureException aggregationClassNotPublic(String procClass) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N11)
+                        .withParam(GqlParams.StringParam.procClass, procClass)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql, Status.Procedure.ProcedureRegistrationFailed, "Aggregation class '%s' must be public.", procClass);
+    }
+
+    public static ProcedureException unableToFindPublicConstructor(String procClass) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N11)
+                        .withParam(GqlParams.StringParam.procClass, procClass)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Unable to find a usable public no-argument constructor in the class `%s`. "
+                        + "Please add a valid, public constructor, recompile the class and try again.",
+                procClass);
+    }
+
+    public static ProcedureException classNotVoid(String proc) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N12)
+                        .withParam(GqlParams.StringParam.proc, proc)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Procedures with zero output fields must be declared as VOID");
+    }
+
+    public static ProcedureException procedureNameAlreadyInUse(String name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N13)
+                        .withParam(GqlParams.StringParam.procFun, name)
+                        .build())
+                .build();
+
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Unable to register procedure, because the name `%s` is already in use.",
+                name);
+    }
+
+    public static ProcedureException functionNameAlreadyInUse(String name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N13)
+                        .withParam(GqlParams.StringParam.procFun, name)
+                        .build())
+                .build();
+
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Unable to register function, because the name `%s` is already in use.",
+                name);
+    }
+
+    public static ProcedureException aggregationFunctionNameAlreadyInUse(String name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N13)
+                        .withParam(GqlParams.StringParam.procFun, name)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Unable to register aggregation function, because the name `%s` is already in use.",
+                name);
+    }
+
+    public static ProcedureException aggregationFunctionNameAlreadyInUseAsFunction(String name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N13)
+                        .withParam(GqlParams.StringParam.procFun, name)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Unable to register aggregation function, because the name `%s` is already in use as a function.",
+                name);
+    }
+
+    public static ProcedureException aggregationFunctionNameAlreadyInUseAsAggregationFunction(String name) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N13)
+                        .withParam(GqlParams.StringParam.procFun, name)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Unable to register function, because the name `%s` is already in use as an aggregation function.",
+                name);
+    }
+
+    public static ProcedureException duplicateFieldName(String proc, String fieldType, String field) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N14)
+                        .withParam(GqlParams.StringParam.proc, proc)
+                        .withParam(GqlParams.StringParam.procFieldType, fieldType)
+                        .withParam(GqlParams.StringParam.procField, field)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Procedure `%s` cannot be registered, because it contains a duplicated " + fieldType + " field, '%s'. "
+                        + "You need to rename or remove one of the duplicate fields.",
+                proc,
+                field);
+    }
+
+    public static ProcedureException invalidMapKeyType(String typeName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N15)
+                        .withParam(GqlParams.StringParam.valueType, typeName)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Maps are required to have `String` keys - but this map has `%s` keys.",
+                typeName);
+    }
+
+    public static ProcedureException invalidDefaultValueType(String defaultValue, String type) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N16)
+                        .withParam(GqlParams.StringParam.valueType, type)
+                        .withParam(GqlParams.StringParam.input, defaultValue)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureRegistrationFailed,
+                "Default value `%s` could not be parsed as a %s",
+                defaultValue,
+                type);
     }
 
     public static ProcedureException nonReloadableNamespaces(List<String> nonReloadableNamespaces, Status statusCode) {
