@@ -29,6 +29,7 @@ import org.neo4j.cypher.internal.logical.plans.Argument
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpandInto
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.Selection
+import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
@@ -50,6 +51,16 @@ class PruningVarExpanderTest extends CypherFunSuite with LogicalPlanningTestSupp
     rewrite(before) should equal(after)
   }
 
+  test("Do not rewrite to PruningVarExpand in walk mode") {
+    val before = new LogicalPlanBuilder(wholePlan = false)
+      .distinct("to AS to")
+      .expand("(from)-[*2..3]-(to)", matchMode = TraversalMatchMode.Walk)
+      .allNodeScan("from")
+      .build()
+
+    assertNotRewritten(before, policy = VarExpandRewritePolicy.PreferDFS)
+  }
+
   test("simplest possible query that can use BFSPruningVarExpand") {
     val before = new LogicalPlanBuilder(wholePlan = false)
       .distinct("to AS to")
@@ -64,6 +75,16 @@ class PruningVarExpanderTest extends CypherFunSuite with LogicalPlanningTestSupp
       .build()
 
     rewrite(before) should equal(after)
+  }
+
+  test("Do not rewrite to BFSPruningVarExpand in walk mode") {
+    val before = new LogicalPlanBuilder(wholePlan = false)
+      .distinct("to AS to")
+      .expand("(from)-[*1..3]->(to)", matchMode = TraversalMatchMode.Walk)
+      .allNodeScan("from")
+      .build()
+
+    assertNotRewritten(before, policy = VarExpandRewritePolicy.PreferDFS)
   }
 
   test("should not rewrite simplest possible VarExpandInto plan with DFS policy") {
