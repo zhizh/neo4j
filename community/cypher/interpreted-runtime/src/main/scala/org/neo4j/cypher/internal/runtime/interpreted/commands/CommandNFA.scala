@@ -36,12 +36,13 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.DirectionC
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.RelationshipTypes
 import org.neo4j.function.Predicates
-import org.neo4j.internal.kernel.api.RelationshipDataReader
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.NodeJuxtaposition
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipExpansion
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipPredicate
 import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.values.AnyValue
 import org.neo4j.values.virtual.VirtualRelationshipValue
@@ -73,8 +74,8 @@ case class CommandNFA(
         predicate(row, queryState, VirtualValues.node(l))
       }
 
-    def relPredicate(qualifiers: RelationshipQualifiers): Predicate[RelationshipDataReader] =
-      qualifiers.innerRelPred.fold(Predicates.alwaysTrue[RelationshipDataReader]()) { predicate => rel =>
+    def relPredicate(qualifiers: RelationshipQualifiers): Predicate[RelationshipTraversalEntities] =
+      qualifiers.innerRelPred.fold(RelationshipPredicate.ALWAYS_TRUE) { predicate => rel =>
         predicate(
           row,
           queryState,
@@ -83,15 +84,8 @@ case class CommandNFA(
       }
 
     def convertCompoundPredicate(commandPred: CompoundPredicate): MultiRelationshipExpansion.CompoundPredicate =
-      new MultiRelationshipExpansion.CompoundPredicate {
-        override def test(
-          startNode: Long,
-          rels: Array[VirtualRelationshipValue],
-          interiorNodes: Array[Long],
-          endNode: Long
-        ): Boolean =
-          commandPred.test(row, queryState, startNode, rels, interiorNodes, endNode)
-      }
+      (startNode: Long, rels: Array[VirtualRelationshipValue], interiorNodes: Array[Long], endNode: Long) =>
+        commandPred.test(row, queryState, startNode, rels, interiorNodes, endNode)
 
     // This is then used to retrieve each state given the id, completing the transition -> targetState.id -> targetState
     // mapping

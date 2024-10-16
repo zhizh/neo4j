@@ -21,6 +21,8 @@ package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks
 
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.AddTarget
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.CursorNextRelationship
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.CursorSetNode
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.Event
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.Expand
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.ExpandNode
@@ -63,6 +65,12 @@ private[ppbfs] class EventRecorder {
 
   def expandNode(node: Long, direction: TraversalDirection): EventRecorder =
     record(ExpandNode(node, direction))
+
+  def cursorSetNode(node: Long): EventRecorder =
+    record(CursorSetNode(node))
+
+  def cursorNextRelationship(nodeId: Long): EventRecorder =
+    record(CursorNextRelationship(nodeId))
 }
 
 private[ppbfs] object EventRecorder {
@@ -74,6 +82,8 @@ private[ppbfs] object EventRecorder {
   case class AddTarget(nodeId: Long) extends Event
   case class Expand(direction: TraversalDirection, forwardDepth: Int, backwardDepth: Int) extends Event
   case class ExpandNode(node: Long, direction: TraversalDirection) extends Event
+  case class CursorSetNode(node: Long) extends Event
+  case class CursorNextRelationship(node: Long) extends Event
 
   implicit class RichEventSeq(events: Seq[Event]) {
 

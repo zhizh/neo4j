@@ -21,19 +21,19 @@ package org.neo4j.internal.kernel.api.helpers.traversal.productgraph;
 
 import java.util.function.Predicate;
 import org.neo4j.graphdb.Direction;
-import org.neo4j.internal.kernel.api.RelationshipDataReader;
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName;
 
 public record RelationshipExpansion(
         State sourceState,
-        Predicate<RelationshipDataReader> relPredicate,
+        Predicate<RelationshipTraversalEntities> relPredicate,
         int[] types,
         Direction direction,
         SlotOrName slotOrName,
         State targetState)
         implements Transition {
 
-    public boolean testRelationship(RelationshipDataReader rel) {
+    public boolean testRelationship(RelationshipTraversalEntities rel) {
         return relPredicate.test(rel);
     }
 }

@@ -149,7 +149,7 @@ public final class PGPathPropagatingBFS<Row> extends PrefetchingIterator<Row> im
                 intoTarget,
                 finalState,
                 intoTarget == NO_SUCH_ENTITY ? SearchMode.Unidirectional : SearchMode.Bidirectional,
-                new ProductGraphTraversalCursor.DataGraphRelationshipCursorImpl(read, nodeCursor, relCursor),
+                new ProductGraphTraversalCursor.DataGraphRelationshipCursorImpl(read, nodeCursor, relCursor, hooks),
                 pathTracer,
                 toRow,
                 nonInlinedPredicate,

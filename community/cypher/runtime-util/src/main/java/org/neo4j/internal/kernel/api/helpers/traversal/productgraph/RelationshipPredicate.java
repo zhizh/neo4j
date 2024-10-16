@@ -22,22 +22,25 @@ package org.neo4j.internal.kernel.api.helpers.traversal.productgraph;
 import java.util.function.IntPredicate;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
-import org.neo4j.internal.kernel.api.RelationshipDataReader;
+import org.neo4j.function.Predicates;
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
 
 public interface RelationshipPredicate {
-    static Predicate<RelationshipDataReader> onId(LongPredicate idPredicate) {
+    Predicate<RelationshipTraversalEntities> ALWAYS_TRUE = Predicates.alwaysTrue();
+
+    static Predicate<RelationshipTraversalEntities> onId(LongPredicate idPredicate) {
         return (rel) -> idPredicate.test(rel.relationshipReference());
     }
 
-    static Predicate<RelationshipDataReader> onSource(LongPredicate idPredicate) {
+    static Predicate<RelationshipTraversalEntities> onSource(LongPredicate idPredicate) {
         return (rel) -> idPredicate.test(rel.sourceNodeReference());
     }
 
-    static Predicate<RelationshipDataReader> onTarget(LongPredicate idPredicate) {
+    static Predicate<RelationshipTraversalEntities> onTarget(LongPredicate idPredicate) {
         return (rel) -> idPredicate.test(rel.targetNodeReference());
     }
 
-    static Predicate<RelationshipDataReader> onType(IntPredicate idPredicate) {
+    static Predicate<RelationshipTraversalEntities> onType(IntPredicate idPredicate) {
         return (rel) -> idPredicate.test(rel.type());
     }
 }

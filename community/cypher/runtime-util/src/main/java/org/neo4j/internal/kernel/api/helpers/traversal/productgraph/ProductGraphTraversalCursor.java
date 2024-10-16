@@ -27,9 +27,10 @@ import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.KernelReadTracer;
 import org.neo4j.internal.kernel.api.NodeCursor;
 import org.neo4j.internal.kernel.api.Read;
-import org.neo4j.internal.kernel.api.RelationshipDataReader;
 import org.neo4j.internal.kernel.api.RelationshipTraversalCursor;
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection;
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
 import org.neo4j.memory.MemoryTracker;
 import org.neo4j.storageengine.api.DirectedTypes;
 import org.neo4j.storageengine.api.RelationshipDirection;
@@ -45,8 +46,12 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
     private TraversalDirection direction = TraversalDirection.FORWARD;
 
     public ProductGraphTraversalCursor(
-            Read read, NodeCursor nodeCursor, RelationshipTraversalCursor relCursor, MemoryTracker mt) {
-        this(new DataGraphRelationshipCursorImpl(read, nodeCursor, relCursor), mt);
+            Read read,
+            NodeCursor nodeCursor,
+            RelationshipTraversalCursor relCursor,
+            MemoryTracker mt,
+            PPBFSHooks hooks) {
+        this(new DataGraphRelationshipCursorImpl(read, nodeCursor, relCursor, hooks), mt);
     }
 
     public ProductGraphTraversalCursor(DataGraphRelationshipCursor graph, MemoryTracker mt) {
@@ -65,7 +70,7 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
     }
 
     public long otherNodeReference() {
-        return graphCursor.otherNode();
+        return graphCursor.otherNodeReference();
     }
 
     public long relationshipReference() {
@@ -112,7 +117,7 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
         return graphCursor.direction().matches(expansionDir)
                 && (expansion.types() == null || ArrayUtils.contains(expansion.types(), graphCursor.type()))
                 && expansion.testRelationship(graphCursor)
-                && expansion.endState(direction).test(graphCursor.otherNode());
+                && expansion.endState(direction).test(graphCursor.otherNodeReference());
     }
 
     public void setNodeAndStates(long nodeId, List<State> states, TraversalDirection direction) {
@@ -147,17 +152,14 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
         this.nfaCursor.close();
     }
 
-    public interface DataGraphRelationshipCursor extends RelationshipDataReader {
+    public interface DataGraphRelationshipCursor extends RelationshipTraversalEntities {
         boolean nextRelationship();
 
         void setNode(long nodeId, RelationshipSelection relationshipSelection);
 
-        long originNode();
-
-        long otherNode();
-
         default RelationshipDirection direction() {
-            return RelationshipDirection.directionOfStrict(originNode(), sourceNodeReference(), targetNodeReference());
+            return RelationshipDirection.directionOfStrict(
+                    originNodeReference(), sourceNodeReference(), targetNodeReference());
         }
 
         void setTracer(KernelReadTracer tracer);
@@ -167,15 +169,19 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
         private final Read read;
         private final NodeCursor node;
         private final RelationshipTraversalCursor rel;
+        private final PPBFSHooks hooks;
 
-        public DataGraphRelationshipCursorImpl(Read read, NodeCursor node, RelationshipTraversalCursor rel) {
+        public DataGraphRelationshipCursorImpl(
+                Read read, NodeCursor node, RelationshipTraversalCursor rel, PPBFSHooks hooks) {
             this.read = read;
             this.node = node;
             this.rel = rel;
+            this.hooks = hooks;
         }
 
         @Override
         public boolean nextRelationship() {
+            hooks.cursorNextRelationship(node.nodeReference());
             return rel.next();
         }
 
@@ -187,6 +193,7 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
 
         @Override
         public void setNode(long nodeId, RelationshipSelection relationshipSelection) {
+            hooks.cursorSetNode(nodeId);
             read.singleNode(nodeId, node);
             if (!node.next()) {
                 var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
@@ -202,12 +209,12 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
         }
 
         @Override
-        public long originNode() {
+        public long originNodeReference() {
             return rel.originNodeReference();
         }
 
         @Override
-        public long otherNode() {
+        public long otherNodeReference() {
             return rel.otherNodeReference();
         }
 
@@ -219,16 +226,6 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
         @Override
         public long targetNodeReference() {
             return rel.targetNodeReference();
-        }
-
-        @Override
-        public void source(NodeCursor cursor) {
-            rel.source(cursor);
-        }
-
-        @Override
-        public void target(NodeCursor cursor) {
-            rel.target(cursor);
         }
 
         @Override

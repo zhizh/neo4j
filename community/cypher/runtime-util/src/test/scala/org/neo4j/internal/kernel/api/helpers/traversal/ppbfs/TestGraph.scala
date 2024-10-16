@@ -23,9 +23,10 @@ import org.neo4j.cypher.internal.runtime.graphtemplate.InstantiatedGraph
 import org.neo4j.cypher.internal.runtime.graphtemplate.TemplateInstantiator
 import org.neo4j.cypher.internal.runtime.graphtemplate.parsing.GraphTemplateParser
 import org.neo4j.internal.kernel.api.KernelReadTracer
-import org.neo4j.internal.kernel.api.NodeCursor
-import org.neo4j.internal.kernel.api.RelationshipDataReader
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TestGraph.Rel
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TestGraph.TraversedRel
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor.DataGraphRelationshipCursor
 import org.neo4j.storageengine.api.RelationshipDirection
 import org.neo4j.storageengine.api.RelationshipSelection
@@ -74,23 +75,23 @@ case class TestGraph(nodes: Set[Long], rels: Map[Long, TestGraph.Rel]) {
 
 object TestGraph {
 
-  case class Rel(id: Long, source: Long, target: Long, relType: Int) extends RelationshipDataReader {
+  case class TraversedRel(rel: Rel, from: Long) extends RelationshipTraversalEntities {
+    def relationshipReference(): Long = rel.id
+    def `type`(): Int = rel.relType
+    def sourceNodeReference(): Long = rel.source
+    def targetNodeReference(): Long = rel.target
 
-    def opposite(x: Long): Long =
-      x match {
-        case `target` => source
-        case `source` => target
-        case _        => throw new IllegalArgumentException()
+    def otherNodeReference(): Long =
+      from match {
+        case rel.target => rel.source
+        case rel.source => rel.target
+        case _          => throw new IllegalArgumentException()
       }
+    def originNodeReference(): Long = from
+  }
 
+  case class Rel(id: Long, source: Long, target: Long, relType: Int) {
     override def toString: String = s"($source)-[$id:$relType]->($target)"
-
-    def relationshipReference(): Long = id
-    def `type`(): Int = relType
-    def sourceNodeReference(): Long = source
-    def targetNodeReference(): Long = target
-    def source(cursor: NodeCursor): Unit = ???
-    def target(cursor: NodeCursor): Unit = ???
   }
 
   val empty: TestGraph = TestGraph(Set.empty, Map.empty)
@@ -178,12 +179,13 @@ object TestGraph {
   }
 }
 
-class MockGraphCursor(graph: TestGraph) extends DataGraphRelationshipCursor {
-  private var rels = Iterator.empty[Rel]
+class MockGraphCursor(graph: TestGraph, hooks: PPBFSHooks) extends DataGraphRelationshipCursor {
+  private var rels = Iterator.empty[TraversedRel]
   private var currentNode: Long = -1L
-  private var current: Rel = _
+  private var current: TraversedRel = _
 
   def nextRelationship(): Boolean = {
+    hooks.cursorNextRelationship(currentNode)
     if (rels.hasNext) {
       current = rels.next()
       true
@@ -194,26 +196,23 @@ class MockGraphCursor(graph: TestGraph) extends DataGraphRelationshipCursor {
   }
 
   def setNode(node: Long, selection: RelationshipSelection): Unit = {
+    hooks.cursorSetNode(node)
     currentNode = node
     rels = graph.nodeRels(node)
-      .collect { case (rel, dir) if selection.test(rel.relType, dir) => rel }
+      .collect { case (rel, dir) if selection.test(rel.relType, dir) => TraversedRel(rel, node) }
   }
 
-  def relationshipReference(): Long = this.current.id
+  def relationshipReference(): Long = this.current.relationshipReference()
 
-  def originNode(): Long = this.currentNode
+  def originNodeReference(): Long = this.currentNode
 
-  def otherNode(): Long = this.current.opposite(this.currentNode)
+  def otherNodeReference(): Long = this.current.otherNodeReference()
 
-  def sourceNodeReference(): Long = this.current.source
+  def sourceNodeReference(): Long = this.current.sourceNodeReference()
 
-  def targetNodeReference(): Long = this.current.target
+  def targetNodeReference(): Long = this.current.targetNodeReference()
 
-  def `type`(): Int = this.current.relType
+  def `type`(): Int = this.current.`type`()
 
   def setTracer(tracer: KernelReadTracer): Unit = ()
-
-  def source(cursor: NodeCursor): Unit = ???
-
-  def target(cursor: NodeCursor): Unit = ???
 }

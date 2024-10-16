@@ -51,6 +51,7 @@ import org.neo4j.cypher.internal.util.attribution.Id
 import org.neo4j.cypher.internal.util.symbols
 import org.neo4j.graphdb.Node
 import org.neo4j.graphdb.Relationship
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor
 import org.neo4j.memory.EmptyMemoryTracker
 import org.neo4j.values.AnyValue
@@ -281,7 +282,8 @@ class NFAToProductGraphCursorIT extends ExecutionEngineFunSuite {
       val read = tx.kernelTransaction().dataRead()
       val nodeCursor = cursorFactory.allocateNodeCursor(cursorContext)
       val relCursor = cursorFactory.allocateRelationshipTraversalCursor(cursorContext)
-      val pgCursor = new ProductGraphTraversalCursor(read, nodeCursor, relCursor, EmptyMemoryTracker.INSTANCE)
+      val pgCursor =
+        new ProductGraphTraversalCursor(read, nodeCursor, relCursor, EmptyMemoryTracker.INSTANCE, PPBFSHooks.NULL)
 
       try {
         QueryStateHelper.withQueryState(

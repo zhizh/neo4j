@@ -22,7 +22,7 @@ package org.neo4j.internal.kernel.api.helpers.traversal.productgraph;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 import org.neo4j.graphdb.Direction;
-import org.neo4j.internal.kernel.api.RelationshipDataReader;
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection;
 import org.neo4j.storageengine.api.RelationshipSelection;
@@ -59,10 +59,16 @@ public record MultiRelationshipExpansion(
     public record Node(LongPredicate predicate, SlotOrName slotOrName) {}
 
     public record Rel(
-            Predicate<RelationshipDataReader> predicate, int[] types, Direction direction, SlotOrName slotOrName) {
+            Predicate<RelationshipTraversalEntities> predicate,
+            int[] types,
+            Direction direction,
+            SlotOrName slotOrName) {
         public RelationshipSelection getSelection(TraversalDirection traversalDirection) {
-            return RelationshipSelection.selection(
-                    types, traversalDirection == TraversalDirection.BACKWARD ? direction.reverse() : direction);
+            return RelationshipSelection.selection(types, getDirection(traversalDirection));
+        }
+
+        public Direction getDirection(TraversalDirection traversalDirection) {
+            return traversalDirection == TraversalDirection.BACKWARD ? direction.reverse() : direction;
         }
     }
 

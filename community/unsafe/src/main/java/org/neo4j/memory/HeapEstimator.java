@@ -413,16 +413,27 @@ public final class HeapEstimator {
 
         long size = OBJECT_HEADER_BYTES;
 
-        // Walk type hierarchy
-        for (; clazz != null; clazz = clazz.getSuperclass()) {
-            for (Field f : clazz.getDeclaredFields()) {
-                if (!Modifier.isStatic(f.getModifiers())) {
-                    Class<?> type = f.getType();
-                    int fieldSize = type.isPrimitive() ? PRIMITIVE_SIZES.get(type) : OBJECT_REFERENCE_BYTES;
-                    size = max(size, UnsafeUtil.getFieldOffset(f) + fieldSize);
+        if (clazz.isRecord()) {
+            // unsafe.getFieldOffset does not work for record types so we use the record components. records cannot
+            // have non-component fields so this is exhaustive
+            for (var r : clazz.getRecordComponents()) {
+                Class<?> type = r.getType();
+                int fieldSize = type.isPrimitive() ? PRIMITIVE_SIZES.get(type) : OBJECT_REFERENCE_BYTES;
+                size += fieldSize;
+            }
+        } else {
+            // Walk type hierarchy
+            for (; clazz != null; clazz = clazz.getSuperclass()) {
+                for (Field f : clazz.getDeclaredFields()) {
+                    if (!Modifier.isStatic(f.getModifiers())) {
+                        Class<?> type = f.getType();
+                        int fieldSize = type.isPrimitive() ? PRIMITIVE_SIZES.get(type) : OBJECT_REFERENCE_BYTES;
+                        size = max(size, UnsafeUtil.getFieldOffset(f) + fieldSize);
+                    }
                 }
             }
         }
+
         return alignObjectSize(size);
     }
 

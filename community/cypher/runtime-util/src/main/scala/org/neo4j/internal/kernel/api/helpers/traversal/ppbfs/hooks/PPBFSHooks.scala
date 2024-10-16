@@ -92,4 +92,7 @@ abstract class PPBFSHooks {
   def expand(direction: TraversalDirection, foundNodes: FoundNodes): Unit = {}
   def expandNode(nodeId: Long, states: HeapTrackingArrayList[State], direction: TraversalDirection): Unit = {}
   def discover(node: NodeState, direction: TraversalDirection): Unit = {}
+
+  def cursorSetNode(nodeId: Long): Unit = {}
+  def cursorNextRelationship(nodeId: Long): Unit = {}
 }

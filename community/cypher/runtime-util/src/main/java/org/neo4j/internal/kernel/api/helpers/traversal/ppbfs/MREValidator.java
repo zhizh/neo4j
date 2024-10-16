@@ -19,12 +19,15 @@
  */
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs;
 
-import org.neo4j.internal.kernel.api.RelationshipDataReader;
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
 import org.neo4j.values.virtual.VirtualRelationshipValue;
 
 public interface MREValidator {
     boolean validateRelationships(
-            TraversalDirection direction, int depth, VirtualRelationshipValue[] rels, RelationshipDataReader relCursor);
+            TraversalDirection direction,
+            int depth,
+            VirtualRelationshipValue[] rels,
+            RelationshipTraversalEntities relCursor);
 
     MREValidator TRAIL_MODE = (direction, depth, rels, relCursor) -> {
         boolean isUnique = true;

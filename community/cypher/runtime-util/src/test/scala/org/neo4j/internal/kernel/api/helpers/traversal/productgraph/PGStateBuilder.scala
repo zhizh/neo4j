@@ -22,7 +22,7 @@ package org.neo4j.internal.kernel.api.helpers.traversal.productgraph
 
 import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
-import org.neo4j.internal.kernel.api.RelationshipDataReader
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion.CompoundPredicate
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion.Node
@@ -48,7 +48,7 @@ object PGStateBuilder {
 
     def addRelationshipExpansion(
       target: PGStateBuilder.BuilderState,
-      relPredicate: Predicate[RelationshipDataReader] = Predicates.alwaysTrue(),
+      relPredicate: Predicate[RelationshipTraversalEntities] = Predicates.alwaysTrue(),
       types: Array[Int] = null,
       direction: Direction = Direction.BOTH,
       name: SlotOrName = SlotOrName.None
@@ -89,7 +89,7 @@ object PGStateBuilder {
 
     def r(
       name: String = null,
-      predicate: Predicate[RelationshipDataReader] = Predicates.alwaysTrue(),
+      predicate: Predicate[RelationshipTraversalEntities] = Predicates.alwaysTrue(),
       types: Array[Int] = null,
       direction: Direction = Direction.BOTH
     ): MultiRelationshipBuilder =
@@ -116,7 +116,7 @@ object PGStateBuilder {
 
     def r(
       name: String = null,
-      predicate: Predicate[RelationshipDataReader] = Predicates.alwaysTrue(),
+      predicate: Predicate[RelationshipTraversalEntities] = Predicates.alwaysTrue(),
       types: Array[Int] = null,
       direction: Direction = Direction.BOTH
     ): MultiRelationshipBuilder =

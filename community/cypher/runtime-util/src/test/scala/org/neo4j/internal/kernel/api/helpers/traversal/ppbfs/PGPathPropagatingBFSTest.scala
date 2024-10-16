@@ -23,20 +23,26 @@ import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest._
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.AddTarget
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.CursorNextRelationship
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.CursorSetNode
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.Expand
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.ExpandNode
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.NextLevel
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.ReturnPath
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder.MultiRelationshipBuilder.r
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipPredicate
 import org.neo4j.memory.EmptyMemoryTracker
 import org.neo4j.memory.LocalMemoryTracker
 import org.neo4j.memory.MemoryTracker
+import org.scalatest.Inspectors
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 class PGPathPropagatingBFSTest extends CypherFunSuite with PGPathPropagatingBFSTestBase {
@@ -518,30 +524,29 @@ class PGPathPropagatingBFSTest extends CypherFunSuite with PGPathPropagatingBFST
   }
 
   test("multiple relationship expansion works with bidirectional search") {
-    val graph = `()-->()<--(a)-->(b)<--(c)-->(d)<--(e)`
+    val graph = `(n1)-->(n2)<--(n3)-->(n4)<--(n5)-->(n6)<--(n7)`
 
     val paths = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
-      .into(graph.e)
+      .from(graph.n3)
+      .into(graph.n7)
       .withNfa(`(s) ((a)-->(b)<--(c))+ (t)`)
-      .logged()
       .paths()
 
     paths shouldBe Seq(
       Seq(
-        graph.a,
-        graph.a,
-        graph.ab,
-        graph.b,
-        graph.cb,
-        graph.c,
-        graph.c,
-        graph.cd,
-        graph.d,
-        graph.ed,
-        graph.e,
-        graph.e
+        graph.n3,
+        graph.n3,
+        graph.r3_4,
+        graph.n4,
+        graph.r5_4,
+        graph.n5,
+        graph.n5,
+        graph.r5_6,
+        graph.n6,
+        graph.r7_6,
+        graph.n7,
+        graph.n7
       )
     )
   }
@@ -920,16 +925,130 @@ class PGPathPropagatingBFSTest extends CypherFunSuite with PGPathPropagatingBFST
   }
 
   test("multiple relationship expansion does not prevent backward bidirectional search") {
-    val graph = `()-->()<--(a)-->(b)<--(c)-->(d)<--(e)`
+    val graph = `(n1)-->(n2)<--(n3)-->(n4)<--(n5)-->(n6)<--(n7)`
 
     val events = fixture()
       .withGraph(graph.graph)
-      .from(graph.a)
-      .into(graph.e)
+      .from(graph.n3)
+      .into(graph.n7)
       .withNfa(`(s) ((a)-->(b)<--(c))+ (t)`)
       .events()
 
-    events should contain(ExpandNode(graph.c, TraversalDirection.BACKWARD))
+    events should contain(ExpandNode(graph.n5, TraversalDirection.BACKWARD))
+  }
+
+  // ignored because we still have some rogue cursor interactions somewhere
+  ignore("multiple relationship expansion does not cause more cursor interactions than single rel equivalent") {
+    val graph = `(n1)-->(n2)<--(n3)-->(n4)<--(n5)-->(n6)<--(n7)`
+
+    val f = fixture()
+      .withGraph(graph.graph)
+      .from(graph.n3)
+
+    def getCursorEvents(nfa: PGStateBuilder => Unit) =
+      f.withNfa(nfa)
+        .events()
+        .collect {
+          case e: CursorSetNode          => e
+          case e: CursorNextRelationship => e
+        }
+        .groupBy(identity)
+        .view
+        .mapValues(_.length)
+        .toMap
+
+    val mre = getCursorEvents(`(s) ((a)--(b)--(c))* (t)`)
+    val sre = getCursorEvents(`(s) ((a)--(b)--(c))* (t) [single transition]`)
+
+    mre shouldBe sre
+  }
+
+  test("predicate is not evaluated twice on the same interior MRE node") {
+    val graph = TestGraph.fromTemplate("""
+                 .-----.
+                 v     |
+          (s)-->( )-->( )
+           ^     |
+           '-----'
+        """)
+
+    val count = mutable.Map.empty[Long, Int]
+    def predicate(node: Long): Boolean = {
+      count.updateWith(node) {
+        case None    => Some(1)
+        case Some(x) => Some(x + 1)
+      }
+      true
+    }
+
+    val lengths = fixture()
+      .withGraph(graph.graph)
+      .from(graph node "s")
+      .withNfa { sb =>
+        val s = sb.newState("s", isStartState = true)
+        val a = sb.newState("a")
+        val c = sb.newState("c")
+        val t = sb.newState("t", isFinalState = true)
+
+        s.addNodeJuxtaposition(a)
+        a.addMultiRelationshipExpansion(
+          c,
+          r(direction = Direction.OUTGOING).n("b", predicate).r(direction = Direction.OUTGOING)
+        )
+        c.addNodeJuxtaposition(a)
+        c.addNodeJuxtaposition(t)
+      }
+      .toList
+      .map(_.length)
+
+    lengths shouldBe Seq(2, 2, 4)
+
+    count should not be empty
+    Inspectors.forAll(count.values) { _ shouldBe 1 }
+  }
+
+  test("predicate is not evaluated twice on the same interior MRE relationship") {
+
+    // the idea here is we will traverse r twice, in two iterations of the MRE, and the second time we should
+    // not rerun the predicate
+    val graph = TestGraph.fromTemplate("""
+      .---.
+      '->(1)-[r]->(2)<-.
+                   '---'
+        """)
+
+    val count = mutable.Map.empty[Long, Int]
+    def predicate(rel: RelationshipTraversalEntities): Boolean = {
+      count.updateWith(rel.relationshipReference()) {
+        case None    => Some(1)
+        case Some(x) => Some(x + 1)
+      }
+      true
+    }
+
+    val lengths = fixture()
+      .withGraph(graph.graph)
+      .from(graph node "1")
+      .withNfa { sb =>
+        val s = sb.newState("s", isStartState = true)
+        val a = sb.newState("a")
+        val c = sb.newState("c")
+        val t = sb.newState("t", isFinalState = true)
+
+        s.addNodeJuxtaposition(a)
+        a.addMultiRelationshipExpansion(
+          c,
+          r(direction = Direction.BOTH, predicate = predicate).n("b").r(direction = Direction.OUTGOING)
+        )
+        c.addNodeJuxtaposition(a)
+        c.addNodeJuxtaposition(t)
+      }
+      .toList
+      .map(_.length)
+
+    lengths shouldBe Seq(2, 2)
+    count should not be empty
+    Inspectors.forAll(count.values) { _ shouldBe 1 }
   }
 
   /****************************************
@@ -1649,22 +1768,22 @@ object PGPathPropagatingBFSTest {
   }
 
   // noinspection TypeAnnotation
-  private object `()-->()<--(a)-->(b)<--(c)-->(d)<--(e)` {
+  private object `(n1)-->(n2)<--(n3)-->(n4)<--(n5)-->(n6)<--(n7)` {
     private val g = TestGraph.builder
-    private val m = g.node()
-    private val n = g.node()
-    val a = g.node()
-    val b = g.node()
-    val c = g.node()
-    val d = g.node()
-    val e = g.node()
+    private val n1 = g.node()
+    private val n2 = g.node()
+    val n3 = g.node()
+    val n4 = g.node()
+    val n5 = g.node()
+    val n6 = g.node()
+    val n7 = g.node()
 
-    g.rel(m, n)
-    g.rel(a, n)
-    val ab = g.rel(a, b)
-    val cb = g.rel(c, b)
-    val cd = g.rel(c, d)
-    val ed = g.rel(e, d)
+    g.rel(n1, n2)
+    g.rel(n3, n2)
+    val r3_4 = g.rel(n3, n4)
+    val r5_4 = g.rel(n5, n4)
+    val r5_6 = g.rel(n5, n6)
+    val r7_6 = g.rel(n7, n6)
     val graph = g.build()
   }
 

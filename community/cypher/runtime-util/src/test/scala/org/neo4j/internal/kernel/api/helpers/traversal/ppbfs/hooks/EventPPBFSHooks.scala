@@ -62,4 +62,10 @@ private[ppbfs] class EventPPBFSHooks(recorder: EventRecorder) extends PPBFSHooks
   override def expandNode(nodeId: Long, states: HeapTrackingArrayList[State], direction: TraversalDirection): Unit = {
     recorder.expandNode(nodeId, direction)
   }
+
+  override def cursorSetNode(nodeId: Long): Unit =
+    recorder.cursorSetNode(nodeId)
+
+  override def cursorNextRelationship(nodeId: Long): Unit =
+    recorder.cursorNextRelationship(nodeId)
 }

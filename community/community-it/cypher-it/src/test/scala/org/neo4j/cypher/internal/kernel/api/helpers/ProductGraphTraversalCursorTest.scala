@@ -32,6 +32,7 @@ import org.neo4j.internal.kernel.api.Read
 import org.neo4j.internal.kernel.api.RelationshipTraversalCursor
 import org.neo4j.internal.kernel.api.Write
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor
 import org.neo4j.io.pagecache.context.CursorContext
@@ -321,7 +322,9 @@ class ProductGraphTraversalCursorTest extends CypherFunSuite with GraphDatabaseT
   ) {
     val write: Write = tx.kernelTransaction().dataWrite()
     val read: Read = tx.kernelTransaction().dataRead()
-    val pgCursor = new ProductGraphTraversalCursor(read, nodeCursor, relCursor, EmptyMemoryTracker.INSTANCE)
+
+    val pgCursor =
+      new ProductGraphTraversalCursor(read, nodeCursor, relCursor, EmptyMemoryTracker.INSTANCE, PPBFSHooks.NULL)
 
     def relType(name: String): Int =
       tx.kernelTransaction().tokenWrite().relationshipTypeGetOrCreateForName(name)

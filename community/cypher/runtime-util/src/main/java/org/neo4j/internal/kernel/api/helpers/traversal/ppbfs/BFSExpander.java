@@ -19,15 +19,31 @@
  */
 package org.neo4j.internal.kernel.api.helpers.traversal.ppbfs;
 
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.LongPredicate;
+import java.util.function.Predicate;
+import org.neo4j.collection.trackable.HeapTracking;
 import org.neo4j.collection.trackable.HeapTrackingArrayList;
+import org.neo4j.collection.trackable.HeapTrackingCollections;
 import org.neo4j.collection.trackable.HeapTrackingLongArrayList;
+import org.neo4j.collection.trackable.HeapTrackingUnifiedMap;
+import org.neo4j.function.Predicates;
+import org.neo4j.graphdb.Direction;
+import org.neo4j.internal.helpers.collection.PrefetchingIterator;
 import org.neo4j.internal.kernel.api.KernelReadTracer;
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor;
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipPredicate;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.State;
 import org.neo4j.kernel.impl.util.ValueUtils;
+import org.neo4j.memory.HeapEstimator;
 import org.neo4j.memory.MemoryTracker;
+import org.neo4j.storageengine.api.RelationshipSelection;
 import org.neo4j.values.virtual.VirtualRelationshipValue;
 
 final class BFSExpander implements AutoCloseable {
@@ -35,13 +51,24 @@ final class BFSExpander implements AutoCloseable {
     private final PPBFSHooks hooks;
     private final GlobalState globalState;
     private final ProductGraphTraversalCursor pgCursor;
-    private final ProductGraphTraversalCursor.DataGraphRelationshipCursor relCursor;
+    private final CachingRelCursor relCursor;
     private final long intoTarget;
     private final TraversalMatchModeFactory tracker;
 
     // allocated once and reused per source nodeState
     private final HeapTrackingArrayList<State> statesList;
     private final FoundNodes foundNodes;
+
+    record CachedRelPredicate(Predicate<RelationshipTraversalEntities> predicate, long rel) {
+        public static long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(CachedRelPredicate.class);
+    }
+
+    record CachedNodePredicate(LongPredicate predicate, long node) {
+        public static long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(CachedNodePredicate.class);
+    }
+
+    private final HeapTrackingUnifiedMap<CachedRelPredicate, Boolean> relPredicateCache;
+    private final HeapTrackingUnifiedMap<CachedNodePredicate, Boolean> nodePredicateCache;
 
     public BFSExpander(
             FoundNodes foundNodes,
@@ -55,11 +82,13 @@ final class BFSExpander implements AutoCloseable {
         this.hooks = globalState.hooks;
         this.globalState = globalState;
         this.pgCursor = pgCursor;
-        this.relCursor = relCursor;
+        this.relCursor = new CachingRelCursor(relCursor, mt);
         this.intoTarget = intoTarget;
         this.statesList = HeapTrackingArrayList.newArrayList(nfaStateCount, mt);
         this.foundNodes = foundNodes;
         this.tracker = tracker;
+        this.relPredicateCache = HeapTrackingCollections.newMap(mt);
+        this.nodePredicateCache = HeapTrackingCollections.newMap(mt);
     }
 
     /** discover a nodeState that has not been seen before */
@@ -112,6 +141,29 @@ final class BFSExpander implements AutoCloseable {
         }
 
         return nodeState;
+    }
+
+    private boolean cachedRelPredicate(
+            Predicate<RelationshipTraversalEntities> predicate, RelationshipTraversalEntities rel) {
+        if (predicate == RelationshipPredicate.ALWAYS_TRUE) {
+            return true;
+        }
+        // if we implement TraversalEndpoints for stateful shortest, we will need to add TraversalDirection to this
+        // cache key, otherwise we will cache indiscriminately
+        return relPredicateCache.getIfAbsentPut(new CachedRelPredicate(predicate, rel.relationshipReference()), () -> {
+            this.mt.allocateHeap(CachedRelPredicate.SHALLOW_SIZE);
+            return predicate.test(rel);
+        });
+    }
+
+    private boolean cachedNodePredicate(LongPredicate predicate, long node) {
+        if (predicate == Predicates.ALWAYS_TRUE_LONG) {
+            return true;
+        }
+        return nodePredicateCache.getIfAbsentPut(new CachedNodePredicate(predicate, node), () -> {
+            this.mt.allocateHeap(CachedNodePredicate.SHALLOW_SIZE);
+            return predicate.test(node);
+        });
     }
 
     private void multiHopDFS(NodeState startNode, MultiRelationshipExpansion expansion, TraversalDirection direction) {
@@ -196,21 +248,22 @@ final class BFSExpander implements AutoCloseable {
                 var relHop = expansion.rel(depth, direction);
                 var nodePredicate = expansion.nodePredicate(depth, direction);
 
-                var sel = relHop.getSelection(direction);
-                relCursor.setNode(node, sel);
                 boolean canExpand = false;
-                while (relCursor.nextRelationship()) {
-                    if (relHop.predicate().test(relCursor) && nodePredicate.test(relCursor.otherNode())) {
-                        if (mreValidator.validateRelationships(direction, depth, rels, relCursor)) {
+                for (var it = relCursor.iterator(node, relHop.types(), relHop.getDirection(direction));
+                        it.hasNext(); ) {
+                    var rel = it.next();
+                    if (mreValidator.validateRelationships(direction, depth, rels, rel)) {
+                        if (cachedRelPredicate(relHop.predicate(), rel)
+                                && cachedNodePredicate(nodePredicate, rel.otherNodeReference())) {
                             if (nodeTree[depth + 1] == null) {
                                 nodeTree[depth + 1] = HeapTrackingLongArrayList.newLongArrayList(mt);
                             }
-                            nodeTree[depth + 1].add(relCursor.otherNode());
+                            nodeTree[depth + 1].add(rel.otherNodeReference());
 
                             if (relTree[depth] == null) {
                                 relTree[depth] = HeapTrackingArrayList.newArrayList(mt);
                             }
-                            relTree[depth].add(ValueUtils.fromRelationshipCursor(relCursor));
+                            relTree[depth].add(ValueUtils.fromRelationshipCursor(rel));
                             canExpand = true;
                         }
                     }
@@ -288,7 +341,6 @@ final class BFSExpander implements AutoCloseable {
                         }
                     }
                 }
-                ;
             }
         }
 
@@ -312,5 +364,80 @@ final class BFSExpander implements AutoCloseable {
         // globalState is not owned by this class; it should be closed by the consumer
         pgCursor.close();
         statesList.close();
+    }
+
+    private static class CachingRelCursor {
+
+        private record CachedNode(long nodeId, int[] types, Direction direction) {
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                CachedNode that = (CachedNode) o;
+                return nodeId == that.nodeId && Arrays.equals(types, that.types) && direction == that.direction;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(nodeId, Arrays.hashCode(types), direction);
+            }
+
+            public static long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(CachedNode.class);
+        }
+
+        private record CachedRel(
+                long relationshipReference,
+                int type,
+                long sourceNodeReference,
+                long targetNodeReference,
+                long otherNodeReference,
+                long originNodeReference)
+                implements RelationshipTraversalEntities {
+            public static long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(CachedRel.class);
+        }
+
+        private final ProductGraphTraversalCursor.DataGraphRelationshipCursor relCursor;
+        private final HeapTracking.Map<CachedNode, List<RelationshipTraversalEntities>> cache;
+        private final MemoryTracker mt;
+
+        public CachingRelCursor(ProductGraphTraversalCursor.DataGraphRelationshipCursor relCursor, MemoryTracker mt) {
+            this.relCursor = relCursor;
+            // we do not need to close this collection; the whole of PGPathPropagatingBFS uses a scoped memory tracker
+            this.cache = HeapTrackingCollections.newMap(mt);
+            this.mt = mt;
+        }
+
+        public Iterator<RelationshipTraversalEntities> iterator(long node, int[] types, Direction direction) {
+            var cacheKey = new CachedNode(node, types, direction);
+            var cached = cache.get(cacheKey);
+            if (cached != null) {
+                return cached.iterator();
+            } else {
+                HeapTrackingArrayList<RelationshipTraversalEntities> currentCache =
+                        HeapTrackingCollections.newArrayList(this.mt);
+                this.mt.allocateHeap(CachedNode.SHALLOW_SIZE);
+                cache.put(cacheKey, currentCache);
+                relCursor.setNode(node, RelationshipSelection.selection(types, direction));
+                return new PrefetchingIterator<>() {
+                    @Override
+                    protected RelationshipTraversalEntities fetchNextOrNull() {
+                        if (relCursor.nextRelationship()) {
+                            var cached = new CachedRel(
+                                    relCursor.relationshipReference(),
+                                    relCursor.type(),
+                                    relCursor.sourceNodeReference(),
+                                    relCursor.targetNodeReference(),
+                                    relCursor.otherNodeReference(),
+                                    relCursor.originNodeReference());
+                            mt.allocateHeap(CachedRel.SHALLOW_SIZE);
+                            currentCache.add(cached);
+                            return cached;
+                        } else {
+                            return null;
+                        }
+                    }
+                };
+            }
+        }
     }
 }

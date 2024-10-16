@@ -22,6 +22,8 @@ package org.neo4j.memory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.neo4j.memory.HeapEstimator.OBJECT_ALIGNMENT_BYTES;
+import static org.neo4j.memory.HeapEstimator.OBJECT_HEADER_BYTES;
+import static org.neo4j.memory.HeapEstimator.OBJECT_REFERENCE_BYTES;
 import static org.neo4j.memory.HeapEstimator.shallowSizeOfInstance;
 import static org.neo4j.memory.HeapEstimator.shallowSizeOfInstanceWithObjectReferences;
 
@@ -45,6 +47,18 @@ class HeapEstimatorTest {
     void shouldEstimateShallowSizeOfInstanceTheSame() {
         assertThat(shallowSizeOfInstanceWithObjectReferences(3)).isEqualTo(shallowSizeOfInstance(DummyClass.class));
     }
+
+    @Test
+    void shouldEstimateRecordSize() {
+        var estimated = shallowSizeOfInstance(DummyRecord.class);
+
+        var expected = HeapEstimator.alignObjectSize(
+                OBJECT_HEADER_BYTES + Long.BYTES + Integer.BYTES + OBJECT_REFERENCE_BYTES);
+
+        assertThat(estimated).isEqualTo(expected);
+    }
+
+    private record DummyRecord(long longField, int intField, Object objectField) {}
 
     private static class DummyClass {
         Object ref1;

@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.graphdb.Direction
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.NfaDsl.DslPart
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TestGraph.TraversedRel
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TracedPath.PathEntity
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventPPBFSHooks
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder
@@ -142,7 +143,7 @@ trait PGPathPropagatingBFSTestBase { self: CypherFunSuite =>
         intoTarget,
         nfa.getFinal.state,
         searchMode,
-        new MockGraphCursor(graph),
+        new MockGraphCursor(graph, hooks),
         createPathTracer(mt, hooks),
         projection(_),
         predicate(_),
@@ -227,7 +228,7 @@ trait PGPathPropagatingBFSTestBase { self: CypherFunSuite =>
                 case _                              => fail("inexhaustive match")
               }
               if dir.matches(r.direction) &&
-                r.predicate.test(rel) &&
+                r.predicate.test(TraversedRel(rel, node)) &&
                 n.predicate.test(nextNode) &&
                 (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
 
@@ -248,7 +249,7 @@ trait PGPathPropagatingBFSTestBase { self: CypherFunSuite =>
                 case _                              => fail("inexhaustive match")
               }
               if dir.matches(r.direction) &&
-                r.predicate.test(rel) &&
+                r.predicate.test(TraversedRel(rel, node)) &&
                 targetState.test(nextNode) &&
                 (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
 
@@ -283,7 +284,7 @@ trait PGPathPropagatingBFSTestBase { self: CypherFunSuite =>
               case _                              => fail("inexhaustive match")
             }
             if dir.matches(re.direction) &&
-              re.testRelationship(rel) &&
+              re.testRelationship(TraversedRel(rel, node)) &&
               re.targetState().test(nextNode) &&
               (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
 

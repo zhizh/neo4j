@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.util.UpperBound.Unlimited
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
-import org.neo4j.internal.kernel.api.RelationshipDataReader
+import org.neo4j.internal.kernel.api.RelationshipTraversalEntities
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName.VarName
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.NfaDsl.DslPart
@@ -194,14 +194,18 @@ object NfaDsl {
         RelExpansion(from, Direction.INCOMING, predicate, to)
     }
 
-    case class RelPredicate(name: Option[String], types: Array[Int], pred: Option[Predicate[RelationshipDataReader]]) {
+    case class RelPredicate(
+      name: Option[String],
+      types: Array[Int],
+      pred: Option[Predicate[RelationshipTraversalEntities]]
+    ) {
 
       /** Set a predicate on the relationship expansion */
-      def where(pred: Predicate[RelationshipDataReader]): RelPredicate =
+      def where(pred: Predicate[RelationshipTraversalEntities]): RelPredicate =
         copy(pred = Some(pred))
 
       /** Set a predicate on the relationship expansion */
-      def where(pred: RelationshipDataReader => Boolean): RelPredicate =
+      def where(pred: RelationshipTraversalEntities => Boolean): RelPredicate =
         where(r => pred(r))
 
       /** Add a relationship type specification (disjunction, naturally) */
@@ -271,7 +275,7 @@ class NfaDslTests extends CypherFunSuite {
   import NfaDsl.Implicits._
 
   private val nodePredicate: LongPredicate = Predicates.ALWAYS_TRUE_LONG
-  private val relPredicate: Predicate[RelationshipDataReader] = _ => true
+  private val relPredicate: Predicate[RelationshipTraversalEntities] = _ => true
 
   Seq(
     // format: off
@@ -390,7 +394,7 @@ class NfaDslTests extends CypherFunSuite {
   case class MockExpansion(
     from: BuilderState,
     to: BuilderState,
-    relPredicate: Predicate[RelationshipDataReader],
+    relPredicate: Predicate[RelationshipTraversalEntities],
     types: Option[Set[Int]],
     direction: Direction,
     name: SlotOrName
@@ -410,7 +414,7 @@ class NfaDslTests extends CypherFunSuite {
 
     override def addRelationshipExpansion(
       target: BuilderState,
-      relPredicate: Predicate[RelationshipDataReader],
+      relPredicate: Predicate[RelationshipTraversalEntities],
       types: Array[Int],
       direction: Direction,
       name: SlotOrName
