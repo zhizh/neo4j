@@ -146,4 +146,36 @@ public class ProtocolViolationIT {
 
         BoltConnectionAssertions.assertThat(connection).isEventuallyTerminated();
     }
+
+    @ProtocolTest
+    void shouldFailWhenTryToStartTransactionInFailedState(@Authenticated TransportConnection connection)
+            throws IOException {
+        // Failing
+        var buf = PackstreamBuf.allocUnpooled()
+                .writeStructHeader(new StructHeader(3, BoltV40Wire.MESSAGE_TAG_RUN))
+                .writeString("RETURN $x") // statement
+                .writeMapHeader(1) // parameters
+                .writeString("foo")
+                .writeString("bar");
+        connection.send(buf.writeMapHeader(0) // extra
+                .getTarget());
+
+        BoltConnectionAssertions.assertThat(connection).receivesFailure();
+
+        // Sending the begin message
+        buf = PackstreamBuf.allocUnpooled()
+                .writeStructHeader(new StructHeader(1, BoltV40Wire.MESSAGE_TAG_BEGIN))
+                .writeMapHeader(0) // metadata
+        ;
+        connection.send(buf.writeMapHeader(0) // extra
+                .getTarget());
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureFuzzy(
+                        Status.Request.Invalid,
+                        // we need to fuzzy check since the string representation
+                        // of the begin message change in different protocol versions
+                        "cannot be handled by session in the READY state");
+        ;
+    }
 }
