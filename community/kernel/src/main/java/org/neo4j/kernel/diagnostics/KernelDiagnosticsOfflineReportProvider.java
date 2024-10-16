@@ -45,6 +45,10 @@ import org.neo4j.storageengine.api.StorageEngineFactory;
 
 @ServiceProvider
 public class KernelDiagnosticsOfflineReportProvider extends DiagnosticsOfflineReportProvider {
+    // This is the base directory for information related to specific databases,
+    // like the ones provided by the "tree" and "tx" sources.
+    public static final String DATABASES_REPORT_BASE_DIR = "databases";
+
     private FileSystemAbstraction fs;
     private Config config;
     private Set<String> databaseNames;
@@ -143,7 +147,8 @@ public class KernelDiagnosticsOfflineReportProvider extends DiagnosticsOfflineRe
         storeFiles.dump(files::add);
 
         sources.add(DiagnosticsReportSources.newDiagnosticsString(
-                databaseName + "/tree.txt", () -> String.join(System.lineSeparator(), files)));
+                String.join("/", DATABASES_REPORT_BASE_DIR, databaseName, "tree.txt"),
+                () -> String.join(System.lineSeparator(), files)));
     }
 
     private static DeviceMapper loadDeviceMapper() {
@@ -191,11 +196,19 @@ public class KernelDiagnosticsOfflineReportProvider extends DiagnosticsOfflineRe
                     .build();
             for (Path file : logFiles.logFiles()) {
                 sources.add(DiagnosticsReportSources.newDiagnosticsFile(
-                        databaseName + "/tx/" + file.getFileName(), fs, file));
+                        String.join(
+                                "/",
+                                DATABASES_REPORT_BASE_DIR,
+                                databaseName,
+                                "tx",
+                                file.getFileName().toString()),
+                        fs,
+                        file));
             }
         } catch (IOException e) {
             sources.add(DiagnosticsReportSources.newDiagnosticsString(
-                    databaseName + "/tx.txt", () -> "Error getting tx logs: " + e.getMessage()));
+                    String.join("/", DATABASES_REPORT_BASE_DIR, databaseName, "tx.txt"),
+                    () -> "Error getting tx logs: " + e.getMessage()));
         }
     }
 }
