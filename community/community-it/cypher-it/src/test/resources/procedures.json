@@ -3072,7 +3072,7 @@
     "description": "Place a database into quarantine or remove it from it.",
     "mode": "DBMS",
     "worksOnSystem": true,
-    "signature": "dbms.quarantineDatabase(databaseName :: STRING, setStatus :: BOOLEAN, reason = No reason given :: STRING) :: (databaseName :: STRING, quarantined :: BOOLEAN, result :: STRING)",
+    "signature": "dbms.quarantineDatabase(databaseName :: STRING, setStatus :: BOOLEAN, reason = No reason given :: STRING, wipeMode = DO_NOT_WIPE :: STRING) :: (databaseName :: STRING, quarantined :: BOOLEAN, result :: STRING)",
     "argumentDescription": [
       {
         "name": "databaseName",
@@ -3090,6 +3090,13 @@
         "default": "DefaultParameterValue{value=No reason given, type=STRING}",
         "name": "reason",
         "description": "The reason to quarantine the database.",
+        "type": "STRING",
+        "isDeprecated": false
+      },
+      {
+        "default": "DefaultParameterValue{value=DO_NOT_WIPE, type=STRING}",
+        "name": "wipeMode",
+        "description": "Optional wiping action to apply while lifting the quarantine.",
         "type": "STRING",
         "isDeprecated": false
       }
