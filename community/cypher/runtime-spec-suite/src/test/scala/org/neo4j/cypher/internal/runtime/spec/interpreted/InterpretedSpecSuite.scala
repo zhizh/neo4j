@@ -403,8 +403,21 @@ class InterpretedStatefulShortestPathTrailModeTest
 class InterpretedStatefulShortestPathWalkModeTest
     extends StatefulShortestPathWalkModeTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 
-class InterpretedStatefulShortestPathPropagationTest
-    extends StatefulShortestPathPropagationTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
+class InterpretedStatefulShortestPathPropagationTrailModeTest
+    extends StatefulShortestPathPropagationTestBase(
+      COMMUNITY.EDITION,
+      InterpretedRuntime,
+      SIZE_HINT,
+      TraversalMatchMode.Trail
+    )
+
+class InterpretedStatefulShortestPathPropagationWalkModeTest
+    extends StatefulShortestPathPropagationTestBase(
+      COMMUNITY.EDITION,
+      InterpretedRuntime,
+      SIZE_HINT,
+      TraversalMatchMode.Walk
+    )
 
 class InterpretedUnionTest extends UnionTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)
 class InterpretedOrderedUnionTest extends OrderedUnionTestBase(COMMUNITY.EDITION, InterpretedRuntime, SIZE_HINT)

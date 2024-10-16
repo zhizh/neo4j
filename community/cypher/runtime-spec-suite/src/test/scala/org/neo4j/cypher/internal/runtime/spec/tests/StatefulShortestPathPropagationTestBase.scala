@@ -51,7 +51,8 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
 abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
   runtime: CypherRuntime[CONTEXT],
-  protected val sizeHint: Int
+  protected val sizeHint: Int,
+  protected val traversalMatchMode: TraversalMatchMode
 ) extends RuntimeTestSuite[CONTEXT](edition, runtime) {
 
   private val ENABLE_LOGS = false
@@ -69,6 +70,59 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
   test("test logging is disabled in production") {
     ENABLE_LOGS shouldBe false
   }
+
+  private val upperLimit = traversalMatchMode match {
+    case TraversalMatchMode.Walk  => Some(8)
+    case TraversalMatchMode.Trail => None
+  }
+
+  private def pattern(
+    direction: SemanticDirection,
+    startNode: String = "x",
+    endNode: String = "y",
+    relationship: String = "r",
+    startLength: Option[Int] = None,
+    endLength: Option[Int] = upperLimit
+  ): String = {
+    val relPattern = (startLength, endLength) match {
+      case (Some(s), Some(e)) => s"$relationship*$s..$e"
+      case (Some(s), None)    => s"$relationship*$s.."
+      case (None, Some(e))    => s"$relationship*..$e"
+      case (None, None)       => s"$relationship*"
+    }
+    val arrow = direction match {
+      case SemanticDirection.OUTGOING => s"-[$relPattern]->"
+      case SemanticDirection.INCOMING => s"<-[$relPattern]-"
+      case SemanticDirection.BOTH     => s"-[$relPattern]-"
+    }
+    s"($startNode)$arrow($endNode)"
+  }
+
+  private def outgoingPattern(
+    startNode: String = "x",
+    endNode: String = "y",
+    relationship: String = "r",
+    startLength: Option[Int] = None,
+    actualUpperLimit: Option[Int] = upperLimit
+  ): String = pattern(SemanticDirection.OUTGOING, startNode, endNode, relationship, startLength, actualUpperLimit)
+
+  private def incomingPattern(
+    startNode: String = "x",
+    endNode: String = "y",
+    relationship: String = "r",
+    startLength: Option[Int] = None,
+    endLength: Option[Int] = upperLimit
+  ): String =
+    pattern(SemanticDirection.INCOMING, startNode, endNode, relationship, startLength, endLength)
+
+  private def undirectedPattern(
+    startNode: String = "x",
+    endNode: String = "y",
+    relationship: String = "r",
+    startLength: Option[Int] = None,
+    endLength: Option[Int] = upperLimit
+  ) =
+    pattern(SemanticDirection.BOTH, startNode, endNode, relationship, startLength, endLength)
 
   test("Infinity Fork") {
 
@@ -104,11 +158,13 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       n2.addLabel(Label.label("Target"))
       n4.addLabel(Label.label("Target"))
     }
+
+    val actualUpperLimit = upperLimit.map(_ => 3)
     // when
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(actualUpperLimit = actualUpperLimit), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -118,7 +174,8 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
         "x",
         "r",
         "y",
-        targetLabel = Some("Target")
+        targetLabel = Some("Target"),
+        actualUpperLimit = actualUpperLimit
       )
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
@@ -150,7 +207,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]-(y)")
+      .expand(undirectedPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -209,7 +266,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -252,7 +309,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]-(y)")
+      .expand(undirectedPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -303,7 +360,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -344,7 +401,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]-(y)")
+      .expand(undirectedPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -391,11 +448,12 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       n1.addLabel(Label.label("Target"))
 
     }
+    val actualUpperLimit = upperLimit.map(_ => 3)
     // when
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(actualUpperLimit = actualUpperLimit), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -405,7 +463,8 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
         "x",
         "r",
         "y",
-        targetLabel = Some("Target")
+        targetLabel = Some("Target"),
+        actualUpperLimit = actualUpperLimit
       )
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
@@ -414,7 +473,6 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
   }
 
   test("Undirected Spoon Spinner") {
-
     givenGraph {
       // See previous test
 
@@ -431,11 +489,12 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       n1.addLabel(Label.label("Target"))
 
     }
+    val actualUpperLimit = upperLimit.map(_ => 3)
     // when
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: Target")
-      .expand("(x)-[r*]-(y)")
+      .expand(undirectedPattern(endLength = actualUpperLimit), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
 
@@ -446,7 +505,8 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
         "r",
         "y",
         targetLabel = Some("Target"),
-        direction = SemanticDirection.BOTH
+        direction = SemanticDirection.BOTH,
+        actualUpperLimit = actualUpperLimit
       )
       .nodeByLabelScan("x", "Source", IndexOrderNone)
       .build()
@@ -500,7 +560,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     // when
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .allNodeScan("x")
       .build()
 
@@ -543,10 +603,11 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       n6.createRelationshipTo(n7, R)
       n7.createRelationshipTo(n0, R)
     }
+    val actualUpperLimit = upperLimit.map(_ => 3)
     // when
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
-      .expand("(x)-[r*]-(y)")
+      .expand(undirectedPattern(endLength = actualUpperLimit), matchMode = traversalMatchMode)
       .allNodeScan("x")
       .build()
 
@@ -556,7 +617,8 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
         "x",
         "r",
         "y",
-        direction = SemanticDirection.BOTH
+        direction = SemanticDirection.BOTH,
+        actualUpperLimit = actualUpperLimit
       )
       .allNodeScan("x")
       .build()
@@ -575,7 +637,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("'4,4' IN labels(y)")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -606,7 +668,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       .filter(
         "'4,0' IN labels(y) OR '4,1' IN labels(y) OR '4,2' IN labels(y) OR '4,3' IN labels(y) OR '4,4' IN labels(y)"
       )
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -647,7 +709,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("'4,4' IN labels(y)")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -687,7 +749,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("'2,0' IN labels(y) OR '2,1' IN labels(y) OR '2,2' IN labels(y)")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -729,7 +791,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       .filter(
         "'4,0' IN labels(y) OR '4,1' IN labels(y) OR '4,2' IN labels(y) OR '4,3' IN labels(y) OR '4,4' IN labels(y)"
       )
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -775,7 +837,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       .filter(
         "'4,4' IN labels(y)"
       )
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -821,7 +883,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       .filter(
         "'4,0' IN labels(y) OR '4,1' IN labels(y) OR '4,2' IN labels(y) OR '4,3' IN labels(y) OR '4,4' IN labels(y)"
       )
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -893,7 +955,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       .filter(
         "'4,0' IN labels(y) OR '4,1' IN labels(y) OR '4,2' IN labels(y) OR '4,3' IN labels(y) OR '4,4' IN labels(y)"
       )
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -925,9 +987,13 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "rs", "y", "rs2", "z")
       .filter("ANY(r IN rs2 WHERE TYPE(r) = 'SPECIAL') AND NONE(r IN rs2 WHERE r IN rs)")
-      .expand("(y)<-[rs2*]-(z)", projectedDir = SemanticDirection.INCOMING)
+      .expand(
+        incomingPattern(startNode = "y", relationship = "rs2", endNode = "z"),
+        projectedDir = SemanticDirection.INCOMING,
+        matchMode = traversalMatchMode
+      )
       .filter("'3,3' IN labels(y)")
-      .expand("(x)-[rs*]->(y)")
+      .expand(outgoingPattern(startNode = "x", relationship = "rs", endNode = "y"))
       .nodeByLabelScan("x", "0,0", IndexOrderNone)
       .build()
 
@@ -959,7 +1025,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     // when
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "rs", "y")
-      .expand("(x)<-[rs*]-(y)", projectedDir = SemanticDirection.INCOMING)
+      .expand("(x)<-[rs*]-(y)", projectedDir = SemanticDirection.INCOMING, matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "1,1", IndexOrderNone)
       .build()
 
@@ -987,7 +1053,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y = x")
-      .expand("(x)-[r*0..]->(y)")
+      .expand(outgoingPattern(startLength = Some(0)), matchMode = traversalMatchMode)
       .allNodeScan("x")
       .build()
 
@@ -1013,10 +1079,14 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       ns.last.createRelationshipTo(ns.head, RelationshipType.withName("LOOP"))
     }
     // when
+    val actualUpperLimit = upperLimit.map(_ => 20)
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y = x")
-      .expand("(x)-[r*6..]->(y)")
+      .expand(
+        outgoingPattern(startLength = Some(6), actualUpperLimit = actualUpperLimit),
+        matchMode = traversalMatchMode
+      )
       .allNodeScan("x")
       .build()
 
@@ -1027,7 +1097,8 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
         "x",
         "r",
         "y",
-        targetFilter = Some("x = y")
+        targetFilter = Some("x = y"),
+        actualUpperLimit = actualUpperLimit
       )
       .allNodeScan("x")
       .build()
@@ -1077,7 +1148,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y:T")
-      .expand("(x)-[r*]->(y)")
+      .expand(outgoingPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "S")
       .build()
 
@@ -1152,7 +1223,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     val expandQuery = new LogicalQueryBuilder(this)
       .produceResults("x", "r", "y")
       .filter("y: " + targetLabel)
-      .expand("(x)-[r*]-(y)")
+      .expand(undirectedPattern(), matchMode = traversalMatchMode)
       .nodeByLabelScan("x", "0,0")
       .build()
 
@@ -1272,6 +1343,7 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
     }
 
     res1 should beColumns(columns: _*).withRows(rows2)
+    consume(res1) should not be empty
   }
 
   def printPath(source: NodeValue, rs: ListValue): Unit = {
@@ -1310,7 +1382,8 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
       nonInlinablePrefilters: Option[String] = None,
       direction: SemanticDirection = SemanticDirection.OUTGOING,
       includeZeroLength: Boolean = false,
-      selector: StatefulShortestPath.Selector = StatefulShortestPath.Selector.Shortest(Int.MaxValue)
+      selector: StatefulShortestPath.Selector = StatefulShortestPath.Selector.Shortest(Int.MaxValue),
+      actualUpperLimit: Option[Int] = upperLimit
     ): LogicalQueryBuilder = {
       val targetLabelString = targetLabel.map(": " + _)
       // TODO FIXME: this is a dirty hack to make predicates work on inner (expression) variables
@@ -1348,7 +1421,8 @@ abstract class StatefulShortestPathPropagationTestBase[CONTEXT <: RuntimeContext
         selector,
         nfa,
         ExpandAll,
-        matchMode = TraversalMatchMode.Trail
+        matchMode = traversalMatchMode,
+        maxLength = actualUpperLimit
       )
     }
   }
