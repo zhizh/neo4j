@@ -24,9 +24,6 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
-import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters.BufferHasAsJava
-
 trait CypherExceptionFactory {
   def arithmeticException(message: String, cause: Exception): RuntimeException
 
@@ -65,7 +62,7 @@ trait CypherExceptionFactory {
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N04)
           .withParam(GqlParams.StringParam.input, wrongInput)
           .withParam(GqlParams.StringParam.context, forField)
-          .withParam(GqlParams.ListParam.inputList, ArrayBuffer(expectedInput).asJava)
+          .withParam(GqlParams.ListParam.inputList, java.util.List.of(expectedInput))
           .build()
       )
       .build()
