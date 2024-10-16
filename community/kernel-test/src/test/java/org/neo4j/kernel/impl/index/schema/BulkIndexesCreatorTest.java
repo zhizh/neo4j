@@ -28,6 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.neo4j.internal.schema.AllIndexProviderDescriptors.INDEX_TYPES;
 import static org.neo4j.internal.schema.AllIndexProviderDescriptors.TOKEN_DESCRIPTOR;
+import static org.neo4j.internal.schema.AllIndexProviderDescriptors.VECTOR_V1_DESCRIPTOR;
 import static org.neo4j.internal.schema.IndexPrototype.forSchema;
 import static org.neo4j.internal.schema.SchemaDescriptors.forAnyEntityTokens;
 import static org.neo4j.internal.schema.SchemaDescriptors.forLabel;
@@ -37,6 +38,7 @@ import static org.neo4j.memory.EmptyMemoryTracker.INSTANCE;
 import static org.neo4j.token.ReadOnlyTokenCreator.READ_ONLY;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -58,9 +60,11 @@ import org.neo4j.configuration.Config;
 import org.neo4j.exceptions.KernelException;
 import org.neo4j.graphdb.schema.IndexSetting;
 import org.neo4j.internal.schema.AllIndexProviderDescriptors;
+import org.neo4j.internal.schema.IndexCapability;
 import org.neo4j.internal.schema.IndexConfig;
 import org.neo4j.internal.schema.IndexDescriptor;
 import org.neo4j.internal.schema.IndexPrototype;
+import org.neo4j.internal.schema.IndexProviderDescriptor;
 import org.neo4j.internal.schema.IndexType;
 import org.neo4j.internal.schema.StorageEngineIndexingBehaviour;
 import org.neo4j.io.fs.FileSystemAbstraction;
@@ -155,6 +159,7 @@ class BulkIndexesCreatorTest {
 
     @AfterEach
     void shutdown() throws Exception {
+        indexesCreator.close();
         scheduler.shutdown();
     }
 
@@ -164,6 +169,44 @@ class BulkIndexesCreatorTest {
         assertThatThrownBy(() -> factory.getCreator(new DuffContext(fs)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Index creation requires an instance of BulkIndexCreationContext");
+    }
+
+    private static Stream<Arguments> completeConfiguration() {
+        return INDEX_TYPES.entrySet().stream()
+                // skipping VectorV1 as it requires the config to already be set before completion
+                .filter(entry -> entry.getKey() != VECTOR_V1_DESCRIPTOR)
+                .map(entry -> {
+                    final var indexProviderDescriptor = entry.getKey();
+                    final var indexType = entry.getValue();
+                    // only Point and Fulltext add config - VectorV2 defaults come from Cypher-land and not the provider
+                    final var addsDefaultConfig = indexType == IndexType.POINT || indexType == IndexType.FULLTEXT;
+                    return Arguments.of(indexProviderDescriptor, indexType, addsDefaultConfig);
+                });
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void completeConfiguration(IndexProviderDescriptor providerDescriptor, IndexType type, boolean addsDefaultConfig) {
+        final var descriptor = forSchema(forLabel(1, 2))
+                .withName("basic")
+                .withIndexType(type)
+                .withIndexProvider(providerDescriptor)
+                .materialise(3);
+        assertThat(descriptor.getCapability()).isEqualTo(IndexCapability.NO_CAPABILITY);
+
+        final var completedDescriptor = indexesCreator.completeConfiguration(descriptor);
+        assertThat(completedDescriptor.getCapability())
+                .as("completion should set the correct capability")
+                .isNotEqualTo(IndexCapability.NO_CAPABILITY);
+        if (addsDefaultConfig) {
+            assertThat(descriptor.getIndexConfig().asMap())
+                    .as("use the default index config for descriptor")
+                    .isEmpty();
+
+            assertThat(completedDescriptor.getIndexConfig().asMap())
+                    .as("completion should set the default index config for descriptor")
+                    .isNotEmpty();
+        }
     }
 
     @ParameterizedTest
@@ -185,11 +228,11 @@ class BulkIndexesCreatorTest {
         final var checkPointed = new MutableBoolean();
 
         // this isn't valid config (RANGE + LOOKUP) => boom
-        final var descriptor = forSchema(forLabel(1, 2))
+        final var descriptor = indexesCreator.completeConfiguration(forSchema(forLabel(1, 2))
                 .withName("duff")
                 .withIndexType(IndexType.RANGE)
                 .withIndexProvider(TOKEN_DESCRIPTOR)
-                .materialise(0);
+                .materialise(0));
         indexesCreator.create(
                 new CreationListener() {
                     @Override
@@ -240,6 +283,9 @@ class BulkIndexesCreatorTest {
         final var deltas = ObjectFloatMaps.mutable.<IndexDescriptor>empty();
         final var completed = new MutableBoolean();
         final var checkPointed = new MutableBoolean();
+        final var indexDescriptors = Arrays.stream(descriptors)
+                .map(indexesCreator::completeConfiguration)
+                .toList();
         indexesCreator.create(
                 new CreationListener() {
                     @Override
@@ -262,7 +308,7 @@ class BulkIndexesCreatorTest {
                         checkPointed.setTrue();
                     }
                 },
-                List.of(descriptors));
+                indexDescriptors);
 
         // THEN
         for (var descriptor : descriptors) {

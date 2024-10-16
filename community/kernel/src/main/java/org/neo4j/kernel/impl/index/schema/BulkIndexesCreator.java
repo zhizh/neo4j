@@ -33,21 +33,14 @@ import org.eclipse.collections.api.factory.primitive.ObjectFloatMaps;
 import org.neo4j.batchimport.api.IndexesCreator;
 import org.neo4j.collection.Dependencies;
 import org.neo4j.common.Subject;
-import org.neo4j.configuration.Config;
 import org.neo4j.dbms.database.readonly.DatabaseReadOnlyChecker;
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.HostedOnMode;
 import org.neo4j.index.internal.gbptree.GroupingRecoveryCleanupWorkCollector;
 import org.neo4j.internal.kernel.api.IndexMonitor;
 import org.neo4j.internal.kernel.api.InternalIndexState;
 import org.neo4j.internal.schema.IndexDescriptor;
-import org.neo4j.io.fs.FileSystemAbstraction;
-import org.neo4j.io.layout.DatabaseLayout;
-import org.neo4j.io.pagecache.PageCache;
-import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
-import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.kernel.api.index.BulkIndexCreationContext;
-import org.neo4j.kernel.database.MetadataCache;
 import org.neo4j.kernel.impl.api.DatabaseSchemaState;
 import org.neo4j.kernel.impl.api.index.IndexingService;
 import org.neo4j.kernel.impl.api.index.IndexingServiceFactory;
@@ -58,45 +51,28 @@ import org.neo4j.kernel.impl.transaction.state.storeview.FullScanStoreView;
 import org.neo4j.kernel.impl.transaction.state.storeview.IndexStoreViewFactory;
 import org.neo4j.kernel.lifecycle.LifeSupport;
 import org.neo4j.kernel.lifecycle.Lifespan;
-import org.neo4j.logging.internal.LogService;
-import org.neo4j.memory.MemoryTracker;
 import org.neo4j.monitoring.Monitors;
-import org.neo4j.scheduler.JobScheduler;
-import org.neo4j.storageengine.api.ReadableStorageEngine;
 import org.neo4j.time.Clocks;
-import org.neo4j.token.TokenHolders;
-import org.neo4j.values.ElementIdMapper;
 
 public class BulkIndexesCreator implements IndexesCreator {
 
-    private final Config config;
-    private final ReadableStorageEngine storageEngine;
-    private final DatabaseLayout databaseLayout;
-    private final FileSystemAbstraction fileSystem;
-    private final PageCache pageCache;
-    private final MetadataCache metadataCache;
-    private final JobScheduler jobScheduler;
-    private final TokenHolders tokenHolders;
-    private final ElementIdMapper elementIdMapper;
-    private final CursorContextFactory contextFactory;
-    private final PageCacheTracer pageCacheTracer;
-    private final LogService logService;
-    private final MemoryTracker memoryTracker;
+    private final BulkIndexCreationContext context;
+    private final Lifespan lifespan;
+    private final IndexingService indexingService;
 
-    public BulkIndexesCreator(BulkIndexCreationContext context) {
-        this.config = requireNonNull(context).config();
-        this.storageEngine = context.storageEngine();
-        this.databaseLayout = context.databaseLayout();
-        this.fileSystem = context.fileSystem();
-        this.pageCache = context.pageCache();
-        this.metadataCache = context.metadataCache();
-        this.jobScheduler = context.jobScheduler();
-        this.tokenHolders = context.tokenHolders();
-        this.elementIdMapper = context.elementIdMapper();
-        this.contextFactory = context.contextFactory();
-        this.pageCacheTracer = context.pageCacheTracer();
-        this.logService = context.logService();
-        this.memoryTracker = context.memoryTracker();
+    public BulkIndexesCreator(BulkIndexCreationContext context) throws IOException {
+        this.context = requireNonNull(context);
+
+        // need to create the lifecycle in the NONE state as the scheduler has already been started
+        // adding an already started lifecycle component and then calling start then fails
+        this.lifespan = Lifespan.createWithNoneState();
+        this.indexingService = indexingService(lifespan, context);
+        lifespan.start(); // this will call life.init automatically
+    }
+
+    @Override
+    public IndexDescriptor completeConfiguration(IndexDescriptor index) {
+        return indexingService.completeConfiguration(index);
     }
 
     @Override
@@ -106,73 +82,81 @@ public class BulkIndexesCreator implements IndexesCreator {
             return;
         }
 
-        // need to create the lifecycle in the NONE state as the scheduler has already been started
-        // adding an already started lifecycle component and then calling start then fails
-        try (var creationContext = contextFactory.create("Indexing creation");
-                var life = Lifespan.createWithNoneState()) {
-            final var indexingService = indexingService(life);
+        indexingService.createIndexes(
+                Subject.SYSTEM,
+                indexDescriptors.stream()
+                        .map(indexingService::completeConfiguration)
+                        .toArray(IndexDescriptor[]::new));
 
-            life.start(); // this will call life.init automatically
-
-            indexingService.createIndexes(
-                    Subject.SYSTEM,
-                    indexDescriptors.stream()
-                            .map(indexingService::completeConfiguration)
-                            .toArray(IndexDescriptor[]::new));
-
-            final var progressTracker = ObjectFloatMaps.mutable.<IndexDescriptor>empty();
-            var completed = 0;
-            var failed = 0;
-            while (completed + failed < descriptorCount) {
-                for (var indexProxy : indexingService.getIndexProxies()) {
-                    final var descriptor = indexProxy.getDescriptor();
-                    final var latestProgress =
-                            indexProxy.getIndexPopulationProgress().getProgress();
-                    final var updatedValue = progressTracker.updateValue(descriptor, latestProgress, lastProgress -> {
-                        creationListener.onUpdate(descriptor, latestProgress - lastProgress);
-                        return latestProgress;
-                    });
-                    if (updatedValue == latestProgress && latestProgress > 0f) {
-                        // already had some updates on first pass through the loop so update here too
-                        creationListener.onUpdate(descriptor, latestProgress);
-                    }
-
-                    final var state = indexProxy.getState();
-                    if (state == InternalIndexState.FAILED) {
-                        failed++;
-                        creationListener.onFailure(
-                                descriptor,
-                                indexProxy
-                                        .getPopulationFailure()
-                                        .asIndexPopulationFailure(
-                                                descriptor.schema(), descriptor.userDescription(tokenHolders)));
-                    } else if (state == InternalIndexState.ONLINE || latestProgress == 1.0f) {
-                        // some proxies are 'tentative' and stay at POPULATING even though they are actually done
-                        completed++;
-                    }
+        final var progressTracker = ObjectFloatMaps.mutable.<IndexDescriptor>empty();
+        var completed = 0;
+        var failed = 0;
+        while (completed + failed < descriptorCount) {
+            for (var indexProxy : indexingService.getIndexProxies()) {
+                final var descriptor = indexProxy.getDescriptor();
+                final var latestProgress =
+                        indexProxy.getIndexPopulationProgress().getProgress();
+                final var updatedValue = progressTracker.updateValue(descriptor, latestProgress, lastProgress -> {
+                    creationListener.onUpdate(descriptor, latestProgress - lastProgress);
+                    return latestProgress;
+                });
+                if (updatedValue == latestProgress && latestProgress > 0f) {
+                    // already had some updates on first pass through the loop so update here too
+                    creationListener.onUpdate(descriptor, latestProgress);
                 }
 
-                sleepIgnoreInterrupt();
+                final var state = indexProxy.getState();
+                if (state == InternalIndexState.FAILED) {
+                    failed++;
+                    creationListener.onFailure(
+                            descriptor,
+                            indexProxy
+                                    .getPopulationFailure()
+                                    .asIndexPopulationFailure(
+                                            descriptor.schema(), descriptor.userDescription(context.tokenHolders())));
+                } else if (state == InternalIndexState.ONLINE || latestProgress == 1.0f) {
+                    // some proxies are 'tentative' and stay at POPULATING even though they are actually done
+                    completed++;
+                }
             }
 
-            final var success = failed == 0;
-            creationListener.onCreationCompleted(success);
-            if (success) {
-                try (var flushEvent = pageCacheTracer.beginDatabaseFlush()) {
-                    indexingService.checkpoint(flushEvent, creationContext);
-                    creationListener.onCheckpointingCompleted();
-                }
+            sleepIgnoreInterrupt();
+        }
+
+        final var success = failed == 0;
+        creationListener.onCreationCompleted(success);
+        if (success) {
+            try (var creationContext = context.contextFactory().create("Indexing flushing");
+                    var flushEvent = context.pageCacheTracer().beginDatabaseFlush()) {
+                indexingService.checkpoint(flushEvent, creationContext);
+                creationListener.onCheckpointingCompleted();
             }
         }
     }
 
-    private IndexingService indexingService(LifeSupport life) throws IOException {
+    @Override
+    public void close() {
+        lifespan.close();
+    }
+
+    private static IndexingService indexingService(LifeSupport life, BulkIndexCreationContext context)
+            throws IOException {
         final var clock = Clocks.nanoClock();
+        final var readOnlyChecker = DatabaseReadOnlyChecker.writable();
+        final var logService = context.logService();
         final var logProvider = logService.getInternalLogProvider();
-        final var schemaState = new DatabaseSchemaState(logProvider);
+        final var jobScheduler = context.jobScheduler();
+        final var databaseLayout = context.databaseLayout();
+        final var config = context.config();
+        final var pageCache = context.pageCache();
+        final var fileSystem = context.fileSystem();
+        final var tokenHolders = context.tokenHolders();
+        final var contextFactory = context.contextFactory();
+        final var pageCacheTracer = context.pageCacheTracer();
+        final var storageEngine = context.storageEngine();
+
         final var cleanupCollector = life.add(new GroupingRecoveryCleanupWorkCollector(
                 jobScheduler, INDEX_POPULATION, INDEX_POPULATION_WORK, databaseLayout.getDatabaseName()));
-        final var readOnlyChecker = DatabaseReadOnlyChecker.writable();
 
         final var indexDependencies = new Dependencies();
         indexDependencies.satisfyDependencies(VersionStorage.EMPTY_STORAGE);
@@ -216,19 +200,19 @@ public class BulkIndexesCreator implements IndexesCreator {
                 indexProviderMap,
                 indexStoreViewFactory,
                 tokenHolders,
-                elementIdMapper,
+                context.elementIdMapper(),
                 List.of(),
                 logService.getInternalLogProvider(),
                 IndexMonitor.NO_MONITOR,
-                schemaState,
+                new DatabaseSchemaState(logProvider),
                 indexStatisticsStore,
                 new DatabaseIndexStats(),
                 contextFactory,
-                memoryTracker,
+                context.memoryTracker(),
                 databaseLayout.getDatabaseName(),
                 readOnlyChecker,
                 clock,
-                metadataCache,
+                context.metadataCache(),
                 fileSystem,
                 EMPTY_VISIBILITY_PROVIDER));
     }

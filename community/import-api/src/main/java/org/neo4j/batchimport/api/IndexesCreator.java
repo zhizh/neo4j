@@ -27,7 +27,13 @@ import org.neo4j.internal.schema.IndexDescriptor;
 /**
  * Used by the {@link BatchImporter} to create indexes after it has imported node & relationship entities.
  */
-public interface IndexesCreator {
+public interface IndexesCreator extends AutoCloseable {
+
+    /**
+     * @param index the index descriptor to complete before writing to the schema store
+     * @return the completed index descriptor
+     */
+    IndexDescriptor completeConfiguration(IndexDescriptor index);
 
     /**
      * Creates all the provided indexes
@@ -36,6 +42,9 @@ public interface IndexesCreator {
      * @throws IOException if unable to create any indexes
      */
     void create(CreationListener creationListener, List<IndexDescriptor> indexDescriptors) throws IOException;
+
+    @Override
+    void close();
 
     interface CreationListener {
         /**
@@ -65,5 +74,20 @@ public interface IndexesCreator {
         void onCheckpointingCompleted();
     }
 
-    IndexesCreator EMPTY_CREATOR = (creationListener, indexDescriptors) -> {};
+    IndexesCreator EMPTY_CREATOR = new IndexesCreator() {
+        @Override
+        public void create(CreationListener creationListener, List<IndexDescriptor> indexDescriptors) {
+            // no-op
+        }
+
+        @Override
+        public IndexDescriptor completeConfiguration(IndexDescriptor index) {
+            return index;
+        }
+
+        @Override
+        public void close() {
+            // no-op
+        }
+    };
 }

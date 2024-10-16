@@ -92,9 +92,9 @@ public abstract class AbstractLuceneIndexAccessor<READER extends ValueIndexReade
             JobScheduler jobScheduler,
             ProgressListener progress)
             throws IndexEntryConflictException {
-        if (entityIdConverter != null) {
-            throw new UnsupportedOperationException("Unable to modify document IDs");
-        }
+        // NB entityIdConverter not used at the moment but this test would be required when doing incremental updates
+        // during the build phase rather than the merge phase - keeping commented code as an aide-mémoire
+        // Preconditions.checkArgument(entityIdConverter == null, "Unable to modify document IDs");
 
         var o = (AbstractLuceneIndexAccessor<READER, INDEX>) other;
         try {

@@ -22,6 +22,7 @@ package org.neo4j.batchimport.api;
 import static org.neo4j.batchimport.api.IndexImporter.EMPTY_IMPORTER;
 import static org.neo4j.batchimport.api.IndexesCreator.EMPTY_CREATOR;
 
+import java.io.IOException;
 import java.nio.file.OpenOption;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.neo4j.internal.schema.IndexDescriptor;
@@ -50,7 +51,7 @@ public interface IndexImporterFactory {
      * @param context the context required for this creator to build the indexes
      * @return the creator of indexes
      */
-    <CONTEXT extends CreationContext> IndexesCreator getCreator(CONTEXT context);
+    <CONTEXT extends CreationContext> IndexesCreator getCreator(CONTEXT context) throws IOException;
 
     IndexImporterFactory EMPTY = new IndexImporterFactory() {
         @Override

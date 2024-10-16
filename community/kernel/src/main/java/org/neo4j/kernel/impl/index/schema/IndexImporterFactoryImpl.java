@@ -19,6 +19,7 @@
  */
 package org.neo4j.kernel.impl.index.schema;
 
+import java.io.IOException;
 import java.nio.file.OpenOption;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.neo4j.batchimport.api.IndexImporter;
@@ -50,7 +51,7 @@ public class IndexImporterFactoryImpl implements IndexImporterFactory {
     }
 
     @Override
-    public IndexesCreator getCreator(CreationContext context) {
+    public IndexesCreator getCreator(CreationContext context) throws IOException {
         Preconditions.checkState(
                 context instanceof BulkIndexCreationContext,
                 "Index creation requires an instance of BulkIndexCreationContext");
