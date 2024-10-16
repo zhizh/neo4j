@@ -64,6 +64,10 @@ public class FulltextIndexCapability implements IndexCapability {
 
     @Override
     public boolean isQuerySupported(IndexQueryType queryType, ValueCategory valueCategory) {
+        if (queryType == IndexQueryType.ALL_ENTRIES) {
+            return true;
+        }
+
         // read/write is not symmetric for fulltext - can only query for text values and not on arrays
         return queryType == IndexQueryType.FULLTEXT_SEARCH && valueCategory == ValueCategory.TEXT;
     }

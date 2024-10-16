@@ -24,12 +24,14 @@ import static org.neo4j.kernel.api.impl.fulltext.FulltextIndexSettings.isEventua
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.LongPredicate;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TotalHitCountCollector;
 import org.eclipse.collections.impl.block.factory.primitive.LongPredicates;
@@ -97,31 +99,62 @@ public class FulltextIndexReader implements ValueIndexReader {
             IndexQueryConstraints constraints,
             PropertyIndexQuery... queries)
             throws IndexNotApplicableKernelException {
-        BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-        for (PropertyIndexQuery indexQuery : queries) {
-            if (indexQuery.type() == IndexQueryType.FULLTEXT_SEARCH) {
-                PropertyIndexQuery.FulltextSearchPredicate fulltextSearch =
-                        (PropertyIndexQuery.FulltextSearchPredicate) indexQuery;
-                try {
-                    queryBuilder.add(
-                            parseFulltextQuery(fulltextSearch.query(), fulltextSearch.queryAnalyzer()),
-                            BooleanClause.Occur.SHOULD);
-                } catch (ParseException e) {
-                    throw new RuntimeException(
-                            "Could not parse the given fulltext search query: '" + fulltextSearch.query() + "'.", e);
-                }
-            } else {
-                throw new IndexNotApplicableKernelException("A fulltext schema index cannot answer " + indexQuery.type()
-                        + " queries on " + indexQuery.valueCategory() + " values.");
-            }
-        }
-        Query query = queryBuilder.build();
+        validateQueries(queries);
+        final var query = toLuceneQuery(queries);
         context.monitor().queried(index);
         usageTracker.queried();
-        ValuesIterator itr =
+
+        final var iterator =
                 searchLucene(query, constraints, context, context.cursorContext(), context.memoryTracker());
-        IndexProgressor progressor = new LuceneScoredEntityIndexProgressor(itr, client, constraints);
+        final var progressor = new LuceneScoredEntityIndexProgressor(iterator, client, constraints);
         client.initializeQuery(index, progressor, true, false, constraints, queries);
+    }
+
+    private void validateQueries(PropertyIndexQuery... predicates) throws IndexNotApplicableKernelException {
+        if (predicates.length > 1) {
+            for (int i = 1; i < predicates.length; i++) {
+                final var predicate = predicates[i];
+                if (predicate.type() == IndexQueryType.ALL_ENTRIES) {
+                    throw new IndexNotApplicableKernelException(
+                            "A fulltext schema index cannot answer composite queries containing a %s query"
+                                    .formatted(predicate.type()));
+                }
+            }
+        }
+
+        for (final var predicate : predicates) {
+            if (!index.getCapability().isQuerySupported(predicate.type(), predicate.valueCategory())) {
+                throw invalidQuery(IndexNotApplicableKernelException::new, predicate);
+            }
+        }
+    }
+
+    private Query toLuceneQuery(PropertyIndexQuery... predicates) {
+        if (predicates.length == 1 && predicates[0].type() == IndexQueryType.ALL_ENTRIES) {
+            return new MatchAllDocsQuery();
+        }
+
+        final var queryBuilder = new BooleanQuery.Builder();
+        for (final var predicate : predicates) {
+            if (predicate.type() != IndexQueryType.FULLTEXT_SEARCH) {
+                throw invalidQuery(IllegalArgumentException::new, predicate);
+            }
+            final var fulltextSearch = (PropertyIndexQuery.FulltextSearchPredicate) predicate;
+            try {
+                queryBuilder.add(
+                        parseFulltextQuery(fulltextSearch.query(), fulltextSearch.queryAnalyzer()),
+                        BooleanClause.Occur.SHOULD);
+            } catch (ParseException e) {
+                throw new RuntimeException(
+                        "Could not parse the given fulltext search query: '" + fulltextSearch.query() + "'.", e);
+            }
+        }
+        return queryBuilder.build();
+    }
+
+    private <E extends Exception> E invalidQuery(Function<String, E> constructor, PropertyIndexQuery query) {
+        return constructor.apply("A fulltext schema index cannot answer %s queries on %s values."
+                .formatted(query.type(), query.valueCategory()));
     }
 
     @Override

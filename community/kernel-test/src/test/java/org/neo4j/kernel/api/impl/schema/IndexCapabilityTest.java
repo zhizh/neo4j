@@ -20,6 +20,7 @@
 package org.neo4j.kernel.api.impl.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.neo4j.internal.helpers.ArrayUtil.concat;
 import static org.neo4j.internal.schema.IndexQuery.IndexQueryType.ALL_ENTRIES;
 import static org.neo4j.internal.schema.IndexQuery.IndexQueryType.BOUNDING_BOX;
 import static org.neo4j.internal.schema.IndexQuery.IndexQueryType.EXACT;
@@ -65,43 +66,45 @@ import org.neo4j.kernel.impl.index.schema.TokenIndexProvider;
 import org.neo4j.values.storable.ValueCategory;
 
 class IndexCapabilityTest {
+    private static final IndexCapability TOKEN = TokenIndexProvider.capability(true);
+    private static final IndexCapability BLOCK_REL_TOKEN = TokenIndexProvider.capability(false);
     private static final IndexCapability RANGE = RangeIndexProvider.CAPABILITY;
     private static final IndexCapability POINT = PointIndexProvider.CAPABILITY;
     private static final IndexCapability TEXT = TextIndexProvider.CAPABILITY;
     private static final IndexCapability TRIGRAM = TrigramIndexProvider.CAPABILITY;
+    private static final IndexCapability FULLTEXT = new FulltextIndexCapability(false);
     private static final IndexCapability VECTOR_V1 = VectorIndexProvider.capability(
             VectorIndexVersion.V1_0, IndexSettingUtil.defaultConfigForTest(IndexType.VECTOR));
     private static final IndexCapability VECTOR_V2 = VectorIndexProvider.capability(
             VectorIndexVersion.V2_0, IndexSettingUtil.defaultConfigForTest(IndexType.VECTOR));
-    private static final IndexCapability TOKEN = TokenIndexProvider.capability(true);
-    private static final IndexCapability BLOCK_REL_TOKEN = TokenIndexProvider.capability(false);
-    private static final IndexCapability FULLTEXT = new FulltextIndexCapability(false);
-    private static final IndexCapability[] ALL = of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2, TOKEN, FULLTEXT);
     private static final IndexCapability[] NONE = of();
+    private static final IndexCapability[] ALL_PROPERTY =
+            of(RANGE, POINT, TEXT, TRIGRAM, FULLTEXT, VECTOR_V1, VECTOR_V2);
+    private static final IndexCapability[] ALL = concat(TOKEN, ALL_PROPERTY);
 
     @Test
     void testSupportsOrdering() {
+        assertThat(TOKEN.supportsOrdering()).isTrue();
+        assertThat(BLOCK_REL_TOKEN.supportsOrdering()).isFalse();
         assertThat(RANGE.supportsOrdering()).isTrue();
         assertThat(POINT.supportsOrdering()).isFalse();
         assertThat(TEXT.supportsOrdering()).isFalse();
         assertThat(TRIGRAM.supportsOrdering()).isFalse();
+        assertThat(FULLTEXT.supportsOrdering()).isFalse();
         assertThat(VECTOR_V1.supportsOrdering()).isFalse();
         assertThat(VECTOR_V2.supportsOrdering()).isFalse();
-        assertThat(TOKEN.supportsOrdering()).isTrue();
-        assertThat(BLOCK_REL_TOKEN.supportsOrdering()).isFalse();
-        assertThat(FULLTEXT.supportsOrdering()).isFalse();
     }
 
     @Test
     void testSupportsReturningValues() {
+        assertThat(TOKEN.supportsReturningValues()).isTrue();
         assertThat(RANGE.supportsReturningValues()).isTrue();
         assertThat(POINT.supportsReturningValues()).isTrue();
         assertThat(TEXT.supportsReturningValues()).isFalse();
         assertThat(TRIGRAM.supportsReturningValues()).isFalse();
+        assertThat(FULLTEXT.supportsReturningValues()).isFalse();
         assertThat(VECTOR_V1.supportsReturningValues()).isFalse();
         assertThat(VECTOR_V2.supportsReturningValues()).isFalse();
-        assertThat(TOKEN.supportsReturningValues()).isTrue();
-        assertThat(FULLTEXT.supportsReturningValues()).isFalse();
     }
 
     @ParameterizedTest
@@ -170,20 +173,20 @@ class IndexCapabilityTest {
                 Arguments.of(TOKEN_LOOKUP, UNKNOWN, NONE),
                 Arguments.of(TOKEN_LOOKUP, NO_CATEGORY, of(TOKEN)),
                 Arguments.of(TOKEN_LOOKUP, ANYTHING, NONE),
-                // ALL_ENTRIES :: not supported by TOKEN and FULLTEXT, and ValueCategory is ignored
-                Arguments.of(ALL_ENTRIES, NUMBER, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, NUMBER_ARRAY, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, ValueCategory.TEXT, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, TEXT_ARRAY, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, GEOMETRY, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, GEOMETRY_ARRAY, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, TEMPORAL, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, TEMPORAL_ARRAY, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, BOOLEAN, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, BOOLEAN_ARRAY, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, UNKNOWN, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, NO_CATEGORY, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
-                Arguments.of(ALL_ENTRIES, ANYTHING, of(RANGE, POINT, TEXT, TRIGRAM, VECTOR_V1, VECTOR_V2)),
+                // ALL_ENTRIES :: not supported by TOKEN, and ValueCategory is ignored
+                Arguments.of(ALL_ENTRIES, NUMBER, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, NUMBER_ARRAY, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, ValueCategory.TEXT, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, TEXT_ARRAY, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, GEOMETRY, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, GEOMETRY_ARRAY, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, TEMPORAL, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, TEMPORAL_ARRAY, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, BOOLEAN, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, BOOLEAN_ARRAY, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, UNKNOWN, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, NO_CATEGORY, ALL_PROPERTY),
+                Arguments.of(ALL_ENTRIES, ANYTHING, ALL_PROPERTY),
                 // EXISTS
                 Arguments.of(EXISTS, NUMBER, of(RANGE)),
                 Arguments.of(EXISTS, NUMBER_ARRAY, of(RANGE)),
@@ -314,14 +317,14 @@ class IndexCapabilityTest {
 
     private static Stream<Arguments> supportedValueCategories() {
         return Stream.of(
+                Arguments.of(TOKEN, new ValueCategory[] {}),
                 Arguments.of(RANGE, ValueCategory.values()),
                 Arguments.of(POINT, new ValueCategory[] {GEOMETRY}),
                 Arguments.of(TEXT, new ValueCategory[] {ValueCategory.TEXT}),
                 Arguments.of(TRIGRAM, new ValueCategory[] {ValueCategory.TEXT}),
+                Arguments.of(FULLTEXT, new ValueCategory[] {ValueCategory.TEXT, TEXT_ARRAY}),
                 Arguments.of(VECTOR_V1, new ValueCategory[] {NUMBER_ARRAY}),
-                Arguments.of(VECTOR_V2, new ValueCategory[] {NUMBER_ARRAY}),
-                Arguments.of(TOKEN, new ValueCategory[] {}),
-                Arguments.of(FULLTEXT, new ValueCategory[] {ValueCategory.TEXT, TEXT_ARRAY}));
+                Arguments.of(VECTOR_V2, new ValueCategory[] {NUMBER_ARRAY}));
     }
 
     private static IndexCapability[] of(IndexCapability... capabilities) {
