@@ -3039,18 +3039,18 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached node properties on NFA predicate expression variables") {
-    // Parallel runtime doesn't support changes in tx state
-    assume(!isParallel)
-
     val (n1, n2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-->(n1)-->(n2:T)
       """)
 
-      (graph node "n1", graph node "n2")
+      val n1 = graph node "n1"
+      val n2 = graph node "n2"
+
+      n1.setProperty("prop", 1)
+      n2.setProperty("prop", 2)
+      (n1, n2)
     }
-    n1.setProperty("prop", 1)
-    n2.setProperty("prop", 2)
 
     // the cacheNFromStore should not persist
     val nfa = new TestNFABuilder(0, "s")
@@ -3088,17 +3088,16 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached node properties on NFA predicate expression variables as MRE") {
-    // Parallel runtime doesn't support changes in tx state
-    assume(!isParallel)
     val (n1, n2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-->(n1)-->(n2:T)
       """)
 
-      (graph node "n1", graph node "n2")
+      val (n1, n2) = (graph node "n1", graph node "n2")
+      n1.setProperty("prop", 1)
+      n2.setProperty("prop", 2)
+      (n1, n2)
     }
-    n1.setProperty("prop", 1)
-    n2.setProperty("prop", 2)
 
     // the cacheNFromStore should not persist
     val nfa = new TestNFABuilder(0, "s")
@@ -3136,17 +3135,17 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached relationship properties on NFA predicate expression variables") {
-    // Parallel runtime doesn't support changes in tx state
-    assume(!isParallel)
     val (r1, r2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-[r1]->()-[r2]->(:T)
       """)
 
-      (graph rel "r1", graph rel "r2")
+      val r1 = graph rel "r1"
+      val r2 = graph rel "r2"
+      r1.setProperty("prop", 1)
+      r2.setProperty("prop", 2)
+      (r1, r2)
     }
-    r1.setProperty("prop", 1)
-    r2.setProperty("prop", 2)
 
     // the cacheNFromStore should not persist
     val nfa = new TestNFABuilder(0, "s")
@@ -3184,18 +3183,16 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   }
 
   test("cached relationship properties on NFA predicate expression variables as MRE") {
-    // Parallel runtime doesn't support changes in tx state
-    assume(!isParallel)
-
     val (r1, r2) = givenGraph {
       val graph = fromTemplate("""
         (:S)-[r1]->()-[r2]->(:T)
       """)
 
-      (graph rel "r1", graph rel "r2")
+      val (r1, r2) = (graph rel "r1", graph rel "r2")
+      r1.setProperty("prop", 1)
+      r2.setProperty("prop", 2)
+      (r1, r2)
     }
-    r1.setProperty("prop", 1)
-    r2.setProperty("prop", 2)
 
     // the cacheNFromStore should not persist
     val nfa = new TestNFABuilder(0, "s")
