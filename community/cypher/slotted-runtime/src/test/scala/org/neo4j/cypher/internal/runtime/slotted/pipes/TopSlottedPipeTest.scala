@@ -21,7 +21,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 
 import org.neo4j.cypher.internal.physicalplanning.LongSlot
 import org.neo4j.cypher.internal.physicalplanning.RefSlot
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.commands.LiteralHelper.literal
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Pipe
@@ -307,16 +307,17 @@ object TopSlottedPipeTestSupport {
     limit: Long,
     withTies: Boolean = false
   ): List[Any] = {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newReference("a", nullable = true, CTAny)
+      .build()
 
     val slot = slots("a")
 
     val source = FakeSlottedPipe(data.map(v => Map[Any, Any]("a" -> v)), slots)
 
     val topOrderBy = orderBy match {
-      case AscendingOrder  => List(Ascending(slot))
-      case DescendingOrder => List(Descending(slot))
+      case AscendingOrder  => List(Ascending(slot.slot))
+      case DescendingOrder => List(Descending(slot.slot))
     }
 
     val topPipe = createTopPipe(source, topOrderBy, limit, withTies)
@@ -324,7 +325,7 @@ object TopSlottedPipeTestSupport {
     val results = topPipe.createResults(QueryStateHelper.emptyWithValueSerialization)
     results.map {
       case c: SlottedRow =>
-        slot match {
+        slot.slot match {
           case RefSlot(offset, _, _) =>
             c.getRefAt(offset)
           case LongSlot(offset, _, _) =>
@@ -339,24 +340,25 @@ object TopSlottedPipeTestSupport {
     limit: Int,
     withTies: Boolean = false
   ): List[(AnyValue, AnyValue)] = {
-    val slotConfiguration = SlotConfiguration.empty
+    val slotConfiguration = SlotConfigurationBuilder.empty
       .newReference("a", nullable = true, CTAny)
       .newReference("b", nullable = true, CTAny)
+      .build()
 
     val slots = Seq(slotConfiguration("a"), slotConfiguration("b"))
 
     val source = FakeSlottedPipe(data.map { case (v1, v2) => Map[Any, Any]("a" -> v1, "b" -> v2) }, slotConfiguration)
 
     val topOrderBy = orderBy.zip(slots).map {
-      case (AscendingOrder, slot)  => Ascending(slot)
-      case (DescendingOrder, slot) => Descending(slot)
+      case (AscendingOrder, slot)  => Ascending(slot.slot)
+      case (DescendingOrder, slot) => Descending(slot.slot)
     }.toList
 
     val topPipe = createTopPipe(source, topOrderBy, limit, withTies)
 
     topPipe.createResults(QueryStateHelper.emptyWithValueSerialization).map {
       case c: SlottedRow =>
-        (slots(0), slots(1)) match {
+        (slots(0).slot, slots(1).slot) match {
           case (RefSlot(offset1, _, _), RefSlot(offset2, _, _)) =>
             (c.getRefAt(offset1), c.getRefAt(offset2))
           case _ =>

@@ -21,7 +21,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 
 import org.mockito.Mockito
 import org.neo4j.cypher.internal.expressions.SemanticDirection
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.EagerTypes
@@ -45,14 +45,15 @@ class ExpandAllSlottedPipeTest extends CypherFunSuite {
     Mockito.when(state.query.traversalCursor()).thenReturn(relCursor)
     Mockito.when(state.query.nodeCursor()).thenReturn(nodeCursor)
 
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10)), slots)
     val pipe =
-      ExpandAllSlottedPipe(input, slots("a"), 1, 2, SemanticDirection.OUTGOING, new EagerTypes(Array(0)), slots)()
+      ExpandAllSlottedPipe(input, slots("a").slot, 1, 2, SemanticDirection.OUTGOING, new EagerTypes(Array(0)), slots)()
     // exhaust
     pipe.createResults(state).toList
     input.wasClosed shouldBe true
@@ -68,14 +69,15 @@ class ExpandAllSlottedPipeTest extends CypherFunSuite {
     Mockito.when(state.query.traversalCursor()).thenReturn(relCursor)
     Mockito.when(state.query.nodeCursor()).thenReturn(nodeCursor)
 
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10)), slots)
     val pipe =
-      ExpandAllSlottedPipe(input, slots("a"), 1, 2, SemanticDirection.OUTGOING, new EagerTypes(Array(0)), slots)()
+      ExpandAllSlottedPipe(input, slots("a").slot, 1, 2, SemanticDirection.OUTGOING, new EagerTypes(Array(0)), slots)()
     val result = pipe.createResults(state)
     result.hasNext shouldBe true // Need to initialize to get cursor registered
     result.close()

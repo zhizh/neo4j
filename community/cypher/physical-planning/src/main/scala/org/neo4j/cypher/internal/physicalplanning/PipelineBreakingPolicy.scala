@@ -51,10 +51,10 @@ trait PipelineBreakingPolicy {
 
   def invoke(
     lp: LogicalPlan,
-    slots: SlotConfiguration,
-    argumentSlots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
+    argumentSlots: SlotConfigurationBuilder,
     applyPlans: PhysicalPlanningAttributes.ApplyPlans
-  ): SlotConfiguration =
+  ): SlotConfigurationBuilder =
     if (breakOn(lp, applyPlans)) {
       lp match {
         case _: AggregatingPlan => argumentSlots.copy()

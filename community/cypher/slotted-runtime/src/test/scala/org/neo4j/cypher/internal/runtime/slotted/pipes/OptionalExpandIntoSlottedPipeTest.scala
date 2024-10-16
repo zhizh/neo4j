@@ -21,7 +21,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 
 import org.mockito.Mockito
 import org.neo4j.cypher.internal.expressions.SemanticDirection
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.EagerTypes
@@ -46,17 +46,18 @@ class OptionalExpandIntoSlottedPipeTest extends CypherFunSuite {
     Mockito.when(state.query.traversalCursor()).thenReturn(relCursor)
     Mockito.when(state.query.nodeCursor()).thenReturn(nodeCursor)
 
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10, "b" -> 20)), slots)
     val pipe = OptionalExpandIntoSlottedPipe(
       input,
-      slots("a"),
+      slots("a").slot,
       1,
-      slots("b"),
+      slots("b").slot,
       SemanticDirection.OUTGOING,
       new EagerTypes(Array(0)),
       slots,
@@ -80,17 +81,18 @@ class OptionalExpandIntoSlottedPipeTest extends CypherFunSuite {
     Mockito.when(state.query.traversalCursor()).thenReturn(relCursor)
     Mockito.when(state.query.nodeCursor()).thenReturn(nodeCursor)
 
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10, "b" -> 20)), slots)
     val pipe = OptionalExpandIntoSlottedPipe(
       input,
-      slots("a"),
+      slots("a").slot,
       1,
-      slots("b"),
+      slots("b").slot,
       SemanticDirection.OUTGOING,
       new EagerTypes(Array(0)),
       slots,

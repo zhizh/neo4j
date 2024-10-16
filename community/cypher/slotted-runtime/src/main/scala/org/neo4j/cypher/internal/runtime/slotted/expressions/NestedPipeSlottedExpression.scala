@@ -40,7 +40,7 @@ abstract class NestedPipeSlottedExpression(
 
   // NOTE: we make this distinct in the case of multiple availableExpressionVariables maps to the same slot
   private val expVarSlotsInNestedPlan =
-    availableExpressionVariables.map(ev => slots.getReferenceOffsetFor(ev.name)).distinct
+    availableExpressionVariables.map(ev => slots.refOffset(ev.name)).distinct
 
   override protected def createInitialContext(ctx: ReadableRow, state: QueryState): SlottedRow = {
     val initialContext = new SlottedRow(slots)

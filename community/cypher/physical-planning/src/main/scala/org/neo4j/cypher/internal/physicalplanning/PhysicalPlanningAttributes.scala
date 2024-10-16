@@ -23,9 +23,11 @@ import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.Size
 import org.neo4j.cypher.internal.util.attribution.Attribute
 import org.neo4j.cypher.internal.util.attribution.Id
+import org.neo4j.cypher.internal.util.attribution.ImmutableAttribute
 
 object PhysicalPlanningAttributes {
-  class SlotConfigurations extends Attribute[LogicalPlan, SlotConfiguration]
+
+  class SlotConfigurations extends BuildsSlotConfigurations
   class ArgumentSizes extends Attribute[LogicalPlan, Size]
 
   class ApplyPlans extends Attribute[LogicalPlan, Id] {
@@ -50,6 +52,13 @@ object PhysicalPlanningAttributes {
 
   class TrailPlans extends Attribute[LogicalPlan, Id]
 
-  class NestedPlanArgumentConfigurations extends Attribute[LogicalPlan, SlotConfiguration]
+  class NestedPlanArgumentConfigurations extends BuildsSlotConfigurations
   class LiveVariables extends Attribute[LogicalPlan, Set[String]]
+
+  trait BuildsSlotConfigurations extends Attribute[LogicalPlan, SlotConfigurationBuilder] {
+
+    def finalizeSlots(): ImmutableAttribute[SlotConfiguration] = {
+      ImmutableAttribute.deduplicated(iterator.map { case (id, s) => id -> s.build() })
+    }
+  }
 }

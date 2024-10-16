@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.logical.plans.IndexOrder
 import org.neo4j.cypher.internal.logical.plans.IndexOrderNone
 import org.neo4j.cypher.internal.logical.plans.SingleQueryExpression
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.physicalplanning.SlottedIndexedProperty
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
@@ -46,7 +47,7 @@ class NodeIndexSeekSlottedPipeTest extends CypherFunSuite {
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
     val state = QueryStateHelper.emptyWithResourceManager(resourceManager)
-    val slots = SlotConfiguration.empty.newLong("n", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty.newLong("n", nullable = false, CTNode).build()
 
     val cursor = new StubNodeValueIndexCursor().withNode(0)
     when(
@@ -77,7 +78,7 @@ class NodeIndexSeekSlottedPipeTest extends CypherFunSuite {
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
     val state = QueryStateHelper.emptyWithResourceManager(resourceManager)
-    val slots = SlotConfiguration.empty.newLong("n", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty.newLong("n", nullable = false, CTNode).build()
 
     val cursor = new StubNodeValueIndexCursor().withNode(0)
     when(

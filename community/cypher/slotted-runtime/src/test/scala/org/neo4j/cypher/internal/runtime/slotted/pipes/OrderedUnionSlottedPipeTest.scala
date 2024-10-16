@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.pipes
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.slotted.Ascending
 import org.neo4j.cypher.internal.runtime.slotted.SlottedExecutionContextOrdering
@@ -30,8 +30,9 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 class OrderedUnionSlottedPipeTest extends CypherFunSuite {
 
   test("Close should close RHS and LHS.") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
+      .build()
 
     val lhs = FakeSlottedPipe(Seq(Map("a" -> 10), Map("a" -> 11), Map("a" -> 25)), slots)
     val rhs = FakeSlottedPipe(Seq(Map("a" -> 20), Map("a" -> 21), Map("a" -> 26)), slots)
@@ -42,7 +43,7 @@ class OrderedUnionSlottedPipeTest extends CypherFunSuite {
       slots,
       mapping,
       mapping,
-      SlottedExecutionContextOrdering.asComparator(List(Ascending(slots("a"))))
+      SlottedExecutionContextOrdering.asComparator(List(Ascending(slots("a").slot)))
     )()
     val result = pipe.createResults(QueryStateHelper.empty)
     result.next()

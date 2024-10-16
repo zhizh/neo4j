@@ -46,7 +46,7 @@ case class UndirectedRelationshipIndexSeekSlottedPipe(
   slots: SlotConfiguration
 )(val id: Id = Id.INVALID_ID) extends Pipe with EntityIndexSeeker with IndexSlottedPipeWithValues {
 
-  override val offset: Int = slots.getLongOffsetFor(ident)
+  override val offset: Int = slots.longOffset(ident)
 
   override val propertyIds: Array[Int] = properties.map(_.propertyKeyId).toArray
 
@@ -62,8 +62,8 @@ case class UndirectedRelationshipIndexSeekSlottedPipe(
     val context = state.newRowWithArgument(rowFactory)
     new SlottedUndirectedRelationshipIndexIterator(
       state,
-      slots.getLongOffsetFor(startNode),
-      slots.getLongOffsetFor(endNode),
+      slots.longOffset(startNode),
+      slots.longOffset(endNode),
       relationshipIndexSeek(state, index, needsValues, indexOrder, context)
     )
   }

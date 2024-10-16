@@ -29,7 +29,7 @@ import org.neo4j.cypher.internal.util.attribution.Id
 
 case class AllNodesScanSlottedPipe(ident: String, slots: SlotConfiguration)(val id: Id = Id.INVALID_ID) extends Pipe {
 
-  private val offset = slots.getLongOffsetFor(ident)
+  private val offset = slots.longOffset(ident)
 
   protected def internalCreateResults(state: QueryState): ClosingIterator[CypherRow] = {
     PrimitiveLongHelper.map(

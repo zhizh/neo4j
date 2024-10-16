@@ -41,7 +41,7 @@ abstract class AbstractNodeIndexStringScanSlottedPipe(
   slots: SlotConfiguration
 ) extends Pipe with IndexSlottedPipeWithValues {
 
-  override val offset: Int = slots.getLongOffsetFor(ident)
+  override val offset: Int = slots.longOffset(ident)
   override val indexPropertySlotOffsets: Array[Int] = property.maybeCachedEntityPropertySlot.toArray
 
   override val indexPropertyIndices: Array[Int] =

@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.aggregation
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.CountStar
@@ -38,13 +38,14 @@ class SlottedGroupingAggTableTest extends CypherFunSuite {
     // given
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newReference("a", nullable = false, CTInteger)
       .newReference("c", nullable = false, CTInteger)
+      .build()
     val state = QueryStateHelper.emptyWithResourceManager(resourceManager)
     val table = new SlottedGroupingAggTable(
       slots,
-      SlottedGroupingExpression1(SlotExpression(slots("a"), ReferenceFromSlot(0))),
+      SlottedGroupingExpression1(SlotExpression(slots("a").slot, ReferenceFromSlot(0))),
       Map(slots("c").offset -> CountStar()),
       state,
       Id(0),

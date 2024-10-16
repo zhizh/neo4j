@@ -22,7 +22,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.FakeEntityTestSupport
@@ -37,7 +37,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 class RollUpApplySlottedPipeTest extends CypherFunSuite with PipeTestSupport with FakeEntityTestSupport {
 
   private val slots =
-    SlotConfiguration
+    SlotConfigurationBuilder
       .empty
       .newReference("a", nullable = true, CTNumber)
       .newReference(
@@ -45,8 +45,9 @@ class RollUpApplySlottedPipeTest extends CypherFunSuite with PipeTestSupport wit
         nullable = false,
         CTList(CTNumber)
       ) // NOTE: This has to be last since that is the order in which the slots are assumed to be allocated
+      .build()
 
-  private val collectionRefSlotOffset = slots.getReferenceOffsetFor("x")
+  private val collectionRefSlotOffset = slots.refOffset("x")
 
   test("should set the QueryState when calling down to the RHS") {
     // given

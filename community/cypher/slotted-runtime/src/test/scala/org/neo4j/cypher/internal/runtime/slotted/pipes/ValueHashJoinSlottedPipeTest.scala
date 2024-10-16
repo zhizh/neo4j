@@ -23,7 +23,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Pipe
@@ -49,8 +49,9 @@ class ValueHashJoinSlottedPipeTest extends CypherFunSuite {
     // given
     val queryState = QueryStateHelper.emptyWithValueSerialization
 
-    val slotInfo = SlotConfiguration.empty
-    slotInfo.newLong("a", nullable = false, CTNode)
+    val slotInfo = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = false, CTNode)
+      .build()
 
     val left = mockPipeFor(slotInfo)
 
@@ -76,8 +77,9 @@ class ValueHashJoinSlottedPipeTest extends CypherFunSuite {
     // given
     val queryState = QueryStateHelper.emptyWithValueSerialization
 
-    val slotInfo = SlotConfiguration.empty
-    slotInfo.newReference("a", nullable = false, CTNode)
+    val slotInfo = SlotConfigurationBuilder.empty
+      .newReference("a", nullable = false, CTNode)
+      .build()
 
     val left = mockPipeFor(slotInfo, RowR(NO_VALUE))
     val right = mockPipeFor(slotInfo, RowR(intValue(42)))
@@ -103,16 +105,18 @@ class ValueHashJoinSlottedPipeTest extends CypherFunSuite {
   test("should support hash join between two identifiers with shared arguments") {
     // given
     val queryState = QueryStateHelper.emptyWithValueSerialization
-    val slotInfoForInputs = SlotConfiguration.empty
+    val slotInfoForInputs = SlotConfigurationBuilder.empty
       .newLong("arg1", nullable = false, CTNode)
       .newReference("arg2", nullable = false, CTInteger)
       .newReference("b", nullable = false, CTInteger)
+      .build()
 
-    val slotInfoForJoin = SlotConfiguration.empty
+    val slotInfoForJoin = SlotConfigurationBuilder.empty
       .newLong("arg1", nullable = false, CTNode)
       .newReference("arg2", nullable = false, CTInteger)
       .newReference("a", nullable = false, CTInteger)
       .newReference("b", nullable = false, CTInteger)
+      .build()
 
     val left = mockPipeFor(
       slotInfoForInputs,
@@ -158,8 +162,9 @@ class ValueHashJoinSlottedPipeTest extends CypherFunSuite {
     val monitor = QueryStateHelper.trackClosedMonitor
     val queryState = QueryStateHelper.emptyWithResourceManager(new ResourceManager(monitor))
 
-    val slots = SlotConfiguration.empty
-    slots.newReference("n", nullable = false, CTInteger)
+    val slots = SlotConfigurationBuilder.empty
+      .newReference("n", nullable = false, CTInteger)
+      .build()
 
     val left = mockPipeFor(slots, RowR(intValue(1)))
     val right = mockPipeFor(slots, RowR(intValue(1)))
@@ -183,8 +188,9 @@ class ValueHashJoinSlottedPipeTest extends CypherFunSuite {
     val monitor = QueryStateHelper.trackClosedMonitor
     val queryState = QueryStateHelper.emptyWithResourceManager(new ResourceManager(monitor))
 
-    val slots = SlotConfiguration.empty
-    slots.newReference("n", nullable = false, CTInteger)
+    val slots = SlotConfigurationBuilder.empty
+      .newReference("n", nullable = false, CTInteger)
+      .build()
 
     val left = mockPipeFor(slots, RowR(intValue(1)))
     val right = mockPipeFor(slots, RowR(intValue(1)))

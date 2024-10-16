@@ -182,7 +182,6 @@ import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.SlotWithKeyA
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.VariableSlotKey
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.isRefSlotAndNotAlias
 import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils
-import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils.finalizeSlotConfiguration
 import org.neo4j.cypher.internal.physicalplanning.SlottedIndexedProperty
 import org.neo4j.cypher.internal.physicalplanning.ast.NodeFromSlot
 import org.neo4j.cypher.internal.physicalplanning.ast.NullCheckVariable
@@ -352,7 +351,6 @@ class SlottedPipeMapper(
     val convertExpressions = (e: internal.expressions.Expression) => expressionConverters.toCommandExpression(id, e)
     val slots = physicalPlan.slotConfigurations(id)
     val argumentSize = physicalPlan.argumentSizes(id)
-    finalizeSlotConfiguration(slots)
 
     val pipe = plan match {
       case AllNodesScan(column, _) =>
@@ -457,7 +455,7 @@ class SlottedPipeMapper(
       case UnionNodeByLabelsScan(column, labels, _, indexOrder) =>
         indexRegistrator.registerLabelScan()
         UnionNodesByLabelsScanSlottedPipe(
-          slots.getLongOffsetFor(column),
+          slots.longOffset(column),
           labels.map(label => LazyLabel(label)(semanticTable)),
           indexOrder
         )(id)
@@ -465,7 +463,7 @@ class SlottedPipeMapper(
       case PartitionedUnionNodeByLabelsScan(column, labels, _) =>
         indexRegistrator.registerLabelScan()
         UnionNodesByLabelsScanSlottedPipe(
-          slots.getLongOffsetFor(column),
+          slots.longOffset(column),
           labels.map(label => LazyLabel(label)(semanticTable)),
           IndexOrderNone
         )(id)
@@ -473,7 +471,7 @@ class SlottedPipeMapper(
       case IntersectionNodeByLabelsScan(column, labels, _, indexOrder) =>
         indexRegistrator.registerLabelScan()
         IntersectionNodesByLabelsScanSlottedPipe(
-          slots.getLongOffsetFor(column),
+          slots.longOffset(column),
           labels.map(label => LazyLabel(label)(semanticTable)),
           indexOrder
         )(id)
@@ -481,7 +479,7 @@ class SlottedPipeMapper(
       case PartitionedIntersectionNodeByLabelsScan(column, labels, _) =>
         indexRegistrator.registerLabelScan()
         IntersectionNodesByLabelsScanSlottedPipe(
-          slots.getLongOffsetFor(column),
+          slots.longOffset(column),
           labels.map(label => LazyLabel(label)(semanticTable)),
           IndexOrderNone
         )(id)
@@ -489,7 +487,7 @@ class SlottedPipeMapper(
       case SubtractionNodeByLabelsScan(column, positiveLabels, negativeLabels, _, indexOrder) =>
         indexRegistrator.registerLabelScan()
         SubtractionNodesByLabelsScanSlottedPipe(
-          slots.getLongOffsetFor(column),
+          slots.longOffset(column),
           positiveLabels.map(l => LazyLabel(l)(semanticTable)),
           negativeLabels.map(l => LazyLabel(l)(semanticTable)),
           indexOrder
@@ -498,7 +496,7 @@ class SlottedPipeMapper(
       case PartitionedSubtractionNodeByLabelsScan(column, positiveLabels, negativeLabels, _) =>
         indexRegistrator.registerLabelScan()
         SubtractionNodesByLabelsScanSlottedPipe(
-          slots.getLongOffsetFor(column),
+          slots.longOffset(column),
           positiveLabels.map(l => LazyLabel(l)(semanticTable)),
           negativeLabels.map(l => LazyLabel(l)(semanticTable)),
           IndexOrderNone
@@ -740,109 +738,109 @@ class SlottedPipeMapper(
 
       case DirectedAllRelationshipsScan(name, start, end, _) =>
         DirectedAllRelationshipsScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
-          slots.getLongOffsetFor(end)
+          slots.longOffset(name),
+          slots.longOffset(start),
+          slots.longOffset(end)
         )(id)
 
       case UndirectedAllRelationshipsScan(name, start, end, _) =>
         UndirectedAllRelationshipsScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
-          slots.getLongOffsetFor(end)
+          slots.longOffset(name),
+          slots.longOffset(start),
+          slots.longOffset(end)
         )(id)
 
       case PartitionedDirectedAllRelationshipsScan(name, start, end, _) =>
         DirectedAllRelationshipsScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
-          slots.getLongOffsetFor(end)
+          slots.longOffset(name),
+          slots.longOffset(start),
+          slots.longOffset(end)
         )(id)
 
       case PartitionedUndirectedAllRelationshipsScan(name, start, end, _) =>
         UndirectedAllRelationshipsScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
-          slots.getLongOffsetFor(end)
+          slots.longOffset(name),
+          slots.longOffset(start),
+          slots.longOffset(end)
         )(id)
 
       case DirectedRelationshipTypeScan(name, start, typ, end, _, indexOrder) =>
         indexRegistrator.registerTypeScan()
         DirectedRelationshipTypeScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           LazyType(typ),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           indexOrder
         )(id)
 
       case UndirectedRelationshipTypeScan(name, start, typ, end, _, indexOrder) =>
         indexRegistrator.registerTypeScan()
         UndirectedRelationshipTypeScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           LazyType(typ),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           indexOrder
         )(id)
 
       case PartitionedDirectedRelationshipTypeScan(name, start, typ, end, _) =>
         indexRegistrator.registerTypeScan()
         DirectedRelationshipTypeScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           LazyType(typ),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           IndexOrderNone
         )(id)
 
       case PartitionedUndirectedRelationshipTypeScan(name, start, typ, end, _) =>
         indexRegistrator.registerTypeScan()
         UndirectedRelationshipTypeScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           LazyType(typ),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           IndexOrderNone
         )(id)
 
       case DirectedUnionRelationshipTypesScan(name, start, types, end, _, indexOrder) =>
         indexRegistrator.registerTypeScan()
         DirectedUnionRelationshipTypesScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           types.map(t => LazyType(t)(semanticTable)),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           indexOrder
         )(id)
 
       case UndirectedUnionRelationshipTypesScan(name, start, types, end, _, indexOrder) =>
         indexRegistrator.registerTypeScan()
         UndirectedUnionRelationshipTypesScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           types.map(t => LazyType(t)(semanticTable)),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           indexOrder
         )(id)
 
       case PartitionedDirectedUnionRelationshipTypesScan(name, start, types, end, _) =>
         indexRegistrator.registerTypeScan()
         DirectedUnionRelationshipTypesScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           types.map(t => LazyType(t)(semanticTable)),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           IndexOrderNone
         )(id)
 
       case PartitionedUndirectedUnionRelationshipTypesScan(name, start, types, end, _) =>
         indexRegistrator.registerTypeScan()
         UndirectedUnionRelationshipTypesScanSlottedPipe(
-          slots.getLongOffsetFor(name),
-          slots.getLongOffsetFor(start),
+          slots.longOffset(name),
+          slots.longOffset(start),
           types.map(t => LazyType(t)(semanticTable)),
-          slots.getLongOffsetFor(end),
+          slots.longOffset(end),
           IndexOrderNone
         )(id)
 
@@ -956,7 +954,6 @@ class SlottedPipeMapper(
     val slots = physicalPlan.slotConfigurations(id)
     // some operators will overwrite this value
     var argumentSize = physicalPlan.argumentSizes.getOrElse(id, SlotConfiguration.Size.zero)
-    finalizeSlotConfiguration(slots)
 
     def compileEffects(sideEffect: SimpleMutatingPattern): Seq[SideEffect] = sideEffect match {
 
@@ -965,7 +962,7 @@ class SlottedPipeMapper(
           case CreateNode(node, labels, labelExpressions, properties) =>
             CreateSlottedNode(
               CreateNodeSlottedCommand(
-                slots.getLongOffsetFor(node),
+                slots.longOffset(node),
                 labels.toSeq.map(l => LazyLabel(l)(semanticTable)),
                 labelExpressions.toSeq.map(convertExpressions),
                 properties.map(convertExpressions)
@@ -975,10 +972,10 @@ class SlottedPipeMapper(
           case r: CreateRelationship =>
             CreateSlottedRelationship(
               CreateRelationshipSlottedCommand(
-                slots.getLongOffsetFor(r.variable),
-                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode)),
+                slots.longOffset(r.variable),
+                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode).slot),
                 LazyType(r.relType, semanticTable, convertExpressions),
-                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode)),
+                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode).slot),
                 r.properties.map(convertExpressions),
                 r.variable.name,
                 r.startNode.name,
@@ -991,20 +988,20 @@ class SlottedPipeMapper(
         Seq(DeleteOperation(convertExpressions(expression), forced))
       case SetLabelPattern(node, labelNames, dynamicLabels) =>
         Seq(SlottedSetLabelsOperation(
-          slots(node),
+          slots(node).slot,
           labelNames.map(l => LazyLabel(l)(semanticTable)),
           dynamicLabels.map(l => convertExpressions(l))
         ))
       case RemoveLabelPattern(node, labelNames, dynamicLabels) =>
         Seq(SlottedRemoveLabelsOperation(
-          slots(node),
+          slots(node).slot,
           labelNames.map(l => LazyLabel(l)(semanticTable)),
           dynamicLabels.map(l => convertExpressions(l))
         ))
       case SetNodePropertyPattern(node, propertyKey, value) =>
         val needsExclusiveLock = internal.expressions.Expression.hasPropertyReadDependency(node, value, propertyKey)
         Seq(SlottedSetNodePropertyOperation(
-          slots(node),
+          slots(node).slot,
           LazyPropertyKey(propertyKey),
           convertExpressions(value),
           needsExclusiveLock
@@ -1022,11 +1019,11 @@ class SlottedPipeMapper(
             values(i) = convertExpressions(e)
         }
 
-        Seq(SlottedSetNodePropertiesOperation(slots(node), keys, values, needsExclusiveLock))
+        Seq(SlottedSetNodePropertiesOperation(slots(node).slot, keys, values, needsExclusiveLock))
       case SetNodePropertiesFromMapPattern(node, map, removeOtherProps) =>
         val needsExclusiveLock = internal.expressions.Expression.mapExpressionHasPropertyReadDependency(node, map)
         Seq(SlottedSetNodePropertyFromMapOperation(
-          slots(node),
+          slots(node).slot,
           convertExpressions(map),
           removeOtherProps,
           needsExclusiveLock
@@ -1035,7 +1032,7 @@ class SlottedPipeMapper(
         val needsExclusiveLock =
           internal.expressions.Expression.hasPropertyReadDependency(relationship, value, propertyKey)
         Seq(SlottedSetRelationshipPropertyOperation(
-          slots(relationship),
+          slots(relationship).slot,
           LazyPropertyKey(propertyKey),
           convertExpressions(value),
           needsExclusiveLock
@@ -1053,12 +1050,12 @@ class SlottedPipeMapper(
             values(i) = convertExpressions(e)
         }
 
-        Seq(SlottedSetRelationshipPropertiesOperation(slots(rel), keys, values, needsExclusiveLock))
+        Seq(SlottedSetRelationshipPropertiesOperation(slots(rel).slot, keys, values, needsExclusiveLock))
       case SetRelationshipPropertiesFromMapPattern(relationship, map, removeOtherProps) =>
         val needsExclusiveLock =
           internal.expressions.Expression.mapExpressionHasPropertyReadDependency(relationship, map)
         Seq(SlottedSetRelationshipPropertyFromMapOperation(
-          slots(relationship),
+          slots(relationship).slot,
           convertExpressions(map),
           removeOtherProps,
           needsExclusiveLock
@@ -1109,21 +1106,21 @@ class SlottedPipeMapper(
         ProduceResultsPipe(source, runtimeColumns.toArray)(id)
 
       case Expand(_, from, dir, types, to, relName, ExpandAll) =>
-        val fromSlot = slots(from)
-        val relOffset = slots.getLongOffsetFor(relName)
-        val toOffset = slots.getLongOffsetFor(to)
+        val fromSlot = slots(from).slot
+        val relOffset = slots.longOffset(relName)
+        val toOffset = slots.longOffset(to)
         ExpandAllSlottedPipe(source, fromSlot, relOffset, toOffset, dir, RelationshipTypes(types.toArray), slots)(id)
 
       case Expand(_, from, dir, types, to, relName, ExpandInto) =>
-        val fromSlot = slots(from)
-        val relOffset = slots.getLongOffsetFor(relName)
-        val toSlot = slots(to)
+        val fromSlot = slots(from).slot
+        val relOffset = slots.longOffset(relName)
+        val toSlot = slots(to).slot
         ExpandIntoSlottedPipe(source, fromSlot, relOffset, toSlot, dir, RelationshipTypes(types.toArray), slots)(id)
 
       case OptionalExpand(_, fromName, dir, types, toName, relName, ExpandAll, predicate) =>
-        val fromSlot = slots(fromName)
-        val relOffset = slots.getLongOffsetFor(relName)
-        val toOffset = slots.getLongOffsetFor(toName)
+        val fromSlot = slots(fromName).slot
+        val relOffset = slots.longOffset(relName)
+        val toOffset = slots.longOffset(toName)
         OptionalExpandAllSlottedPipe(
           source,
           fromSlot,
@@ -1136,9 +1133,9 @@ class SlottedPipeMapper(
         )(id)
 
       case OptionalExpand(_, fromName, dir, types, toName, relName, ExpandInto, predicate) =>
-        val fromSlot = slots(fromName)
-        val relOffset = slots.getLongOffsetFor(relName)
-        val toSlot = slots(toName)
+        val fromSlot = slots(fromName).slot
+        val relOffset = slots.longOffset(relName)
+        val toSlot = slots(toName).slot
 
         OptionalExpandIntoSlottedPipe(
           source,
@@ -1169,9 +1166,9 @@ class SlottedPipeMapper(
           case ExpandAll  => true
           case ExpandInto => false
         }
-        val fromSlot = slots(fromName)
-        val relOffset = slots.getReferenceOffsetFor(relName)
-        val toSlot = slots(toName)
+        val fromSlot = slots(fromName).slot
+        val relOffset = slots.refOffset(relName)
+        val toSlot = slots(toName).slot
 
         // The node/relationship predicates are evaluated on the source pipeline, not the produced one
         val sourceSlots = physicalPlan.slotConfigurations(sourcePlan.id)
@@ -1213,9 +1210,9 @@ class SlottedPipeMapper(
           nodePredicates,
           relationshipPredicates
         ) =>
-        val fromSlot = slots(from)
-        val toSlot = slots(to)
-        val depthOffset = depthName.map(slots.getReferenceOffsetFor)
+        val fromSlot = slots(from).slot
+        val toSlot = slots(to).slot
+        val depthOffset = depthName.map(slots.refOffset)
 
         // The node/relationship predicates are evaluated on the source pipeline, not the produced one
         val sourceSlots = physicalPlan.slotConfigurations(source.id)
@@ -1270,10 +1267,10 @@ class SlottedPipeMapper(
         val pathName = shortestPathPattern.maybePathVar.get // Should always be given anonymous name
         val relsName = rel.variable.get.name // Should always be given anonymous name
 
-        val sourceSlot = slots(sourceNodeName)
-        val targetSlot = slots(targetNodeName)
-        val pathOffset = slots.getReferenceOffsetFor(pathName)
-        val relsOffset = slots.getReferenceOffsetFor(relsName)
+        val sourceSlot = slots(sourceNodeName).slot
+        val targetSlot = slots(targetNodeName).slot
+        val pathOffset = slots.refOffset(pathName)
+        val relsOffset = slots.refOffset(relsName)
 
         val (allowZeroLength, maxDepth) = rel.length match {
           case Some(Some(internal.expressions.Range(lower, max))) =>
@@ -1360,13 +1357,13 @@ class SlottedPipeMapper(
           nonInlinedPreFilters.map(expressionConverters.toCommandExpression(id, _)).map(_.rewriteAsPredicate(identity))
 
         val intoTargetName = mode match {
-          case ExpandInto => Some(slots(targetNode))
+          case ExpandInto => Some(slots(targetNode).slot)
           case ExpandAll  => None
         }
 
         StatefulShortestPathSlottedPipe(
           source,
-          slots(sourceNode),
+          slots(sourceNode).slot,
           intoTargetName,
           commandNFA,
           bounds,
@@ -1384,7 +1381,7 @@ class SlottedPipeMapper(
 
       case Projection(_, expressions) =>
         val toProject = expressions collect {
-          case (k, e) if isRefSlotAndNotAlias(slots, k) => k -> e
+          case (k, e) if isRefSlotAndNotAlias(slots, k.name) => k -> e
         }
         ProjectionPipe(source, expressionConverters.toCommandProjection(id, toProject))(id)
 
@@ -1394,7 +1391,7 @@ class SlottedPipeMapper(
           commands.map {
             case n: CreateNode =>
               CreateNodeSlottedCommand(
-                slots.getLongOffsetFor(n.variable),
+                slots.longOffset(n.variable),
                 n.labels.toSeq.map(l => LazyLabel(l)(semanticTable)),
                 n.labelExpressions.toSeq.map(convertExpressions),
                 n.properties.map(convertExpressions)
@@ -1402,10 +1399,10 @@ class SlottedPipeMapper(
 
             case r: CreateRelationship =>
               CreateRelationshipSlottedCommand(
-                slots.getLongOffsetFor(r.variable),
-                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode)),
+                slots.longOffset(r.variable),
+                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode).slot),
                 LazyType(r.relType, semanticTable, convertExpressions),
-                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode)),
+                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode).slot),
                 r.properties.map(convertExpressions),
                 r.variable.name,
                 r.startNode.name,
@@ -1419,7 +1416,7 @@ class SlottedPipeMapper(
           case CreateNode(node, labels, labelExpressions, properties) =>
             CreateSlottedNode(
               CreateNodeSlottedCommand(
-                slots.getLongOffsetFor(node),
+                slots.longOffset(node),
                 labels.toSeq.map(l => LazyLabel(l)(semanticTable)),
                 labelExpressions.toSeq.map(convertExpressions),
                 properties.map(convertExpressions)
@@ -1430,10 +1427,10 @@ class SlottedPipeMapper(
           (r: CreateRelationship) =>
             CreateSlottedRelationship(
               CreateRelationshipSlottedCommand(
-                slots.getLongOffsetFor(r.variable),
-                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode)),
+                slots.longOffset(r.variable),
+                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode).slot),
                 LazyType(r.relType, semanticTable, convertExpressions),
-                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode)),
+                SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode).slot),
                 r.properties.map(convertExpressions),
                 r.variable.name,
                 r.startNode.name,
@@ -1452,7 +1449,7 @@ class SlottedPipeMapper(
           source,
           (creates ++ onCreate.flatMap(compileEffects)).toArray,
           onMatch.flatMap(compileEffects).toArray,
-          nodesToLock.map(n => slots(n)).toArray
+          nodesToLock.map(n => slots(n).slot).toArray
         )(id = id)
 
       case Foreach(_, variable, expression, mutations) =>
@@ -1460,7 +1457,7 @@ class SlottedPipeMapper(
           slots.get(variable).getOrElse(throw new InternalException(s"Foreach variable '$variable' has no slot"))
         ForeachSlottedPipe(
           source,
-          innerVariableSlot,
+          innerVariableSlot.slot,
           convertExpressions(expression),
           mutations.flatMap(compileEffects).toArray
         )(id = id)
@@ -1471,7 +1468,7 @@ class SlottedPipeMapper(
         SetPipe(
           source,
           SlottedSetNodePropertyOperation(
-            slots(name),
+            slots(name).slot,
             LazyPropertyKey(propertyKey),
             convertExpressions(expression),
             needsExclusiveLock
@@ -1490,7 +1487,9 @@ class SlottedPipeMapper(
             keys(i) = LazyPropertyKey(k)
             values(i) = convertExpressions(e)
         }
-        SetPipe(source, SlottedSetNodePropertiesOperation(slots(name), keys, values, needsExclusiveLock))(id = id)
+        SetPipe(source, SlottedSetNodePropertiesOperation(slots(name).slot, keys, values, needsExclusiveLock))(id =
+          id
+        )
 
       case SetNodePropertiesFromMap(_, name, expression, removeOtherProps) =>
         val needsExclusiveLock =
@@ -1498,7 +1497,7 @@ class SlottedPipeMapper(
         SetPipe(
           source,
           SlottedSetNodePropertyFromMapOperation(
-            slots(name),
+            slots(name).slot,
             convertExpressions(expression),
             removeOtherProps,
             needsExclusiveLock
@@ -1511,7 +1510,7 @@ class SlottedPipeMapper(
         SetPipe(
           source,
           SlottedSetRelationshipPropertyOperation(
-            slots(name),
+            slots(name).slot,
             LazyPropertyKey(propertyKey),
             convertExpressions(expression),
             needsExclusiveLock
@@ -1530,7 +1529,10 @@ class SlottedPipeMapper(
             keys(i) = LazyPropertyKey(k)
             values(i) = convertExpressions(e)
         }
-        SetPipe(source, SlottedSetRelationshipPropertiesOperation(slots(name), keys, values, needsExclusiveLock))(id =
+        SetPipe(
+          source,
+          SlottedSetRelationshipPropertiesOperation(slots(name).slot, keys, values, needsExclusiveLock)
+        )(id =
           id
         )
 
@@ -1540,7 +1542,7 @@ class SlottedPipeMapper(
         SetPipe(
           source,
           SlottedSetRelationshipPropertyFromMapOperation(
-            slots(name),
+            slots(name).slot,
             convertExpressions(expression),
             removeOtherProps,
             needsExclusiveLock
@@ -1551,19 +1553,19 @@ class SlottedPipeMapper(
         EmptyResultPipe(source)(id)
 
       case UnwindCollection(_, name, expression) =>
-        val offset = slots.getReferenceOffsetFor(name)
+        val offset = slots.refOffset(name)
         UnwindSlottedPipe(source, convertExpressions(expression), offset, slots)(id)
 
       // Note: this plan shouldn't really be used here, but having it mapped here helps
       //      fallback and makes testing easier
       case PartitionedUnwindCollection(_, name, expression) =>
-        val offset = slots.getReferenceOffsetFor(name)
+        val offset = slots.refOffset(name)
         UnwindSlottedPipe(source, convertExpressions(expression), offset, slots)(id)
 
       case Aggregation(_, groupingExpressions, aggregationExpression) =>
         val aggregation = aggregationExpression.map {
           case (key, expression) =>
-            slots.getReferenceOffsetFor(key) -> convertExpressions(expression).asInstanceOf[AggregationExpression]
+            slots.refOffset(key) -> convertExpressions(expression).asInstanceOf[AggregationExpression]
         }
 
         val keys = groupingExpressions.keys.toArray
@@ -1616,7 +1618,7 @@ class SlottedPipeMapper(
       case OrderedAggregation(_, groupingExpressions, aggregationExpression, orderToLeverage) =>
         val aggregation = aggregationExpression.map {
           case (key, expression) =>
-            slots.getReferenceOffsetFor(key) -> convertExpressions(expression).asInstanceOf[AggregationExpression]
+            slots.refOffset(key) -> convertExpressions(expression).asInstanceOf[AggregationExpression]
         }
 
         val (orderedGroupingColumns, unorderedGroupingColumns) =
@@ -1731,8 +1733,8 @@ class SlottedPipeMapper(
         fallback.onOneChildPlan(plan, source)
 
       case LoadCSV(_, url, variableName, format, fieldTerminator, legacyCsvQuoteEscaping, bufferSize) =>
-        val lineVariableOffset = slots.getReferenceOffsetFor(variableName)
-        val metaDataOffset = slots.getMetaDataOffsetFor(LOAD_CSV_METADATA_KEY)
+        val lineVariableOffset = slots.refOffset(variableName)
+        val metaDataOffset = slots.metaDataOffset(LOAD_CSV_METADATA_KEY)
         LoadCSVSlottedPipe(
           source,
           format,
@@ -1759,7 +1761,6 @@ class SlottedPipeMapper(
     val slots = slotConfigs(id)
     // some plans (e.g. Apply) have no argument size attribute set
     val argumentSize = physicalPlan.argumentSizes.getOrElse(id, SlotConfiguration.Size.zero)
-    finalizeSlotConfiguration(slots)
 
     val pipe = plan match {
       case Apply(_, _) =>
@@ -1768,7 +1769,7 @@ class SlottedPipeMapper(
       case RollUpApply(_, rhsPlan, collectionName, identifierToCollect) =>
         val rhsSlots = slotConfigs(rhsPlan.id)
         val identifierToCollectExpression = createProjectionForVariable(rhsSlots, identifierToCollect)
-        val collectionRefSlotOffset = slots.getReferenceOffsetFor(collectionName)
+        val collectionRefSlotOffset = slots.refOffset(collectionName)
         RollUpApplySlottedPipe(lhs, rhs, collectionRefSlotOffset, identifierToCollectExpression, slots)(id = id)
 
       case _: CartesianProduct =>
@@ -1818,33 +1819,35 @@ class SlottedPipeMapper(
 
       case ConditionalApply(left, right, items) =>
         val (longIds, refIds) = items.partition(idName =>
-          slots.get(idName) match {
+          slots.getSlot(idName) match {
             case Some(_: LongSlot) => true
             case Some(_: RefSlot)  => false
             case _                 => throw new InternalException("We expect only an existing LongSlot or RefSlot here")
           }
         )
-        val longOffsets = longIds.map(e => slots.getLongOffsetFor(e))
-        val refOffsets = refIds.map(e => slots.getReferenceOffsetFor(e))
+        val longOffsets = longIds.map(e => slots.longOffset(e))
+        val refOffsets = refIds.map(e => slots.refOffset(e))
         val nullableSlots = computeSlotsDifference(right.availableSymbols, left.availableSymbols, slots)
         ConditionalApplySlottedPipe(lhs, rhs, longOffsets.toArray, refOffsets.toArray, slots, nullableSlots)(id)
 
       case AntiConditionalApply(left, right, items) =>
         val (longIds, refIds) = items.partition(idName =>
-          slots.get(idName) match {
+          slots.getSlot(idName) match {
             case Some(_: LongSlot) => true
             case Some(_: RefSlot)  => false
             case _                 => throw new InternalException("We expect only an existing LongSlot or RefSlot here")
           }
         )
-        val longOffsets = longIds.map(e => slots.getLongOffsetFor(e))
-        val refOffsets = refIds.map(e => slots.getReferenceOffsetFor(e))
+        val longOffsets = longIds.map(e => slots.longOffset(e))
+        val refOffsets = refIds.map(e => slots.refOffset(e))
         val nullableSlots = computeSlotsDifference(right.availableSymbols, left.availableSymbols, slots)
         AntiConditionalApplySlottedPipe(lhs, rhs, longOffsets.toArray, refOffsets.toArray, slots, nullableSlots)(id)
 
       case ForeachApply(_, _, variable, expression) =>
         val innerVariableSlot =
-          slots.get(variable).getOrElse(throw new InternalException(s"Foreach variable '$variable' has no slot"))
+          slots.get(variable).map(_.slot).getOrElse(throw new InternalException(
+            s"Foreach variable '$variable' has no slot"
+          ))
         ForeachSlottedApplyPipe(lhs, rhs, innerVariableSlot, convertExpressions(expression))(id)
 
       case TransactionForeach(_, _, batchSize, TransactionConcurrency.Serial, onErrorBehaviour, maybeReportAs) =>
@@ -1853,7 +1856,7 @@ class SlottedPipeMapper(
           rhs,
           expressionConverters.toCommandExpression(id, batchSize),
           onErrorBehaviour,
-          maybeReportAs.map(slots.apply)
+          maybeReportAs.map(v => slots(v).slot)
         )(id = id)
 
       case TransactionApply(
@@ -1869,8 +1872,8 @@ class SlottedPipeMapper(
           rhs,
           expressionConverters.toCommandExpression(id, batchSize),
           onErrorBehaviour,
-          (rhsPlan.availableSymbols.map(_.name) -- lhsPlan.availableSymbols.map(_.name)).map(slots.apply),
-          maybeReportAs.map(slots.apply),
+          (rhsPlan.availableSymbols.map(_.name) -- lhsPlan.availableSymbols.map(_.name)).map(n => slots(n).slot),
+          maybeReportAs.map(n => slots(n).slot),
           argumentSize
         )(id = id)
 
@@ -1888,7 +1891,7 @@ class SlottedPipeMapper(
           expressionConverters.toCommandExpression(id, batchSize),
           maybeConcurrency.map(expressionConverters.toCommandExpression(id, _)),
           onErrorBehaviour,
-          maybeReportAs.map(slots.apply)
+          maybeReportAs.map(n => slots(n).slot)
         )(id = id)
 
       case TransactionApply(
@@ -1905,8 +1908,8 @@ class SlottedPipeMapper(
           expressionConverters.toCommandExpression(id, batchSize),
           maybeConcurrency.map(expressionConverters.toCommandExpression(id, _)),
           onErrorBehaviour,
-          (rhsPlan.availableSymbols.map(_.name) -- lhsPlan.availableSymbols.map(_.name)).map(slots.apply),
-          maybeReportAs.map(slots.apply),
+          (rhsPlan.availableSymbols.map(_.name) -- lhsPlan.availableSymbols.map(_.name)).map(n => slots(n).slot),
+          maybeReportAs.map(n => slots(n).slot),
           argumentSize
         )(id = id)
 
@@ -1952,7 +1955,7 @@ class SlottedPipeMapper(
         )(id = id)
 
       case AssertSameRelationship(relationship, _, _) =>
-        AssertSameRelationshipSlottedPipe(lhs, rhs, relationship.name, slots(relationship))(id = id)
+        AssertSameRelationshipSlottedPipe(lhs, rhs, relationship.name, slots(relationship).slot)(id = id)
 
       case RepeatTrail(
           _,
@@ -1975,17 +1978,17 @@ class SlottedPipeMapper(
           lhs,
           rhs,
           repetition,
-          slots(start),
-          slots.getLongOffsetFor(end),
-          rhsSlots.getLongOffsetFor(innerStart),
-          rhsSlots(innerEnd),
-          groupNodes.map(n => GroupSlot(rhsSlots(n.singleton), slots(n.group))).toArray,
-          groupRelationships.map(r => GroupSlot(rhsSlots(r.singleton), slots(r.group))).toArray,
+          slots(start).slot,
+          slots.longOffset(end),
+          rhsSlots.longOffset(innerStart),
+          rhsSlots(innerEnd).slot,
+          groupNodes.map(n => GroupSlot(rhsSlots(n.singleton).slot, slots(n.group).slot)).toArray,
+          groupRelationships.map(r => GroupSlot(rhsSlots(r.singleton).slot, slots(r.group).slot)).toArray,
           TrailModeConstraint(
-            rhsSlots.getMetaDataOffsetFor(SlotAllocation.TRAIL_STATE_METADATA_KEY, id),
-            innerRelationships.map(r => rhsSlots(r)).toArray,
-            previouslyBoundRelationships.map(r => lhsSlots(r)).toArray,
-            previouslyBoundRelationshipGroups.map(r => lhsSlots(r)).toArray
+            rhsSlots.metaDataOffset(SlotAllocation.TRAIL_STATE_METADATA_KEY, id),
+            innerRelationships.map(r => rhsSlots(r).slot).toArray,
+            previouslyBoundRelationships.map(r => lhsSlots(r).slot).toArray,
+            previouslyBoundRelationshipGroups.map(r => lhsSlots(r).slot).toArray
           ),
           slots,
           rhsSlots,
@@ -2010,12 +2013,12 @@ class SlottedPipeMapper(
           lhs,
           rhs,
           repetition,
-          slots(start),
-          slots.getLongOffsetFor(end),
-          rhsSlots.getLongOffsetFor(innerStart),
-          rhsSlots(innerEnd),
-          groupNodes.map(n => GroupSlot(rhsSlots(n.singleton), slots(n.group))).toArray,
-          groupRelationships.map(r => GroupSlot(rhsSlots(r.singleton), slots(r.group))).toArray,
+          slots(start).slot,
+          slots.longOffset(end),
+          rhsSlots.longOffset(innerStart),
+          rhsSlots(innerEnd).slot,
+          groupNodes.map(n => GroupSlot(rhsSlots(n.singleton).slot, slots(n.group).slot)).toArray,
+          groupRelationships.map(r => GroupSlot(rhsSlots(r.singleton).slot, slots(r.group).slot)).toArray,
           WalkModeConstraint,
           slots,
           rhsSlots,
@@ -2041,7 +2044,7 @@ class SlottedPipeMapper(
 
     val runtimeProjections: Map[Slot, commands.expressions.Expression] = groupingExpressions.map {
       case (key, expression) =>
-        slots(key) -> convertExpressions(expression)
+        slots(key).slot -> convertExpressions(expression)
     }
 
     val physicalDistinctOp = findDistinctPhysicalOp(groupingExpressions, orderToLeverage)
@@ -2109,19 +2112,18 @@ class SlottedPipeMapper(
     val rhsPlan = plan.rhs.get
     val lhsSlots = physicalPlan.slotConfigurations(lhsPlan.id)
     val rhsSlots = physicalPlan.slotConfigurations(rhsPlan.id)
-    val sharedSlots =
-      rhsSlots.filterSlots({
-        case (VariableSlotKey(k), _) => lhsSlots.get(k).isDefined
-        case (CachedPropertySlotKey(k), slot) =>
-          slot.offset < argumentSize.nReferences && lhsSlots.hasCachedPropertySlot(k)
-        case (DuplicatedSlotKey(k, offset), _) =>
-          lhsSlots.hasDuplicateSlot(k, offset)
-        case (key: MetaDataSlotKey, slot) => slot.offset < argumentSize.nReferences && lhsSlots.hasMetaDataSlot(key)
-        case (key: ApplyPlanSlotKey, _)   => throw new InternalException(s"Unexpected slot key $key")
+    val (sharedLongSlots, sharedRefSlots) = rhsSlots.legacyView.iterableWithAliases
+      .collect {
+        case (VariableSlotKey(k), slots) if lhsSlots.contains(k) => slots
+        case (key: CachedPropertySlotKey, slot) if slot.offset < argumentSize.nReferences && lhsSlots.contains(key) =>
+          slot
+        case (key: DuplicatedSlotKey, slot) if lhsSlots.contains(key)                                         => slot
+        case (key: MetaDataSlotKey, slot) if slot.offset < argumentSize.nReferences && lhsSlots.contains(key) => slot
+        case (key: ApplyPlanSlotKey, _)            => throw new InternalException(s"Unexpected slot key $key")
         case (key: OuterNestedApplyPlanSlotKey, _) => throw new InternalException(s"Unexpected slot key $key")
-      })
-
-    val (sharedLongSlots, sharedRefSlots) = sharedSlots.partition(_.isLongSlot)
+      }
+      .toSeq
+      .partition(_.isLongSlot)
 
     @nowarn("msg=return statement")
     def checkSharedSlots(slots: Seq[Slot], expectedSlots: Int): Boolean = {
@@ -2140,8 +2142,8 @@ class SlottedPipeMapper(
       prevOffset + 1 == expectedSlots
     }
 
-    val longSlotsOk = checkSharedSlots(sharedLongSlots.toSeq, argumentSize.nLongs)
-    val refSlotsOk = checkSharedSlots(sharedRefSlots.toSeq, argumentSize.nReferences)
+    val longSlotsOk = checkSharedSlots(sharedLongSlots, argumentSize.nLongs)
+    val refSlotsOk = checkSharedSlots(sharedRefSlots, argumentSize.nReferences)
 
     if (!longSlotsOk || !refSlotsOk) {
       val longSlotsMessage =
@@ -2167,7 +2169,7 @@ class SlottedPipeMapper(
     val lhsArgRefSlots = mutable.ArrayBuffer.empty[(String, Slot)]
     val rhsArgLongSlots = mutable.ArrayBuffer.empty[(String, Slot)]
     val rhsArgRefSlots = mutable.ArrayBuffer.empty[(String, Slot)]
-    lhsSlots.foreachSlotAndAliases({
+    lhsSlots.legacyView.keyedSlots.foreach {
       case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
         if (slot.isLongSlot && slot.offset < argumentSize.nLongs) {
           lhsArgLongSlots += (key -> slot)
@@ -2194,8 +2196,8 @@ class SlottedPipeMapper(
         } else if (!slot.isLongSlot && slot.offset < argumentSize.nReferences) {
           lhsArgRefSlots += (key.toString -> slot)
         }
-    })
-    rhsSlots.foreachSlotAndAliases({
+    }
+    rhsSlots.legacyView.keyedSlots.foreach {
       case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
         if (slot.isLongSlot && slot.offset < argumentSize.nLongs) {
           rhsArgLongSlots += (key -> slot)
@@ -2222,7 +2224,7 @@ class SlottedPipeMapper(
         } else if (!slot.isLongSlot && slot.offset < argumentSize.nReferences) {
           lhsArgRefSlots += (key.toString -> slot)
         }
-    })
+    }
 
     def sameSlotsInOrder(a: ArrayBuffer[(String, Slot)], b: ArrayBuffer[(String, Slot)]): Boolean =
       a.sortBy(_._1).zip(b.sortBy(_._1)) forall {
@@ -2284,7 +2286,7 @@ object SlottedPipeMapper {
     val slotMappings = collection.mutable.ArrayBuffer.newBuilder[SlotMapping]
     val cachedPropertyMappings = collection.mutable.ArrayBuffer.newBuilder[(Int, Int)]
 
-    fromSlots.foreachSlotAndAliasesOrdered({
+    fromSlots.legacyView.keyedSlotsOrdered().foreach {
       case SlotWithKeyAndAliases(VariableSlotKey(key), fromSlot, _)
         if (fromSlot.isLongSlot && fromSlot.offset >= argumentSize.nLongs) || (!fromSlot.isLongSlot && fromSlot.offset >= argumentSize.nReferences) =>
         toSlots.get(key).foreach { toSlot =>
@@ -2295,18 +2297,18 @@ object SlottedPipeMapper {
       case SlotWithKeyAndAliases(_: OuterNestedApplyPlanSlotKey, _, _) => // do nothing, part of arguments
       case SlotWithKeyAndAliases(_: DuplicatedSlotKey, _, _)           => // do nothing
       case SlotWithKeyAndAliases(CachedPropertySlotKey(cnp), _, _) =>
-        val offset = fromSlots.getCachedPropertyOffsetFor(cnp)
+        val offset = fromSlots.cachedPropOffset(cnp)
         if (offset >= argumentSize.nReferences) {
-          cachedPropertyMappings += offset -> toSlots.getCachedPropertyOffsetFor(cnp)
+          cachedPropertyMappings += offset -> toSlots.cachedPropOffset(cnp)
         }
       case SlotWithKeyAndAliases(key: MetaDataSlotKey, _, _) =>
-        val fromOffset = fromSlots.getMetaDataOffsetFor(key)
+        val fromOffset = fromSlots.metaDataOffset(key)
         if (fromOffset >= argumentSize.nReferences) {
-          val toOffset = toSlots.getMetaDataOffsetFor(key)
+          val toOffset = toSlots.metaDataOffset(key)
           slotMappings += SlotMapping(fromOffset, toOffset, fromIsLongSlot = false, toIsLongSlot = false)
         }
 
-    })
+    }
 
     SlotMappings(slotMappings.result().toArray, cachedPropertyMappings.result().toArray)
   }
@@ -2365,9 +2367,7 @@ object SlottedPipeMapper {
     cachedProperties: Set[(LazyPropertyKey, Expression)] = Set.empty
   ): (String, Expression) = {
     val identifier = variable.name
-    val slot = slots.get(identifier).getOrElse(
-      throw new InternalException(s"Did not find `$identifier` in the slot configuration")
-    )
+    val slot = slots(identifier).slot
     identifier -> SlottedPipeMapper.projectSlotExpression(slot, cachedProperties)
   }
 
@@ -2430,36 +2430,39 @@ object SlottedPipeMapper {
    * e.g. MATCH (n) RETURN n UNION RETURN 42 AS n
    */
   def computeUnionSlotMappings(in: SlotConfiguration, out: SlotConfiguration): Iterable[UnionSlotMapping] = {
-    in.mapSlotsDoNotSkipAliases {
-      case (VariableSlotKey(k), inLongSlot: LongSlot) =>
-        out.get(k).map {
-          case l: LongSlot => CopyLongSlot(inLongSlot.offset, l.offset)
-          case r: RefSlot  => ProjectLongToRefSlot(inLongSlot, r.offset)
-        }
-      case (VariableSlotKey(k), inSlot: RefSlot) =>
-        // This means out must be a ref slot as well, if it exists, otherwise slot allocation was wrong
-        out.get(k).map {
-          case l: LongSlot => throw new IllegalStateException(s"Expected Union output slot to be a refslot but was: $l")
-          case r: RefSlot  => CopyRefSlot(inSlot.offset, r.offset)
-        }
-      case (CachedPropertySlotKey(cachedProp), inRefSlot) =>
-        out.getCachedPropertySlot(cachedProp).map {
-          outRefSlot => CopyCachedProperty(inRefSlot.offset, outRefSlot.offset)
-        }
-      case (key: MetaDataSlotKey, inRefSlot) =>
-        out.getMetaDataSlot(key).map {
-          outRefSlot => CopyRefSlot(inRefSlot.offset, outRefSlot.offset)
-        }
-      case (ApplyPlanSlotKey(id), slot) =>
-        out.getArgumentSlot(id).map {
-          outArgumentSlot => CopyLongSlot(slot.offset, outArgumentSlot.offset)
-        }
-      case (OuterNestedApplyPlanSlotKey(id), slot) =>
-        out.getNestedArgumentSlot(id).map {
-          outArgumentSlot => CopyLongSlot(slot.offset, outArgumentSlot.offset)
-        }
-      case (DuplicatedSlotKey(_, _), _) => None
-    }.flatten
+    in.legacyView.iterableWithAliases
+      .flatMap {
+        case (k: VariableSlotKey, inLongSlot: LongSlot) =>
+          out.getSlot(k).map {
+            case l: LongSlot => CopyLongSlot(inLongSlot.offset, l.offset)
+            case r: RefSlot  => ProjectLongToRefSlot(inLongSlot, r.offset)
+          }
+        case (k: VariableSlotKey, inSlot: RefSlot) =>
+          // This means out must be a ref slot as well, if it exists, otherwise slot allocation was wrong
+          out.getSlot(k).map {
+            case l: LongSlot =>
+              throw new IllegalStateException(s"Expected Union output slot to be a refslot but was: $l")
+            case r: RefSlot => CopyRefSlot(inSlot.offset, r.offset)
+          }
+        case (key: CachedPropertySlotKey, inRefSlot) =>
+          out.getSlot(key).map {
+            outRefSlot => CopyCachedProperty(inRefSlot.offset, outRefSlot.offset)
+          }
+        case (key: MetaDataSlotKey, inRefSlot) =>
+          out.getSlot(key).map {
+            outRefSlot => CopyRefSlot(inRefSlot.offset, outRefSlot.offset)
+          }
+        case (key: ApplyPlanSlotKey, slot) =>
+          out.getSlot(key).map {
+            outArgumentSlot => CopyLongSlot(slot.offset, outArgumentSlot.offset)
+          }
+        case (key: OuterNestedApplyPlanSlotKey, slot) =>
+          out.get(key).map {
+            outArgumentSlot => CopyLongSlot(slot.offset, outArgumentSlot.offset)
+          }
+        case (DuplicatedSlotKey(_, _), _) => None
+      }
+      .toSeq
   }
 
   /**
@@ -2529,12 +2532,12 @@ object SlottedPipeMapper {
    */
   def translateColumnOrder(slots: SlotConfiguration, s: plans.ColumnOrder): slotted.ColumnOrder = s match {
     case plans.Ascending(name) =>
-      slots.get(name) match {
+      slots.getSlot(name) match {
         case Some(slot) => slotted.Ascending(slot)
         case None       => throw new InternalException(s"Did not find `$name` in the pipeline information")
       }
     case plans.Descending(name) =>
-      slots.get(name) match {
+      slots.getSlot(name) match {
         case Some(slot) => slotted.Descending(slot)
         case None       => throw new InternalException(s"Did not find `$name` in the pipeline information")
       }
@@ -2550,22 +2553,22 @@ object SlottedPipeMapper {
     s: plans.ColumnOrder
   ): slotted.ColumnOrder2 = s match {
     case plans.Ascending(name) =>
-      val lhsSlot = lhsSlots.get(name) match {
+      val lhsSlot = lhsSlots.getSlot(name) match {
         case Some(slot) => slot
         case None       => throw new InternalException(s"Did not find `$name` in the pipeline information")
       }
-      val rhsSlot = rhsSlots.get(name) match {
+      val rhsSlot = rhsSlots.getSlot(name) match {
         case Some(slot) => slot
         case None       => throw new InternalException(s"Did not find `$name` in the pipeline information")
       }
       Ascending2(lhsSlot, rhsSlot)
 
     case plans.Descending(name) =>
-      val lhsSlot = lhsSlots.get(name) match {
+      val lhsSlot = lhsSlots.getSlot(name) match {
         case Some(slot) => slot
         case None       => throw new InternalException(s"Did not find `$name` in the pipeline information")
       }
-      val rhsSlot = rhsSlots.get(name) match {
+      val rhsSlot = rhsSlots.getSlot(name) match {
         case Some(slot) => slot
         case None       => throw new InternalException(s"Did not find `$name` in the pipeline information")
       }
@@ -2593,8 +2596,8 @@ object SlottedPipeMapper {
     right: Set[LogicalVariable],
     slotConfiguration: SlotConfiguration
   ): Array[Slot] = {
-    val leftSlots = left.map(slotConfiguration(_))
-    val rightSlots = right.map(slotConfiguration(_))
+    val leftSlots = left.map(slotConfiguration(_).slot)
+    val rightSlots = right.map(slotConfiguration(_).slot)
     (leftSlots -- rightSlots).toArray
   }
 }

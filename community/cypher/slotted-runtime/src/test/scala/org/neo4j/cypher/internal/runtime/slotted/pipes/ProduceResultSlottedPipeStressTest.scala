@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.pipes
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ClosingIterator
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.QueryStatistics
@@ -43,7 +43,7 @@ import scala.jdk.CollectionConverters.ListHasAsScala
 
 class ProduceResultSlottedPipeStressTest extends CypherFunSuite {
 
-  private val slotConfig = SlotConfiguration.empty.newLong("n", nullable = false, CTNode)
+  private val slotConfig = SlotConfigurationBuilder.empty.newLong("n", nullable = false, CTNode).build()
 
   test(s"concurrent slotted produce result execution should not crash") {
 

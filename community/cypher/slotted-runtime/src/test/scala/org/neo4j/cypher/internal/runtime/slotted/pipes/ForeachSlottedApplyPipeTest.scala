@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.pipes
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.ListLiteral
@@ -33,14 +33,14 @@ class ForeachSlottedApplyPipeTest extends CypherFunSuite {
   test("Each row should immediately close RHS. Exhaust should close LHS.") {
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("b", nullable = false, CTNode)
       .newLong("c", nullable = false, CTNode)
-
+      .build()
     val lhs = FakeSlottedPipe(Seq(Map("a" -> 10), Map("a" -> 11)), slots)
     val rhs = FakeSlottedPipe(Seq(Map("b" -> 20), Map("b" -> 21)), slots)
-    val pipe = ForeachSlottedApplyPipe(lhs, rhs, slots("c"), ListLiteral(Literal(VirtualValues.node(42))))()
+    val pipe = ForeachSlottedApplyPipe(lhs, rhs, slots("c").slot, ListLiteral(Literal(VirtualValues.node(42))))()
     val result = pipe.createResults(QueryStateHelper.emptyWithResourceManager(resourceManager))
     result.next() // First row
     lhs.wasClosed shouldBe false

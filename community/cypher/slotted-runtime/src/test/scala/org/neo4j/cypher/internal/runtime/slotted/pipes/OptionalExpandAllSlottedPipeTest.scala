@@ -21,7 +21,7 @@ package org.neo4j.cypher.internal.runtime.slotted.pipes
 
 import org.mockito.Mockito
 import org.neo4j.cypher.internal.expressions.SemanticDirection
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.EagerTypes
@@ -45,15 +45,16 @@ class OptionalExpandAllSlottedPipeTest extends CypherFunSuite {
     Mockito.when(state.query.traversalCursor()).thenReturn(relCursor)
     Mockito.when(state.query.nodeCursor()).thenReturn(nodeCursor)
 
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("r", nullable = true, CTRelationship)
       .newLong("b", nullable = true, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10)), slots)
     val pipe = OptionalExpandAllSlottedPipe(
       input,
-      slots("a"),
+      slots("a").slot,
       1,
       2,
       SemanticDirection.OUTGOING,
@@ -76,15 +77,16 @@ class OptionalExpandAllSlottedPipeTest extends CypherFunSuite {
     Mockito.when(state.query.traversalCursor()).thenReturn(relCursor)
     Mockito.when(state.query.nodeCursor()).thenReturn(nodeCursor)
 
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("r", nullable = true, CTRelationship)
       .newLong("b", nullable = true, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10)), slots)
     val pipe = OptionalExpandAllSlottedPipe(
       input,
-      slots("a"),
+      slots("a").slot,
       1,
       2,
       SemanticDirection.OUTGOING,

@@ -43,7 +43,7 @@ abstract class AbstractRelationshipIndexStringScanSlottedPipe(
   slots: SlotConfiguration
 ) extends Pipe with IndexSlottedPipeWithValues {
 
-  override val offset: Int = slots.getLongOffsetFor(ident)
+  override val offset: Int = slots.longOffset(ident)
   override val indexPropertySlotOffsets: Array[Int] = property.maybeCachedEntityPropertySlot.toArray
 
   override val indexPropertyIndices: Array[Int] =
@@ -58,8 +58,8 @@ abstract class AbstractRelationshipIndexStringScanSlottedPipe(
       case value: TextValue =>
         iterator(
           state,
-          slots.getLongOffsetFor(startNode),
-          slots.getLongOffsetFor(endNode),
+          slots.longOffset(startNode),
+          slots.longOffset(endNode),
           baseContext,
           queryContextCall(state, state.queryIndexes(queryIndexId), value)
         )

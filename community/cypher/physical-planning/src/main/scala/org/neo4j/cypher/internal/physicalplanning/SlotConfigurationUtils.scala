@@ -19,8 +19,6 @@
  */
 package org.neo4j.cypher.internal.physicalplanning
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.SlotWithKeyAndAliases
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.VariableSlotKey
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.EntityById
 import org.neo4j.cypher.internal.runtime.ReadableRow
@@ -43,7 +41,7 @@ object SlotConfigurationUtils {
   // TODO: Check if having try/catch blocks inside some of these generated functions prevents inlining or other JIT optimizations
   //       If so we may want to consider moving the handling and responsibility out to the pipes that use them
 
-  val PRIMITIVE_NULL: Long = -1L
+  final val PRIMITIVE_NULL: Long = -1L
 
   /**
    * Use this to make a specialized getter function for a slot,
@@ -341,43 +339,4 @@ object SlotConfigurationUtils {
    */
   def makeSetPrimitiveRelationshipInSlotFunctionFor(slot: Slot): (CypherRow, Long, EntityById) => Unit =
     makeSetPrimitiveInSlotFunctionFor(slot, CTRelationship)
-
-  /**
-   * Prepare the given [[SlotConfiguration]] for use by runtime operators.
-   * After this is called we do not expect any further mutations to happen to the slot configuration.
-   */
-  def finalizeSlotConfiguration(slots: SlotConfiguration): Unit = {
-    if (!slots.finalized) {
-      generateSlotAccessorFunctions(slots)
-      slots.updateHasCachedProperties()
-      slots.finalized = true
-    }
-  }
-
-  /**
-   * Generate and update accessors for all slots in a SlotConfiguration
-   */
-  def generateSlotAccessorFunctions(slots: SlotConfiguration): Unit = {
-    slots.foreachSlotAndAliases({
-      case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
-        val getter = SlotConfigurationUtils.makeGetValueFromSlotFunctionFor(slot)
-        val setter = SlotConfigurationUtils.makeSetValueInSlotFunctionFor(slot)
-        val primitiveNodeSetter =
-          if (slot.typ.isAssignableFrom(CTNode))
-            Some(SlotConfigurationUtils.makeSetPrimitiveNodeInSlotFunctionFor(slot))
-          else
-            None
-        val primitiveRelationshipSetter =
-          if (slot.typ.isAssignableFrom(CTRelationship))
-            Some(SlotConfigurationUtils.makeSetPrimitiveRelationshipInSlotFunctionFor(slot))
-          else
-            None
-        slots.updateAccessorFunctions(key, getter, setter, primitiveNodeSetter, primitiveRelationshipSetter)
-        aliases.foreach(alias =>
-          slots.updateAccessorFunctions(alias, getter, setter, primitiveNodeSetter, primitiveRelationshipSetter)
-        )
-
-      case _ => // do nothing
-    })
-  }
 }

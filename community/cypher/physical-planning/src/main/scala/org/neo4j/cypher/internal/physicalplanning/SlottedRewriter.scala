@@ -211,7 +211,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
   }
 
   private def rewriteCreator(
-    slotConfiguration: SlotConfiguration,
+    slotConfiguration: SlotConfigurationBuilder,
     thisPlan: LogicalPlan,
     slotConfigurations: SlotConfigurations,
     trailPlans: TrailPlans
@@ -533,7 +533,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
   }
 
   private def rewriteCachedProperies(
-    slotConfiguration: SlotConfiguration,
+    slotConfiguration: SlotConfigurationBuilder,
     prop: ASTCachedProperty,
     needsValue: Boolean
   ) = {
@@ -552,7 +552,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
               offset,
               offsetIsForLongSlot = true,
               propId,
-              slotConfiguration.getCachedPropertyOffsetFor(prop),
+              slotConfiguration.cachedPropOffset(prop.runtimeKey),
               entityType,
               nullable,
               needsValue
@@ -564,7 +564,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
               offset,
               offsetIsForLongSlot = true,
               propKey,
-              slotConfiguration.getCachedPropertyOffsetFor(prop),
+              slotConfiguration.cachedPropOffset(prop.runtimeKey),
               entityType,
               nullable,
               needsValue
@@ -589,7 +589,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
               offset,
               offsetIsForLongSlot = false,
               propId,
-              slotConfiguration.getCachedPropertyOffsetFor(prop),
+              slotConfiguration.cachedPropOffset(prop.runtimeKey),
               entityType,
               nullable,
               needsValue
@@ -601,7 +601,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
               offset,
               offsetIsForLongSlot = false,
               propKey,
-              slotConfiguration.getCachedPropertyOffsetFor(prop),
+              slotConfiguration.cachedPropOffset(prop.runtimeKey),
               entityType,
               nullable,
               needsValue
@@ -627,7 +627,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
   }
 
   private def primitiveEqualityChecks(
-    slots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
     e: Equals,
     k1: String,
     k2: String,
@@ -683,7 +683,7 @@ class SlottedRewriter(tokenContext: ReadTokenContext) {
   }
 
   private def specializeCheckIfPropertyExists(
-    slotConfiguration: SlotConfiguration,
+    slotConfiguration: SlotConfigurationBuilder,
     key: String,
     propKey: String,
     prop: Property,
@@ -742,7 +742,7 @@ object SlottedRewriter {
   def rewriteVariable(
     thisPlan: LogicalPlan,
     v: LogicalVariable,
-    slotConfiguration: SlotConfiguration
+    slotConfiguration: SlotConfigurationBuilder
   ): LogicalVariable = {
     v match {
       case Variable(k) =>

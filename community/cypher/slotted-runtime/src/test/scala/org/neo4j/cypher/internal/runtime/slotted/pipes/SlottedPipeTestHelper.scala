@@ -30,20 +30,19 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
 trait SlottedPipeTestHelper extends CypherFunSuite {
 
-  def testableResult(list: ClosingIterator[CypherRow], slots: SlotConfiguration): List[Map[String, Any]] = {
-    val list1 = list.toList
-    list1 map { in =>
-      val build = scala.collection.mutable.HashMap.empty[String, Any]
-      slots.foreachSlotAndAliases({
-        case SlotWithKeyAndAliases(VariableSlotKey(column), LongSlot(offset, _, _), aliases) =>
-          build.put(column, in.getLongAt(offset))
-          aliases.foreach(build.put(_, in.getLongAt(offset)))
-        case SlotWithKeyAndAliases(VariableSlotKey(column), RefSlot(offset, _, _), aliases) =>
-          build.put(column, in.getRefAt(offset))
-          aliases.foreach(build.put(_, in.getRefAt(offset)))
-        case _ => // no help here
-      })
-      build.toMap
-    }
+  def testableResult(rows: ClosingIterator[CypherRow], slots: SlotConfiguration): List[Map[String, Any]] = {
+    rows
+      .map { in =>
+        slots.legacyView.keyedSlots
+          .flatMap {
+            case SlotWithKeyAndAliases(VariableSlotKey(column), LongSlot(offset, _, _), aliases) =>
+              Seq((column, in.getLongAt(offset))).appendedAll(aliases.map(alias => alias -> in.getLongAt(offset)))
+            case SlotWithKeyAndAliases(VariableSlotKey(column), RefSlot(offset, _, _), aliases) =>
+              Seq((column, in.getRefAt(offset))).appendedAll(aliases.map(alias => alias -> in.getRefAt(offset)))
+            case _ => Seq.empty // no help here
+          }
+          .toMap
+      }
+      .toList
   }
 }

@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.pipes
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.util.symbols.CTNode
@@ -31,7 +31,7 @@ class DistinctSlottedPipeTest extends CypherFunSuite {
   test("exhaust should close seen set") {
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
-    val slots = SlotConfiguration.empty.newLong("a", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty.newLong("a", nullable = false, CTNode).build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10)), slots)
     val pipe = DistinctSlottedPipe(input, slots, EmptyGroupingExpression)()
@@ -44,7 +44,7 @@ class DistinctSlottedPipeTest extends CypherFunSuite {
   test("close should close seen set") {
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
-    val slots = SlotConfiguration.empty.newLong("a", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty.newLong("a", nullable = false, CTNode).build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10)), slots)
     val pipe = DistinctSlottedPipe(input, slots, EmptyGroupingExpression)()

@@ -40,7 +40,7 @@ case class UndirectedRelationshipIndexScanSlottedPipe(
   slots: SlotConfiguration
 )(val id: Id = Id.INVALID_ID) extends Pipe with IndexSlottedPipeWithValues {
 
-  override val offset: Int = slots.getLongOffsetFor(ident)
+  override val offset: Int = slots.longOffset(ident)
 
   override val indexPropertyIndices: Array[Int] =
     properties.zipWithIndex.filter(_._1.getValueFromIndex).map(_._2).toArray
@@ -54,8 +54,8 @@ case class UndirectedRelationshipIndexScanSlottedPipe(
 
     new SlottedUndirectedRelationshipIndexIterator(
       state,
-      slots.getLongOffsetFor(startNode),
-      slots.getLongOffsetFor(endNode),
+      slots.longOffset(startNode),
+      slots.longOffset(endNode),
       cursor
     )
   }

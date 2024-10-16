@@ -22,10 +22,11 @@ package org.neo4j.cypher.internal
 import org.bitbucket.inkytonik.kiama.output.PrettyPrinter.any
 import org.bitbucket.inkytonik.kiama.output.PrettyPrinter.pretty
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
-import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.SlotConfigurations
+import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Pipe
 import org.neo4j.cypher.internal.util.CypherException
 import org.neo4j.cypher.internal.util.attribution.Id
+import org.neo4j.cypher.internal.util.attribution.ImmutableAttribute
 
 trait DebugPrettyPrinter {
   val PRINT_QUERY_TEXT = true
@@ -53,7 +54,7 @@ trait DebugPrettyPrinter {
     println("\u001b[0m") // Reset
   }
 
-  protected def printPipe(slotConfigurations: SlotConfigurations, pipe: Pipe = null): Unit = {
+  protected def printPipe(slotConfigurations: ImmutableAttribute[SlotConfiguration], pipe: Pipe = null): Unit = {
     if (PRINT_PIPELINE_INFO) {
       println(s"\n\u001b[36m[SLOT CONFIGURATIONS]\n") // Cyan
       prettyPrintPipelines(slotConfigurations)
@@ -75,8 +76,8 @@ trait DebugPrettyPrinter {
     }
   }
 
-  protected def prettyPrintPipelines(pipelines: SlotConfigurations): Unit = {
-    val transformedPipelines = pipelines.iterator.foldLeft(Seq.empty[(Int, Any)]) {
+  protected def prettyPrintPipelines(pipelines: ImmutableAttribute[SlotConfiguration]): Unit = {
+    val transformedPipelines = pipelines.orderedIterator.foldLeft(Seq.empty[(Int, Any)]) {
       case (acc, (k: Id, v)) => acc :+ (k.x -> v)
     }.sortBy {
       case (k, _) => k

@@ -35,7 +35,7 @@ import org.neo4j.cypher.internal.kernel.api.helpers.ProductGraph.equalProductGra
 import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
 import org.neo4j.cypher.internal.logical.plans.NFA
 import org.neo4j.cypher.internal.logical.plans.NFABuilder
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.planner.spi.ReadTokenContext
 import org.neo4j.cypher.internal.runtime.CypherRuntimeConfiguration
 import org.neo4j.cypher.internal.runtime.SelectivityTrackerRegistrator
@@ -290,10 +290,10 @@ class NFAToProductGraphCursorIT extends ExecutionEngineFunSuite {
           graph,
           tx,
           f = queryState => {
-            val slots = SlotConfiguration.empty
+            val slots = SlotConfigurationBuilder.empty
               .newLong("start", nullable = true, symbols.CTNode)
-            val context = SlottedRow(slots)
-            context.setLongAt(slots.getLongOffsetFor("start"), start.getId)
+            val context = SlottedRow(slots.build())
+            context.setLongAt(slots.longOffset("start"), start.getId)
 
             val converters =
               new ExpressionConverters(

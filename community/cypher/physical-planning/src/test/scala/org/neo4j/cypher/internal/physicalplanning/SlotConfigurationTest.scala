@@ -28,7 +28,6 @@ import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.ApplyPlanSlo
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.CachedPropertySlotKey
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.MetaDataSlotKey
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.OuterNestedApplyPlanSlotKey
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.SlotKey
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.SlotWithKeyAndAliases
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.VariableSlotKey
 import org.neo4j.cypher.internal.util.attribution.Id
@@ -41,16 +40,12 @@ import org.neo4j.cypher.internal.util.symbols.CTNumber
 import org.neo4j.cypher.internal.util.symbols.CTRelationship
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.exceptions.InternalException
-import org.scalatest.matchers.MatchResult
-import org.scalatest.matchers.Matcher
-
-import scala.collection.mutable.ArrayBuffer
 
 class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSupport {
 
   test("allocating same variable name with compatible type but different nullability should increase nullability 1") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newLong("x", nullable = false, CTNode)
 
     // when
@@ -62,7 +57,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating same variable name with compatible type but different nullability should increase nullability 2") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newLong("x", nullable = true, CTNode)
 
     // when
@@ -74,7 +69,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating same variable name with compatible types should work and get the upper bound type 1") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newReference("x", nullable = false, CTInteger)
 
     // when
@@ -86,7 +81,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating same variable name with compatible types should work and get the upper bound type 2") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newReference("x", nullable = false, CTAny)
 
     // when
@@ -98,7 +93,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating same variable name with compatible types should work and get the upper bound type 3") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newReference("x", nullable = true, CTMap)
 
     // when
@@ -110,7 +105,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating same variable name with compatible types should work and get the upper bound type 4") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newReference("x", nullable = false, CTList(CTNumber))
 
     // when
@@ -122,7 +117,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating metadata with plan id should create new slot") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
 
     // when
     slots.newMetaData("meta", Id(1))
@@ -133,7 +128,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating metadata with same name and plan id should not create new slot") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newMetaData("meta", Id(1))
 
     // when
@@ -145,7 +140,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("allocating metadata with new plan id should create new slot") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newMetaData("meta", Id(1))
 
     // when
@@ -159,7 +154,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("can't overwrite variable name by mistake1") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newLong("x", nullable = false, CTNode)
 
     // when && then
@@ -168,7 +163,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("can't overwrite variable name by mistake2") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newLong("x", nullable = false, CTNode)
 
     // when && then
@@ -177,7 +172,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("can't overwrite variable name by mistake3") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newReference("x", nullable = false, CTNode)
 
     // when && then
@@ -186,7 +181,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("can't overwrite variable name by mistake4") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newReference("x", nullable = false, CTNode)
 
     // when && then
@@ -195,12 +190,12 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("copy() should create a deep copy") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("y", nullable = false, CTNode)
       .addAlias("z", "x")
 
-    val clone: SlotConfiguration = slots.copy()
+    val clone: SlotConfigurationBuilder = slots.copy()
     slots should equal(clone)
 
     // when
@@ -209,60 +204,40 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     slots.newMetaData("b")
 
     // then
-    val slotsAcc = new SlotAccumulator
-    slots.foreachSlotAndAliasesOrdered(slotsAcc.onSlotAndAliases)
-    slotsAcc should haveEventsInOrder(
-      Seq(
-        OnLongVar("x", LongSlot(0, nullable = false, CTNode), Set("z")),
-        OnLongVar("y", LongSlot(1, nullable = false, CTNode), Set("w"))
-      ),
-      Seq(
-        OnRefVar("a", RefSlot(0, nullable = false, CTNode), Set.empty),
-        OnRefVar("b", RefSlot(1, false, CTAny), Set.empty)
-      )
-    )
+    assertKeyedSlotsOrderedContains(slots)(Seq(
+      SlotWithKeyAndAliases(VariableSlotKey("x"), LongSlot(0, false, CTNode), Set("z")),
+      SlotWithKeyAndAliases(VariableSlotKey("y"), LongSlot(1, false, CTNode), Set("w")),
+      SlotWithKeyAndAliases(VariableSlotKey("a"), RefSlot(0, false, CTNode), Set.empty),
+      SlotWithKeyAndAliases(MetaDataSlotKey("b", Id.INVALID_ID), RefSlot(1, false, CTAny), Set.empty)
+    ))
 
-    val cloneAcc = new SlotAccumulator
-    clone.foreachSlotAndAliasesOrdered(cloneAcc.onSlotAndAliases)
-    cloneAcc should haveEventsInOrder(
-      Seq(
-        OnLongVar("x", LongSlot(0, nullable = false, CTNode), Set("z")),
-        OnLongVar("y", LongSlot(1, nullable = false, CTNode), Set.empty)
-      ),
-      Seq.empty
-    )
-
+    assertKeyedSlotsOrderedContains(clone)(Seq(
+      SlotWithKeyAndAliases(VariableSlotKey("x"), LongSlot(0, false, CTNode), Set("z")),
+      SlotWithKeyAndAliases(VariableSlotKey("y"), LongSlot(1, false, CTNode), Set.empty)
+    ))
   }
 
   test("foreachSlotAndAliasesOrdered should not choke on LongSlot aliases") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("y", nullable = false, CTNode)
       .addAlias("z", "x")
       .newArgument(Id(0))
       .newNestedArgument(Id(0))
 
-    val acc = new SlotAccumulator
-
-    // when
-    slots.foreachSlotAndAliasesOrdered(acc.onSlotAndAliases)
-
     // then
-    acc should haveEventsInOrder(
-      Seq(
-        OnLongVar("x", LongSlot(0, nullable = false, CTNode), Set("z")),
-        OnLongVar("y", LongSlot(1, nullable = false, CTNode), Set.empty),
-        OnApplyPlanId(Id(0)),
-        OnNestedApplyPlanId(Id(0))
-      ),
-      Seq.empty
-    )
+    assertKeyedSlotsOrderedContains(slots)(Seq(
+      SlotWithKeyAndAliases(VariableSlotKey("x"), LongSlot(0, false, CTNode), Set("z")),
+      SlotWithKeyAndAliases(VariableSlotKey("y"), LongSlot(1, false, CTNode), Set.empty),
+      SlotWithKeyAndAliases(ApplyPlanSlotKey(Id(0)), LongSlot(2, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(OuterNestedApplyPlanSlotKey(Id(0)), LongSlot(3, false, CTAny), Set.empty)
+    ))
   }
 
   test("foreachSlotAndAliasesOrdered with refs/cached props/longs/applyPlans and skipSlots and aliases") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newArgument(Id(0))
     slots.newLong("a", nullable = false, CTNode)
     slots.addAlias("aa", "a")
@@ -282,34 +257,22 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     val eCP = CachedProperty(varFor("e"), varFor("e"), PropertyKeyName("prop")(pos), NODE_TYPE)(pos)
     slots.newCachedProperty(eCP.runtimeKey)
 
-    val acc = new SlotAccumulator
-
-    // when
-    slots.foreachSlotAndAliasesOrdered(
-      acc.onSlotAndAliases,
-      skipFirst = SlotConfiguration.Size(nLongs = 2, nReferences = 1)
-    )
-
     // then
-    acc should haveEventsInOrder(
-      Seq(
-        OnLongVar("b", LongSlot(2, nullable = false, CTNode), Set("bb", "bbb")),
-        OnApplyPlanId(Id(1)),
-        OnNestedApplyPlanId(Id(1))
-      ),
-      Seq(
-        OnRefVar("cc", RefSlot(1, nullable = false, CTAny), Set.empty),
-        OnRefVar("d", RefSlot(2, nullable = false, CTNode), Set.empty),
-        OnCachedProp(dCP.runtimeKey),
-        OnRefVar("e", RefSlot(4, nullable = false, CTNode), Set("ee")),
-        OnCachedProp(eCP.runtimeKey)
-      )
-    )
+    assertKeyedSlotsOrderedContains(slots, SlotConfiguration.Size(nLongs = 2, nReferences = 1))(Seq(
+      SlotWithKeyAndAliases(VariableSlotKey("b"), LongSlot(2, false, CTNode), Set("bb", "bbb")),
+      SlotWithKeyAndAliases(ApplyPlanSlotKey(Id(1)), LongSlot(3, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(OuterNestedApplyPlanSlotKey(Id(1)), LongSlot(4, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(MetaDataSlotKey("cc", Id.INVALID_ID), RefSlot(1, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("d"), RefSlot(2, false, CTNode), Set.empty),
+      SlotWithKeyAndAliases(CachedPropertySlotKey(dCP.runtimeKey), RefSlot(3, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("e"), RefSlot(4, false, CTNode), Set("ee")),
+      SlotWithKeyAndAliases(CachedPropertySlotKey(eCP.runtimeKey), RefSlot(5, false, CTAny), Set.empty)
+    ))
   }
 
   test("foreachSlotAndAliases with refs/cached props/longs/applyPlans and skipSlots and aliases") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newArgument(Id(0))
     slots.newLong("a", nullable = false, CTNode)
     slots.addAlias("aa", "a")
@@ -329,34 +292,25 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     val eCP = CachedProperty(varFor("e"), varFor("e"), PropertyKeyName("prop")(pos), NODE_TYPE)(pos)
     slots.newCachedProperty(eCP.runtimeKey)
 
-    val acc = new SlotAccumulator
-
-    // when
-    slots.foreachSlotAndAliases(acc.onSlotAndAliases)
-
     // then
-    acc should haveEvents(
-      Seq(
-        OnApplyPlanId(Id(0)),
-        OnLongVar("a", LongSlot(1, nullable = false, CTNode), Set("aa")),
-        OnLongVar("b", LongSlot(2, nullable = false, CTNode), Set("bb", "bbb")),
-        OnApplyPlanId(Id(1)),
-        OnNestedApplyPlanId(Id(1))
-      ),
-      Seq(
-        OnRefVar("c", RefSlot(0, nullable = false, CTNode), Set.empty),
-        OnRefVar("cc", RefSlot(1, nullable = false, CTAny), Set.empty),
-        OnRefVar("d", RefSlot(2, nullable = false, CTNode), Set.empty),
-        OnCachedProp(dCP.runtimeKey),
-        OnRefVar("e", RefSlot(4, nullable = false, CTNode), Set("ee")),
-        OnCachedProp(eCP.runtimeKey)
-      )
-    )
+    assertKeyedSlotsOrderedContains(slots)(Seq(
+      SlotWithKeyAndAliases(ApplyPlanSlotKey(Id(0)), LongSlot(0, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("a"), LongSlot(1, false, CTNode), Set("aa")),
+      SlotWithKeyAndAliases(VariableSlotKey("b"), LongSlot(2, false, CTNode), Set("bb", "bbb")),
+      SlotWithKeyAndAliases(ApplyPlanSlotKey(Id(1)), LongSlot(3, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(OuterNestedApplyPlanSlotKey(Id(1)), LongSlot(4, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("c"), RefSlot(0, false, CTNode), Set.empty),
+      SlotWithKeyAndAliases(MetaDataSlotKey("cc", Id.INVALID_ID), RefSlot(1, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("d"), RefSlot(2, false, CTNode), Set.empty),
+      SlotWithKeyAndAliases(CachedPropertySlotKey(dCP.runtimeKey), RefSlot(3, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("e"), RefSlot(4, false, CTNode), Set("ee")),
+      SlotWithKeyAndAliases(CachedPropertySlotKey(eCP.runtimeKey), RefSlot(5, false, CTAny), Set.empty)
+    ))
   }
 
   test("foreachSlot with refs/cached props/longs/applyPlans and skipSlots and aliases") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newArgument(Id(0))
     slots.newLong("a", nullable = false, CTNode)
     slots.addAlias("aa", "a")
@@ -377,37 +331,28 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     slots.newMetaData("f")
     slots.newMetaData("g")
 
-    val acc = new SlotAccumulator
-
-    // when
-    slots.foreachSlot(acc.onSlotTuples)
-
     // then
-    acc should haveEvents(
-      Seq(
-        OnApplyPlanId(Id(0)),
-        OnLongVar("a", LongSlot(1, nullable = false, CTNode), Set.empty),
-        OnLongVar("b", LongSlot(2, nullable = false, CTNode), Set.empty),
-        OnApplyPlanId(Id(1)),
-        OnNestedApplyPlanId(Id(1))
-      ),
-      Seq(
-        OnRefVar("c", RefSlot(0, nullable = false, CTNode), Set.empty),
-        OnRefVar("d", RefSlot(1, nullable = false, CTNode), Set.empty),
-        OnCachedProp(dCP.runtimeKey),
-        OnRefVar("e", RefSlot(3, nullable = false, CTNode), Set.empty),
-        OnCachedProp(eCP.runtimeKey),
-        OnRefVar("f", RefSlot(5, nullable = false, CTAny), Set.empty),
-        OnRefVar("g", RefSlot(6, nullable = false, CTAny), Set.empty)
-      )
-    )
+    assertKeyedSlotsOrderedContains(slots)(Seq(
+      SlotWithKeyAndAliases(ApplyPlanSlotKey(Id(0)), LongSlot(0, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("a"), LongSlot(1, nullable = false, CTNode), Set("aa")),
+      SlotWithKeyAndAliases(VariableSlotKey("b"), LongSlot(2, nullable = false, CTNode), Set("bb", "bbb")),
+      SlotWithKeyAndAliases(ApplyPlanSlotKey(Id(1)), LongSlot(3, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(OuterNestedApplyPlanSlotKey(Id(1)), LongSlot(4, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("c"), RefSlot(0, nullable = false, CTNode), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("d"), RefSlot(1, nullable = false, CTNode), Set.empty),
+      SlotWithKeyAndAliases(CachedPropertySlotKey(dCP.runtimeKey), RefSlot(2, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(VariableSlotKey("e"), RefSlot(3, nullable = false, CTNode), Set("ee")),
+      SlotWithKeyAndAliases(CachedPropertySlotKey(eCP.runtimeKey), RefSlot(4, false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(MetaDataSlotKey("f", Id.INVALID_ID), RefSlot(5, nullable = false, CTAny), Set.empty),
+      SlotWithKeyAndAliases(MetaDataSlotKey("g", Id.INVALID_ID), RefSlot(6, nullable = false, CTAny), Set.empty)
+    ))
   }
 
   test("addAllSlotsInOrderTo with refs/cached props/longs/applyPlans and skipSlots and aliases") {
     // given
 
     // slots
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     slots.newArgument(Id(0)) // skipped
     slots.newLong("a", nullable = false, CTNode) // skipped
     slots.addAlias("aa", "a") // skipped
@@ -424,7 +369,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     slots.newCachedProperty(eCP.runtimeKey)
 
     // ... which are added to result
-    val result = SlotConfiguration.empty
+    val result = SlotConfigurationBuilder.empty
     result.newLong("z", nullable = false, CTNode)
     result.addAlias("zz", "z")
     result.newReference("y", nullable = false, CTNode)
@@ -443,46 +388,46 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     result("z") should equal(LongSlot(0, nullable = false, CTNode))
     result("zz") should equal(LongSlot(0, nullable = false, CTNode))
     result("y") should equal(RefSlot(0, nullable = false, CTNode))
-    result.getArgumentLongOffsetFor(Id(2)) should equal(1)
+    result.argumentOffset(Id(2)) should equal(1)
     result("x") should equal(LongSlot(2, nullable = false, CTNode))
     result("xx") should equal(LongSlot(2, nullable = false, CTNode))
-    result.getCachedPropertyOffsetFor(xCP) should equal(1)
-    result.getMetaDataOffsetFor("xxx") should equal(2)
+    result.cachedPropOffset(xCP.runtimeKey) should equal(1)
+    result.metaDataOffset("xxx") should equal(2)
 
     // the new stuff
     result("b") should equal(LongSlot(3, nullable = false, CTNode))
-    result.getArgumentLongOffsetFor(Id(1)) should equal(4)
+    result.argumentOffset(Id(1)) should equal(4)
     result("d") should equal(RefSlot(3, nullable = false, CTNode))
-    result.getCachedPropertyOffsetFor(dCP) should equal(4)
-    result.getMetaDataOffsetFor("dd") should equal(5)
+    result.cachedPropOffset(dCP.runtimeKey) should equal(4)
+    result.metaDataOffset("dd") should equal(5)
     result("e") should equal(RefSlot(6, nullable = false, CTNode))
     result("ee") should equal(RefSlot(6, nullable = false, CTNode))
-    result.getCachedPropertyOffsetFor(eCP) should equal(7)
+    result.cachedPropOffset(eCP.runtimeKey) should equal(7)
   }
 
   test("addAllSlotsInOrderTo should increase numberOfReferences when duplicated cached property is in last slot") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     val cachedProp = CachedProperty(varFor("a"), varFor("a"), PropertyKeyName("prop")(pos), NODE_TYPE)(pos)
     slots.newCachedProperty(cachedProp.runtimeKey) // ref slot 0
     slots.newCachedProperty(cachedProp.runtimeKey, shouldDuplicate = true) // ref slot 1
 
     // when
-    val result = SlotConfiguration.empty
+    val result = SlotConfigurationBuilder.empty
     slots.addAllSlotsInOrderTo(result)
 
     // then
     result.numberOfReferences should equal(2)
-    result.getCachedPropertyOffsetFor(cachedProp) should equal(0)
+    result.cachedPropOffset(cachedProp.runtimeKey) should equal(0)
     cachedPropertiesTest(result, (cachedProp.runtimeKey, RefSlot(0, nullable = false, typ = CTAny)))
   }
 
   test("addAllSlotsInOrderTo should add nothing with empty source") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
 
     // when
-    val result = SlotConfiguration.empty
+    val result = SlotConfigurationBuilder.empty
     slots.addAllSlotsInOrderTo(result)
 
     // then
@@ -492,7 +437,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("addAllSlotsInOrderTo should handle duplicated cached properties mixed with ref slots") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     val cachedProp = CachedProperty(varFor("a"), varFor("a"), PropertyKeyName("prop")(pos), NODE_TYPE)(pos)
 
     slots.newCachedProperty(cachedProp.runtimeKey) // ref slot 0, 1 CachedPropertySlotKey
@@ -512,24 +457,24 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     ) // ref slot 4, 1 CachedPropertySlotKey + 2 DuplicatedSlotKey + 2 VariableSlotKey
 
     // when
-    val result = SlotConfiguration.empty
+    val result = SlotConfigurationBuilder.empty
     slots.addAllSlotsInOrderTo(result)
 
     // then
     result.numberOfReferences should equal(5)
     cachedPropertiesTest(result, (cachedProp.runtimeKey, RefSlot(0, nullable = false, typ = CTAny)))
-    result.getReferenceOffsetFor("b") should equal(1)
-    result.getReferenceOffsetFor("c") should equal(3)
+    result.refOffset("b") should equal(1)
+    result.refOffset("c") should equal(3)
   }
 
   test("addAllSlotsInOrderTo should increment numberOfRefs when cached property already exists on target ") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     val cachedProp = CachedProperty(varFor("a"), varFor("a"), PropertyKeyName("prop")(pos), NODE_TYPE)(pos)
     slots.newCachedProperty(cachedProp.runtimeKey)
     slots.newReference("b", nullable = true, CTNode)
 
-    val result = SlotConfiguration.empty
+    val result = SlotConfigurationBuilder.empty
     result.newReference("a", nullable = false, CTNode)
     result.newCachedProperty(cachedProp.runtimeKey)
 
@@ -538,14 +483,14 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
     // then
     result.numberOfReferences should equal(4)
-    result.getReferenceOffsetFor("a") should equal(0)
-    result.getReferenceOffsetFor("b") should equal(3)
+    result.refOffset("a") should equal(0)
+    result.refOffset("b") should equal(3)
     cachedPropertiesTest(result, (cachedProp.runtimeKey, RefSlot(1, nullable = false, typ = CTAny)))
   }
 
   test("addAllSlotsInOrderTo with skipSlots and cached properties") {
     // given
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     val cachedProp = CachedProperty(varFor("a"), varFor("a"), PropertyKeyName("prop")(pos), NODE_TYPE)(pos)
 
     slots.newReference("skip_this", nullable = false, CTAny) // ref slot 0 --> skip this
@@ -557,19 +502,20 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
     slots.newReference("b", nullable = true, CTNode) // ref slot 6 --> ref slot 3
 
     // when
-    val result = SlotConfiguration.empty
+    val result = SlotConfigurationBuilder.empty
     slots.addAllSlotsInOrderTo(result, skipFirst = SlotConfiguration.Size(0, 3))
+    val immutableResult = result.build()
 
     // then
     result.numberOfReferences should equal(4)
-    assertThrows[NoSuchElementException] {
-      result.getCachedPropertyOffsetFor(cachedProp.runtimeKey)
-    }
-    result.getReferenceOffsetFor("b") should equal(3)
+    assertThrows[NoSuchElementException](result.cachedPropOffset(cachedProp.runtimeKey))
+    assertThrows[NoSuchElementException](immutableResult.cachedPropOffset(cachedProp.runtimeKey))
+    result.refOffset("b") should equal(3)
+    immutableResult.refOffset("b") should equal(3)
   }
 
   test("iterate cached property slots") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
 
     cachedPropertiesTest(slots)
 
@@ -604,7 +550,7 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
       cachedProp2.runtimeKey -> RefSlot(3, false, CTAny)
     )
 
-    val newSlots = SlotConfiguration.empty
+    val newSlots = SlotConfigurationBuilder.empty
     slots.addAllSlotsInOrderTo(newSlots)
 
     cachedPropertiesTest(
@@ -616,129 +562,67 @@ class SlotConfigurationTest extends CypherFunSuite with AstConstructionTestSuppo
 
   test("addAlias on existing slot should insert a DuplicatedSlot") {
 
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
 
     slots.newLong("x", nullable = false, CTNode)
     slots.newLong("y", nullable = false, CTNode)
     slots.addAlias("x", "y")
 
-    slots.getLongOffsetFor("x") shouldBe 1
-    slots.getLongOffsetFor("y") shouldBe 1
+    slots.longOffset("x") shouldBe 1
+    slots.longOffset("y") shouldBe 1
     slots.hasDuplicateSlot("x", 0) shouldBe true
   }
 
   private def cachedPropertiesTest(
-    slots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
     expected: (ASTCachedProperty.RuntimeKey, RefSlot)*
   ): Unit = {
     expected.foreach {
       case (key, slot) =>
         slots.hasCachedPropertySlot(key) shouldBe true
-        slots.getCachedPropertySlot(key) shouldBe Some(slot)
-        slots.getCachedPropertyOffsetFor(key) shouldBe slot.offset
+        slots.cachedPropSlot(key) shouldBe Some(slot)
+        slots.cachedPropOffset(key) shouldBe slot.offset
     }
 
-    val builder = Seq.newBuilder[(ASTCachedProperty.RuntimeKey, RefSlot)]
-    slots.foreachCachedSlot(builder.addOne)
-    val collectedSlots = builder.result()
+    val immutableSlots = slots.copy().build()
 
-    collectedSlots should contain theSameElementsAs expected
+    val collectedSlots = Range(immutableSlots.cachedPropertiesStartIndex, immutableSlots.cachedPropertiesEndIndex)
+      .map(i => immutableSlots.slots(i).slot)
 
-    val offsetBuilder = Seq.newBuilder[Int]
-    slots.foreachCachedPropertySlotOffset(offsetBuilder.addOne)
-    val collectedSlotOffsets = offsetBuilder.result()
+    withClue(
+      s"cachedPropertiesStartIndex=${immutableSlots.cachedPropertiesStartIndex}, cachedPropertiesEndIndex=${immutableSlots.cachedPropertiesEndIndex}"
+    ) {
+      collectedSlots should contain theSameElementsAs expected.map(_._2)
+    }
+
+    val collectedSlotOffsets = immutableSlots.cachedPropertyOffsets
 
     collectedSlotOffsets should contain theSameElementsAs expected.map { case (_, slot) => slot.offset }
 
-    builder.clear()
-    slots.foreachSlot {
-      case (CachedPropertySlotKey(property), slot: RefSlot) => builder += property -> slot
-      case _                                                =>
+    slots.iterableWithAliases
+      .collect { case (CachedPropertySlotKey(p), slot: RefSlot) => p -> slot }
+      .toSeq should contain theSameElementsAs expected
+  }
+
+  private def assertKeyedSlotsOrderedContains(
+    slots: SlotConfigurationBuilder,
+    skip: SlotConfiguration.Size = SlotConfiguration.Size.zero,
+    build: Boolean = true
+  )(expected: Seq[SlotWithKeyAndAliases]): Unit = {
+    val iterA = slots.keyedSlotsOrdered(skip).iterator
+    val iterB = expected.iterator
+
+    while (iterA.hasNext && iterB.hasNext) iterA.next() shouldBe iterB.next()
+
+    slots.keyedSlotsOrdered(skip) should contain theSameElementsInOrderAs expected
+    if (build) {
+      slots.build().legacyView.keyedSlotsOrdered(skip) should contain theSameElementsInOrderAs expected
+    } else {
+      slots.copy().build().legacyView.keyedSlotsOrdered(skip) should contain theSameElementsInOrderAs expected
     }
-    builder.result() should contain theSameElementsAs expected
   }
 
   trait HasSlot {
     def slot: Slot
-  }
-
-  sealed trait LongEvent
-  case class OnLongVar(string: String, slot: Slot, aliases: collection.Set[String]) extends LongEvent with HasSlot
-  case class OnApplyPlanId(id: Id) extends LongEvent
-  case class OnNestedApplyPlanId(id: Id) extends LongEvent
-  sealed trait RefEvent
-  case class OnRefVar(string: String, slot: Slot, aliases: collection.Set[String]) extends RefEvent with HasSlot
-  case class OnCachedProp(cp: ASTCachedProperty.RuntimeKey) extends RefEvent
-
-  class SlotAccumulator {
-    val longEvents = new ArrayBuffer[LongEvent]()
-    val refEvents = new ArrayBuffer[RefEvent]()
-
-    def onSlotAndAliases(entry: SlotWithKeyAndAliases): Unit = {
-      val SlotWithKeyAndAliases(key, slot, aliases) = entry
-      key match {
-        case VariableSlotKey(name) =>
-          if (slot.isLongSlot) {
-            longEvents += OnLongVar(name, slot, aliases)
-          } else {
-            refEvents += OnRefVar(name, slot, aliases)
-          }
-        case CachedPropertySlotKey(cp) =>
-          refEvents += OnCachedProp(cp)
-        case MetaDataSlotKey(key, id) =>
-          refEvents += OnRefVar(key, slot, aliases)
-        case ApplyPlanSlotKey(id) =>
-          longEvents += OnApplyPlanId(id)
-        case OuterNestedApplyPlanSlotKey(id) =>
-          longEvents += OnNestedApplyPlanId(id)
-      }
-    }
-
-    def onSlotTuples(entry: (SlotKey, Slot)): Unit = {
-      val (key, slot) = entry
-      key match {
-        case VariableSlotKey(name) =>
-          if (slot.isLongSlot) {
-            longEvents += OnLongVar(name, slot, Set.empty[String])
-          } else {
-            refEvents += OnRefVar(name, slot, Set.empty[String])
-          }
-        case CachedPropertySlotKey(cp) =>
-          refEvents += OnCachedProp(cp)
-        case MetaDataSlotKey(key, id) =>
-          refEvents += OnRefVar(key, slot, Set.empty[String])
-        case ApplyPlanSlotKey(id) =>
-          longEvents += OnApplyPlanId(id)
-        case OuterNestedApplyPlanSlotKey(id) =>
-          longEvents += OnNestedApplyPlanId(id)
-      }
-    }
-  }
-
-  case class haveEventsInOrder(expectedLongEvents: Seq[LongEvent], expectedRefEvents: Seq[RefEvent])
-      extends Matcher[SlotAccumulator] {
-
-    override def apply(actual: SlotAccumulator): MatchResult = {
-      MatchResult(
-        matches = expectedLongEvents == actual.longEvents && expectedRefEvents == actual.refEvents,
-        rawFailureMessage =
-          s"${actual.longEvents.toList}/${actual.refEvents.toList} were not \n$expectedLongEvents/$expectedRefEvents\n",
-        rawNegatedFailureMessage = ""
-      )
-    }
-  }
-
-  case class haveEvents(expectedLongEvents: Seq[LongEvent], expectedRefEvents: Seq[RefEvent])
-      extends Matcher[SlotAccumulator] {
-
-    override def apply(actual: SlotAccumulator): MatchResult = {
-      MatchResult(
-        matches = expectedLongEvents.groupBy(identity) == actual.longEvents.groupBy(identity) &&
-          expectedRefEvents.groupBy(identity) == actual.refEvents.groupBy(identity),
-        rawFailureMessage =
-          s"${actual.longEvents.toList}/${actual.refEvents.toList} were not \n$expectedLongEvents/$expectedRefEvents\n",
-        rawNegatedFailureMessage = ""
-      )
-    }
   }
 }

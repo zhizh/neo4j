@@ -215,7 +215,7 @@ object SlotAllocation {
    * @param trailPlan the nearest outer Trail plan
    */
   case class SlotsAndArgument(
-    slotConfiguration: SlotConfiguration,
+    slotConfiguration: SlotConfigurationBuilder,
     argumentSize: Size,
     argumentPlan: Id,
     conditionalApplyPlan: Id,
@@ -238,14 +238,14 @@ object SlotAllocation {
   )
 
   private[physicalplanning] def NO_ARGUMENT(allocateArgumentSlots: Boolean): SlotsAndArgument = {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
     if (allocateArgumentSlots) {
       slots.newArgument(Id.INVALID_ID)
     }
     SlotsAndArgument(slots, Size.zero, Id.INVALID_ID, Id.INVALID_ID, Id.INVALID_ID)
   }
 
-  final val INITIAL_SLOT_CONFIGURATION: SlotConfiguration = NO_ARGUMENT(true).slotConfiguration
+  final val INITIAL_SLOT_CONFIGURATION: SlotConfiguration = NO_ARGUMENT(true).slotConfiguration.build()
 
   def allocateSlots(
     lp: LogicalPlan,
@@ -310,7 +310,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   ): SlotMetaData = {
 
     val planStack = new util.ArrayDeque[(Boolean, LogicalPlan)]()
-    val resultStack = new util.ArrayDeque[SlotConfiguration]()
+    val resultStack = new util.ArrayDeque[SlotConfigurationBuilder]()
     val argumentStack = new util.ArrayDeque[SlotsAndArgument]()
     initialSlotsAndArgument.foreach(argumentStack.push)
     var comingFrom = lp
@@ -469,7 +469,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   private def allocateExpressionsOneChildOnInput(
     plan: LogicalPlan,
     nullable: Boolean,
-    slots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
     semanticTable: CachableSemanticTable,
     cancellationChecker: CancellationChecker
   ): Unit = plan match {
@@ -488,7 +488,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   private def allocateExpressionsOneChildOnOutput(
     plan: LogicalPlan,
     nullable: Boolean,
-    slots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
     semanticTable: CachableSemanticTable,
     cancellationChecker: CancellationChecker
   ): Unit = plan match {
@@ -506,7 +506,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   private def allocateExpressionsOneChild(
     plan: LogicalPlan,
     nullable: Boolean,
-    slots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
     semanticTable: CachableSemanticTable,
     cancellationChecker: CancellationChecker
   ): Unit = {
@@ -536,7 +536,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
 
   private def allocateExpressionsTwoChild(
     plan: LogicalPlan,
-    slots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
     semanticTable: CachableSemanticTable,
     comingFromLeft: Boolean,
     cancellationChecker: CancellationChecker
@@ -567,7 +567,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
 
   private def allocateExpressionsInternal(
     expression: Foldable,
-    slots: SlotConfiguration,
+    slots: SlotConfigurationBuilder,
     semanticTable: CachableSemanticTable,
     planId: Id,
     cancellationChecker: CancellationChecker,
@@ -684,7 +684,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
    * @param nullable true if new slots are nullable
    * @param slots the slot configuration of lp
    */
-  private def allocateLeaf(lp: LogicalPlan, nullable: Boolean, slots: SlotConfiguration): Unit =
+  private def allocateLeaf(lp: LogicalPlan, nullable: Boolean, slots: SlotConfigurationBuilder): Unit =
     lp match {
       case MultiNodeIndexSeek(leafPlans) =>
         leafPlans.foreach { p =>
@@ -750,16 +750,16 @@ class SingleQuerySlotAllocator private[physicalplanning] (
    *
    * @param lp the operator to compute slots for.
    * @param nullable true if new slots are nullable
-   * @param source the slot configuration of the source operator.
-   * @param slots the slot configuration of lp.
+   * @param source         the slot configuration of the source operator.
+   * @param slots          the slot configuration of lp.
    * @param recordArgument function which records the argument size for the given operator
    */
   private def allocateOneChild(
     slotsAndArgument: SlotsAndArgument,
     lp: LogicalPlan,
     nullable: Boolean,
-    source: SlotConfiguration,
-    slots: SlotConfiguration,
+    source: SlotConfigurationBuilder,
+    slots: SlotConfigurationBuilder,
     recordArgument: LogicalPlan => Unit,
     semanticTable: CachableSemanticTable
   ): Unit = {
@@ -998,20 +998,20 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   /**
    * Compute the slot configuration of a branching logical plan operator `lp`.
    *
-   * @param lp the operator to compute slots for.
+   * @param lp       the operator to compute slots for.
    * @param nullable true if new slots are nullable
-   * @param lhs the slot configuration of the left hand side operator.
-   * @param rhs the slot configuration of the right hand side operator.
+   * @param lhs      the slot configuration of the left hand side operator.
+   * @param rhs      the slot configuration of the right hand side operator.
    * @return the slot configuration of lp
    */
   private def allocateTwoChild(
     lp: LogicalPlan,
     nullable: Boolean,
-    lhs: SlotConfiguration,
-    rhs: SlotConfiguration,
+    lhs: SlotConfigurationBuilder,
+    rhs: SlotConfigurationBuilder,
     recordArgument: LogicalPlan => Unit,
     argument: SlotsAndArgument
-  ): SlotConfiguration = {
+  ): SlotConfigurationBuilder = {
     val result = lp match {
       case _: Apply =>
         rhs
@@ -1030,7 +1030,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         // A new pipeline is not strictly needed here unless we have batching/vectorization
         recordArgument(lp)
         val result = breakingPolicy.invoke(lp, rhs, argument.slotConfiguration, applyPlans)
-        rhs.foreachSlotAndAliases {
+        rhs.keyedSlots.foreach {
           case SlotWithKeyAndAliases(VariableSlotKey(key), slot, _) if slot.offset >= lhs.numberOfLongs =>
             result.add(key, slot.asNullable)
           case _ => // do nothing
@@ -1070,7 +1070,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         val result = breakingPolicy.invoke(lp, rhs, argument.slotConfiguration, applyPlans)
 
         // Note, we can potentially carry discarded slots from lhs here to save memory
-        lhs.foreachSlotAndAliasesOrdered {
+        lhs.keyedSlotsOrdered().foreach {
           case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
             // If the column is one of the join columns there is no need to add it again
             if (!nodes.contains(varFor(key))) {
@@ -1104,7 +1104,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         val result = breakingPolicy.invoke(lp, lhs, argument.slotConfiguration, applyPlans)
 
         // Note, we can potentially carry discarded slots from rhs here to save memory
-        rhs.foreachSlotAndAliasesOrdered {
+        rhs.keyedSlotsOrdered().foreach {
           case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
             // If the column is one of the join columns there is no need to add it again
             if (!nodes(varFor(key))) {
@@ -1138,7 +1138,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         val result = breakingPolicy.invoke(lp, lhs, argument.slotConfiguration, applyPlans)
 
         // Note, we can potentially carry discaded slots from rhs here to save memory
-        rhs.foreachSlotAndAliasesOrdered {
+        rhs.keyedSlotsOrdered().foreach {
           case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
             // If the column is one of the join columns there is no need to add it again
             if (!nodes(varFor(key))) {
@@ -1173,27 +1173,24 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         // For the implementation of the slotted pipe to use array copy
         // it is very important that we add the slots in the same order
         // Note, we can potentially carry discaded slots from rhs here to save memory
-        rhs.foreachSlotAndAliasesOrdered(
-          {
-            case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
-              result.add(key, slot)
-              aliases.foreach(alias => result.addAlias(alias, key))
-            case SlotWithKeyAndAliases(CachedPropertySlotKey(key), _, _) =>
-              result.newCachedProperty(key, shouldDuplicate = true)
-            case SlotWithKeyAndAliases(MetaDataSlotKey(key, planId), _, _) =>
-              result.newMetaData(key, planId)
-            case SlotWithKeyAndAliases(_: ApplyPlanSlotKey, _, _) =>
-            // apply plan slots are already in the argument, and don't have to be added here
-            case SlotWithKeyAndAliases(_: OuterNestedApplyPlanSlotKey, _, _) =>
-            // apply plan slots are already in the argument, and don't have to be added here
-            case SlotWithKeyAndAliases(DuplicatedSlotKey(key, _), slot, _) =>
-              if (result.get(key).isEmpty) {
-                if (slot.isLongSlot) result.newDuplicatedLongSlot(key)
-                else result.newDuplicatedRefSlot(key)
-              }
-          },
-          skipFirst = argument.argumentSize
-        )
+        rhs.keyedSlotsOrdered(skipFirst = argument.argumentSize).foreach {
+          case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
+            result.add(key, slot)
+            aliases.foreach(alias => result.addAlias(alias, key))
+          case SlotWithKeyAndAliases(CachedPropertySlotKey(key), _, _) =>
+            result.newCachedProperty(key, shouldDuplicate = true)
+          case SlotWithKeyAndAliases(MetaDataSlotKey(key, planId), _, _) =>
+            result.newMetaData(key, planId)
+          case SlotWithKeyAndAliases(_: ApplyPlanSlotKey, _, _) =>
+          // apply plan slots are already in the argument, and don't have to be added here
+          case SlotWithKeyAndAliases(_: OuterNestedApplyPlanSlotKey, _, _) =>
+          // apply plan slots are already in the argument, and don't have to be added here
+          case SlotWithKeyAndAliases(DuplicatedSlotKey(key, _), slot, _) =>
+            if (result.get(key).isEmpty) {
+              if (slot.isLongSlot) result.newDuplicatedLongSlot(key)
+              else result.newDuplicatedRefSlot(key)
+            }
+        }
         result
 
       case RollUpApply(_, _, collectionName, _) =>
@@ -1208,7 +1205,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         // The result slot configuration should only contain the variables we join on.
         // If both lhs and rhs has a long slot with the same type the result should
         // also use a long slot, otherwise we use a ref slot.
-        val result = SlotConfiguration.empty
+        val result = SlotConfigurationBuilder.empty
         def addVariableToResult(key: String, slot: Slot): Unit = slot match {
           case lhsSlot: LongSlot =>
             // find all shared variables and look for other long slots with same type
@@ -1229,7 +1226,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
         }
         // Note, we can potentially carry discarded slots from lhs/rhs here to save memory
         // First, add original variable names, cached properties and apply plan slots in order
-        lhs.foreachSlotAndAliasesOrdered({
+        lhs.keyedSlotsOrdered().foreach {
           case SlotWithKeyAndAliases(VariableSlotKey(key), slot, _) => addVariableToResult(key, slot)
           case SlotWithKeyAndAliases(CachedPropertySlotKey(key), _, _) =>
             if (rhs.hasCachedPropertySlot(key)) {
@@ -1252,10 +1249,10 @@ class SingleQuerySlotAllocator private[physicalplanning] (
               result.newNestedArgument(id)
             }
           case SlotWithKeyAndAliases(DuplicatedSlotKey(_, _), _, _) => // noop
-        })
+        }
 
         // Second, add aliases in order. Aliases get their own slots after a union.
-        lhs.foreachSlotAndAliasesOrdered({
+        lhs.keyedSlotsOrdered().foreach {
           case SlotWithKeyAndAliases(VariableSlotKey(key), slot, aliases) =>
             if (argument.isArgument(slot)) {
               aliases.foreach(alias =>
@@ -1269,7 +1266,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
               aliases.foreach(addVariableToResult(_, slot))
             }
           case _ =>
-        })
+        }
         result
 
       case _: AssertSameNode | _: AssertSameRelationship =>
@@ -1325,7 +1322,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
   private def allocateLhsOfApply(
     plan: LogicalPlan,
     nullable: Boolean,
-    lhs: SlotConfiguration,
+    lhs: SlotConfigurationBuilder,
     semanticTable: CachableSemanticTable
   ): Unit =
     plan match {
@@ -1358,8 +1355,8 @@ class SingleQuerySlotAllocator private[physicalplanning] (
 
   private def addGroupingSlots(
     groupingExpressions: Map[LogicalVariable, Expression],
-    incoming: SlotConfiguration,
-    outgoing: SlotConfiguration
+    incoming: SlotConfigurationBuilder,
+    outgoing: SlotConfigurationBuilder
   ): Unit = {
     groupingExpressions foreach {
       case (key, internal.expressions.Variable(ident)) =>
@@ -1377,11 +1374,11 @@ class SingleQuerySlotAllocator private[physicalplanning] (
 
   private def discardUnusedSlots(
     lp: LogicalPlan,
-    slots: SlotConfiguration,
-    lhs: SlotConfiguration,
-    rhs: Option[SlotConfiguration]
+    slots: SlotConfigurationBuilder,
+    lhs: SlotConfigurationBuilder,
+    rhs: Option[SlotConfigurationBuilder]
   ): Unit = {
-    def doDiscard(source: SlotConfiguration): Unit = {
+    def doDiscard(source: SlotConfigurationBuilder): Unit = {
       // Operators for these plans will 'compact' the morsel, setting discarded ref slots to null,
       // before putting it in the eager buffer. This frees memory of those slots for the remainder
       // of the query execution.
@@ -1415,7 +1412,7 @@ class SingleQuerySlotAllocator private[physicalplanning] (
     variable: LogicalVariable,
     nullable: Boolean,
     expression: Expression,
-    slots: SlotConfiguration
+    slots: SlotConfigurationBuilder
   ): Unit = {
     val nullableExpression = expression match {
       case ListLiteral(expressions) => expressions.exists {

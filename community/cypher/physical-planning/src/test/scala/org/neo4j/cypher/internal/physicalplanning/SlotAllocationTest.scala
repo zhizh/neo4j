@@ -113,7 +113,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 1
     allocations(plan.id) should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
   }
 
@@ -134,7 +134,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 1
     allocations(plan.id) should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
   }
 
@@ -155,7 +155,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 1
     allocations(plan.id) should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newCachedProperty(cachedNodeProp("x", "prop").runtimeKey)
     )
@@ -178,7 +178,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 2
     allocations(plan.id) should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
   }
 
@@ -198,7 +198,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 1
-    allocations(plan.id) should equal(SlotConfiguration.empty.newLong("x", nullable = false, CTNode))
+    allocations(plan.id) should equal(SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode))
   }
 
   test("labelscan with filtering") {
@@ -218,7 +218,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 2
-    allocations(leaf.id) should equal(SlotConfiguration.empty.newLong("x", nullable = false, CTNode))
+    allocations(leaf.id) should equal(SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode))
     allocations(filter.id) shouldBe theSameInstanceAs(allocations(leaf.id))
   }
 
@@ -242,12 +242,12 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 2
     val labelScanAllocations = allocations(allNodesScan.id)
     labelScanAllocations should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val expandAllocations = allocations(expand.id)
     expandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("r", nullable = false, CTRelationship)
         .newLong("z", nullable = false, CTNode)
@@ -274,12 +274,12 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 2
     val labelScanAllocations = allocations(allNodesScan.id)
     labelScanAllocations should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val expandAllocations = allocations(expand.id)
     expandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("r", nullable = false, CTRelationship)
     )
@@ -302,7 +302,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 2
-    allocations(plan.id) should equal(SlotConfiguration.empty
+    allocations(plan.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = true, CTNode))
   }
 
@@ -333,12 +333,12 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 2
     val labelScanAllocations = allocations(allNodesScan.id)
     labelScanAllocations should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val expandAllocations = allocations(expand.id)
     expandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("r", nullable = true, CTRelationship)
         .newLong("z", nullable = true, CTNode)
@@ -372,12 +372,12 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 2
     val labelScanAllocations = allocations(allNodesScan.id)
     labelScanAllocations should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val expandAllocations = allocations(expand.id)
     expandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("r", nullable = true, CTRelationship)
     )
@@ -416,12 +416,12 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 2
     val allNodeScanAllocations = allocations(allNodesScan.id)
     allNodeScanAllocations should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val expandAllocations = allocations(expand.id)
     expandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newReference("r", nullable = false, CTList(CTRelationship))
         .newLong("z", nullable = false, CTNode)
@@ -463,12 +463,12 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 3
     val allNodeScanAllocations = allocations(allNodesScan.id)
     allNodeScanAllocations should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val expandAllocations = allocations(expand.id)
     expandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("r", nullable = false, CTRelationship)
         .newLong("y", nullable = false, CTNode)
@@ -476,7 +476,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     val varExpandAllocations = allocations(varExpand.id)
     varExpandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("r", nullable = false, CTRelationship)
         .newLong("y", nullable = false, CTNode)
@@ -503,12 +503,12 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 2
     val allNodeScanAllocations = allocations(input.id)
     allNodeScanAllocations should equal(
-      SlotConfiguration.empty.newReference("x", nullable = true, CTAny)
+      SlotConfigurationBuilder.empty.newReference("x", nullable = true, CTAny)
     )
 
     val expandAllocations = allocations(expand.id)
     expandAllocations should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newReference("x", nullable = true, CTAny)
         .newLong("z", nullable = false, CTNode)
     )
@@ -533,7 +533,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     allocations should have size 2
     val labelScanAllocations = allocations(allNodesScan.id)
     labelScanAllocations should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val expandAllocations = allocations(skip.id)
@@ -559,13 +559,13 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 3
     allocations(lhs.id) should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
 
     val rhsPipeline = allocations(rhs.id)
 
     rhsPipeline should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("z", nullable = false, CTNode)
     )
@@ -589,7 +589,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     ).slotConfigurations
 
     // then
-    val expected = SlotConfiguration.empty.newLong("x", false, CTNode)
+    val expected = SlotConfigurationBuilder.empty.newLong("x", false, CTNode)
 
     allocations should have size 2
     allocations(leaf.id) should equal(expected)
@@ -615,7 +615,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     val expected =
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", true, CTNode)
         .newReference("x.propertyKey", true, CTAny)
 
@@ -646,9 +646,9 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     ).slotConfigurations
 
     // then
-    val leafExpected = SlotConfiguration.empty.newLong("x", true, CTNode)
+    val leafExpected = SlotConfigurationBuilder.empty.newLong("x", true, CTNode)
     val aggrExpected =
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", true, CTNode)
         .newReference("x.propertyKey", true, CTAny)
         .newReference("count(*)", true, CTAny)
@@ -679,7 +679,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 2
     allocations(leaf.id) should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newReference("x.propertyKey", nullable = true, CTAny)
     )
@@ -704,9 +704,9 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 3
-    allocations(lhs.id) should equal(SlotConfiguration.empty.newLong("x", nullable = false, CTNode))
-    allocations(rhs.id) should equal(SlotConfiguration.empty.newLong("y", nullable = false, CTNode))
-    allocations(Xproduct.id) should equal(SlotConfiguration.empty
+    allocations(lhs.id) should equal(SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode))
+    allocations(rhs.id) should equal(SlotConfigurationBuilder.empty.newLong("y", nullable = false, CTNode))
+    allocations(Xproduct.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("y", nullable = false, CTNode))
 
@@ -805,14 +805,14 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
         // then
         allocations should have size 6
-        allocations(lhs.id) should equal(SlotConfiguration.empty)
+        allocations(lhs.id) should equal(SlotConfigurationBuilder.empty)
 
         val nullable = join.isInstanceOf[LeftOuterHashJoin] || join.isInstanceOf[RightOuterHashJoin]
-        allocations(join.id) should equal(SlotConfiguration.empty
+        allocations(join.id) should equal(SlotConfigurationBuilder.empty
           .newDuplicatedLongSlot("x", CTNode)
           .newLong("y", nullable, CTNode)
           .addAlias("x", "y"))
-        allocations(Xproduct.id) should equal(SlotConfiguration.empty
+        allocations(Xproduct.id) should equal(SlotConfigurationBuilder.empty
           .newDuplicatedLongSlot("x", CTAny)
           .newLong("y", nullable, CTNode)
           .addAlias("x", "y"))
@@ -880,7 +880,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
         allocations should have size 6
         val nullable = join.isInstanceOf[LeftOuterHashJoin] || join.isInstanceOf[RightOuterHashJoin]
 
-        allocations(join.id) should equal(SlotConfiguration.empty
+        allocations(join.id) should equal(SlotConfigurationBuilder.empty
           .newDuplicatedLongSlot("x", CTNode)
           .newLong("y", nullable, CTNode)
           .addAlias("x", "y"))
@@ -906,9 +906,9 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 3
-    allocations(lhs.id) should equal(SlotConfiguration.empty.newLong("x", nullable = false, CTNode))
-    allocations(rhs.id) should equal(SlotConfiguration.empty.newLong("x", nullable = false, CTNode))
-    allocations(hashJoin.id) should equal(SlotConfiguration.empty.newLong("x", nullable = false, CTNode))
+    allocations(lhs.id) should equal(SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode))
+    allocations(rhs.id) should equal(SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode))
+    allocations(hashJoin.id) should equal(SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode))
   }
 
   test("most joins - with LHS & RHS aliases") {
@@ -951,7 +951,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
         ).slotConfigurations
 
         // then
-        val expectedJoinSlotConfig = SlotConfiguration.empty
+        val expectedJoinSlotConfig = SlotConfigurationBuilder.empty
           .newLong("x", nullable = false, CTNode)
           .newReference("cLhs", nullable = true, CTAny)
           .addAlias("cLhs2", "cLhs")
@@ -997,7 +997,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     ).slotConfigurations
 
     // then
-    val expectedJoinSlotConfig = SlotConfiguration.empty
+    val expectedJoinSlotConfig = SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newReference("cRhs", nullable = true, CTAny)
       .addAlias("cRhs2", "cRhs")
@@ -1031,15 +1031,15 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 5
-    allocations(lhsE.id) should equal(SlotConfiguration.empty
+    allocations(lhsE.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("y", nullable = false, CTNode))
-    allocations(rhsE.id) should equal(SlotConfiguration.empty
+    allocations(rhsE.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r2", nullable = false, CTRelationship)
       .newLong("z", nullable = false, CTNode))
-    allocations(hashJoin.id) should equal(SlotConfiguration.empty
+    allocations(hashJoin.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("y", nullable = false, CTNode)
@@ -1069,15 +1069,15 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 5 // One for each label-scan and expand, and one after the join
-    allocations(lhsE.id) should equal(SlotConfiguration.empty
+    allocations(lhsE.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("y", nullable = false, CTNode))
-    allocations(rhsE.id) should equal(SlotConfiguration.empty
+    allocations(rhsE.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r2", nullable = false, CTRelationship)
       .newLong("y", nullable = false, CTNode))
-    allocations(hashJoin.id) should equal(SlotConfiguration.empty
+    allocations(hashJoin.id) should equal(SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("y", nullable = false, CTNode)
@@ -1111,7 +1111,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
         // then
         joinAllocations(join.id) should be(
-          SlotConfiguration.empty
+          SlotConfigurationBuilder.empty
             .newLong("x", false, CTNode)
             .newCachedProperty(cachedNodeProp("x", "lhsProp").runtimeKey)
             .newCachedProperty(cachedNodeProp("x", "rhsProp").runtimeKey)
@@ -1138,7 +1138,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     joinAllocations(join.id) should be(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", false, CTNode)
         .newCachedProperty(cachedNodeProp("x", "rhsProp").runtimeKey)
         .newCachedProperty(cachedNodeProp("x", "lhsProp").runtimeKey)
@@ -1174,7 +1174,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
         // then
         allocations(plan.id) should be(
-          SlotConfiguration.empty
+          SlotConfigurationBuilder.empty
             .newLong("x", false, CTNode)
             .newCachedProperty(cachedNodeProp("x", "argProp").runtimeKey)
             .newCachedProperty(cachedNodeProp("x", "lhsProp").runtimeKey)
@@ -1205,7 +1205,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations(plan.id) should be(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", false, CTNode)
         .newCachedProperty(cachedNodeProp("x", "argProp").runtimeKey)
         .newCachedProperty(cachedNodeProp("x", "rhsProp").runtimeKey)
@@ -1232,8 +1232,8 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     ).slotConfigurations
 
     // then
-    val lhsPipeline = SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
-    val rhsPipeline = SlotConfiguration.empty
+    val lhsPipeline = SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
+    val rhsPipeline = SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("y", nullable = false, CTNode)
@@ -1263,9 +1263,9 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 3
-    allocations(leaf.id) should equal(SlotConfiguration.empty)
+    allocations(leaf.id) should equal(SlotConfigurationBuilder.empty)
 
-    allocations(unwind.id) should equal(SlotConfiguration.empty.newReference("x", nullable = false, CTAny))
+    allocations(unwind.id) should equal(SlotConfigurationBuilder.empty.newReference("x", nullable = false, CTAny))
     allocations(produceResult.id) shouldBe theSameInstanceAs(allocations(unwind.id))
   }
 
@@ -1288,9 +1288,9 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 4
-    allocations(leaf.id) should equal(SlotConfiguration.empty)
+    allocations(leaf.id) should equal(SlotConfigurationBuilder.empty)
 
-    val expectedPipeline = SlotConfiguration.empty.newReference("x", nullable = false, CTAny)
+    val expectedPipeline = SlotConfigurationBuilder.empty.newReference("x", nullable = false, CTAny)
     allocations(unwind.id) should equal(expectedPipeline)
     allocations(sort.id) shouldBe theSameInstanceAs(allocations(unwind.id))
     allocations(produceResult.id) shouldBe theSameInstanceAs(allocations(unwind.id))
@@ -1322,10 +1322,10 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
       new AnonymousVariableNameGenerator()
     ).slotConfigurations
 
-    val lhsPipeline = SlotConfiguration.empty.newLong(varFor("x"), nullable = false, CTNode)
+    val lhsPipeline = SlotConfigurationBuilder.empty.newLong(varFor("x"), nullable = false, CTNode)
     val argumentSide = lhsPipeline
 
-    val rhsPipeline = SlotConfiguration.empty
+    val rhsPipeline = SlotConfigurationBuilder.empty
       .newLong("x", nullable = false, CTNode)
       .newLong("r", nullable = false, CTRelationship)
       .newLong("y", nullable = false, CTNode)
@@ -1356,9 +1356,9 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     // then
     allocations should have size 5
-    val lhsPipeline = SlotConfiguration.empty.newReference("x", true, CTAny)
+    val lhsPipeline = SlotConfigurationBuilder.empty.newReference("x", true, CTAny)
     val rhsPipeline =
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newReference("x", true, CTAny)
         .newReference("y", true, CTAny)
 
@@ -1394,14 +1394,14 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     allocations should have size 3
     allocations(expand.id) should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", false, CTNode)
         .newLong("r", false, CTRelationship)
         .newLong("y", false, CTNode)
     )
 
     allocations(aggregation.id) should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", false, CTNode)
         .newReference("x.prop", true, CTAny)
         .newReference("count(r.prop)", true, CTAny)
@@ -1442,7 +1442,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 5
     allocations(rollUp.id) should equal(
-      SlotConfiguration.empty.newReference("c", nullable = false, CTList(CTAny))
+      SlotConfigurationBuilder.empty.newReference("c", nullable = false, CTList(CTAny))
     )
   }
 
@@ -1465,7 +1465,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 3
     allocations(plan.id) should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
   }
 
@@ -1491,7 +1491,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 7
     allocations(union.id) should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newArgument(apply.id)
         .addAlias("y", "x")
@@ -1519,7 +1519,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 4
     allocations(plan.id) should equal(
-      SlotConfiguration.empty.newReference("x", nullable = false, CTAny)
+      SlotConfigurationBuilder.empty.newReference("x", nullable = false, CTAny)
     )
   }
 
@@ -1542,7 +1542,7 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 5
     allocations(plan.id) should equal(
-      SlotConfiguration.empty.newReference("A", nullable = true, CTAny)
+      SlotConfigurationBuilder.empty.newReference("A", nullable = true, CTAny)
     )
   }
 
@@ -1569,11 +1569,11 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
     // then
     allocations should have size 3
     allocations(plan.id) should equal(
-      SlotConfiguration.empty.newReference("z", nullable = true, CTAny)
+      SlotConfigurationBuilder.empty.newReference("z", nullable = true, CTAny)
     )
     allocations(argument.id) should equal(allocations(plan.id))
     allocations(nestedPlan.id) should equal(
-      SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
+      SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode)
     )
   }
 
@@ -1606,14 +1606,14 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     val lhsSlots = allocations(lhs.id)
     lhsSlots should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newReference("i", nullable = true, CTAny)
     )
 
     val rhsSlots = allocations(rhs.id)
     rhsSlots should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("z", nullable = false, CTNode)
         .newReference("i", nullable = true, CTAny)
@@ -1651,14 +1651,14 @@ class SlotAllocationTest extends CypherFunSuite with LogicalPlanningTestSupport2
 
     val lhsSlots = allocations(lhs.id)
     lhsSlots should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("i", nullable = true, CTNode)
     )
 
     val rhsSlots = allocations(rhs.id)
     rhsSlots should equal(
-      SlotConfiguration.empty
+      SlotConfigurationBuilder.empty
         .newLong("x", nullable = false, CTNode)
         .newLong("i", nullable = true, CTNode)
         .newLong("z", nullable = false, CTNode)

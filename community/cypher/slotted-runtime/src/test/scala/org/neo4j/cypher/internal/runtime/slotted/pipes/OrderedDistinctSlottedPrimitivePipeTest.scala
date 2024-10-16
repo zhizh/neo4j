@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.pipes
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.util.symbols.CTNode
@@ -31,9 +31,10 @@ class OrderedDistinctSlottedPrimitivePipeTest extends CypherFunSuite {
   test("exhaust should close seen set") {
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10, "b" -> 11)), slots)
     val pipe = OrderedDistinctSlottedPrimitivePipe(input, slots, Array(0), Array(1), EmptyGroupingExpression)()
@@ -46,9 +47,10 @@ class OrderedDistinctSlottedPrimitivePipeTest extends CypherFunSuite {
   test("close should close seen set") {
     val monitor = QueryStateHelper.trackClosedMonitor
     val resourceManager = new ResourceManager(monitor)
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val input = FakeSlottedPipe(Seq(Map("a" -> 10)), slots)
     val pipe = OrderedDistinctSlottedPrimitivePipe(input, slots, Array(0), Array(1), EmptyGroupingExpression)()

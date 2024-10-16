@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.expressions
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.slotted.pipes.FakeSlottedPipe
 import org.neo4j.cypher.internal.util.attribution.Id
@@ -31,8 +31,8 @@ class NestedPipeExistsSlottedExpressionTest extends CypherFunSuite {
   test("Should close pipe results.") {
     // given
     val state = QueryStateHelper.empty
-    val outerSlots = SlotConfiguration.empty.newLong("x", nullable = false, CTNode)
-    val innerSlots = SlotConfiguration.empty.newLong("a", nullable = false, CTNode)
+    val outerSlots = SlotConfigurationBuilder.empty.newLong("x", nullable = false, CTNode).build()
+    val innerSlots = SlotConfigurationBuilder.empty.newLong("a", nullable = false, CTNode).build()
     val input = FakeSlottedPipe(Seq(Map("a" -> 10), Map("a" -> 11)), innerSlots)
     val npee = NestedPipeExistsSlottedExpression(input, innerSlots, Array(), Id(0))
     // when

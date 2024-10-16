@@ -20,7 +20,7 @@
 package org.neo4j.cypher.internal.runtime.slotted.pipes
 
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
-import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.NodeRightOuterHashJoinPipe
 import org.neo4j.cypher.internal.runtime.slotted.SlottedCypherRowFactory
@@ -36,24 +36,24 @@ class NodeRightOuterHashJoinFallbackPipeTest extends CypherFunSuite {
     // given
     val queryState = QueryStateHelper.emptyWithValueSerialization
 
-    val leftSlots = SlotConfiguration.empty
-    leftSlots.newLong("a", nullable = false, CTNode)
-    leftSlots.newLong("b", nullable = false, CTNode)
-    leftSlots.newLong("c", nullable = true, CTNode)
-    SlotConfigurationUtils.generateSlotAccessorFunctions(leftSlots)
+    val leftSlots = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = false, CTNode)
+      .newLong("b", nullable = false, CTNode)
+      .newLong("c", nullable = true, CTNode)
+      .build()
 
-    val rightSlots = SlotConfiguration.empty
-    rightSlots.newLong("a", nullable = true, CTNode)
-    rightSlots.newLong("b", nullable = false, CTNode)
-    rightSlots.newLong("d", nullable = false, CTNode)
-    SlotConfigurationUtils.generateSlotAccessorFunctions(rightSlots)
+    val rightSlots = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = true, CTNode)
+      .newLong("b", nullable = false, CTNode)
+      .newLong("d", nullable = false, CTNode)
+      .build()
 
-    val hashSlots = SlotConfiguration.empty
-    hashSlots.newLong("a", nullable = true, CTNode)
-    hashSlots.newLong("b", nullable = false, CTNode)
-    hashSlots.newLong("d", nullable = false, CTNode)
-    hashSlots.newLong("c", nullable = true, CTNode)
-    SlotConfigurationUtils.generateSlotAccessorFunctions(hashSlots)
+    val hashSlots = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = true, CTNode)
+      .newLong("b", nullable = false, CTNode)
+      .newLong("d", nullable = false, CTNode)
+      .newLong("c", nullable = true, CTNode)
+      .build()
 
     val left = mockPipeFor(
       leftSlots,

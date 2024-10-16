@@ -19,7 +19,7 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.pipes
 
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.slotted.SlottedPipeMapper
 import org.neo4j.cypher.internal.util.symbols.CTNode
@@ -28,10 +28,10 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 class UnionSlottedPipeTest extends CypherFunSuite {
 
   test("close should close rhs and lhs when exhausted") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("b", nullable = false, CTNode)
-
+      .build()
     val lhs = FakeSlottedPipe(Seq(Map("a" -> 10), Map("a" -> 11)), slots)
     val rhs = FakeSlottedPipe(Seq(Map("b" -> 20), Map("b" -> 21)), slots)
     val mapping = SlottedPipeMapper.computeUnionRowMapping(slots, slots)
@@ -50,9 +50,10 @@ class UnionSlottedPipeTest extends CypherFunSuite {
   }
 
   test("close should close rhs and lhs") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val lhs = FakeSlottedPipe(Seq(Map("a" -> 10), Map("a" -> 11)), slots)
     val rhs = FakeSlottedPipe(Seq(Map("b" -> 20), Map("b" -> 21)), slots)
@@ -76,9 +77,10 @@ class UnionSlottedPipeTest extends CypherFunSuite {
   }
 
   test("close should not close rhs if it's not used") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newLong("a", nullable = false, CTNode)
       .newLong("b", nullable = false, CTNode)
+      .build()
 
     val lhs = FakeSlottedPipe(Seq(Map("a" -> 10), Map("a" -> 11)), slots)
     val rhs = FakeSlottedPipe(Seq(Map("b" -> 20), Map("b" -> 21)), slots)

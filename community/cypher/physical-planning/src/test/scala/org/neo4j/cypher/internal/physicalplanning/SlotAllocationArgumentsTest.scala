@@ -361,7 +361,7 @@ class SlotAllocationArgumentsTest extends CypherFunSuite with LogicalPlanningTes
     ).slotConfigurations
 
     // then
-    slots(distinct.id) should be(SlotConfiguration.empty
+    slots(distinct.id) should be(SlotConfigurationBuilder.empty
       .newLong("lhsLong0", false, CTNode)
       .newLong("rhsLong0", false, CTNode)
       .newLong("rhsLong1", false, CTNode) // kept because we don't break pipeline on distinct
@@ -401,7 +401,7 @@ class SlotAllocationArgumentsTest extends CypherFunSuite with LogicalPlanningTes
     ).slotConfigurations
 
     // then
-    slots(aggregation.id) should be(SlotConfiguration.empty
+    slots(aggregation.id) should be(SlotConfigurationBuilder.empty
       .newLong("lhsLong0", false, CTNode)
       .newLong("rhsLong0", false, CTNode)
       .newReference("lhsRef0", false, CTAny)

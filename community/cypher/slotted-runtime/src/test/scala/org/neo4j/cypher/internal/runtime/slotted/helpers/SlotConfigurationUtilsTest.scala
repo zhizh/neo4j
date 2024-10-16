@@ -19,8 +19,9 @@
  */
 package org.neo4j.cypher.internal.runtime.slotted.helpers
 
-import org.neo4j.cypher.internal.physicalplanning.Slot
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.KeyedSlot
+import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration.VariableSlotKey
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils.makeGetValueFromSlotFunctionFor
 import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils.makeSetPrimitiveNodeInSlotFunctionFor
 import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationUtils.makeSetPrimitiveRelationshipInSlotFunctionFor
@@ -45,27 +46,29 @@ import org.neo4j.values.virtual.VirtualValues
 // If this test class gets in your way you can just delete it
 class SlotConfigurationUtilsTest extends CypherFunSuite {
 
-  private val slots = SlotConfiguration.empty
+  private val slots = SlotConfigurationBuilder.empty
     .newLong("n1", nullable = false, CTNode)
     .newLong("n2", nullable = true, CTNode)
     .newLong("r1", nullable = false, CTRelationship)
     .newLong("r2", nullable = true, CTRelationship)
     .newReference("x", nullable = true, CTAny)
     .newReference("y", nullable = false, CTAny)
+    .build()
 
   // GETTING
 
-  private def assertGetLong(slot: Slot, longValue: Long, expectedValue: AnyValue) = {
+  private def assertGetLong(slot: KeyedSlot, longValue: Long, expectedValue: AnyValue) = {
     val context = SlottedRow(slots)
-    val getter = makeGetValueFromSlotFunctionFor(slot)
+    val getter = makeGetValueFromSlotFunctionFor(slot.slot)
 
     context.setLongAt(slot.offset, longValue)
     val value = getter(context)
     value should equal(expectedValue)
+    context.getByName(slot.key.asInstanceOf[VariableSlotKey].name) shouldBe expectedValue
   }
 
-  private def assertGetNode(slot: Slot, id: Long) = assertGetLong(slot, id, VirtualValues.node(id))
-  private def assertGetRelationship(slot: Slot, id: Long) = assertGetLong(slot, id, VirtualValues.relationship(id))
+  private def assertGetNode(slot: KeyedSlot, id: Long) = assertGetLong(slot, id, VirtualValues.node(id))
+  private def assertGetRelationship(slot: KeyedSlot, id: Long) = assertGetLong(slot, id, VirtualValues.relationship(id))
 
   test("getter for non-nullable node slot") {
     assertGetNode(slots("n1"), 42L)
@@ -95,7 +98,7 @@ class SlotConfigurationUtilsTest extends CypherFunSuite {
     val slot = slots("x")
 
     val context = SlottedRow(slots)
-    val getter = makeGetValueFromSlotFunctionFor(slot)
+    val getter = makeGetValueFromSlotFunctionFor(slot.slot)
 
     val expectedValue = Values.stringValue("the value")
     context.setRefAt(slot.offset, expectedValue)
@@ -105,24 +108,28 @@ class SlotConfigurationUtilsTest extends CypherFunSuite {
 
   // SETTING
 
-  private def assertSetLong(slot: Slot, value: AnyValue, expected: Long): Unit = {
+  private def assertSetLong(slot: KeyedSlot, value: AnyValue, expected: Long): Unit = {
     val context = SlottedRow(slots)
-    val setter = makeSetValueInSlotFunctionFor(slot)
-
+    val setter = makeSetValueInSlotFunctionFor(slot.slot)
     setter(context, value)
     context.getLongAt(slot.offset) should equal(expected)
+
+    val row = SlottedRow(slots)
+    row.set(slot.key.asInstanceOf[VariableSlotKey].name, value)
+    row.getLongAt(slot.offset) should equal(expected)
   }
 
-  private def assertSetNode(slot: Slot, id: Long): Unit = assertSetLong(slot, VirtualValues.node(id), id)
+  private def assertSetNode(slot: KeyedSlot, id: Long): Unit = assertSetLong(slot, VirtualValues.node(id), id)
 
-  private def assertSetRelationship(slot: Slot, id: Long): Unit =
+  private def assertSetRelationship(slot: KeyedSlot, id: Long): Unit =
     assertSetLong(slot, VirtualValues.relationship(id), id)
 
-  private def assertSetFails(slot: Slot, value: AnyValue): Unit = {
+  private def assertSetFails(slot: KeyedSlot, value: AnyValue): Unit = {
     val context = SlottedRow(slots)
-    val setter = makeSetValueInSlotFunctionFor(slot)
+    val setter = makeSetValueInSlotFunctionFor(slot.slot)
 
     a[ParameterWrongTypeException] should be thrownBy setter(context, value)
+    a[ParameterWrongTypeException] should be thrownBy context.set(slot.key.asInstanceOf[VariableSlotKey].name, value)
   }
 
   test("setter for non-nullable node slot") {
@@ -169,63 +176,87 @@ class SlotConfigurationUtilsTest extends CypherFunSuite {
     val slot = slots("x")
 
     val context = SlottedRow(slots)
-    val setter = makeSetValueInSlotFunctionFor(slot)
+    val setter = makeSetValueInSlotFunctionFor(slot.slot)
 
     val expectedValue = Values.stringValue("the value")
     setter(context, expectedValue)
-    val value = context.getRefAt(slot.offset)
-    value should equal(expectedValue)
+    context.getRefAt(slot.offset) shouldBe expectedValue
+
+    val row = SlottedRow(slots)
+    row.set("x", expectedValue)
+    row.getRefAt(slot.offset) shouldBe expectedValue
+    row.getByName("x") shouldBe expectedValue
   }
 
-  private def assertPrimitiveNodeSetLong(slot: Slot, id: Long): Unit = {
+  private def assertPrimitiveNodeSetLong(slot: KeyedSlot, id: Long): Unit = {
     val context = SlottedRow(slots)
-    val primitiveNodeSetter = makeSetPrimitiveNodeInSlotFunctionFor(slot)
+    val primitiveNodeSetter = makeSetPrimitiveNodeInSlotFunctionFor(slot.slot)
 
     primitiveNodeSetter(context, id, TestEntityById)
     context.getLongAt(slot.offset) should equal(id)
+
+    val row = SlottedRow(slots)
+    row.set(slot.key.asInstanceOf[VariableSlotKey].name, if (id == -1) Values.NO_VALUE else VirtualValues.node(id))
+    row.getLongAt(slot.offset) shouldBe id
+    row.getByName(slot.key.asInstanceOf[VariableSlotKey].name) shouldBe
+      (if (id == -1) Values.NO_VALUE else VirtualValues.node(id))
   }
 
-  private def assertPrimitiveRelationshipSetLong(slot: Slot, id: Long): Unit = {
+  private def assertPrimitiveRelationshipSetLong(slot: KeyedSlot, id: Long): Unit = {
     val context = SlottedRow(slots)
-    val primitiveRelationshipSetter = makeSetPrimitiveRelationshipInSlotFunctionFor(slot)
+    val primitiveRelationshipSetter = makeSetPrimitiveRelationshipInSlotFunctionFor(slot.slot)
 
     primitiveRelationshipSetter(context, id, TestEntityById)
-    context.getLongAt(slot.offset) should equal(id)
+    context.getLongAt(slot.offset) shouldBe id
+
+    val row = SlottedRow(slots)
+    row.setPrimitiveRel(slot.key, id)
+    context.getLongAt(slot.offset) shouldBe id
   }
 
-  private def assertPrimitiveNodeSetRef(slot: Slot, id: Long, expected: AnyValue): Unit = {
+  private def assertPrimitiveNodeSetRef(slot: KeyedSlot, id: Long, expected: AnyValue): Unit = {
     val context = SlottedRow(slots)
-    val primitiveNodeSetter = makeSetPrimitiveNodeInSlotFunctionFor(slot)
+    val primitiveNodeSetter = makeSetPrimitiveNodeInSlotFunctionFor(slot.slot)
 
     primitiveNodeSetter(context, id, TestEntityById)
     context.getRefAt(slot.offset) should equal(expected)
+
+    val row = SlottedRow(slots)
+    row.setPrimitiveNode(slot.key, id)
+    row.getRefAt(slot.offset) shouldBe expected
   }
 
-  private def assertPrimitiveRelationshipSetRef(slot: Slot, id: Long, expected: AnyValue): Unit = {
+  private def assertPrimitiveRelationshipSetRef(slot: KeyedSlot, id: Long, expected: AnyValue): Unit = {
     val context = SlottedRow(slots)
-    val primitiveRelationshipSetter = makeSetPrimitiveRelationshipInSlotFunctionFor(slot)
+    val primitiveRelationshipSetter = makeSetPrimitiveRelationshipInSlotFunctionFor(slot.slot)
 
     primitiveRelationshipSetter(context, id, TestEntityById)
     context.getRefAt(slot.offset) should equal(expected)
+
+    val row = SlottedRow(slots)
+    row.setPrimitiveRel(slot.key, id)
+    row.getRefAt(slot.offset) shouldBe expected
   }
 
-  private def assertPrimitiveNodeSetFails(slot: Slot, id: Long): Unit = {
+  private def assertPrimitiveNodeSetFails(slot: KeyedSlot, id: Long): Unit = {
     val context = SlottedRow(slots)
-    val setter = makeSetPrimitiveNodeInSlotFunctionFor(slot)
+    val setter = makeSetPrimitiveNodeInSlotFunctionFor(slot.slot)
 
     // The setter only throws if assertions are enabled
     if (isAssertionsEnabled) {
       a[ParameterWrongTypeException] should be thrownBy setter(context, id, TestEntityById)
+      a[AssertionError] should be thrownBy context.setPrimitiveNode(slot.key, id)
     }
   }
 
-  private def assertPrimitiveRelationshipSetFails(slot: Slot, id: Long): Unit = {
+  private def assertPrimitiveRelationshipSetFails(slot: KeyedSlot, id: Long): Unit = {
     val context = SlottedRow(slots)
-    val setter = makeSetPrimitiveRelationshipInSlotFunctionFor(slot)
+    val setter = makeSetPrimitiveRelationshipInSlotFunctionFor(slot.slot)
 
     // The setter only throws if assertions are enabled
     if (isAssertionsEnabled) {
       a[ParameterWrongTypeException] should be thrownBy setter(context, id, TestEntityById)
+      a[AssertionError] should be thrownBy context.setPrimitiveRel(slot.key, id)
     }
   }
 

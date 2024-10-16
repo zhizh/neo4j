@@ -44,7 +44,7 @@ case class NodeIndexSeekSlottedPipe(
   slots: SlotConfiguration
 )(val id: Id = Id.INVALID_ID) extends Pipe with EntityIndexSeeker with IndexSlottedPipeWithValues {
 
-  override val offset: Int = slots.getLongOffsetFor(ident)
+  override val offset: Int = slots.longOffset(ident)
 
   override val propertyIds: Array[Int] = properties.map(_.propertyKeyId).toArray
 

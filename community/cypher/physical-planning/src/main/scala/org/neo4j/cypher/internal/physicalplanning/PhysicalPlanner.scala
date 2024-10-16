@@ -24,8 +24,6 @@ import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.ApplyPlans
 import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.ArgumentSizes
 import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.LiveVariables
-import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.NestedPlanArgumentConfigurations
-import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.SlotConfigurations
 import org.neo4j.cypher.internal.physicalplanning.PhysicalPlanningAttributes.TrailPlans
 import org.neo4j.cypher.internal.planner.spi.ReadTokenContext
 import org.neo4j.cypher.internal.runtime.CypherRuntimeConfiguration
@@ -37,6 +35,7 @@ import org.neo4j.cypher.internal.runtime.expressionVariableAllocation.Result
 import org.neo4j.cypher.internal.runtime.slottedParameters
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.CancellationChecker
+import org.neo4j.cypher.internal.util.attribution.ImmutableAttribute
 
 object PhysicalPlanner {
 
@@ -71,20 +70,19 @@ object PhysicalPlanner {
       cancellationChecker,
       allocatePipelinedSlots
     )
-    val slottedRewriter = new SlottedRewriter(tokenContext)
-    val finalLogicalPlan =
-      slottedRewriter(withSlottedParameters, slotMetaData.slotConfigurations, slotMetaData.trailPlans)
+    val finalLogicalPlan = new SlottedRewriter(tokenContext)
+      .apply(withSlottedParameters, slotMetaData.slotConfigurations, slotMetaData.trailPlans)
     DebugSupport.PHYSICAL_PLANNING.log(
       "======== END Physical Planning =================================================================="
     )
     PhysicalPlan(
       finalLogicalPlan,
       nExpressionSlots,
-      slotMetaData.slotConfigurations,
+      slotMetaData.slotConfigurations.finalizeSlots(),
       slotMetaData.argumentSizes,
       slotMetaData.applyPlans,
       slotMetaData.trailPlans,
-      slotMetaData.nestedPlanArgumentConfigurations,
+      slotMetaData.nestedPlanArgumentConfigurations.finalizeSlots(),
       availableExpressionVars,
       parameterMapping
     )
@@ -94,11 +92,11 @@ object PhysicalPlanner {
 case class PhysicalPlan(
   logicalPlan: LogicalPlan,
   nExpressionSlots: Int,
-  slotConfigurations: SlotConfigurations,
+  slotConfigurations: ImmutableAttribute[SlotConfiguration],
   argumentSizes: ArgumentSizes,
   applyPlans: ApplyPlans,
   trailPlans: TrailPlans,
-  nestedPlanArgumentConfigurations: NestedPlanArgumentConfigurations,
+  nestedPlanArgumentConfigurations: ImmutableAttribute[SlotConfiguration],
   availableExpressionVariables: AvailableExpressionVariables,
   parameterMapping: ParameterMapping
 )

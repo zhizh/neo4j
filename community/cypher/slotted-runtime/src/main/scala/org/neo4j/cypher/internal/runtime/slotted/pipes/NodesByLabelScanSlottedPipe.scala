@@ -36,7 +36,7 @@ case class NodesByLabelScanSlottedPipe(
   indexOrder: IndexOrder
 )(val id: Id = Id.INVALID_ID) extends Pipe {
 
-  private val offset = slots.getLongOffsetFor(ident)
+  private val offset = slots.longOffset(ident)
 
   protected def internalCreateResults(state: QueryState): ClosingIterator[CypherRow] = {
 

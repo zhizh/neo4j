@@ -25,6 +25,7 @@ import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorContinue
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorFail
 import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateTestSupport
 import org.neo4j.cypher.internal.runtime.interpreted.commands.LiteralHelper.literal
@@ -41,8 +42,9 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QueryStateTestSupport {
 
   test("should close on failure with ON ERROR FAIL") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newReference("status", nullable = true, CTMap)
+      .build()
 
     val lhs = FakeSlottedPipe(slots, Seq(Map(), Map(), Map()))
     val rhs = FakeSlottedPipe(slots, Seq(Map(), Map()), new FailingNextIterable(Map(), Map()), Seq(Map()))
@@ -53,7 +55,7 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
       literal(1),
       OnErrorFail,
       Set.empty,
-      slots.get("status"),
+      slots.getSlot("status"),
       SlotConfiguration.Size.zero
     )()
 
@@ -78,8 +80,9 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
   }
 
   test("should close on failure with ON ERROR BREAK") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newReference("status", nullable = true, CTMap)
+      .build()
 
     val lhs = FakeSlottedPipe(slots, Seq(Map(), Map(), Map()))
     val rhs = FakeSlottedPipe(slots, Seq(Map(), Map()), new FailingNextIterable(Map(), Map()), Seq(Map(), Map()))
@@ -90,7 +93,7 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
       literal(1),
       OnErrorBreak,
       Set.empty,
-      slots.get("status"),
+      slots.getSlot("status"),
       SlotConfiguration.Size.zero
     )()
 
@@ -117,8 +120,9 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
   }
 
   test("should close on failure with ON ERROR CONTINUE") {
-    val slots = SlotConfiguration.empty
+    val slots = SlotConfigurationBuilder.empty
       .newReference("status", nullable = true, CTMap)
+      .build()
 
     val lhs = FakeSlottedPipe(slots, Seq(Map(), Map(), Map(), Map()))
     val rhs = FakeSlottedPipe(
@@ -135,7 +139,7 @@ class TransactionApplySlottedPipeTest extends GraphDatabaseFunSuite with QuerySt
       literal(1),
       OnErrorContinue,
       Set.empty,
-      slots.get("status"),
+      slots.getSlot("status"),
       SlotConfiguration.Size.zero
     )()
 

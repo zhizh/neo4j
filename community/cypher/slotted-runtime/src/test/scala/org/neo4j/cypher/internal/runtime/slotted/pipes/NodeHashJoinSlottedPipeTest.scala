@@ -23,7 +23,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.verifyNoMoreInteractions
-import org.neo4j.cypher.internal.physicalplanning.SlotConfiguration
+import org.neo4j.cypher.internal.physicalplanning.SlotConfigurationBuilder
 import org.neo4j.cypher.internal.runtime.ResourceManager
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Pipe
@@ -47,8 +47,9 @@ class NodeHashJoinSlottedPipeTest extends CypherFunSuite {
     // given
     val queryState = QueryStateHelper.emptyWithValueSerialization
 
-    val slots = SlotConfiguration.empty
-    slots.newLong("a", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = false, CTNode)
+      .build()
 
     val left = mockPipeFor(slots)
 
@@ -73,8 +74,9 @@ class NodeHashJoinSlottedPipeTest extends CypherFunSuite {
     // given
     val queryState = QueryStateHelper.emptyWithValueSerialization
 
-    val slots = SlotConfiguration.empty
-    slots.newLong("a", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = false, CTNode)
+      .build()
 
     val left = mockPipeFor(slots, RowL(NULL))
     val right = mockPipeFor(slots, RowL(node0))
@@ -106,21 +108,24 @@ class NodeHashJoinSlottedPipeTest extends CypherFunSuite {
       RowL(i.toLong, i.toLong)
     }
 
-    val lhs = SlotConfiguration.empty
-    lhs.newLong("a", nullable = false, CTNode)
-    lhs.newLong("b", nullable = false, CTNode)
+    val lhs = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = false, CTNode)
+      .newLong("b", nullable = false, CTNode)
+      .build()
 
-    val rhs = SlotConfiguration.empty
-    rhs.newLong("b", nullable = false, CTNode)
-    rhs.newLong("c", nullable = false, CTNode)
+    val rhs = SlotConfigurationBuilder.empty
+      .newLong("b", nullable = false, CTNode)
+      .newLong("c", nullable = false, CTNode)
+      .build()
 
-    val output = SlotConfiguration.empty
-    output.newLong("a", nullable = false, CTNode)
-    output.newLong("b", nullable = false, CTNode)
-    output.newLong("c", nullable = false, CTNode)
+    val output = SlotConfigurationBuilder.empty
+      .newLong("a", nullable = false, CTNode)
+      .newLong("b", nullable = false, CTNode)
+      .newLong("c", nullable = false, CTNode)
+      .build()
 
     val lhsPipe = mockPipeFor(lhs, a_b: _*)
-    val rhsPipe = mockPipeFor(lhs, b_c: _*)
+    val rhsPipe = mockPipeFor(rhs, b_c: _*)
 
     // when
     val result = NodeHashJoinSlottedPipe(
@@ -144,8 +149,9 @@ class NodeHashJoinSlottedPipeTest extends CypherFunSuite {
     val monitor = QueryStateHelper.trackClosedMonitor
     val queryState = QueryStateHelper.emptyWithResourceManager(new ResourceManager(monitor))
 
-    val slots = SlotConfiguration.empty
-    slots.newLong("n", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty
+      .newLong("n", nullable = false, CTNode)
+      .build()
 
     val left = mockPipeFor(slots, RowL(node0))
     val right = mockPipeFor(slots, RowL(node0))
@@ -169,8 +175,9 @@ class NodeHashJoinSlottedPipeTest extends CypherFunSuite {
     val monitor = QueryStateHelper.trackClosedMonitor
     val queryState = QueryStateHelper.emptyWithResourceManager(new ResourceManager(monitor))
 
-    val slots = SlotConfiguration.empty
-    slots.newLong("n", nullable = false, CTNode)
+    val slots = SlotConfigurationBuilder.empty
+      .newLong("n", nullable = false, CTNode)
+      .build()
 
     val left = mockPipeFor(slots, RowL(node0))
     val right = mockPipeFor(slots, RowL(node0))

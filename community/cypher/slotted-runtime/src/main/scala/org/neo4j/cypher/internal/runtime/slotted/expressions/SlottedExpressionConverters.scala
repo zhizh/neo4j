@@ -109,7 +109,7 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
   ): Option[GroupingExpression] = {
     val slots = physicalPlan.slotConfigurations(id)
     val orderedGroupings = orderGroupingKeyExpressions(projections, orderToLeverage)(slots)
-      .map(e => (slots(e._1), self.toCommandExpression(id, e._2), e._3))
+      .map(e => (slots(e._1).slot, self.toCommandExpression(id, e._2), e._3))
 
     orderedGroupings.toList match {
       case Nil                       => Some(EmptyGroupingExpression)
@@ -440,15 +440,15 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
       case e: NestedPipeGetByNameExpression =>
         Some(slotted.expressions.NestedPipeGetByNameSlottedExpression(
           e.pipe,
-          physicalPlan.slotConfigurations(e.pipe.id)(e.columnNameToGet),
+          physicalPlan.slotConfigurations(e.pipe.id)(e.columnNameToGet).slot,
           physicalPlan.nestedPlanArgumentConfigurations(e.pipe.id),
           e.availableExpressionVariables.map(commands.expressions.ExpressionVariable.of).toArray,
           id
         ))
       case e: physicalplanning.ast.TrailRelationshipUniqueness =>
         val trailStateMetadataSlotOffset =
-          physicalPlan.slotConfigurations(id).getMetaDataOffsetFor(e.trailStateMetadataSlotKey, Id(e.trailId))
-        val innerRelSlot = physicalPlan.slotConfigurations(id)(e.innerRelationship)
+          physicalPlan.slotConfigurations(id).metaDataOffset(e.trailStateMetadataSlotKey, Id(e.trailId))
+        val innerRelSlot = physicalPlan.slotConfigurations(id)(e.innerRelationship).slot
         Some(TrailRelationshipsUniqueExpression(trailStateMetadataSlotOffset, innerRelSlot))
       case _ =>
         None
