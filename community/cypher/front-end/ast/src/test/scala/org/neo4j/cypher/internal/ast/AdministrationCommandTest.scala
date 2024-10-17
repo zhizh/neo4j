@@ -59,7 +59,10 @@ import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.cypher.internal.util.symbols.CTList
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
+import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.scalatest.prop.TableDrivenPropertyChecks._
 
 import java.nio.charset.StandardCharsets
@@ -119,6 +122,13 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
         }
       }
     }
+  }
+
+  def getGql42N97(clause: String, authProvider: String) = {
+    ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N97)
+      .withParam(GqlParams.StringParam.clause, clause)
+      .withParam(GqlParams.StringParam.auth, authProvider)
+      .build()
   }
 
   test("allAuthAttributes should be up to date") {
@@ -1492,7 +1502,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Clause `SET PASSWORD` is mandatory for auth provider `native`.", pos1).errors
+      .error(
+        getGql42N97("SET PASSWORD", "native"),
+        initialState,
+        "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
+        pos1
+      ).errors
   }
 
   test("CREATE USER foo SET STATUS SUSPENDED") {
@@ -1518,7 +1533,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Clause `SET PASSWORD` is mandatory for auth provider `native`.", pos1).errors
+      .error(
+        getGql42N97("SET PASSWORD", "native"),
+        initialState,
+        "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
+        pos1
+      ).errors
   }
 
   test("CREATE USER foo IF NOT EXISTS SET PASSWORD CHANGE REQUIRED") {
@@ -1531,7 +1551,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Clause `SET PASSWORD` is mandatory for auth provider `native`.", pos1).errors
+      .error(
+        getGql42N97("SET PASSWORD", "native"),
+        initialState,
+        "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
+        pos1
+      ).errors
   }
 
   test("CREATE USER foo IF NOT EXISTS SET STATUS ACTIVE") {
@@ -1557,7 +1582,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Clause `SET PASSWORD` is mandatory for auth provider `native`.", pos1).errors
+      .error(
+        getGql42N97("SET PASSWORD", "native"),
+        initialState,
+        "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
+        pos1
+      ).errors
   }
 
   test("CREATE OR REPLACE USER foo SET PASSWORD CHANGE NOT REQUIRED") {
@@ -1570,7 +1600,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Clause `SET PASSWORD` is mandatory for auth provider `native`.", pos1).errors
+      .error(
+        getGql42N97("SET PASSWORD", "native"),
+        initialState,
+        "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
+        pos1
+      ).errors
   }
 
   test("CREATE OR REPLACE USER foo SET STATUS SUSPENDED") {
@@ -1596,7 +1631,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Clause `SET PASSWORD` is mandatory for auth provider `native`.", pos1).errors
+      .error(
+        getGql42N97("SET PASSWORD", "native"),
+        initialState,
+        "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
+        pos1
+      ).errors
   }
 
   test("CREATE USER foo SET PASSWORD $password CHANGE NOT REQUIRED SET PASSWORD CHANGE REQUIRED") {
@@ -1629,7 +1669,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
-      .error(initialState, "Clause `SET PASSWORD` is mandatory for auth provider `native`.", pos1).errors
+      .error(
+        getGql42N97("SET PASSWORD", "native"),
+        initialState,
+        "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
+        pos1
+      ).errors
   }
 
   test("CREATE USER foo SET AUTH PROVIDER 'native' { SET ID 'foo' }") {
@@ -1642,6 +1687,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     val error1 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos1
@@ -1675,7 +1721,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     val error1 =
-      SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider `foo`.", pos1).errors
+      SemanticCheckResult.error(
+        getGql42N97("SET ID", "foo"),
+        initialState,
+        "Clause `SET ID` is mandatory for auth provider `foo`.",
+        pos1
+      ).errors
     val gql2 = GqlHelper.getGql42001_22N04(
       "SET PASSWORD",
       "auth provider 'foo' attribute",
@@ -1711,6 +1762,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
     val error1 = SemanticCheckResult.error(initialState, "Duplicate `SET AUTH 'native'` clause.", pos3).errors
     val error2 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos3
@@ -1735,11 +1787,13 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
     val error1 = SemanticCheckResult.error(initialState, "Duplicate `SET AUTH 'native'` clause.", pos3).errors
     val error2 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos1
     ).errors
     val error3 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos3
@@ -1779,6 +1833,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       pos3
     ).errors
     val error2 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos3
@@ -1801,6 +1856,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       pos1
     ).errors
     val error2 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos2
@@ -1823,11 +1879,13 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       pos3
     ).errors
     val error2 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos1
     ).errors
     val error3 = SemanticCheckResult.error(
+      getGql42N97("SET PASSWORD", "native"),
       initialState,
       "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
       pos3
@@ -1970,6 +2028,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
+        getGql42N97("SET PASSWORD", "native"),
         initialState,
         "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
         pos2
@@ -1987,6 +2046,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
     val error1 =
       SemanticCheckResult.error(
+        getGql42N97("SET PASSWORD", "native"),
         initialState,
         "Clause `SET PASSWORD` is mandatory for auth provider `native`.",
         pos3
@@ -2064,7 +2124,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     val error1 =
-      SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider ``.", pos1).errors
+      SemanticCheckResult.error(
+        getGql42N97("SET ID", ""),
+        initialState,
+        "Clause `SET ID` is mandatory for auth provider ``.",
+        pos1
+      ).errors
     val gql2 =
       GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider '' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     val error2 =
@@ -2105,7 +2170,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     )(p)
 
     val error1 =
-      SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider ``.", pos1).errors
+      SemanticCheckResult.error(
+        getGql42N97("SET ID", ""),
+        initialState,
+        "Clause `SET ID` is mandatory for auth provider ``.",
+        pos1
+      ).errors
     val gql2 =
       GqlHelper.getGql42001_22N04("SET PASSWORD", "auth provider '' attribute", java.util.List.of("SET ID"), 2, 0, 0)
     val error2 =
@@ -2271,7 +2341,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
         pos2
       ).errors
     val error2 =
-      SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider `foo`.", pos1).errors
+      SemanticCheckResult.error(
+        getGql42N97("SET ID", "foo"),
+        initialState,
+        "Clause `SET ID` is mandatory for auth provider `foo`.",
+        pos1
+      ).errors
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2
   }
 
@@ -2622,7 +2697,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       pos1
     ).errors
     val error3 =
-      SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider ``.", pos1).errors
+      SemanticCheckResult.error(
+        getGql42N97("SET ID", ""),
+        initialState,
+        "Clause `SET ID` is mandatory for auth provider ``.",
+        pos1
+      ).errors
     alterUser.semanticCheck.run(
       initialState,
       SemanticCheckContext.default
@@ -2668,7 +2748,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       pos1
     ).errors
     val error3 =
-      SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider ``.", pos1).errors
+      SemanticCheckResult.error(
+        getGql42N97("SET ID", ""),
+        initialState,
+        "Clause `SET ID` is mandatory for auth provider ``.",
+        pos1
+      ).errors
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2 ++ error3
   }
 
@@ -2819,7 +2904,12 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       pos1
     ).errors
     val error3 =
-      SemanticCheckResult.error(initialState, "Clause `SET ID` is mandatory for auth provider `foo`.", pos2).errors
+      SemanticCheckResult.error(
+        getGql42N97("SET ID", "foo"),
+        initialState,
+        "Clause `SET ID` is mandatory for auth provider `foo`.",
+        pos2
+      ).errors
     alterUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe error1 ++ error2 ++ error3
   }
 

@@ -531,7 +531,7 @@ sealed trait AuthImpl extends ASTNode with SemanticAnalysisTooling {
   protected def requiredAttributes(func: AuthAttribute => Boolean, name: String): SemanticCheck =
     authAttributes.find(func) match {
       case Some(_) => success
-      case None    => error(missingRequiredClauseErrorMessage(name), position)
+      case None    => missingMandatoryAuthClauseError(name, provider, missingRequiredClauseErrorMessage(name), position)
     }
 
   protected def noUnsupportedAttributes(func: AuthAttribute => Boolean): SemanticCheck = {
@@ -588,7 +588,12 @@ final case class ExternalAuth(provider: String, authAttributes: List[AuthAttribu
 
   def checkIdIsStringLiteralOrParameter: SemanticCheck =
     maybeId.map(id => checkIsStringLiteralOrParameter("id", id))
-      .getOrElse(error(missingRequiredClauseErrorMessage("SET ID"), position))
+      .getOrElse(missingMandatoryAuthClauseError(
+        "SET ID",
+        provider,
+        missingRequiredClauseErrorMessage("SET ID"),
+        position
+      ))
 
   // this is expected to only be called after checkRequiredAttributes has been called
   def id: Expression = maybeId.get

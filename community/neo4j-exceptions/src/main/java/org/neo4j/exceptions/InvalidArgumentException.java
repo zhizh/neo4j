@@ -243,4 +243,13 @@ public class InvalidArgumentException extends Neo4jException {
                 gql,
                 String.format("%s: Parameterized database and graph names do not support wildcards.", messageStart));
     }
+
+    public static InvalidArgumentException missingMandatoryAuthClause(
+            String clause, String authProvider, String legacyMessage) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N97)
+                .withParam(GqlParams.StringParam.clause, clause)
+                .withParam(GqlParams.StringParam.auth, authProvider)
+                .build();
+        return new InvalidArgumentException(gql, legacyMessage);
+    }
 }

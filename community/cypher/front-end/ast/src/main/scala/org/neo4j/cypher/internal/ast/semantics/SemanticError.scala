@@ -307,6 +307,23 @@ object SemanticError {
       originalPropertyType.position
     )
   }
+
+  def missingMandatoryAuthClause(
+    clause: String,
+    authProvider: String,
+    legacyMessage: String,
+    pos: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N97)
+      .withParam(GqlParams.StringParam.clause, clause)
+      .withParam(GqlParams.StringParam.auth, authProvider)
+      .build()
+    SemanticError(
+      gql,
+      legacyMessage,
+      pos
+    )
+  }
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

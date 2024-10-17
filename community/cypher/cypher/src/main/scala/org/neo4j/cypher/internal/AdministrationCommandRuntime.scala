@@ -614,7 +614,9 @@ object AdministrationCommandRuntime {
               "User has no auth provider. Add at least one auth provider for the user or consider suspending them."
             ))
           case (3, value: BooleanValue, _) if !value.booleanValue() =>
-            ThrowException(new InvalidArgumentException(
+            ThrowException(InvalidArgumentException.missingMandatoryAuthClause(
+              "SET PASSWORD",
+              NATIVE_AUTH,
               s"Clause `SET PASSWORD` is mandatory for auth provider `$NATIVE_AUTH`."
             ))
           case _ => validateAuth(externalAuths, nativeAuth)
