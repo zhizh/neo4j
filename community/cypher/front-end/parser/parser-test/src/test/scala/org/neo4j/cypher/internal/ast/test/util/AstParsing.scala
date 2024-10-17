@@ -91,7 +91,7 @@ object AstParsing extends AstParsing {
   sealed trait ParserInTest
 
   object ParserInTest {
-    val AllParsers: Seq[ParserInTest] = Seq(Cypher5JavaCc, Cypher5, Cypher25)
+    val AllParsers: Seq[ParserInTest] = Seq(Cypher5, Cypher25, Cypher5JavaCc)
   }
   case object Cypher5JavaCc extends ParserInTest
   case object Cypher5 extends ParserInTest
