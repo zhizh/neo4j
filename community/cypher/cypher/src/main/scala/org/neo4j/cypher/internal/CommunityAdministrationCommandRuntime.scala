@@ -221,11 +221,12 @@ case class CommunityAdministrationCommandRuntime(
       context => checkAdminRightsForDBMSOrSelf(user, actions)(context)
 
     // Check that the specified user is not the logged in user (eg. for some CREATE/DROP/ALTER USER commands)
-    case AssertNotCurrentUser(source, userName, verb, violationMessage) => context =>
+    case AssertNotCurrentUser(source, userName, verb, violationMessage, errorGqlStatusObject) => context =>
         PredicateExecutionPlan(
           (params, sc) => !sc.subject().hasUsername(runtimeStringValue(userName, params)),
           onViolation = (_, _, sc) =>
             new InvalidArgumentException(
+              errorGqlStatusObject,
               s"Failed to $verb the specified user '${sc.subject().executingUser()}': $violationMessage."
             ),
           source = Some(fullLogicalToExecutable.applyOrElse(source, throwCantCompile).apply(context))

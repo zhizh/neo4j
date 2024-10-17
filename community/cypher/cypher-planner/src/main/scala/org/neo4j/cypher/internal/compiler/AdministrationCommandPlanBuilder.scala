@@ -169,6 +169,8 @@ import org.neo4j.cypher.internal.util.StepSequencer
 import org.neo4j.cypher.internal.util.attribution.SequentialIdGen
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.PRIMARY_PROPERTY
 import org.neo4j.exceptions.InvalidSemanticsException
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 /**
  * This planner takes on queries that run at the DBMS level for multi-database administration.
@@ -289,7 +291,9 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
                 plans.AssertAllowedDbmsActions(None, Seq(DropUserAction, CreateUserAction)),
                 userName,
                 "replace",
-                "Deleting yourself is not allowed"
+                "Deleting yourself is not allowed",
+                ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N99)
+                  .build()
               ),
               userName
             )
@@ -329,7 +333,9 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
           plans.AssertAllowedDbmsActions(DropUserAction),
           userName,
           "delete",
-          "Deleting yourself is not allowed"
+          "Deleting yourself is not allowed",
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N99)
+            .build()
         )
         val source =
           if (ifExists) plans.DoNothingIfNotExists(assertAllowed, "DROP USER", plans.UserEntity, userName, "delete")

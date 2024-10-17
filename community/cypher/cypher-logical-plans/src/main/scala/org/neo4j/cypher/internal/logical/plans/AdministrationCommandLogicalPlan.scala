@@ -51,6 +51,7 @@ import org.neo4j.cypher.internal.util.attribution.IdGen
 import org.neo4j.exceptions.DatabaseAdministrationException
 import org.neo4j.exceptions.NotSystemDatabaseException
 import org.neo4j.exceptions.SecurityAdministrationException
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 
 abstract class AdministrationCommandLogicalPlan(
   source: Option[AdministrationCommandLogicalPlan] = None
@@ -223,7 +224,8 @@ case class AssertNotCurrentUser(
   source: PrivilegePlan,
   userName: Either[String, Parameter],
   verb: String,
-  violationMessage: String
+  violationMessage: String,
+  errorGqlStatusObject: ErrorGqlStatusObject
 )(implicit idGen: IdGen) extends PrivilegePlan(Some(source))
 
 case class AssertManagementActionNotBlocked(action: AdministrationAction)(implicit idGen: IdGen) extends PrivilegePlan
