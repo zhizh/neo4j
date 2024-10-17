@@ -324,6 +324,17 @@ object SemanticError {
       pos
     )
   }
+
+  def duplicateClause(clause: String, legacyMessage: String, pos: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N19)
+      .withParam(GqlParams.StringParam.syntax, clause)
+      .build()
+    SemanticError(
+      gql,
+      legacyMessage,
+      pos
+    )
+  }
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

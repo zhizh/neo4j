@@ -343,6 +343,13 @@ trait SemanticAnalysisTooling {
   ): SemanticCheck =
     SemanticCheck.error(SemanticError.missingMandatoryAuthClause(clause, authProvider, legacyMessage, position))
 
+  def duplicateClauseError(
+    clause: String,
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheck =
+    SemanticCheck.error(SemanticError.duplicateClause(clause, legacyMessage, position))
+
   def warn(notification: InternalNotification): SemanticCheck = SemanticCheck.warn(notification)
 
   def possibleTypes(expression: Expression): TypeGenerator =

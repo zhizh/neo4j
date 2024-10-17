@@ -348,7 +348,11 @@ sealed trait UserAuth extends SemanticAnalysisTooling {
 
   protected def checkDuplicateAuth: SemanticCheck = newStyleAuth.groupBy(_.provider).collectFirst {
     case (_, List(_, duplicate, _*)) =>
-      error(s"Duplicate `SET AUTH '${duplicate.provider}'` clause.", duplicate.position)
+      duplicateClauseError(
+        s"SET AUTH '${duplicate.provider}'",
+        s"Duplicate `SET AUTH '${duplicate.provider}'` clause.",
+        duplicate.position
+      )
   }.getOrElse(success)
 
   protected def checkOldAndNewStyleCombination: SemanticCheck = newStyleAuth.filter(_.provider == NATIVE_AUTH) match {
@@ -521,7 +525,8 @@ sealed trait AuthImpl extends ASTNode with SemanticAnalysisTooling {
   def checkNoUnsupportedAttributes: SemanticCheck
 
   def checkDuplicates: SemanticCheck = authAttributes.groupBy(_.name).collectFirst {
-    case (_, List(_, duplicate, _*)) => error(s"Duplicate `${duplicate.name}` clause.", duplicate.position)
+    case (_, List(_, duplicate, _*)) =>
+      duplicateClauseError(duplicate.name, s"Duplicate `${duplicate.name}` clause.", duplicate.position)
   }.getOrElse(success)
 
   def checkProviderName: SemanticCheck =
