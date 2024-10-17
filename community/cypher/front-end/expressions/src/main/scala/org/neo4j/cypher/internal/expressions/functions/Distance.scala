@@ -30,7 +30,7 @@ case object Distance extends Function {
       argumentTypes = Vector(CTPoint, CTPoint),
       outputType = CTFloat,
       description =
-        "Returns a `FLOAT` representing the geodesic distance between any two points in the same CRS.",
+        "Returns a `FLOAT` representing the distance between any two points in the same CRS. If the points are in the WGS 84 CRS, the function returns the geodesic distance (i.e., the shortest path along the curved surface of the Earth). If the points are in a Cartesian CRS, the function returns the Euclidean distance (i.e., the shortest straight-line distance in a flat, planar space).",
       category = Category.SPATIAL,
       argumentDescriptions = Map("from" -> "A start point.", "to" -> "An end point in the same CRS as the start point.")
     )
