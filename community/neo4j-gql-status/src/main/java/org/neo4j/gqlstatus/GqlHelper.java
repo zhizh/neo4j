@@ -89,7 +89,6 @@ public class GqlHelper {
     private static ErrorGqlStatusObject getGql22N77(
             String entityType, long entityId, String tokenType, String token, String[] propKeyList) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N77)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.entityType, entityType)
                 .withParam(GqlParams.NumberParam.entityId, entityId)
                 .withParam(GqlParams.StringParam.tokenType, tokenType)
@@ -239,6 +238,38 @@ public class GqlHelper {
 
     public static ErrorGqlStatusObject get51N00() {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql22NA0_22NA4(String predicate) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA0)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA4)
+                        .withParam(GqlParams.StringParam.pred, predicate)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql22NA0_22NA5(String predicate) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA0)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA5)
+                        .withParam(GqlParams.StringParam.pred, predicate)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql22NA0_22NA6(String predicate) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA0)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA6)
+                        .withParam(GqlParams.StringParam.pred, predicate)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql22NA0_22NB0(String predicate) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA0)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NB0)
+                        .withParam(GqlParams.StringParam.pred, predicate)
+                        .build())
                 .build();
     }
 

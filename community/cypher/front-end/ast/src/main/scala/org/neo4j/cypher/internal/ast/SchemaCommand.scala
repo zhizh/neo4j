@@ -53,6 +53,9 @@ import org.neo4j.cypher.internal.util.symbols.PropertyValueType
 import org.neo4j.cypher.internal.util.symbols.StringType
 import org.neo4j.cypher.internal.util.symbols.ZonedDateTimeType
 import org.neo4j.cypher.internal.util.symbols.ZonedTimeType
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 sealed trait SchemaCommand extends StatementWithGraph with SemanticAnalysisTooling {
 
@@ -592,7 +595,15 @@ sealed trait CreateConstraint extends SchemaCommand {
           if (containsPropertyValueType) (originalPropertyType.description, additionalErrorInfo(originalPropertyType))
           else (normalizedPropertyType.description, additionalErrorInfo(normalizedPropertyType))
 
+        val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N11)
+          .withParam(GqlParams.StringParam.constrDescrOrName, constraintType.description)
+          .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N90)
+            .withParam(GqlParams.StringParam.item, typeDescription)
+            .build())
+          .build()
+
         error(
+          gql,
           s"Failed to create ${constraintType.description} constraint: " +
             s"Invalid property type `$typeDescription`.$additionalError",
           originalPropertyType.position
@@ -606,10 +617,9 @@ sealed trait CreateConstraint extends SchemaCommand {
       case r @ SemanticCheckResult(_, Nil) => r
       case SemanticCheckResult(state, _) => SemanticCheckResult(
           state,
-          Seq(SemanticError(
-            s"Failed to create ${constraintType.description} constraint: " +
-              s"Invalid property type `${originalPropertyType.description}`.",
-            originalPropertyType.position
+          Seq(SemanticError.propertyTypeUnsupportedInConstraint(
+            constraintType.description,
+            originalPropertyType
           ))
         )
     } chain allowedTypesCheck

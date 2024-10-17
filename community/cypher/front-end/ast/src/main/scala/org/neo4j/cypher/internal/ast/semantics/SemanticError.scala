@@ -18,6 +18,7 @@ package org.neo4j.cypher.internal.ast.semantics
 
 import org.neo4j.cypher.internal.ast.UsingJoinHint
 import org.neo4j.cypher.internal.util.InputPosition
+import org.neo4j.cypher.internal.util.symbols.CypherType
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
@@ -286,6 +287,24 @@ object SemanticError {
       gql,
       legacyMessage,
       pos
+    )
+  }
+
+  def propertyTypeUnsupportedInConstraint(
+    constraintTypeDescription: String,
+    originalPropertyType: CypherType
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N11)
+      .withParam(GqlParams.StringParam.constrDescrOrName, constraintTypeDescription)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N90)
+        .withParam(GqlParams.StringParam.item, originalPropertyType.description)
+        .build())
+      .build()
+    new SemanticError(
+      gql,
+      s"Failed to create ${constraintTypeDescription} constraint: " +
+        s"Invalid property type `${originalPropertyType.description}`.",
+      originalPropertyType.position
     )
   }
 }

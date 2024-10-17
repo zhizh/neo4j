@@ -1987,6 +1987,15 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             Condition.DATA_EXCEPTION,
             "parsing JSON failure",
             ErrorClassification.CLIENT_ERROR),
+    STATUS_22NB0(
+            new GqlStatus("22NB0"),
+            """
+                    The property value access rule pattern { %s } always evaluates to 'NULL'. Use `WHERE` syntax in combination with `IS NULL` instead.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.value},
+            emptyMap(),
+            Condition.DATA_EXCEPTION,
+            "invalid property based access control rule involving WHERE and IS NULL",
+            ErrorClassification.CLIENT_ERROR),
     STATUS_25000(
             new GqlStatus("25000"),
             """

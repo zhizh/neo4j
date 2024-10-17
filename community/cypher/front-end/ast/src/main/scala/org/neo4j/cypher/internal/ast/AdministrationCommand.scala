@@ -68,7 +68,9 @@ import org.neo4j.cypher.internal.util.symbols.CTList
 import org.neo4j.cypher.internal.util.symbols.CTMap
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTString
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
@@ -857,8 +859,14 @@ sealed abstract class PrivilegeCommand(
   private def nanError(l: NaN) =
     error(s"$FAILED_PROPERTY_RULE `NaN` is not supported for property-based access control.", l.position)
 
-  private def propertyAlwaysNullError(predicate: String, pos: InputPosition, hint: String = "") = {
+  private def propertyAlwaysNullError(
+    gqlBuilder: String => ErrorGqlStatusObject,
+    predicate: String,
+    pos: InputPosition,
+    hint: String = ""
+  ) = {
     error(
+      gqlBuilder(predicate),
       s"$FAILED_PROPERTY_RULE The property value access rule pattern `$predicate` always evaluates to `NULL`.$hint",
       pos
     )
@@ -934,29 +942,49 @@ sealed abstract class PrivilegeCommand(
       case LessThan(l: NaN, _: Property)           => nanError(l)
       case LessThanOrEqual(l: NaN, _: Property)    => nanError(l)
       case Equals(p: Property, l: Null) =>
-        propertyAlwaysNullError(s"${p.propertyKey.name} = NULL", l.position, " Use `IS NULL` instead.")
+        propertyAlwaysNullError(
+          GqlHelper.getGql22NA0_22NA5,
+          s"${p.propertyKey.name} = NULL",
+          l.position,
+          " Use `IS NULL` instead."
+        )
       case NotEquals(p: Property, l: Null) =>
-        propertyAlwaysNullError(s"${p.propertyKey.name} <> NULL", l.position, " Use `IS NOT NULL` instead.")
+        propertyAlwaysNullError(
+          GqlHelper.getGql22NA0_22NA6,
+          s"${p.propertyKey.name} <> NULL",
+          l.position,
+          " Use `IS NOT NULL` instead."
+        )
       case GreaterThan(p: Property, l: Null) =>
-        propertyAlwaysNullError(s"${p.propertyKey.name} > NULL", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"${p.propertyKey.name} > NULL", l.position)
       case GreaterThanOrEqual(p: Property, l: Null) =>
-        propertyAlwaysNullError(s"${p.propertyKey.name} >= NULL", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"${p.propertyKey.name} >= NULL", l.position)
       case LessThan(p: Property, l: Null) =>
-        propertyAlwaysNullError(s"${p.propertyKey.name} < NULL", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"${p.propertyKey.name} < NULL", l.position)
       case LessThanOrEqual(p: Property, l: Null) =>
-        propertyAlwaysNullError(s"${p.propertyKey.name} <= NULL", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"${p.propertyKey.name} <= NULL", l.position)
       case Equals(l: Null, p: Property) =>
-        propertyAlwaysNullError(s"NULL = ${p.propertyKey.name}", l.position, " Use `IS NULL` instead.")
+        propertyAlwaysNullError(
+          GqlHelper.getGql22NA0_22NA5,
+          s"NULL = ${p.propertyKey.name}",
+          l.position,
+          " Use `IS NULL` instead."
+        )
       case NotEquals(l: Null, p: Property) =>
-        propertyAlwaysNullError(s"NULL <> ${p.propertyKey.name}", l.position, " Use `IS NOT NULL` instead.")
+        propertyAlwaysNullError(
+          GqlHelper.getGql22NA0_22NA6,
+          s"NULL <> ${p.propertyKey.name}",
+          l.position,
+          " Use `IS NOT NULL` instead."
+        )
       case GreaterThan(l: Null, p: Property) =>
-        propertyAlwaysNullError(s"NULL > ${p.propertyKey.name}", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"NULL > ${p.propertyKey.name}", l.position)
       case GreaterThanOrEqual(l: Null, p: Property) =>
-        propertyAlwaysNullError(s"NULL >= ${p.propertyKey.name}", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"NULL >= ${p.propertyKey.name}", l.position)
       case LessThan(l: Null, p: Property) =>
-        propertyAlwaysNullError(s"NULL < ${p.propertyKey.name}", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"NULL < ${p.propertyKey.name}", l.position)
       case LessThanOrEqual(l: Null, p: Property) =>
-        propertyAlwaysNullError(s"NULL <= ${p.propertyKey.name}", l.position)
+        propertyAlwaysNullError(GqlHelper.getGql22NA0_22NA4, s"NULL <= ${p.propertyKey.name}", l.position)
       case Equals(_, p: Property)             => propertyPositionError(p, "=")
       case NotEquals(_, p: Property)          => propertyPositionError(p, "<>")
       case GreaterThan(_, p: Property)        => propertyPositionError(p, ">")
@@ -970,6 +998,7 @@ sealed abstract class PrivilegeCommand(
         )
       case MapExpression(Seq((pk: PropertyKeyName, l: Null))) =>
         propertyAlwaysNullError(
+          GqlHelper.getGql22NA0_22NB0,
           s"{${pk.name}:NULL}",
           l.position,
           " Use `WHERE` syntax in combination with `IS NULL` instead."
