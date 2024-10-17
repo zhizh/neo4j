@@ -37,6 +37,8 @@ public interface ErrorGqlStatusObject extends CommonGqlStatusObject {
 
     ErrorGqlStatusObject gqlStatusObject();
 
+    String getMessage();
+
     String legacyMessage();
 
     @Override

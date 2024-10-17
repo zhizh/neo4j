@@ -190,4 +190,100 @@ abstract class GqlExceptionTestBase {
 
         assertTrue(cause4.cause().isEmpty());
     }
+
+    @Test
+    void getMessageForTopLevelExceptionWithoutMessagePart() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22012)
+                .build();
+        var exception = testException(gql, "legacy message");
+
+        assertEquals("legacy message", exception.getMessage());
+        assertEquals("22012", exception.gqlStatusObject().getMessage());
+    }
+
+    @Test
+    void getMessageForTopLevelExceptionWithMessagePart() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N06)
+                .withParam(GqlParams.StringParam.option, "myOption")
+                .build();
+        var exception = testException(gql, "legacy message") ;
+
+        assertEquals("legacy message", exception.getMessage());
+        assertEquals(
+                "22N06: Invalid input. 'myOption' needs to be specified.",
+                exception.gqlStatusObject().getMessage());
+    }
+
+    @Test
+    void getMessageForTopLevelExceptionWithoutGql() {
+        var exception = testException(null, "legacy message");
+
+        assertEquals("legacy message", exception.getMessage());
+    }
+
+    @Test
+    void getMessageForErrorCauseWithoutMessagePart() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22012)
+                        .build())
+                .build();
+        var exception = testException(gql, "legacy message");
+
+        assertEquals("legacy message", exception.getMessage());
+        assertEquals("22000", exception.gqlStatusObject().getMessage());
+        assertTrue(exception.cause().isPresent());
+        assertEquals("22012", exception.cause().get().getMessage());
+    }
+
+    @Test
+    void getMessageForErrorCauseWithMessagePart() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N06)
+                        .withParam(GqlParams.StringParam.option, "myOption")
+                        .build())
+                .build();
+        var exception = testException(gql, "legacy message");
+
+        assertEquals("legacy message", exception.getMessage());
+        assertEquals("22000", exception.gqlStatusObject().getMessage());
+        assertTrue(exception.cause().isPresent());
+        assertEquals(
+                "22N06: Invalid input. 'myOption' needs to be specified.",
+                exception.cause().get().getMessage());
+    }
+
+    @Test
+    void getMessageForJavaCause() {
+        var gql1 = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .build();
+        var gql2 = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N06)
+                .withParam(GqlParams.StringParam.option, "myOption")
+                .build();
+        var innerException = testException(gql2, "legacy message 2");
+        var exception = testException(gql1, "legacy message", innerException);
+
+        assertEquals("legacy message", exception.getMessage());
+        assertEquals("22000", exception.gqlStatusObject().getMessage());
+        assertTrue(exception.cause().isPresent());
+        assertEquals(
+                "22N06: Invalid input. 'myOption' needs to be specified.",
+                exception.cause().get().getMessage());
+    }
+
+    @Test
+    void getMessageForJavaCauseWithoutGql() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .build();
+
+        // The top-level error has been implemented in the new framework, but the cause hasn't.
+        var innerException = testException(null, "legacy message 2");
+        var exception = testException(gql, "legacy message", innerException);
+
+        assertEquals("legacy message", exception.getMessage());
+        assertEquals("22000", exception.gqlStatusObject().getMessage());
+        assertTrue(exception.cause().isPresent());
+        assertEquals(
+                "50N42: Unexpected error has occurred. See debug log for details.",
+                exception.cause().get().getMessage());
+    }
 }

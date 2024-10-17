@@ -27,6 +27,7 @@ import java.util.Optional;
 
 public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImplementation
         implements ErrorGqlStatusObject {
+    private boolean isCause = false;
     private Optional<ErrorGqlStatusObject> cause;
     private final Map<GqlParams.GqlParam, Object> paramMap;
     private final GqlStatusInfoCodes gqlStatusInfoCode;
@@ -64,6 +65,10 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         return cause;
     }
 
+    public boolean isCause() {
+        return isCause;
+    }
+
     @Override
     public ErrorGqlStatusObject gqlStatusObject() {
         return this;
@@ -71,6 +76,19 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
 
     public void setCause(ErrorGqlStatusObject cause) {
         this.cause = Optional.of(cause);
+    }
+
+    public void markAsCause() {
+        isCause = true;
+    }
+
+    @Override
+    public String getMessage() {
+        String gqlMessagePart = this.gqlStatusInfoCode.getMessage(paramMap);
+        if (!gqlMessagePart.isEmpty()) {
+            return String.format("%s: %s", gqlStatus(), gqlMessagePart);
+        }
+        return gqlStatus();
     }
 
     @Override
@@ -157,6 +175,9 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         }
 
         public Builder withCause(ErrorGqlStatusObject cause) {
+            if (cause instanceof ErrorGqlStatusObjectImplementation c) {
+                c.markAsCause();
+            }
             this.cause = cause;
             return this;
         }

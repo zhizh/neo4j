@@ -21,8 +21,10 @@ package org.neo4j.gqlstatus;
 
 public class ErrorMessageHolder {
     public static String getMessage(ErrorGqlStatusObject gqlStatusObject, String oldMessage) {
-        // gqlStatusObject might be null! (given that there are Scala exceptions created with old constructors that
-        // doesn't populate with GQL info
+        if (gqlStatusObject instanceof ErrorGqlStatusObjectImplementation gso && gso.isCause()) {
+            return gqlStatusObject.getMessage();
+        }
+        // if this is a top-level error we need to send the old error message for backwards-compatibility
         return oldMessage;
     }
 
