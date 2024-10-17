@@ -29,6 +29,7 @@ import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N02
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N03
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N51
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N60
+import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N62
 import org.neo4j.gqlstatus.NotificationClassification
 import org.neo4j.graphdb.SeverityLevel
 import org.neo4j.internal.schema.AllIndexProviderDescriptors
@@ -49,6 +50,7 @@ import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedPropert
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedRelationshipTypeSeparator
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedShortestPathWithFixedLengthRelationship
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedTextIndexProvider
+import org.neo4j.notifications.NotificationCodeWithDescription.procedureWarning
 import org.neo4j.notifications.NotificationCodeWithDescription.unionReturnOrder
 import org.neo4j.notifications.NotificationDetail
 import org.neo4j.notifications.NotificationDetail.deprecationNotificationDetail
@@ -103,6 +105,29 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
           "warn: feature deprecated with replacement. oldProc is deprecated. It is replaced by newProc.",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
+        ),
+        testOmittedResult
+      )
+    )
+  }
+
+  test("notification on procedure calls with warning") {
+    val queries = Seq("CALL procWithWarning()", "CALL procWithWarning() RETURN 1")
+
+    val detail =
+      NotificationDetail.procedureWarning("procWithWarning", "This procedure is unsafe, use at your own risk!")
+    assertNotification(
+      queries,
+      shouldContainNotification = true,
+      detail,
+      (pos, detail) =>
+        procedureWarning(pos, detail, "procWithWarning", "This procedure is unsafe, use at your own risk!"),
+      List(
+        TestGqlStatusObject(
+          STATUS_01N62.getStatusString,
+          "warn: procedure or function execution warning. Execution of the procedure procWithWarning() generated the warning This procedure is unsafe, use at your own risk!",
+          SeverityLevel.WARNING,
+          NotificationClassification.GENERIC
         ),
         testOmittedResult
       )

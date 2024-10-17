@@ -271,6 +271,9 @@ public class NotificationTestSupport {
         @Procedure(name = "oldProcNotReplaced")
         public void oldProcNotReplaced() {}
 
+        @Procedure(name = "procWithWarning", warning = "This procedure is unsafe, use at your own risk!")
+        public void procWithWarning() {}
+
         @Procedure("changedProc")
         public Stream<ChangedResults> changedProc() {
             return Stream.of(new ChangedResults());

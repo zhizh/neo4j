@@ -154,6 +154,12 @@ public @interface Procedure {
     boolean eager() default false;
 
     /**
+     * A warning message that will be emitted every time this procedure is called.
+     * @return the warning message.
+     */
+    String warning() default "";
+
+    /**
      * When deprecating a procedure it is useful to indicate a possible
      * replacement procedure that clients might show in warnings.
      * @return a string representation of the replacement procedure.

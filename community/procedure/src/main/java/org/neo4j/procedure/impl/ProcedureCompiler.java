@@ -273,6 +273,9 @@ class ProcedureCompiler {
                 procedure::deprecatedBy,
                 "Use of @Procedure(deprecatedBy) without @Deprecated in " + procName,
                 isDeprecated);
+
+        String warning = procedure.warning().isEmpty() ? null : procedure.warning();
+
         List<FieldSetter> setters = allFieldInjections.setters(procDefinition);
         if (!fullAccess && !config.fullAccessFor(procName.toString())) {
             try {
@@ -288,7 +291,7 @@ class ProcedureCompiler {
                         isDeprecated,
                         deprecated,
                         description,
-                        null,
+                        warning,
                         procedure.eager(),
                         false,
                         systemProcedure,
@@ -310,7 +313,7 @@ class ProcedureCompiler {
                 isDeprecated,
                 deprecated,
                 description,
-                null,
+                warning,
                 procedure.eager(),
                 false,
                 systemProcedure,
