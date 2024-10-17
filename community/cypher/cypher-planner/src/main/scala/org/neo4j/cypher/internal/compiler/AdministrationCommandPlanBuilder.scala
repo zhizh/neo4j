@@ -367,7 +367,9 @@ case object AdministrationCommandPlanBuilder extends Phase[PlannerContext, BaseS
             assertAllowed,
             userName,
             "alter",
-            "Changing your own activation status is not allowed"
+            "Changing your own activation status is not allowed",
+            ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N98)
+              .build()
           )
           else assertAllowed
         val ifExistsSubPlan =

@@ -460,6 +460,8 @@ import org.neo4j.cypher.internal.util.symbols.LocalTimeType
 import org.neo4j.cypher.internal.util.symbols.StringType
 import org.neo4j.cypher.internal.util.symbols.ZonedDateTimeType
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.graphdb.schema.IndexType
 import org.neo4j.values.storable.Values.stringValue
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -7535,7 +7537,16 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     )
 
     assertGood(
-      attach(AssertNotCurrentUser(privLhsLP, util.Left("user1"), "verb1", "validation message"), 1.0),
+      attach(
+        AssertNotCurrentUser(
+          privLhsLP,
+          util.Left("user1"),
+          "verb1",
+          "validation message",
+          ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42).build()
+        ),
+        1.0
+      ),
       adminPlanDescription
     )
 
