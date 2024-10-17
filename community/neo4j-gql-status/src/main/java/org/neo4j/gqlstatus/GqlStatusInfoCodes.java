@@ -2997,7 +2997,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlParams.GqlParam[] {GqlParams.StringParam.idxType},
             emptyMap(),
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
-            "unsupported index or constraint ",
+            "unsupported index or constraint",
             ErrorClassification.CLIENT_ERROR),
     STATUS_42N17(
             new GqlStatus("42N17"),

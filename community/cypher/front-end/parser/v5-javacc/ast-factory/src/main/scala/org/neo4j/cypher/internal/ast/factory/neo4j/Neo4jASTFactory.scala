@@ -1943,7 +1943,10 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
 
   private def validateSingleProperty(seq: Seq[_], constraintType: ConstraintType): Unit = {
     if (seq.size != 1)
-      throw new Neo4jASTConstructionException(ASTExceptionFactory.onlySinglePropertyAllowed(constraintType))
+      throw Neo4jASTConstructionException.unsupportedIndexOrConstraint(
+        constraintType.description(),
+        ASTExceptionFactory.onlySinglePropertyAllowed(constraintType)
+      )
   }
 
   private def convertCypherType(javaType: ParserCypherTypeName): CypherType = {

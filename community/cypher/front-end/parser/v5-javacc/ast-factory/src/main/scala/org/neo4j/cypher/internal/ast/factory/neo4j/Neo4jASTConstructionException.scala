@@ -17,7 +17,10 @@
 package org.neo4j.cypher.internal.ast.factory.neo4j
 
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlRuntimeException
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.kernel.api.exceptions.Status
 import org.neo4j.kernel.api.exceptions.Status.HasStatus
 
@@ -32,5 +35,19 @@ object Neo4jASTConstructionException {
 
   def apply(msg: String): Neo4jASTConstructionException = {
     new Neo4jASTConstructionException(null, msg)
+  }
+
+  def apply(gql: ErrorGqlStatusObject, legacyMessage: String): Neo4jASTConstructionException = {
+    new Neo4jASTConstructionException(gql, legacyMessage)
+  }
+
+  def unsupportedIndexOrConstraint(constraintType: String, legacyMessage: String): Neo4jASTConstructionException = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N16)
+        .withParam(GqlParams.StringParam.idxType, constraintType)
+        .build())
+      .build()
+
+    Neo4jASTConstructionException(gql, legacyMessage)
   }
 }
