@@ -1209,7 +1209,7 @@ trait TransactionForeachMemoryManagementTestBase[CONTEXT <: RuntimeContext] {
       case Interpreted                                             => 12000
       case Slotted if concurrency eq TransactionConcurrency.Serial => 13000
       case Slotted                                                 => 12000
-      case Pipelined                                               => 10000
+      case Pipelined                                               => 15000
     }
 
     // given
@@ -1500,7 +1500,7 @@ trait TransactionForeachMemoryManagementTestBase[CONTEXT <: RuntimeContext] {
     val rowCount = runtimeUsed match {
       case Interpreted => 12000
       case Slotted     => 13000
-      case Pipelined   => 10000
+      case Pipelined   => 15000
     }
 
     // given
