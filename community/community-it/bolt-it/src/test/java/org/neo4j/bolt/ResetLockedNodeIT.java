@@ -27,7 +27,7 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -43,9 +43,9 @@ public class ResetLockedNodeIT {
     @TransportTest
     void shouldErrorWhenResettingAConnectionWaitingOnALock(
             BoltWire wire,
-            @Authenticated TransportConnection setupConnection,
-            @Authenticated TransportConnection connectionA,
-            @Authenticated TransportConnection connectionB)
+            @Authenticated BoltTestConnection setupConnection,
+            @Authenticated BoltTestConnection connectionA,
+            @Authenticated BoltTestConnection connectionB)
             throws Exception {
         setupConnection.send(wire.run("CREATE (n {id: 123})")).send(wire.pull());
         BoltConnectionAssertions.assertThat(setupConnection).receivesSuccess(2);

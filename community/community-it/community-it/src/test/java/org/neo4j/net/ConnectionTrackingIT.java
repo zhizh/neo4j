@@ -55,7 +55,6 @@ import static org.neo4j.values.storable.Values.stringValue;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -73,19 +72,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.client.SocketConnection;
-import org.neo4j.bolt.testing.client.TransportConnection;
 import org.neo4j.bolt.testing.messages.BoltDefaultWire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.configuration.connectors.HttpConnector;
 import org.neo4j.configuration.connectors.HttpsConnector;
-import org.neo4j.function.Predicates;
 import org.neo4j.function.ThrowingAction;
 import org.neo4j.graphdb.Lock;
 import org.neo4j.graphdb.Node;
@@ -115,7 +113,7 @@ class ConnectionTrackingIT {
             "connectionId", "connectTime", "connector", "username", "userAgent", "serverAddress", "clientAddress");
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
-    private final Set<TransportConnection> connections = ConcurrentHashMap.newKeySet();
+    private final Set<BoltTestConnection> connections = ConcurrentHashMap.newKeySet();
     private final Set<HttpClient> httpClients = ConcurrentHashMap.newKeySet();
 
     private final BoltWire wire = new BoltDefaultWire();
@@ -156,7 +154,7 @@ class ConnectionTrackingIT {
 
     @AfterEach
     void afterEach() {
-        for (TransportConnection connection : connections) {
+        for (BoltTestConnection connection : connections) {
             try {
                 connection.disconnect();
             } catch (Exception ignore) {
@@ -344,7 +342,7 @@ class ConnectionTrackingIT {
     }
 
     private void testKillingOfConnections(URI uri, TestConnector connector, int count) throws Exception {
-        List<TransportConnection> socketConnections = new ArrayList<>();
+        List<BoltTestConnection> socketConnections = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             socketConnections.add(connectSocketTo(uri));
         }
@@ -355,12 +353,12 @@ class ConnectionTrackingIT {
         killAcceptedConnectionViaBolt();
         verifyConnectionCount(connector, null, 0);
 
-        for (TransportConnection socketConnection : socketConnections) {
-            assertConnectionBreaks(socketConnection);
+        for (BoltTestConnection socketConnection : socketConnections) {
+            BoltConnectionAssertions.assertThat(socketConnection).isEventuallyTerminated();
         }
     }
 
-    private TransportConnection connectSocketTo(URI uri) throws IOException {
+    private BoltTestConnection connectSocketTo(URI uri) throws IOException {
         var connection = new SocketConnection(new InetSocketAddress(uri.getHost(), uri.getPort())).connect();
 
         connections.add(connection);
@@ -574,25 +572,6 @@ class ConnectionTrackingIT {
                             .contains(stringOrNoValue(user), atIndex(1))
                             .contains(stringValue("Connection found"), atIndex(2)))
                     .receivesSuccess();
-        }
-    }
-
-    private static void assertConnectionBreaks(TransportConnection connection) throws TimeoutException {
-        Predicates.await(() -> connectionIsBroken(connection), 1, MINUTES);
-    }
-
-    private static boolean connectionIsBroken(TransportConnection connection) {
-        try {
-            connection.sendRaw(new byte[] {1});
-            connection.receive(1);
-            return false;
-        } catch (SocketException e) {
-            return true;
-        } catch (IOException e) {
-            return false;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         }
     }
 

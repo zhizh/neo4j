@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.bolt.test.extension.BoltTestSupportExtension;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.test.TestDatabaseManagementServiceBuilder;
 
@@ -38,8 +38,8 @@ import org.neo4j.test.TestDatabaseManagementServiceBuilder;
  * This annotation is equivalent to {@link TestTemplate} and will automatically bootstrap a server instance for each
  * respective configuration combination within the test matrix.
  * <p />
- * Test functions may additionally rely on injected parameters for {@link TransportConnection},
- * {@link TransportConnection.Factory} and {@link BoltWire} in order to facilitate transport and protocol agnostic
+ * Test functions may additionally rely on injected parameters for {@link BoltTestConnection},
+ * {@link BoltTestConnection.Factory} and {@link BoltWire} in order to facilitate transport and protocol agnostic
  * testing.
  * <p />
  * This a meta-annotation.

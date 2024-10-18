@@ -20,30 +20,24 @@
 package org.neo4j.bolt.testing.client.tls;
 
 import java.security.cert.X509Certificate;
-import java.util.function.Consumer;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 /** Trust self-signed certificates */
-public class NaiveTrustManager implements X509TrustManager {
-    private final Consumer<X509Certificate> certSink;
+public final class NaiveTrustManager implements X509TrustManager {
+    private static final NaiveTrustManager INSTANCE = new NaiveTrustManager();
 
-    public NaiveTrustManager(Consumer<X509Certificate> certSink) {
-        this.certSink = certSink;
+    private NaiveTrustManager() {}
+
+    public static TrustManager getInstance() {
+        return INSTANCE;
     }
 
     @Override
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
-        for (X509Certificate x509Certificate : x509Certificates) {
-            certSink.accept(x509Certificate);
-        }
-    }
+    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {}
 
     @Override
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {
-        for (X509Certificate x509Certificate : x509Certificates) {
-            certSink.accept(x509Certificate);
-        }
-    }
+    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {

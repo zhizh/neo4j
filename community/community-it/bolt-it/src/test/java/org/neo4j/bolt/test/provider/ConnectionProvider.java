@@ -19,19 +19,18 @@
  */
 package org.neo4j.bolt.test.provider;
 
-import java.io.IOException;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.connection.initializer.Negotiated;
 import org.neo4j.bolt.test.annotation.connection.resolver.Connector;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 
 /**
  * Provides a factory function capable of dynamically creating new managed connections within a test class.
  * <p />
  * Instances of this interface may be injected within tests marked via {@link ProtocolTest} and/or {@link TransportTest}
- * and will follow the same semantics as the injection of {@link TransportConnection} instances.
+ * and will follow the same semantics as the injection of {@link BoltTestConnection} instances.
  * <p />
  * @see Authenticated for creating pre-authenticated connections.
  * @see Connector for selecting a specific connector.
@@ -42,8 +41,6 @@ public interface ConnectionProvider {
 
     /**
      * Creates a new connection to the target server.
-     *
-     * @throws IOException when a connection cannot be established.
      */
-    TransportConnection create() throws IOException;
+    BoltTestConnection create();
 }

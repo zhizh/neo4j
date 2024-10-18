@@ -33,7 +33,7 @@ import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -93,7 +93,7 @@ public class RoutingTableIT {
     }
 
     @ProtocolTest
-    void shouldRespondToRouteMessage(BoltWire wire, @Authenticated TransportConnection connection) throws IOException {
+    void shouldRespondToRouteMessage(BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
         connection.send(wire.route());
 
         assertThat(connection).receivesSuccess(metadata -> Assertions.assertThat(metadata)
@@ -104,7 +104,7 @@ public class RoutingTableIT {
 
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 0)})
-    void shouldReturnTheSameRoutingForTwoDifferentUsers(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldReturnTheSameRoutingForTwoDifferentUsers(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         // Send the routing message and assure it is as intended
         connection.send(wire.route(null, null, "neo4j"));
@@ -143,7 +143,7 @@ public class RoutingTableIT {
     }
 
     @ProtocolTest
-    void shouldRespondToRouteMessageWithBookmark(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldRespondToRouteMessageWithBookmark(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection.send(wire.route(null, List.of("test-bookmark"), null));
 
@@ -156,7 +156,7 @@ public class RoutingTableIT {
     }
 
     @ProtocolTest
-    void shouldReturnFailureIfRoutingTableFailedToReturn(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldReturnFailureIfRoutingTableFailedToReturn(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection.send(wire.route(null, null, "DOESNT_EXIST!"));
         assertThat(connection).receivesFailure();
@@ -174,7 +174,7 @@ public class RoutingTableIT {
     }
 
     @ProtocolTest
-    void shouldIgnoreRouteMessageWhenInFailedState(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldIgnoreRouteMessageWhenInFailedState(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection.send(wire.run("✨✨✨ Magical Crash String ✨✨✨"));
         assertThat(connection).receivesFailure();

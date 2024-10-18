@@ -19,112 +19,46 @@
  */
 package org.neo4j.bolt.testing.client;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import java.io.IOException;
 import java.net.SocketAddress;
 
-public class LocalConnection extends AbstractTransportConnection {
+public final class LocalConnection extends AbstractNettyConnection {
 
     private static final Factory factory = new Factory();
-    private final SocketAddress socketAddress;
-    private Channel channel;
-    private EventLoopGroup eventLoopGroup;
-    private final ByteBuf outputBytes = ByteBufAllocator.DEFAULT.buffer();
 
-    public LocalConnection(SocketAddress socketAddress) {
-        this.socketAddress = socketAddress;
+    private final LocalAddress address;
+
+    public LocalConnection(LocalAddress address) {
+        super();
+        this.address = address;
     }
 
-    public static TransportConnection.Factory factory() {
+    public static BoltTestConnection.Factory factory() {
         return factory;
     }
 
     @Override
-    public TransportConnection connect() throws IOException {
-        var cb = new Bootstrap();
-        eventLoopGroup = new NioEventLoopGroup(1);
-        cb.group(eventLoopGroup).channel(LocalChannel.class).handler(new ChannelInitializer<LocalChannel>() {
-            @Override
-            public void initChannel(LocalChannel ch) throws Exception {
-                ch.pipeline().addLast(new LoggingHandler(LogLevel.INFO));
-                ch.pipeline().addLast(new ByteBufAccumulatingHandler(outputBytes));
-            }
-        });
-
-        // Start the client.
-        try {
-            channel = cb.connect(socketAddress).sync().channel();
-        } catch (InterruptedException e) {
-            throw new IOException("Unable to establish local connection" + e);
-        }
-
-        return this;
+    protected LocalAddress address() {
+        return this.address;
     }
 
     @Override
-    public TransportConnection disconnect() throws IOException {
-        channel.close();
-        try {
-            eventLoopGroup.shutdownGracefully().sync();
-        } catch (InterruptedException e) {
-            throw new IOException("Error whilst disconnecting from local channel" + e);
-        }
-
-        return this;
+    protected Class<? extends Channel> channelType() {
+        return LocalChannel.class;
     }
 
-    @Override
-    public TransportConnection sendRaw(ByteBuf buf) throws IOException {
-        channel.writeAndFlush(buf);
-        return this;
-    }
-
-    @Override
-    public ByteBuf receive(int length) throws IOException, InterruptedException {
-        while (true) {
-            if (outputBytes.readableBytes() >= length) {
-                return outputBytes.readBytes(length);
-            }
-            // allow some time for the buffer to fill if there are insufficient bytes.
-            Thread.sleep(50);
-        }
-    }
-
-    @Override
-    public boolean isClosed() throws InterruptedException {
-        return !channel.isOpen();
-    }
-
-    private static class ByteBufAccumulatingHandler extends ChannelInboundHandlerAdapter {
-
-        private ByteBuf outputBytes;
-
-        protected ByteBufAccumulatingHandler(ByteBuf outputBytes) {
-            this.outputBytes = outputBytes;
-        }
+    private static class Factory implements BoltTestConnection.Factory {
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            outputBytes = outputBytes.writeBytes((ByteBuf) msg);
-        }
-    }
+        public BoltTestConnection create(SocketAddress address) {
+            if (address instanceof LocalAddress localAddress) {
+                return new LocalConnection(localAddress);
+            }
 
-    private static class Factory implements TransportConnection.Factory {
-
-        @Override
-        public TransportConnection create(SocketAddress address) {
-            return new LocalConnection(address);
+            throw new IllegalArgumentException("Cannot initialize local connection with address of type "
+                    + address.getClass().getSimpleName());
         }
 
         @Override

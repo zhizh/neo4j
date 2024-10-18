@@ -30,17 +30,18 @@ import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.test.connection.initializer.SelectProtocolVersionConnectionInitializer;
 import org.neo4j.bolt.test.provider.ConnectionProvider;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 
 /**
  * Ensures that the annotated connection parameter has selected a protocol version for the current
  * Bolt test execution.
  * <p />
- * This annotation is applicable to {@link TransportConnection} and {@link ConnectionProvider} parameters within test
+ * This annotation is applicable to {@link BoltTestConnection} and {@link ConnectionProvider} parameters within test
  * functions annotated using the {@link ProtocolTest} and/or {@link TransportTest} annotations.
  * <p />
  * This annotation is a meta-annotation.
  */
+@Connected
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @InitializeConnection(SelectProtocolVersionConnectionInitializer.class)

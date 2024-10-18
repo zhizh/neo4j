@@ -20,13 +20,12 @@
 package org.neo4j.bolt.testing.sequence;
 
 import io.netty.buffer.ByteBuf;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.util.Preconditions;
 
 public class RequestSequenceCollection {
@@ -64,7 +63,7 @@ public class RequestSequenceCollection {
         return this.it.hasNext();
     }
 
-    public int execute(TransportConnection connection) throws IOException {
+    public int execute(BoltTestConnection connection) throws InterruptedException {
         var total = 0;
 
         while (this.hasRemaining()) {
@@ -74,7 +73,7 @@ public class RequestSequenceCollection {
         return total;
     }
 
-    public RequestSequence execute(TransportConnection connection, Random random) throws IOException {
+    public RequestSequence execute(BoltTestConnection connection, Random random) throws InterruptedException {
         Preconditions.checkState(!this.sequences.isEmpty(), "No sequences available");
 
         var sequence = this.sequences.get(random.nextInt(this.sequences.size()));
@@ -82,7 +81,7 @@ public class RequestSequenceCollection {
         return sequence;
     }
 
-    public RequestSequence executeNext(TransportConnection connection) throws IOException {
+    public RequestSequence executeNext(BoltTestConnection connection) throws InterruptedException {
         if (this.it == null) {
             this.it = this.sequences.iterator();
         }

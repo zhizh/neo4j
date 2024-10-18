@@ -26,7 +26,7 @@ import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.packstream.struct.StructHeader;
 import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
@@ -38,7 +38,7 @@ import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 public class LegacyStructArgumentIT extends AbstractStructArgumentIT {
 
     @ProtocolTest
-    void shouldFailWhenLegacyZonedDateTimeZoneIdIsNotKnown(@Authenticated TransportConnection connection)
+    void shouldFailWhenLegacyZonedDateTimeZoneIdIsNotKnown(@Authenticated BoltTestConnection connection)
             throws IOException {
         testFailureWithUnpackableValue(
                 connection,

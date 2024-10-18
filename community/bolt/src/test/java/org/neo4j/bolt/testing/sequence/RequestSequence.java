@@ -22,9 +22,8 @@ package org.neo4j.bolt.testing.sequence;
 import static org.neo4j.bolt.testing.assertions.BoltConnectionAssertions.assertThat;
 
 import io.netty.buffer.ByteBuf;
-import java.io.IOException;
 import java.util.List;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 
 public class RequestSequence {
     private final List<ByteBuf> requests;
@@ -41,25 +40,25 @@ public class RequestSequence {
         return this.requests.size();
     }
 
-    public void execute(TransportConnection connection) throws IOException {
+    public void execute(BoltTestConnection connection) throws InterruptedException {
         for (var request : this.requests) {
             connection.send(request);
         }
     }
 
-    public void assertSuccess(TransportConnection connection) {
+    public void assertSuccess(BoltTestConnection connection) {
         assertThat(connection).receivesSuccess(this.requests.size());
     }
 
-    public void assertFailure(TransportConnection connection) {
+    public void assertFailure(BoltTestConnection connection) {
         assertThat(connection).receivesFailure(this.requests.size());
     }
 
-    public void assertResponse(TransportConnection connection) {
+    public void assertResponse(BoltTestConnection connection) {
         assertThat(connection).receivesResponse(this.requests.size());
     }
 
-    public void assertResponseOrRecord(TransportConnection connection) {
+    public void assertResponseOrRecord(BoltTestConnection connection) {
         assertThat(connection).receivesResponseOrRecord(this.requests.size());
     }
 }

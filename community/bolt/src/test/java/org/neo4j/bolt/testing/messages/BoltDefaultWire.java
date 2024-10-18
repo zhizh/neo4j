@@ -19,12 +19,12 @@
  */
 package org.neo4j.bolt.testing.messages;
 
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 
 /**
  * Provides aliases for the currently selected default wire protocol.
  * <p>
- * The references within this type should be updated along with {@link TransportConnection#DEFAULT_PROTOCOL_VERSION} in order to transmit the correct message
+ * The references within this type should be updated along with {@link BoltTestConnection#DEFAULT_PROTOCOL_VERSION} in order to transmit the correct message
  * variations.
  */
 public final class BoltDefaultWire extends BoltV50Wire {

@@ -26,14 +26,14 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.client.TransportType;
 
 public class TransportConnectionManager implements AfterEachCallback {
     private final TransportType transportType;
 
     private final Lock lock = new ReentrantLock();
-    private final List<TransportConnection> activeConnections = new ArrayList<>();
+    private final List<BoltTestConnection> activeConnections = new ArrayList<>();
 
     public TransportConnectionManager(TransportType transportType) {
         this.transportType = transportType;
@@ -57,7 +57,7 @@ public class TransportConnectionManager implements AfterEachCallback {
         }
     }
 
-    public TransportConnection acquire(SocketAddress address) {
+    public BoltTestConnection acquire(SocketAddress address) {
         var connection = this.transportType.getFactory().create(address);
         this.lock.lock();
         try {

@@ -21,19 +21,20 @@ package org.neo4j.bolt.testing.assertions;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.assertj.core.api.AbstractAssert;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
+import org.neo4j.bolt.testing.client.error.BoltTestClientIOException;
+import org.neo4j.bolt.testing.client.error.BoltTestClientInterruptedException;
 import org.neo4j.function.Predicates;
 
-public abstract class TransportConnectionAssertions<
-                SELF extends TransportConnectionAssertions<SELF, ACTUAL>, ACTUAL extends TransportConnection>
+public abstract class BoltTestConnectionAssertions<
+                SELF extends BoltTestConnectionAssertions<SELF, ACTUAL>, ACTUAL extends BoltTestConnection>
         extends AbstractAssert<SELF, ACTUAL> {
 
-    protected TransportConnectionAssertions(ACTUAL connection, Class<SELF> selfType) {
+    protected BoltTestConnectionAssertions(ACTUAL connection, Class<SELF> selfType) {
         super(connection, selfType);
     }
 
@@ -51,9 +52,9 @@ public abstract class TransportConnectionAssertions<
                         expected,
                         actual);
             }
-        } catch (IOException ex) {
+        } catch (BoltTestClientIOException ex) {
             throw new AssertionError("Failed to receive expected negotiation response", ex);
-        } catch (InterruptedException ex) {
+        } catch (BoltTestClientInterruptedException ex) {
             throw new AssertionError("Interrupted while awaiting negotiation response", ex);
         }
 
@@ -61,7 +62,7 @@ public abstract class TransportConnectionAssertions<
     }
 
     public SELF negotiatesDefaultVersion() {
-        return this.negotiates(TransportConnection.DEFAULT_PROTOCOL_VERSION);
+        return this.negotiates(BoltTestConnection.DEFAULT_PROTOCOL_VERSION);
     }
 
     @SuppressWarnings("unchecked")
@@ -78,9 +79,9 @@ public abstract class TransportConnectionAssertions<
                         "Expected connection to fail version negotiation but got <%s>",
                         actual);
             }
-        } catch (IOException ex) {
+        } catch (BoltTestClientIOException ex) {
             throw new AssertionError("Failed to receive expected negotiation response", ex);
-        } catch (InterruptedException ex) {
+        } catch (BoltTestClientInterruptedException ex) {
             throw new AssertionError("Interrupted while awaiting negotiation response", ex);
         }
 
@@ -94,7 +95,7 @@ public abstract class TransportConnectionAssertions<
                     () -> {
                         try {
                             return actual.isClosed();
-                        } catch (InterruptedException ex) {
+                        } catch (BoltTestClientInterruptedException ex) {
                             fail(ex);
                         }
                         return false;

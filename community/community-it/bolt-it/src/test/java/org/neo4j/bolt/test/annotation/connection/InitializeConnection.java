@@ -29,12 +29,12 @@ import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.test.connection.initializer.ConnectionInitializer;
 import org.neo4j.bolt.test.provider.ConnectionProvider;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 
 /**
  * Initializes an annotated connection parameter with a specified initializer function.
  * <p />
- * This annotation is applicable to {@link TransportConnection} and {@link ConnectionProvider} parameters within test
+ * This annotation is applicable to {@link BoltTestConnection} and {@link ConnectionProvider} parameters within test
  * functions annotated using the {@link ProtocolTest} and/or {@link TransportTest} annotations.
  * <p />
  * This annotation is a meta-annotation.

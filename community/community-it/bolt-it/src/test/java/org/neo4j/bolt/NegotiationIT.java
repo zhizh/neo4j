@@ -21,17 +21,18 @@ package org.neo4j.bolt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.neo4j.bolt.testing.assertions.BoltConnectionAssertions.assertThat;
-import static org.neo4j.bolt.testing.client.TransportConnection.DEFAULT_PROTOCOL_VERSION;
+import static org.neo4j.bolt.testing.client.BoltTestConnection.DEFAULT_PROTOCOL_VERSION;
 
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
+import org.neo4j.bolt.test.annotation.connection.initializer.Connected;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.test.extension.Inject;
@@ -49,7 +50,7 @@ public class NegotiationIT {
     private OtherThread otherThread;
 
     @ProtocolTest
-    void shouldNegotiateProtocolVersion(BoltWire wire, TransportConnection connection) throws Exception {
+    void shouldNegotiateProtocolVersion(BoltWire wire, @Connected BoltTestConnection connection) throws Exception {
         // When
         connection.send(wire.getProtocolVersion());
 
@@ -58,7 +59,7 @@ public class NegotiationIT {
     }
 
     @TransportTest
-    void shouldReturnNilOnNoApplicableVersion(TransportConnection connection) throws Exception {
+    void shouldReturnNilOnNoApplicableVersion(@Connected BoltTestConnection connection) throws Exception {
         // When
         connection.connect().send(new ProtocolVersion(254, 0, 0));
 
@@ -67,7 +68,7 @@ public class NegotiationIT {
     }
 
     @TransportTest
-    void shouldNegotiateOnRange(TransportConnection connection) throws Exception {
+    void shouldNegotiateOnRange(@Connected BoltTestConnection connection) throws Exception {
         var range = new ProtocolVersion(DEFAULT_PROTOCOL_VERSION.major(), DEFAULT_PROTOCOL_VERSION.minor() + 2, 2);
 
         connection.connect().send(range);
@@ -76,17 +77,18 @@ public class NegotiationIT {
     }
 
     @TransportTest
-    void shouldNegotiateWhenPreferredIsUnavailable(BoltWire wire, TransportConnection connection) throws Exception {
+    void shouldNegotiateWhenPreferredIsUnavailable(BoltWire wire, @Connected BoltTestConnection connection)
+            throws Exception {
         connection.send(new ProtocolVersion(ProtocolVersion.MAX_MAJOR_BIT, 0, 0), wire.getProtocolVersion());
 
         BoltConnectionAssertions.assertThat(connection).negotiates(wire.getProtocolVersion());
     }
 
     @TransportTest
-    void shouldTimeoutWhenHandshakeIsTransmittedTooSlowly(TransportConnection connection) throws Exception {
+    void shouldTimeoutWhenHandshakeIsTransmittedTooSlowly(@Connected BoltTestConnection connection) throws Exception {
         var handshakeBytes = Unpooled.buffer()
                 .writeInt(0x6060B017)
-                .writeInt(TransportConnection.DEFAULT_PROTOCOL_VERSION.encode())
+                .writeInt(BoltTestConnection.DEFAULT_PROTOCOL_VERSION.encode())
                 .writeInt(ProtocolVersion.INVALID.encode())
                 .writeInt(ProtocolVersion.INVALID.encode())
                 .writeInt(ProtocolVersion.INVALID.encode());
@@ -104,7 +106,7 @@ public class NegotiationIT {
     }
 
     @TransportTest
-    void shouldTimeoutWhenTruncatedHandshakeIsTransmitted(TransportConnection connection) throws IOException {
+    void shouldTimeoutWhenTruncatedHandshakeIsTransmitted(@Connected BoltTestConnection connection) throws IOException {
         // Only transmit the magic number (leaving out any protocol versions)
         var buf = Unpooled.buffer().writeInt(0x6060B017);
 

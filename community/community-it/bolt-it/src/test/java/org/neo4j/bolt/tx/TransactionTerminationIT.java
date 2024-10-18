@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Timeout;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -59,7 +59,7 @@ public class TransactionTerminationIT {
 
     @Timeout(15)
     @ProtocolTest
-    void killTxViaReset(BoltWire wire, @Authenticated TransportConnection connection) throws Exception {
+    void killTxViaReset(BoltWire wire, @Authenticated BoltTestConnection connection) throws Exception {
         connection.send(wire.begin()).send(wire.run("UNWIND range(1, 2000000) AS i CREATE (n)"));
 
         awaitTransactionStart();
@@ -74,7 +74,7 @@ public class TransactionTerminationIT {
 
     @Timeout(15)
     @ProtocolTest
-    void killTxThenTryToUseItTest(BoltWire wire, @Authenticated TransportConnection connection) throws Exception {
+    void killTxThenTryToUseItTest(BoltWire wire, @Authenticated BoltTestConnection connection) throws Exception {
         connection
                 .send(wire.begin())
                 .send(wire.run("UNWIND range(1, 200) AS i RETURN i"))
@@ -112,7 +112,7 @@ public class TransactionTerminationIT {
 
     @Timeout(20)
     @ProtocolTest
-    void killedTxShouldNotDestroyConnection(BoltWire wire, @Authenticated TransportConnection connection)
+    void killedTxShouldNotDestroyConnection(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws Exception {
         connection
                 .send(wire.begin())

@@ -28,7 +28,7 @@ import org.neo4j.bolt.test.annotation.connection.initializer.VersionSelected;
 import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltV40Wire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -56,7 +56,7 @@ public class UnauthenticatedIT {
     }
 
     @TransportTest
-    void shouldTimeoutWhenTruncatedHelloIsReceived(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldTimeoutWhenTruncatedHelloIsReceived(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         var msg = wire.hello();
         var buffer = msg.readSlice(msg.readableBytes() / 2);
@@ -70,7 +70,7 @@ public class UnauthenticatedIT {
 
     @TransportTest
     void shouldTerminateConnectionWhenLargeHelloIsReceived(
-            BoltWire wire, @VersionSelected TransportConnection connection) throws IOException {
+            BoltWire wire, @VersionSelected BoltTestConnection connection) throws IOException {
 
         connection.send(wire.hello(x -> {
             for (int i = 0; i < 200; i++) {
@@ -84,7 +84,7 @@ public class UnauthenticatedIT {
     }
 
     @TransportTest
-    void shouldTerminateConnectionWhenLargeDeclaredMetaMapIsReceived(@VersionSelected TransportConnection connection)
+    void shouldTerminateConnectionWhenLargeDeclaredMetaMapIsReceived(@VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(1, BoltV40Wire.MESSAGE_TAG_HELLO))
@@ -101,7 +101,7 @@ public class UnauthenticatedIT {
 
     @TransportTest
     void shouldTerminateConnectionWhenLargeDeclaredListParameterIsReceived(
-            @VersionSelected TransportConnection connection) throws IOException {
+            @VersionSelected BoltTestConnection connection) throws IOException {
         connection.send(PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(1, BoltV40Wire.MESSAGE_TAG_HELLO))
                 .writeMapHeader(1)

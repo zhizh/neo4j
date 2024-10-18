@@ -35,7 +35,7 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.provider.ConnectionProvider;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.function.ThrowingConsumer;
@@ -60,7 +60,7 @@ public class ConcurrentAccessIT {
             ConnectionProvider connectionProvider,
             int nWorkers,
             int nTimes,
-            ThrowingConsumer<TransportConnection, IOException> workload)
+            ThrowingConsumer<BoltTestConnection, IOException> workload)
             throws InterruptedException, ExecutionException {
         var barrier = new DoubleLatch(nWorkers);
         var tasks = new ArrayList<Callable<Void>>();

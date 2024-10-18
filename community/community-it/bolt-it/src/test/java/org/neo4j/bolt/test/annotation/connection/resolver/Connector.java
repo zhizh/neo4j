@@ -28,13 +28,13 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.Resolver;
 import org.neo4j.bolt.test.connection.resolver.ConnectorAddressResolver;
 import org.neo4j.bolt.test.provider.ConnectionProvider;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.configuration.connectors.ConnectorType;
 
 /**
  * Selects the connector to which a connection shall be established via the annotated connection parameter.
  * <p />
- * This annotation is applicable to parameters within {@link BoltTestExtension} methods of types {@link TransportConnection} and
+ * This annotation is applicable to parameters within {@link BoltTestExtension} methods of types {@link BoltTestConnection} and
  * {@link ConnectionProvider}.
  */
 @Documented

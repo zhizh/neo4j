@@ -19,86 +19,72 @@
  */
 package org.neo4j.bolt.testing.client;
 
-import static java.util.Objects.requireNonNull;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import java.io.IOException;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollDomainSocketChannel;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.kqueue.KQueueDomainSocketChannel;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
+import io.netty.channel.unix.DomainSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
-public class UnixDomainSocketConnection extends AbstractTransportConnection {
+public final class UnixDomainSocketConnection extends AbstractNettyConnection {
 
     private static final Factory factory = new Factory();
-    private final SocketAddress address;
 
-    private SocketChannel channel;
+    private final DomainSocketAddress address;
 
-    public UnixDomainSocketConnection(SocketAddress address) {
-        requireNonNull(address);
-
+    public UnixDomainSocketConnection(DomainSocketAddress address) {
+        super(selectEventLoopGroup());
         this.address = address;
     }
 
-    public static TransportConnection.Factory factory() {
+    public static BoltTestConnection.Factory factory() {
         return factory;
     }
 
-    @Override
-    public TransportConnection connect() throws IOException {
-        if (this.channel != null && this.channel.isConnected()) {
-            return this;
+    private static EventLoopGroup selectEventLoopGroup() {
+        if (Epoll.isAvailable()) {
+            return new EpollEventLoopGroup(1);
+        }
+        if (KQueue.isAvailable()) {
+            return new KQueueEventLoopGroup(1);
         }
 
-        this.channel = SocketChannel.open(this.address);
-        return this;
+        throw new IllegalStateException(
+                "UNIX domain sockets are not available within the current execution environment");
     }
 
     @Override
-    public TransportConnection disconnect() throws IOException {
-        if (this.channel == null) {
-            return this;
+    protected DomainSocketAddress address() {
+        return this.address;
+    }
+
+    @Override
+    protected Class<? extends Channel> channelType() {
+        if (Epoll.isAvailable()) {
+            return EpollDomainSocketChannel.class;
+        }
+        if (KQueue.isAvailable()) {
+            return KQueueDomainSocketChannel.class;
         }
 
-        this.channel.close();
-        this.channel = null;
-        return this;
+        // unreachable as same check occurs within constructor
+        throw new UnsupportedOperationException();
     }
 
-    @Override
-    public TransportConnection sendRaw(ByteBuf buf) throws IOException {
-        var heap = ByteBuffer.allocate(128);
-        do {
-            heap.flip();
-            heap.limit(Math.min(buf.readableBytes(), heap.capacity()));
-
-            buf.readBytes(heap);
-            heap.flip();
-            this.channel.write(heap);
-        } while (buf.isReadable());
-
-        return this;
-    }
-
-    @Override
-    public ByteBuf receive(int length) throws IOException {
-        var buffer = ByteBuffer.allocate(length);
-        while (buffer.hasRemaining()) {
-            if (channel.read(buffer) == -1) {
-                throw new IOException("End of stream reached. Connection has died.");
-            }
-        }
-        buffer.flip();
-
-        return Unpooled.wrappedBuffer(buffer);
-    }
-
-    private static class Factory implements TransportConnection.Factory {
+    private static class Factory implements BoltTestConnection.Factory {
 
         @Override
-        public TransportConnection create(SocketAddress address) {
-            return new UnixDomainSocketConnection(address);
+        public BoltTestConnection create(SocketAddress address) {
+            if (address instanceof DomainSocketAddress domainSocketAddress) {
+                return new UnixDomainSocketConnection(domainSocketAddress);
+            }
+
+            throw new IllegalArgumentException("Cannot initialize unix domain socket connection with address of type "
+                    + address.getClass().getSimpleName());
         }
 
         @Override

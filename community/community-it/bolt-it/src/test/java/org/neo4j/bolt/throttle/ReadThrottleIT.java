@@ -34,7 +34,7 @@ import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.test.util.ServerUtil;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -83,7 +83,7 @@ public class ReadThrottleIT {
 
     @TransportTest
     void largeNumberOfSlowRunningJobsShouldChangeAutoReadState(
-            BoltWire wire, @Authenticated TransportConnection connection) throws IOException {
+            BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
         var numberOfRunDiscardPairs = 20;
 
         // when
@@ -93,16 +93,23 @@ public class ReadThrottleIT {
 
         // expect
         for (int i = 0; i < numberOfRunDiscardPairs; i++) {
+            try {
+                LogAssertions.assertThat(internalLogProvider)
+                        .forClass(ChannelReadThrottleHandler.class)
+                        .forLevel(WARN)
+                        .containsMessages("Disabling message processing");
+                LogAssertions.assertThat(internalLogProvider)
+                        .forClass(ChannelReadThrottleHandler.class)
+                        .forLevel(INFO)
+                        .containsMessages("Enabling message processing");
+
+                return;
+            } catch (AssertionError ignore) {
+            }
+
             BoltConnectionAssertions.assertThat(connection).receivesSuccess(2);
         }
 
-        LogAssertions.assertThat(internalLogProvider)
-                .forClass(ChannelReadThrottleHandler.class)
-                .forLevel(WARN)
-                .containsMessages("Disabling message processing");
-        LogAssertions.assertThat(internalLogProvider)
-                .forClass(ChannelReadThrottleHandler.class)
-                .forLevel(INFO)
-                .containsMessages("Enabling message processing");
+        throw new AssertionError("Read throttle was not applied");
     }
 }

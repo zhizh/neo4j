@@ -46,7 +46,7 @@ import org.neo4j.bolt.test.annotation.setup.FactoryFunction;
 import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.test.util.ServerUtil;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.client.TransportType;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
@@ -118,7 +118,7 @@ public class ShutdownSequenceIT {
     }
 
     @TransportTest
-    void shouldReturnFailureForTransactionAwareConnections(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldReturnFailureForTransactionAwareConnections(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException, InterruptedException {
         connection.send(wire.run("CALL test.stream.nodes()")).send(wire.pull());
 
@@ -162,7 +162,7 @@ public class ShutdownSequenceIT {
     }
 
     @TransportTest
-    void shutdownShouldCloseIdleConnections(@Authenticated TransportConnection connection) throws IOException {
+    void shutdownShouldCloseIdleConnections(@Authenticated BoltTestConnection connection) throws IOException {
         // Shutdown the server
         server.getManagementService().shutdown();
 
@@ -177,7 +177,7 @@ public class ShutdownSequenceIT {
 
     @TransportTest
     void shutdownShouldWaitForNonTransactionAwareConnections(
-            BoltWire wire, @Authenticated TransportConnection connection) throws IOException, InterruptedException {
+            BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException, InterruptedException {
         connection.send(wire.run("CALL test.stream.strings()")).send(wire.pull());
 
         // Wait for a transaction to start on the server side

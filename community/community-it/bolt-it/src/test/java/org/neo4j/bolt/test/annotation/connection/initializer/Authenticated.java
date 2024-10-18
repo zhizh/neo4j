@@ -30,13 +30,13 @@ import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.test.connection.initializer.AuthenticateConnectionInitializer;
 import org.neo4j.bolt.test.provider.ConnectionProvider;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 
 /**
- * Ensures that the annotated {@link TransportConnection} parameter in a {@link BoltTestExtension} is negotiated and
+ * Ensures that the annotated {@link BoltTestConnection} parameter in a {@link BoltTestExtension} is negotiated and
  * authenticated prior to invoking the test.
  * <p />
- * This annotation is applicable to {@link TransportConnection} and {@link ConnectionProvider} parameters within test
+ * This annotation is applicable to {@link BoltTestConnection} and {@link ConnectionProvider} parameters within test
  * functions annotated using the {@link ProtocolTest} and/or {@link TransportTest} annotations.
  * <p />
  * This annotation is a meta-annotation and implies {@link Negotiated}.

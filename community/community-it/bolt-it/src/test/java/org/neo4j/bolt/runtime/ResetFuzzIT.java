@@ -23,6 +23,7 @@ import static org.neo4j.bolt.testing.assertions.BoltConnectionAssertions.assertT
 import static org.neo4j.configuration.connectors.BoltConnector.EncryptionLevel.OPTIONAL;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -37,8 +38,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import org.neo4j.bolt.protocol.common.connector.connection.Connection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.client.SocketConnection;
-import org.neo4j.bolt.testing.client.TransportConnection;
 import org.neo4j.bolt.testing.messages.BoltDefaultWire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.testing.sequence.RequestSequenceCollection;
@@ -77,7 +78,7 @@ public class ResetFuzzIT {
     @Inject
     private Neo4jWithSocket server;
 
-    private java.net.SocketAddress address;
+    private InetSocketAddress address;
 
     private final BoltWire wire = new BoltDefaultWire();
 
@@ -86,7 +87,7 @@ public class ResetFuzzIT {
         server.setGraphDatabaseFactory(getTestGraphDatabaseFactory());
         server.setConfigure(getSettingsFunction());
         server.init(testInfo);
-        address = server.lookupDefaultConnector().toSocketAddress();
+        address = (InetSocketAddress) server.lookupDefaultConnector().toSocketAddress();
     }
 
     @AfterEach
@@ -152,7 +153,7 @@ public class ResetFuzzIT {
         }
     }
 
-    private TransportConnection connectAndAuthenticate() throws Exception {
+    private BoltTestConnection connectAndAuthenticate() throws Exception {
         var connection = new SocketConnection(address)
                 .connect()
                 .sendDefaultProtocolVersion()

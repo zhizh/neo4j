@@ -26,7 +26,7 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.initializer.EnableFeature;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.packstream.struct.StructHeader;
 import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
@@ -38,7 +38,7 @@ import org.neo4j.values.storable.CoordinateReferenceSystem;
 public class StructArgumentIT extends AbstractStructArgumentIT {
 
     @ProtocolTest
-    void shouldFailWhenPoint2DIsSentWithInvalidCrsId(@Authenticated TransportConnection connection) throws IOException {
+    void shouldFailWhenPoint2DIsSentWithInvalidCrsId(@Authenticated BoltTestConnection connection) throws IOException {
         testFailureWithUnpackableValue(
                 connection,
                 buf -> buf.writeStructHeader(new StructHeader(3, StructType.POINT_2D.getTag()))
@@ -49,7 +49,7 @@ public class StructArgumentIT extends AbstractStructArgumentIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenPoint3DIsSentWithInvalidCrsId(@Authenticated TransportConnection connection) throws IOException {
+    void shouldFailWhenPoint3DIsSentWithInvalidCrsId(@Authenticated BoltTestConnection connection) throws IOException {
         testFailureWithUnpackableValue(
                 connection,
                 buf -> buf.writeStructHeader(new StructHeader(4, StructType.POINT_3D.getTag()))
@@ -61,7 +61,7 @@ public class StructArgumentIT extends AbstractStructArgumentIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenPoint2DDimensionsDoNotMatch(@Authenticated TransportConnection connection) throws IOException {
+    void shouldFailWhenPoint2DDimensionsDoNotMatch(@Authenticated BoltTestConnection connection) throws IOException {
         testFailureWithUnpackableValue(
                 connection,
                 buf -> buf.writeStructHeader(new StructHeader(3, StructType.POINT_2D.getTag()))
@@ -72,7 +72,7 @@ public class StructArgumentIT extends AbstractStructArgumentIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenPoint3DDimensionsDoNotMatch(@Authenticated TransportConnection connection) throws IOException {
+    void shouldFailWhenPoint3DDimensionsDoNotMatch(@Authenticated BoltTestConnection connection) throws IOException {
         testFailureWithUnpackableValue(
                 connection,
                 buf -> buf.writeStructHeader(new StructHeader(4, StructType.POINT_3D.getTag()))
@@ -85,7 +85,7 @@ public class StructArgumentIT extends AbstractStructArgumentIT {
 
     @ProtocolTest
     @EnableFeature(Feature.UTC_DATETIME)
-    void shouldFailWhenZonedDateTimeZoneIdIsNotKnown(@Authenticated TransportConnection connection) throws IOException {
+    void shouldFailWhenZonedDateTimeZoneIdIsNotKnown(@Authenticated BoltTestConnection connection) throws IOException {
         testFailureWithUnpackableValue(
                 connection,
                 buf -> buf.writeStructHeader(new StructHeader(3, StructType.DATE_TIME_ZONE_ID.getTag()))

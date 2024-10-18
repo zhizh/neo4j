@@ -24,11 +24,12 @@ import static org.neo4j.configuration.connectors.BoltConnector.EncryptionLevel.R
 import java.io.IOException;
 import java.util.Map;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
+import org.neo4j.bolt.test.annotation.connection.initializer.Connected;
 import org.neo4j.bolt.test.annotation.connection.transport.preset.PlaintextTransportOnly;
 import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.configuration.connectors.BoltConnector;
@@ -52,7 +53,7 @@ public class RequiredTransportSecurityIT {
     @TransportTest
     @PlaintextTransportOnly
     void shouldCloseUnencryptedConnectionOnHandshakeWhenEncryptionIsRequired(
-            BoltWire wire, TransportConnection connection) throws IOException {
+            BoltWire wire, @Connected BoltTestConnection connection) throws IOException {
         connection.send(wire.getProtocolVersion());
 
         BoltConnectionAssertions.assertThat(connection).isEventuallyTerminated();

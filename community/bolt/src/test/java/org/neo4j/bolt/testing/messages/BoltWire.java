@@ -34,7 +34,7 @@ import org.neo4j.bolt.protocol.common.connector.connection.Feature;
 import org.neo4j.bolt.protocol.common.message.request.connection.RoutingContext;
 import org.neo4j.bolt.protocol.io.pipeline.WriterPipeline;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.factory.BeginMessageBuilder;
 import org.neo4j.bolt.testing.messages.factory.HelloMessageBuilder;
 import org.neo4j.bolt.testing.messages.factory.RunMessageBuilder;
@@ -88,7 +88,7 @@ public interface BoltWire {
      * @param connection a connection.
      * @throws IOException when transmitting the request fails.
      */
-    default void negotiate(TransportConnection connection) throws IOException {
+    default void negotiate(BoltTestConnection connection) {
         connection.send(this.getProtocolVersion());
 
         BoltConnectionAssertions.assertThat(connection).negotiates(this.getProtocolVersion());

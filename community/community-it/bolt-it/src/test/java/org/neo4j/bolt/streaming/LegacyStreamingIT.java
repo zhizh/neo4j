@@ -35,7 +35,7 @@ import org.neo4j.bolt.test.annotation.connection.initializer.VersionSelected;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltV44Wire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -64,7 +64,7 @@ public class LegacyStreamingIT {
     }
 
     @ProtocolTest
-    void shouldReturnLegacyIdForNodes(BoltWire wire, @Authenticated TransportConnection connection) throws IOException {
+    void shouldReturnLegacyIdForNodes(BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
         connection
                 .send(wire.run("CREATE (m:Movie{title:\"The Matrix\"}) RETURN m"))
                 .send(wire.pull());
@@ -93,7 +93,7 @@ public class LegacyStreamingIT {
     }
 
     @ProtocolTest
-    void shouldReturnLegacyIdForRelationships(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldReturnLegacyIdForRelationships(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection
                 .send(
@@ -116,7 +116,7 @@ public class LegacyStreamingIT {
     }
 
     @ProtocolTest
-    void shouldReturnLegacyIdForPaths(BoltWire wire, @Authenticated TransportConnection connection) throws IOException {
+    void shouldReturnLegacyIdForPaths(BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
         connection
                 .send(
                         wire.run(
@@ -148,7 +148,7 @@ public class LegacyStreamingIT {
     }
 
     @ProtocolTest
-    void shouldNegotiateUTCPatch(BoltWire wire, @VersionSelected TransportConnection connection) throws IOException {
+    void shouldNegotiateUTCPatch(BoltWire wire, @VersionSelected BoltTestConnection connection) throws IOException {
         wire.enable(Feature.UTC_DATETIME);
         connection.send(wire.hello());
 
@@ -157,7 +157,7 @@ public class LegacyStreamingIT {
     }
 
     @ProtocolTest
-    void shouldAcceptLegacyOffsetDateTimes(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldAcceptLegacyOffsetDateTimes(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         var input =
                 DateTimeValue.datetime(OffsetDateTime.of(1995, 6, 14, 12, 50, 35, 556000000, ZoneOffset.ofHours(1)));
@@ -182,7 +182,7 @@ public class LegacyStreamingIT {
     }
 
     @ProtocolTest
-    void shouldAcceptLegacyZoneDateTimes(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldAcceptLegacyZoneDateTimes(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection
                 .send(wire.run("RETURN datetime('1995-06-14T12:50:35.556+02:00[Europe/Berlin]')"))
@@ -203,7 +203,7 @@ public class LegacyStreamingIT {
     }
 
     @ProtocolTest
-    void shouldNotAcceptUTCDatesWithoutPatch(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldNotAcceptUTCDatesWithoutPatch(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws Exception {
         wire.enable(Feature.UTC_DATETIME);
 

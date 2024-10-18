@@ -32,7 +32,7 @@ import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.test.util.ServerUtil;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -67,7 +67,7 @@ public class KeepAliveIT {
 
     @ProtocolTest
     @ExcludeWire(@Version(major = 4, minor = 2, range = 2))
-    void shouldSendNoOpForLongRunningTx(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldSendNoOpForLongRunningTx(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection.send(wire.run("CALL boltissue.sleep(100)")).send(wire.pull());
 
@@ -79,7 +79,7 @@ public class KeepAliveIT {
 
     @ProtocolTest
     @IncludeWire(@Version(major = 4, minor = 0))
-    void shouldNotSendNoOpForLongRunningTxInLegacyVersions(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldNotSendNoOpForLongRunningTxInLegacyVersions(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection.send(wire.run("CALL boltissue.sleep(100)")).send(wire.pull());
 

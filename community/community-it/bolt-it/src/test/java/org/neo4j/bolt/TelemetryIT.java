@@ -32,7 +32,7 @@ import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
 import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.testing.messages.factory.TelemetryMessageBuilder;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -53,7 +53,7 @@ public class TelemetryIT {
 
     @ProtocolTest
     @IncludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldFailToProcessTelemetryWhenOldBoltVersion(@Authenticated TransportConnection connection, BoltWire wire)
+    void shouldFailToProcessTelemetryWhenOldBoltVersion(@Authenticated BoltTestConnection connection, BoltWire wire)
             throws IOException {
         connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
 
@@ -62,7 +62,7 @@ public class TelemetryIT {
 
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldProcessTelemetry(@Authenticated TransportConnection connection, BoltWire wire) throws IOException {
+    void shouldProcessTelemetry(@Authenticated BoltTestConnection connection, BoltWire wire) throws IOException {
         connection
                 .send(wire.telemetry(TelemetryMessageBuilder::withExecute))
                 .send(wire.telemetry(TelemetryMessageBuilder::withUnmanagedTransactions))
@@ -74,7 +74,7 @@ public class TelemetryIT {
 
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldNotProcessTelemetryWhenFailed(@Authenticated TransportConnection connection, BoltWire wire)
+    void shouldNotProcessTelemetryWhenFailed(@Authenticated BoltTestConnection connection, BoltWire wire)
             throws IOException {
         connection.send(wire.run("✨✨✨ FIRE ✨✨✨"));
         connection
@@ -90,7 +90,7 @@ public class TelemetryIT {
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
     void shouldFailWhenTelemetryIsReceivedPriorToNegotiation(
-            @VersionSelected TransportConnection connection, BoltWire wire) throws IOException {
+            @VersionSelected BoltTestConnection connection, BoltWire wire) throws IOException {
         connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
 
         BoltConnectionAssertions.assertThat(connection)
@@ -102,7 +102,7 @@ public class TelemetryIT {
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
     void shouldFailWhenTelemetryIsReceivedPriorToAuthentication(
-            @Negotiated TransportConnection connection, BoltWire wire) throws IOException {
+            @Negotiated BoltTestConnection connection, BoltWire wire) throws IOException {
         connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
 
         BoltConnectionAssertions.assertThat(connection)
@@ -113,7 +113,7 @@ public class TelemetryIT {
 
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldFailWhenTelemetryIsInTxReady(@Authenticated TransportConnection connection, BoltWire wire)
+    void shouldFailWhenTelemetryIsInTxReady(@Authenticated BoltTestConnection connection, BoltWire wire)
             throws IOException {
         connection.send(wire.begin());
         BoltConnectionAssertions.assertThat(connection).receivesSuccess();
@@ -128,7 +128,7 @@ public class TelemetryIT {
 
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldFailWhenTelemetryIsReceivedAfterLogoff(@Authenticated TransportConnection connection, BoltWire wire)
+    void shouldFailWhenTelemetryIsReceivedAfterLogoff(@Authenticated BoltTestConnection connection, BoltWire wire)
             throws IOException {
         connection
                 .send(wire.telemetry(TelemetryMessageBuilder::withExecute))
@@ -145,7 +145,7 @@ public class TelemetryIT {
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
     void shouldCloseConnectionWhenANonSupportedApiTypeIsSent(
-            @Authenticated TransportConnection connection, BoltWire wire) throws IOException {
+            @Authenticated BoltTestConnection connection, BoltWire wire) throws IOException {
         connection.send(wire.telemetry(TelemetryMessageBuilder::withANonValidAPIType));
 
         BoltConnectionAssertions.assertThat(connection).receivesFailure();

@@ -19,10 +19,6 @@
  */
 package org.neo4j.bolt.testing.client;
 
-import org.neo4j.bolt.testing.client.tls.SecureSocketConnection;
-import org.neo4j.bolt.testing.client.websocket.SecureWebSocketConnection;
-import org.neo4j.bolt.testing.client.websocket.WebSocketConnection;
-
 public enum TransportType {
     TCP(SocketConnection.factory()),
     TCP_TLS(SecureSocketConnection.factory()),
@@ -33,13 +29,13 @@ public enum TransportType {
 
     LOCAL(LocalConnection.factory());
 
-    private final TransportConnection.Factory factory;
+    private final BoltTestConnection.Factory factory;
 
-    TransportType(TransportConnection.Factory factory) {
+    TransportType(BoltTestConnection.Factory factory) {
         this.factory = factory;
     }
 
-    public TransportConnection.Factory getFactory() {
+    public BoltTestConnection.Factory getFactory() {
         return this.factory;
     }
 }

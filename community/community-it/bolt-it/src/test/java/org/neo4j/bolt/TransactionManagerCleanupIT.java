@@ -27,7 +27,7 @@ import org.assertj.core.api.Assertions;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -44,7 +44,7 @@ public class TransactionManagerCleanupIT {
     private Neo4jWithSocket server;
 
     @ProtocolTest
-    void shouldIncreaseAndDecreaseTxCount(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldIncreaseAndDecreaseTxCount(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         var txManager = resolveDependency(server, TransactionManager.class);
 

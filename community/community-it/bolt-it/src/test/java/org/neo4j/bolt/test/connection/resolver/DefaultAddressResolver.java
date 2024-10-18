@@ -20,8 +20,8 @@
 package org.neo4j.bolt.test.connection.resolver;
 
 import io.netty.channel.local.LocalAddress;
+import io.netty.channel.unix.DomainSocketAddress;
 import java.net.SocketAddress;
-import java.net.UnixDomainSocketAddress;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.neo4j.bolt.test.annotation.connection.Resolver;
@@ -45,7 +45,7 @@ public final class DefaultAddressResolver extends AbstractAddressResolver {
             TransportType transportType) {
 
         if (transportType.equals(TransportType.UNIX)) {
-            return UnixDomainSocketAddress.of(server.lookupUnixConnector());
+            return new DomainSocketAddress(server.lookupUnixConnector().toFile());
         } else if (transportType.equals(TransportType.LOCAL)) {
             return new LocalAddress(server.lookupLocalConnector());
         } else {

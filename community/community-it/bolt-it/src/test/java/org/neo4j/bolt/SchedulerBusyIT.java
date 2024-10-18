@@ -38,7 +38,7 @@ import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.test.provider.ConnectionProvider;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.client.TransportType;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
@@ -103,19 +103,19 @@ public class SchedulerBusyIT {
         this.userLogProvider.clear();
     }
 
-    private static void enterStreaming(BoltWire wire, TransportConnection connection) throws IOException {
+    private static void enterStreaming(BoltWire wire, BoltTestConnection connection) throws IOException {
         connection.send(wire.run("UNWIND RANGE (1, 100) AS x RETURN x"));
 
         BoltConnectionAssertions.assertThat(connection).receivesSuccess();
     }
 
-    private static void exitStreaming(BoltWire wire, TransportConnection connection) throws IOException {
+    private static void exitStreaming(BoltWire wire, BoltTestConnection connection) throws IOException {
         connection.send(wire.discard());
 
         BoltConnectionAssertions.assertThat(connection).receivesSuccess();
     }
 
-    private static void establishNewConnection(BoltWire wire, TransportConnection connection) throws Exception {
+    private static void establishNewConnection(BoltWire wire, BoltTestConnection connection) throws Exception {
         connection.send(wire.hello());
         BoltConnectionAssertions.assertThat(connection).receivesSuccess();
     }
@@ -124,8 +124,8 @@ public class SchedulerBusyIT {
     @ExcludeTransport({TransportType.WEBSOCKET, TransportType.WEBSOCKET_TLS})
     void shouldReportFailureWhenAllThreadsInThreadPoolAreBusy(
             BoltWire wire,
-            @Authenticated TransportConnection connection1,
-            @Authenticated TransportConnection connection2,
+            @Authenticated BoltTestConnection connection1,
+            @Authenticated BoltTestConnection connection2,
             @VersionSelected ConnectionProvider connectionProvider)
             throws Exception {
         // saturate the thread pool using autocommit transactions (this works since open transactions currently force
@@ -186,10 +186,10 @@ public class SchedulerBusyIT {
     @TransportTest
     void shouldOperateNormallyWhenThreadsFreeUp(
             BoltWire wire,
-            @Authenticated TransportConnection connection1,
-            @Authenticated TransportConnection connection2,
-            @VersionSelected TransportConnection connection3,
-            @VersionSelected TransportConnection connection4)
+            @Authenticated BoltTestConnection connection1,
+            @Authenticated BoltTestConnection connection2,
+            @VersionSelected BoltTestConnection connection3,
+            @VersionSelected BoltTestConnection connection4)
             throws Exception {
         // saturate the thread pool using autocommit transactions (this works since open transactions currently force
         // Bolt to stick to the worker thread until closed or timed out)
@@ -222,10 +222,10 @@ public class SchedulerBusyIT {
     @TransportTest
     void shouldStopConnectionsWhenRelatedJobIsRejectedOnShutdown(
             BoltWire wire,
-            @Authenticated TransportConnection connection1,
-            @Authenticated TransportConnection connection2,
-            @Authenticated TransportConnection connection3,
-            @Authenticated TransportConnection connection4)
+            @Authenticated BoltTestConnection connection1,
+            @Authenticated BoltTestConnection connection2,
+            @Authenticated BoltTestConnection connection3,
+            @Authenticated BoltTestConnection connection4)
             throws IOException {
         // start and terminate a few jobs regularly
         enterStreaming(wire, connection1);

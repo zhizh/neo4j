@@ -19,8 +19,6 @@
  */
 package org.neo4j.bolt.test.extension.resolver.connection;
 
-import java.io.IOException;
-import java.net.SocketAddress;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -29,7 +27,7 @@ import org.neo4j.bolt.test.provider.ConnectionProvider;
 import org.neo4j.bolt.testing.client.TransportType;
 import org.neo4j.bolt.testing.messages.BoltWire;
 
-public class ConnectionProviderParameterResolver extends AbstractConnectionInitializingParameterResolver<IOException> {
+public class ConnectionProviderParameterResolver extends AbstractConnectionInitializingParameterResolver {
 
     public ConnectionProviderParameterResolver(
             TransportConnectionManager connectionManager, BoltWire wire, TransportType transportType) {
@@ -46,14 +44,5 @@ public class ConnectionProviderParameterResolver extends AbstractConnectionIniti
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         return (ConnectionProvider) () -> this.acquireConnection(extensionContext, parameterContext);
-    }
-
-    @Override
-    protected void fail(SocketAddress address, Throwable cause) throws IOException {
-        if (cause instanceof IOException) {
-            throw (IOException) cause;
-        }
-
-        throw new IOException("Failed to establish connection to " + address, cause);
     }
 }

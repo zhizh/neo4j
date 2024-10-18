@@ -19,34 +19,35 @@
  */
 package org.neo4j.packstream.testing;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.function.Predicate;
 import org.assertj.core.api.InstanceOfAssertFactory;
-import org.neo4j.bolt.testing.assertions.TransportConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.assertions.BoltTestConnectionAssertions;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
+import org.neo4j.bolt.testing.client.error.BoltTestClientIOException;
+import org.neo4j.bolt.testing.client.error.BoltTestClientInterruptedException;
 import org.neo4j.packstream.io.PackstreamBuf;
 
 public final class PackstreamConnectionAssertions
-        extends TransportConnectionAssertions<PackstreamConnectionAssertions, TransportConnection> {
-    private PackstreamConnectionAssertions(TransportConnection transportConnection) {
-        super(transportConnection, PackstreamConnectionAssertions.class);
+        extends BoltTestConnectionAssertions<PackstreamConnectionAssertions, BoltTestConnection> {
+    private PackstreamConnectionAssertions(BoltTestConnection connection) {
+        super(connection, PackstreamConnectionAssertions.class);
     }
 
-    public static PackstreamConnectionAssertions assertThat(TransportConnection value) {
+    public static PackstreamConnectionAssertions assertThat(BoltTestConnection value) {
         return new PackstreamConnectionAssertions(value);
     }
 
-    public static InstanceOfAssertFactory<TransportConnection, PackstreamConnectionAssertions> packstreamConnection() {
-        return new InstanceOfAssertFactory<>(TransportConnection.class, PackstreamConnectionAssertions::new);
+    public static InstanceOfAssertFactory<BoltTestConnection, PackstreamConnectionAssertions> packstreamConnection() {
+        return new InstanceOfAssertFactory<>(BoltTestConnection.class, PackstreamConnectionAssertions::new);
     }
 
     public PackstreamBufAssertions receivesMessage() {
         try {
             return PackstreamBufAssertions.assertThat(PackstreamBuf.wrap(this.actual.receiveMessage()));
-        } catch (IOException ex) {
+        } catch (BoltTestClientIOException ex) {
             throw new AssertionError("Failed to retrieve expected message", ex);
-        } catch (InterruptedException ex) {
+        } catch (BoltTestClientInterruptedException ex) {
             throw new AssertionError("Interrupted while awaiting expected message", ex);
         }
     }
@@ -60,9 +61,9 @@ public final class PackstreamConnectionAssertions
                 buf = PackstreamBuf.wrap(this.actual.receiveMessage());
                 accumulator.add(buf);
             } while (assertions.test(buf));
-        } catch (IOException ex) {
+        } catch (BoltTestClientIOException ex) {
             throw new AssertionError("Failed to retrieve expected message", ex);
-        } catch (InterruptedException ex) {
+        } catch (BoltTestClientInterruptedException ex) {
             throw new AssertionError("Interrupted while awaiting expected message", ex);
         }
 

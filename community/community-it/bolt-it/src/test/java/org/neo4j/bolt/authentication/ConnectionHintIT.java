@@ -31,7 +31,7 @@ import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
 import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.configuration.connectors.BoltConnector;
@@ -50,7 +50,7 @@ public class ConnectionHintIT {
 
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldIncludeTelemetryHintOnCompatibleVersions(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldIncludeTelemetryHintOnCompatibleVersions(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello());
 
@@ -62,7 +62,7 @@ public class ConnectionHintIT {
 
     @ProtocolTest
     @IncludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldExcludeTelemetryHintOnLegacyVersions(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldExcludeTelemetryHintOnLegacyVersions(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello());
 

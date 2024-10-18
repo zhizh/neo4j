@@ -21,18 +21,18 @@ package org.neo4j.bolt.testing.client;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelOption;
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.net.SocketOption;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.stream.Stream;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
-import org.neo4j.bolt.testing.client.tls.SecureSocketConnection;
-import org.neo4j.bolt.testing.client.websocket.SecureWebSocketConnection;
-import org.neo4j.bolt.testing.client.websocket.WebSocketConnection;
+import org.neo4j.bolt.testing.client.error.BoltTestClientException;
 import org.neo4j.bolt.testing.messages.BoltDefaultWire;
 import org.neo4j.packstream.io.PackstreamBuf;
 
-public interface TransportConnection extends AutoCloseable {
+public interface BoltTestConnection extends AutoCloseable {
 
     /**
      * Defines the default protocol version which is transmitted when no specific value is passed.
@@ -60,7 +60,19 @@ public interface TransportConnection extends AutoCloseable {
      * @return a reference to this connection.
      * @throws IOException when establishing the connection fails.
      */
-    TransportConnection connect() throws IOException;
+    BoltTestConnection connect();
+
+    /**
+     * Sets the certificate and private key to use for the purposes of client authentication.
+     * <p />
+     * This method takes effect when the connection is established (e.g. requires an uninitialized
+     * connection).
+     *
+     * @param certificate a certificate.
+     * @param privateKey a private key.
+     * @return a reference to this connection.
+     */
+    BoltTestConnection setCertificate(X509Certificate certificate, PrivateKey privateKey);
 
     /**
      * Sets a given socket option (if supported).
@@ -72,9 +84,7 @@ public interface TransportConnection extends AutoCloseable {
      * @param <T>    an option type.
      * @return a reference to this connection.
      */
-    default <T> TransportConnection setOption(SocketOption<T> option, T value) {
-        return this;
-    }
+    <T> BoltTestConnection setOption(ChannelOption<T> option, T value);
 
     /**
      * Terminates the connection.
@@ -82,7 +92,7 @@ public interface TransportConnection extends AutoCloseable {
      * @return a reference to this connection.
      * @throws IOException when an error is reported during the disconnect.
      */
-    TransportConnection disconnect() throws IOException;
+    BoltTestConnection disconnect();
 
     /**
      * Re-establishes a connection to the desired host.
@@ -93,10 +103,10 @@ public interface TransportConnection extends AutoCloseable {
      * @return a reference to this connection.
      * @throws IOException when establishing the connection fails.
      */
-    default TransportConnection reconnect() throws IOException {
+    default BoltTestConnection reconnect() {
         try {
             this.disconnect();
-        } catch (IOException ignore) {
+        } catch (BoltTestClientException ignore) {
         }
 
         return this.connect();
@@ -109,7 +119,7 @@ public interface TransportConnection extends AutoCloseable {
      * @return a reference to this connection.
      * @throws IOException when transmitting the payload fails.
      */
-    TransportConnection sendRaw(ByteBuf buf) throws IOException;
+    BoltTestConnection sendRaw(ByteBuf buf);
 
     /**
      * Transmits a given payload via this connection.
@@ -118,33 +128,28 @@ public interface TransportConnection extends AutoCloseable {
      * @return a reference to this connection.
      * @throws IOException when transmitting the payload fails.
      */
-    default TransportConnection sendRaw(byte[] rawBytes) throws IOException {
+    default BoltTestConnection sendRaw(byte[] rawBytes) {
         return this.sendRaw(Unpooled.wrappedBuffer(rawBytes));
     }
 
-    default TransportConnection sendDefaultProtocolVersion() throws IOException {
+    default BoltTestConnection sendDefaultProtocolVersion() {
         return this.send(DEFAULT_PROTOCOL_VERSION);
     }
 
-    TransportConnection send(ProtocolVersion version) throws IOException;
+    default BoltTestConnection send(ProtocolVersion version) {
+        return this.send(version, ProtocolVersion.INVALID, ProtocolVersion.INVALID, ProtocolVersion.INVALID);
+    }
 
-    TransportConnection send(ProtocolVersion version1, ProtocolVersion version2) throws IOException;
+    default BoltTestConnection send(ProtocolVersion version1, ProtocolVersion version2) {
+        return this.send(version1, version2, ProtocolVersion.INVALID, ProtocolVersion.INVALID);
+    }
 
-    TransportConnection send(ProtocolVersion version1, ProtocolVersion version2, ProtocolVersion version3)
-            throws IOException;
+    default BoltTestConnection send(ProtocolVersion version1, ProtocolVersion version2, ProtocolVersion version3) {
+        return this.send(version1, version2, version3, ProtocolVersion.INVALID);
+    }
 
-    TransportConnection send(
-            ProtocolVersion version1, ProtocolVersion version2, ProtocolVersion version3, ProtocolVersion version4)
-            throws IOException;
-
-    /**
-     * Transmits a chunked message via this connection.
-     *
-     * @param buf an arbitrary payload.
-     * @return a reference to this connection.
-     * @throws IOException when transmitting the payload fails.
-     */
-    TransportConnection send(ByteBuf buf) throws IOException;
+    BoltTestConnection send(
+            ProtocolVersion version1, ProtocolVersion version2, ProtocolVersion version3, ProtocolVersion version4);
 
     /**
      * Transmits a chunked message via this connection.
@@ -153,7 +158,16 @@ public interface TransportConnection extends AutoCloseable {
      * @return a reference to this connection.
      * @throws IOException when transmitting the payload fails.
      */
-    default TransportConnection send(PackstreamBuf buf) throws IOException {
+    BoltTestConnection send(ByteBuf buf);
+
+    /**
+     * Transmits a chunked message via this connection.
+     *
+     * @param buf an arbitrary payload.
+     * @return a reference to this connection.
+     * @throws IOException when transmitting the payload fails.
+     */
+    default BoltTestConnection send(PackstreamBuf buf) {
         return this.send(buf.getTarget());
     }
 
@@ -172,35 +186,28 @@ public interface TransportConnection extends AutoCloseable {
      * @param length a payload length in bytes.
      * @return a reference to this connection.
      * @throws IOException          when transmitting the payload fails.
-     * @throws InterruptedException when the thread is interrupted while waiting for additional data to arrive.
+     * @when the thread is interrupted while waiting for additional data to arrive.
      */
-    ByteBuf receive(int length) throws IOException, InterruptedException;
+    ByteBuf receive(int length);
 
-    ProtocolVersion receiveNegotiatedVersion() throws IOException, InterruptedException;
+    ProtocolVersion receiveNegotiatedVersion();
 
-    int receiveChunkHeader() throws IOException, InterruptedException;
+    int receiveChunkHeader();
 
-    ByteBuf receiveMessage() throws IOException, InterruptedException;
+    ByteBuf receiveMessage();
 
-    default boolean isClosed() throws InterruptedException {
-        try {
-            this.sendRaw(new byte[] {0, 0}).receive(1);
-            return false;
-        } catch (IOException e) {
-            return true;
-        }
-    }
+    boolean isClosed();
 
     @Override
-    default void close() throws Exception {
+    default void close() {
         try {
             this.disconnect();
-        } catch (IOException ignore) {
+        } catch (BoltTestClientException ignore) {
         }
     }
 
     @FunctionalInterface
     interface Factory {
-        TransportConnection create(SocketAddress address);
+        BoltTestConnection create(SocketAddress address);
     }
 }

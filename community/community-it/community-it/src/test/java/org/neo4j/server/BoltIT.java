@@ -26,6 +26,7 @@ import static org.neo4j.bolt.testing.assertions.BoltConnectionAssertions.assertT
 import static org.neo4j.configuration.SettingValueParsers.TRUE;
 import static org.neo4j.server.helpers.CommunityWebContainerBuilder.serverOnRandomPorts;
 
+import io.netty.channel.unix.DomainSocketAddress;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -37,7 +38,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.neo4j.bolt.BoltServer;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.client.SocketConnection;
+import org.neo4j.bolt.testing.client.UnixDomainSocketConnection;
 import org.neo4j.configuration.connectors.BoltConnector;
 import org.neo4j.configuration.connectors.ConnectorPortRegister;
 import org.neo4j.configuration.connectors.ConnectorType;
@@ -120,9 +123,23 @@ class BoltIT extends ExclusiveWebContainerTestBase {
 
             Assertions.assertThat(encounteredAddresses).isNotIn(encounteredAddresses);
 
-            try (var connection = new SocketConnection(addr)) {
+            BoltTestConnection connection = null;
+            try {
+                if (addr instanceof InetSocketAddress socketAddress) {
+                    connection = new SocketConnection(socketAddress);
+                } else if (addr instanceof DomainSocketAddress domainSocketAddress) {
+                    connection = new UnixDomainSocketConnection(domainSocketAddress);
+                } else {
+                    throw new AssertionError("Encountered connector with unsupported socket address type: "
+                            + addr.getClass() + " (" + addr + ")");
+                }
+
                 connection.connect().sendDefaultProtocolVersion();
                 assertThat(connection).negotiatesDefaultVersion();
+            } finally {
+                if (connection != null) {
+                    connection.close();
+                }
             }
 
             encounteredAddresses.add(addr);

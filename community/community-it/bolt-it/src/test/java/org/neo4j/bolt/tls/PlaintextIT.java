@@ -19,15 +19,15 @@
  */
 package org.neo4j.bolt.tls;
 
-import java.io.IOException;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
+import org.neo4j.bolt.test.annotation.connection.initializer.Connected;
 import org.neo4j.bolt.test.annotation.connection.transport.preset.SecureTransportOnly;
 import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.TransportTest;
 import org.neo4j.bolt.test.provider.ConnectionProvider;
-import org.neo4j.bolt.testing.client.TransportType;
+import org.neo4j.bolt.testing.client.error.BoltTestClientIOException;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.configuration.connectors.BoltConnector;
@@ -50,17 +50,10 @@ public class PlaintextIT {
 
     @TransportTest
     @SecureTransportOnly
-    void shouldTerminateConnectionDuringHandshake(
-            TransportType transport, BoltWire wire, ConnectionProvider connectionProvider) throws Exception {
-        // depending on the transport we get different error messages as the WebSocket client seems to hide the
-        // actual TLS error
-        var message = "Remote host terminated the handshake";
-        if (transport == TransportType.WEBSOCKET_TLS) {
-            message = "Failed to connect to the server within 5 minutes";
-        }
-
-        Assertions.assertThatExceptionOfType(IOException.class)
+    void shouldTerminateConnectionDuringHandshake(BoltWire wire, @Connected ConnectionProvider connectionProvider)
+            throws Exception {
+        Assertions.assertThatExceptionOfType(BoltTestClientIOException.class)
                 .isThrownBy(() -> connectionProvider.create().send(wire.getProtocolVersion()))
-                .withMessage(message);
+                .withStackTraceContaining("Connection closed");
     }
 }

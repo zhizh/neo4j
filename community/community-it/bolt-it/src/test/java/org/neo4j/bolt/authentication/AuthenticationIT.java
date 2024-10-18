@@ -25,7 +25,6 @@ import static org.neo4j.logging.AssertableLogProvider.Level.WARN;
 import static org.neo4j.test.assertion.Assert.awaitUntilAsserted;
 import static org.neo4j.test.conditions.Conditions.TRUE;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
@@ -33,14 +32,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.bolt.protocol.common.connector.connection.AtomicSchedulingConnection;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
+import org.neo4j.bolt.test.annotation.connection.initializer.Connected;
 import org.neo4j.bolt.test.annotation.connection.initializer.VersionSelected;
 import org.neo4j.bolt.test.annotation.setup.FactoryFunction;
 import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
+import org.neo4j.bolt.test.provider.ConnectionProvider;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.configuration.GraphDatabaseSettings;
@@ -85,8 +86,8 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldRespondWithCredentialsExpiredOnFirstUse(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldRespondWithCredentialsExpiredOnFirstUse(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -104,8 +105,8 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldFailIfWrongCredentials(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldFailIfWrongCredentials(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -141,63 +142,62 @@ public class AuthenticationIT {
 
     @ProtocolTest
     void shouldFailIfWrongCredentialsFollowingSuccessfulLogin(
-            BoltWire wire, @VersionSelected TransportConnection connection) throws IOException {
+            BoltWire wire, @VersionSelected ConnectionProvider connectionProvider) {
+        try (var connection = connectionProvider.create()) {
+            connection.send(wire.hello());
+            // ensure that the server returns the expected set of metadata
+            BoltConnectionAssertions.assertThat(connection)
+                    .receivesSuccess(meta -> Assertions.assertThat(meta).containsKeys("server", "connection_id"));
 
-        connection.send(wire.hello());
-        // ensure that the server returns the expected set of metadata
-        BoltConnectionAssertions.assertThat(connection)
-                .receivesSuccess(meta -> Assertions.assertThat(meta).containsKeys("server", "connection_id"));
+            // authenticate normally using the preset credentials and update the password to a new value
+            connection.send(wire.logon(Map.of(
+                    "scheme", "basic",
+                    "principal", "neo4j",
+                    "credentials", "neo4j")));
 
-        // authenticate normally using the preset credentials and update the password to a new value
-        connection.send(wire.logon(Map.of(
-                "scheme", "basic",
-                "principal", "neo4j",
-                "credentials", "neo4j")));
+            BoltConnectionAssertions.assertThat(connection).receivesSuccess();
 
-        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+            connection.send(wire.run("ALTER CURRENT USER SET PASSWORD FROM 'neo4j' TO $password", x -> x.withParameters(
+                            singletonMap("password", "secretPassword"))
+                    .withDatabase(SYSTEM_DATABASE_NAME)));
+            connection.send(wire.pull());
 
-        connection.send(wire.run("ALTER CURRENT USER SET PASSWORD FROM 'neo4j' TO $password", x -> x.withParameters(
-                        singletonMap("password", "secretPassword"))
-                .withDatabase(SYSTEM_DATABASE_NAME)));
-        connection.send(wire.pull());
-
-        BoltConnectionAssertions.assertThat(connection).receivesSuccess(2);
+            BoltConnectionAssertions.assertThat(connection).receivesSuccess(2);
+        }
 
         // attempt to authenticate again with the new password
-        connection.reconnect();
-        wire.negotiate(connection);
+        try (var connection = connectionProvider.create()) {
+            connection.send(wire.hello());
+            BoltConnectionAssertions.assertThat(connection).receivesSuccess();
 
-        connection.send(wire.hello());
-        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+            connection.send(wire.logon(Map.of(
+                    "scheme", "basic",
+                    "principal", "neo4j",
+                    "credentials", "secretPassword")));
 
-        connection.send(wire.logon(Map.of(
-                "scheme", "basic",
-                "principal", "neo4j",
-                "credentials", "secretPassword")));
-
-        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+            BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+        }
 
         // attempt to authenticate again with the old password
-        connection.reconnect();
-        wire.negotiate(connection);
+        try (var connection = connectionProvider.create()) {
+            connection.send(wire.hello());
+            BoltConnectionAssertions.assertThat(connection).receivesSuccess();
 
-        connection.send(wire.hello());
-        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+            connection.send(wire.logon(Map.of(
+                    "scheme", "basic",
+                    "principal", "neo4j",
+                    "credentials", "neo4j")));
 
-        connection.send(wire.logon(Map.of(
-                "scheme", "basic",
-                "principal", "neo4j",
-                "credentials", "neo4j")));
-
-        BoltConnectionAssertions.assertThat(connection)
-                .receivesFailure(
-                        Status.Security.Unauthorized, "The client is unauthorized due to authentication failure.")
-                .isEventuallyTerminated();
+            BoltConnectionAssertions.assertThat(connection)
+                    .receivesFailure(
+                            Status.Security.Unauthorized, "The client is unauthorized due to authentication failure.")
+                    .isEventuallyTerminated();
+        }
     }
 
     @ProtocolTest
-    void shouldFailIfMalformedAuthTokenWrongType(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldFailIfMalformedAuthTokenWrongType(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -216,8 +216,8 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldFailIfMalformedAuthTokenMissingKey(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldFailIfMalformedAuthTokenMissingKey(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -235,8 +235,8 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldFailIfMalformedAuthTokenMissingScheme(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldFailIfMalformedAuthTokenMissingScheme(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -254,7 +254,7 @@ public class AuthenticationIT {
 
     @ProtocolTest
     protected void shouldFailIfMalformedAuthTokenUnknownScheme(
-            BoltWire wire, @VersionSelected TransportConnection connection) throws IOException {
+            BoltWire wire, @VersionSelected BoltTestConnection connection) throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -273,32 +273,34 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldFailDifferentlyIfTooManyFailedAuthAttempts(BoltWire wire, TransportConnection connection) {
+    void shouldFailDifferentlyIfTooManyFailedAuthAttempts(
+            BoltWire wire, @Connected ConnectionProvider connectionProvider) {
         awaitUntilAsserted(() -> {
-            connection.reconnect();
-            wire.negotiate(connection);
+            try (var connection = connectionProvider.create()) {
+                wire.negotiate(connection);
 
-            connection.send(wire.hello());
-            // ensure that the server returns the expected set of metadata
-            BoltConnectionAssertions.assertThat(connection)
-                    .receivesSuccess(meta -> Assertions.assertThat(meta).containsKeys("server", "connection_id"));
+                connection.send(wire.hello());
+                // ensure that the server returns the expected set of metadata
+                BoltConnectionAssertions.assertThat(connection)
+                        .receivesSuccess(meta -> Assertions.assertThat(meta).containsKeys("server", "connection_id"));
 
-            connection.send(wire.logon(Map.of(
-                    "scheme", "basic",
-                    "principal", "neo4j",
-                    "credentials", "WHAT_WAS_THE_PASSWORD_AGAIN")));
+                connection.send(wire.logon(Map.of(
+                        "scheme", "basic",
+                        "principal", "neo4j",
+                        "credentials", "WHAT_WAS_THE_PASSWORD_AGAIN")));
 
-            BoltConnectionAssertions.assertThat(connection)
-                    .receivesFailure(
-                            Status.Security.AuthenticationRateLimit,
-                            "The client has provided incorrect authentication details too many times in a row.")
-                    .isEventuallyTerminated();
+                BoltConnectionAssertions.assertThat(connection)
+                        .receivesFailure(
+                                Status.Security.AuthenticationRateLimit,
+                                "The client has provided incorrect authentication details too many times in a row.")
+                        .isEventuallyTerminated();
+            }
         });
     }
 
     @ProtocolTest
-    void shouldFailWhenReusingTheSamePassword(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldFailWhenReusingTheSamePassword(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -343,8 +345,8 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenSubmittingEmptyPassword(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldFailWhenSubmittingEmptyPassword(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -379,8 +381,8 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldNotBeAbleToReadWhenPasswordChangeRequired(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldNotBeAbleToReadWhenPasswordChangeRequired(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -417,7 +419,7 @@ public class AuthenticationIT {
 
     @ProtocolTest
     void shouldBeAbleToLogoffAfterBeingAuthenticatedThenLogBackOn(
-            BoltWire wire, @VersionSelected TransportConnection connection) throws IOException {
+            BoltWire wire, @VersionSelected BoltTestConnection connection) throws InterruptedException {
         connection.send(wire.hello());
         // ensure that the server returns the expected set of metadata
         BoltConnectionAssertions.assertThat(connection)
@@ -444,8 +446,8 @@ public class AuthenticationIT {
     }
 
     @ProtocolTest
-    void shouldNotBeAbleToAuthenticateOnHelloMessage(BoltWire wire, @VersionSelected TransportConnection connection)
-            throws IOException {
+    void shouldNotBeAbleToAuthenticateOnHelloMessage(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws InterruptedException {
         // authenticate normally using the preset credentials and update the password to a new value
         connection.send(wire.hello(x -> x.withBasicAuth("neo4j", "neo4j")));
 

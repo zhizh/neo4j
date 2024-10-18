@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.InstanceOfAssertFactory;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.gqlstatus.Condition;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.NotificationCategory;
@@ -49,18 +49,18 @@ import org.neo4j.values.virtual.ListValue;
 import org.opentest4j.AssertionFailedError;
 
 public final class BoltConnectionAssertions
-        extends TransportConnectionAssertions<BoltConnectionAssertions, TransportConnection> {
+        extends BoltTestConnectionAssertions<BoltConnectionAssertions, BoltTestConnection> {
 
-    private BoltConnectionAssertions(TransportConnection transportConnection) {
-        super(transportConnection, BoltConnectionAssertions.class);
+    private BoltConnectionAssertions(BoltTestConnection boltTestConnection) {
+        super(boltTestConnection, BoltConnectionAssertions.class);
     }
 
-    public static BoltConnectionAssertions assertThat(TransportConnection value) {
+    public static BoltConnectionAssertions assertThat(BoltTestConnection value) {
         return new BoltConnectionAssertions(value);
     }
 
-    public static InstanceOfAssertFactory<TransportConnection, BoltConnectionAssertions> boltConnection() {
-        return new InstanceOfAssertFactory<>(TransportConnection.class, BoltConnectionAssertions::new);
+    public static InstanceOfAssertFactory<BoltTestConnection, BoltConnectionAssertions> boltConnection() {
+        return new InstanceOfAssertFactory<>(BoltTestConnection.class, BoltConnectionAssertions::new);
     }
 
     public PackstreamConnectionAssertions asPackstream() {

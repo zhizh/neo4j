@@ -29,7 +29,7 @@ import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.testing.messages.factory.TelemetryMessageBuilder;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -49,8 +49,7 @@ public class TelemetryDisabledIT {
 
     @ProtocolTest
     @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
-    void shouldProcessTelemetryMessage(@Authenticated TransportConnection connection, BoltWire wire)
-            throws IOException {
+    void shouldProcessTelemetryMessage(@Authenticated BoltTestConnection connection, BoltWire wire) throws IOException {
         connection
                 .send(wire.telemetry(TelemetryMessageBuilder::withExecute))
                 .send(wire.telemetry(TelemetryMessageBuilder::withUnmanagedTransactions))

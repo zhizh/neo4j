@@ -28,7 +28,7 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.util.ServerUtil;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -50,7 +50,7 @@ public class BookmarkIT {
 
     @ProtocolTest
     void shouldReturnUpdatedBookmarkAfterAutoCommitTransaction(
-            BoltWire wire, @Authenticated TransportConnection connection) throws IOException {
+            BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
 
         // bookmark is expected to advance once the auto-commit transaction is committed
         var lastClosedTransactionId = ServerUtil.getLastClosedTransactionId(this.server);
@@ -68,7 +68,7 @@ public class BookmarkIT {
 
     @ProtocolTest
     void shouldReturnUpdatedBookmarkAfterExplicitTransaction(
-            BoltWire wire, @Authenticated TransportConnection connection) throws IOException {
+            BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
         // bookmark is expected to advance once the auto-commit transaction is committed
         var lastClosedTransactionId = ServerUtil.getLastClosedTransactionId(this.server);
         var expectedBookmark = BookmarkFormat.serialize(new QueryRouterBookmark(

@@ -26,7 +26,7 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.VersionSelected;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.AbstractBoltWire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -43,7 +43,7 @@ import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 public class UserAgentIT {
 
     @ProtocolTest
-    void shouldFailWhenUserAgentIsOmitted(@VersionSelected TransportConnection connection) throws IOException {
+    void shouldFailWhenUserAgentIsOmitted(@VersionSelected BoltTestConnection connection) throws IOException {
         connection.send(PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(1, AbstractBoltWire.MESSAGE_TAG_HELLO))
                 .writeMap(Map.of("scheme", "none"))
@@ -56,7 +56,7 @@ public class UserAgentIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenInvalidUserAgentIsGiven(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldFailWhenInvalidUserAgentIsGiven(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withUserAgent(42L)));
 

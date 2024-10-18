@@ -20,22 +20,22 @@
 
 package org.neo4j.bolt.test.connection.initializer;
 
-import java.io.IOException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
+import org.neo4j.bolt.testing.client.error.BoltTestClientException;
 import org.neo4j.bolt.testing.messages.BoltWire;
 
 public class SelectProtocolVersionConnectionInitializer implements ConnectionInitializer {
 
     @Override
     public void initialize(
-            ExtensionContext extensionContext, ParameterContext context, BoltWire wire, TransportConnection connection)
+            ExtensionContext extensionContext, ParameterContext context, BoltWire wire, BoltTestConnection connection)
             throws ParameterResolutionException {
         try {
             wire.negotiate(connection);
-        } catch (IOException ex) {
+        } catch (BoltTestClientException ex) {
             throw new ParameterResolutionException(
                     "Failed to negotiate protocol revision " + wire.getProtocolVersion(), ex);
         }

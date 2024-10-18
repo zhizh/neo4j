@@ -19,14 +19,14 @@
  */
 package org.neo4j.bolt.test.connection.initializer;
 
-import java.io.IOException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.connection.initializer.Negotiated;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
+import org.neo4j.bolt.testing.client.error.BoltTestClientException;
 import org.neo4j.bolt.testing.messages.BoltWire;
 
 /**
@@ -38,7 +38,7 @@ public final class NegotiateConnectionInitializer extends AbstractNegotiatingCon
 
     @Override
     public void initialize(
-            ExtensionContext extensionContext, ParameterContext context, BoltWire wire, TransportConnection connection)
+            ExtensionContext extensionContext, ParameterContext context, BoltWire wire, BoltTestConnection connection)
             throws ParameterResolutionException {
         if (!wire.supportsLogonMessage()) {
             // if the selected protocol version does not support explicit authentication, we will make
@@ -58,7 +58,7 @@ public final class NegotiateConnectionInitializer extends AbstractNegotiatingCon
 
             BoltConnectionAssertions.assertThat(connection)
                     .receivesSuccess(meta -> this.assertNegotiatedFeatures(wire, meta));
-        } catch (IOException | AssertionError ex) {
+        } catch (BoltTestClientException | AssertionError ex) {
             throw new ParameterResolutionException("Failed to authenticate connection", ex);
         }
     }

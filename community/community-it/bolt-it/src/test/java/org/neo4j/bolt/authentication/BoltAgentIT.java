@@ -28,7 +28,7 @@ import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.AbstractBoltWire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -45,14 +45,14 @@ import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 2, range = 2)})
 public class BoltAgentIT {
     @ProtocolTest
-    void shouldSucceedWhenAddingExtraValues(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldSucceedWhenAddingExtraValues(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withBoltAgent(Map.of("product", "test-agent", "extra", "included"))));
         BoltConnectionAssertions.assertThat(connection).receivesSuccess();
     }
 
     @ProtocolTest
-    void shouldFailWhenBoltAgentIsOmitted(@VersionSelected TransportConnection connection) throws IOException {
+    void shouldFailWhenBoltAgentIsOmitted(@VersionSelected BoltTestConnection connection) throws IOException {
         connection.send(PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(1, AbstractBoltWire.MESSAGE_TAG_HELLO))
                 .writeMap(Map.of("scheme", "none", "user_agent", "ignore"))
@@ -65,7 +65,7 @@ public class BoltAgentIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenInvalidBoltAgentIsGiven(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldFailWhenInvalidBoltAgentIsGiven(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent("42L")));
 
@@ -76,7 +76,7 @@ public class BoltAgentIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenBoltAgentInvalidValues(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldFailWhenBoltAgentInvalidValues(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent(Map.of("product", 1))));
 
@@ -87,7 +87,7 @@ public class BoltAgentIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenBoltAgentMissingProduct(BoltWire wire, @VersionSelected TransportConnection connection)
+    void shouldFailWhenBoltAgentMissingProduct(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent(Map.of("invalid", "value"))));
 

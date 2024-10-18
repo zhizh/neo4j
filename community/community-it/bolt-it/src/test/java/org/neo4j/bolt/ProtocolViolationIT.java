@@ -30,7 +30,7 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltV40Wire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
@@ -45,7 +45,7 @@ import org.neo4j.values.virtual.MapValueBuilder;
 @BoltTestExtension
 public class ProtocolViolationIT {
 
-    private static void sendRun(TransportConnection connection, Consumer<PackstreamBuf> packer) throws IOException {
+    private static void sendRun(BoltTestConnection connection, Consumer<PackstreamBuf> packer) throws IOException {
         var buf = PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(3, BoltV40Wire.MESSAGE_TAG_RUN))
                 .writeString("RETURN $x") // statement
@@ -59,7 +59,7 @@ public class ProtocolViolationIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenNullKeyIsSent(@Authenticated TransportConnection connection) throws IOException {
+    void shouldFailWhenNullKeyIsSent(@Authenticated BoltTestConnection connection) throws IOException {
         sendRun(connection, buf -> buf.writeMapHeader(1).writeNull().writeString("foo"));
 
         BoltConnectionAssertions.assertThat(connection)
@@ -69,7 +69,7 @@ public class ProtocolViolationIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenDuplicateKeyIsSent(@Authenticated TransportConnection connection) throws IOException {
+    void shouldFailWhenDuplicateKeyIsSent(@Authenticated BoltTestConnection connection) throws IOException {
         sendRun(connection, buf -> buf.writeMapHeader(2)
                 .writeString("foo")
                 .writeString("bar")
@@ -82,7 +82,7 @@ public class ProtocolViolationIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenNodeIsSentWithRun(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldFailWhenNodeIsSentWithRun(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         var properties = new MapValueBuilder();
         properties.add("the_answer", longValue(42));
@@ -96,7 +96,7 @@ public class ProtocolViolationIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenRelationshipIsSentWithRun(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldFailWhenRelationshipIsSentWithRun(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         var properties = new MapValueBuilder();
         properties.add("the_answer", longValue(42));
@@ -110,7 +110,7 @@ public class ProtocolViolationIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenPathIsSentWithRun(BoltWire wire, @Authenticated TransportConnection connection)
+    void shouldFailWhenPathIsSentWithRun(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         sendRun(connection, buf -> {
             buf.writeStructHeader(new StructHeader(3, StructType.PATH.getTag()));
@@ -137,7 +137,7 @@ public class ProtocolViolationIT {
     }
 
     @ProtocolTest
-    void shouldTerminateConnectionWhenUnknownMessageIsSent(@Authenticated TransportConnection connection)
+    void shouldTerminateConnectionWhenUnknownMessageIsSent(@Authenticated BoltTestConnection connection)
             throws IOException {
         connection.send(PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(1, (short) 0x42))
@@ -148,7 +148,7 @@ public class ProtocolViolationIT {
     }
 
     @ProtocolTest
-    void shouldFailWhenTryToStartTransactionInFailedState(@Authenticated TransportConnection connection)
+    void shouldFailWhenTryToStartTransactionInFailedState(@Authenticated BoltTestConnection connection)
             throws IOException {
         // Failing
         var buf = PackstreamBuf.allocUnpooled()

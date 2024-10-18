@@ -24,7 +24,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.neo4j.bolt.test.annotation.connection.InitializeConnection;
-import org.neo4j.bolt.testing.client.TransportConnection;
+import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.testing.util.AnnotationUtil;
 
@@ -45,7 +45,7 @@ public interface ConnectionInitializer {
     /**
      * Initializes a given connection.
      * <p />
-     * Passed connections will already be established (e.g. {@link TransportConnection#connect()} has already been
+     * Passed connections will already be established (e.g. {@link BoltTestConnection#connect()} has already been
      * invoked).
      *
      * @param extensionContext the context of the extension which is invoking this initializer.
@@ -55,7 +55,7 @@ public interface ConnectionInitializer {
      * @throws ParameterResolutionException when the connection fails to initialize.
      */
     void initialize(
-            ExtensionContext extensionContext, ParameterContext context, BoltWire wire, TransportConnection connection)
+            ExtensionContext extensionContext, ParameterContext context, BoltWire wire, BoltTestConnection connection)
             throws ParameterResolutionException;
 
     static List<ConnectionInitializer> findInitializers(ParameterContext context) {
