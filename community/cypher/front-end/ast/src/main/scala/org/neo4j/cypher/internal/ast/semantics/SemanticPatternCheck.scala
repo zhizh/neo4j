@@ -275,9 +275,25 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
 
   def check(selector: PatternPart.Selector): SemanticCheck = selector match {
     case ShortestGroups(countOfGroups) if countOfGroups.value <= 0 =>
-      error("The group count needs to be greater than 0.", countOfGroups.position)
+      specifiedNumberOutOfRangeError(
+        "group count",
+        "INTEGER",
+        1,
+        Long.MaxValue,
+        String.valueOf(countOfGroups.value),
+        "The group count needs to be greater than 0.",
+        countOfGroups.position
+      )
     case sel: CountedSelector if sel.count.value <= 0 =>
-      error("The path count needs to be greater than 0.", sel.count.position)
+      specifiedNumberOutOfRangeError(
+        "path count",
+        "INTEGER",
+        1,
+        Long.MaxValue,
+        String.valueOf(sel.count.value),
+        "The path count needs to be greater than 0.",
+        sel.count.position
+      )
     case _ => success
   }
 
@@ -412,7 +428,15 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
     checkQuantifierValue(quantifier) ifOkChain {
       quantifier match {
         case FixedQuantifier(UnsignedDecimalIntegerLiteral("0")) =>
-          error("A quantifier for a path pattern must not be limited by 0.", quantifier.position)
+          specifiedNumberOutOfRangeError(
+            "quantifier for a path pattern",
+            "INTEGER",
+            1,
+            Long.MaxValue,
+            "0",
+            "A quantifier for a path pattern must not be limited by 0.",
+            quantifier.position
+          )
         case IntervalQuantifier(Some(lower), Some(upper)) if upper.value < lower.value =>
           error(
             s"""A quantifier for a path pattern must not have a lower bound which exceeds its upper bound.
@@ -420,7 +444,15 @@ object SemanticPatternCheck extends SemanticAnalysisTooling {
             quantifier.position
           )
         case IntervalQuantifier(_, Some(UnsignedDecimalIntegerLiteral("0"))) =>
-          error("A quantifier for a path pattern must not be limited by 0.", quantifier.position)
+          specifiedNumberOutOfRangeError(
+            "quantifier upperbound for a path pattern",
+            "INTEGER",
+            1,
+            Long.MaxValue,
+            "0",
+            "A quantifier for a path pattern must not be limited by 0.",
+            quantifier.position
+          )
         case _ => SemanticCheck.success
       }
     }

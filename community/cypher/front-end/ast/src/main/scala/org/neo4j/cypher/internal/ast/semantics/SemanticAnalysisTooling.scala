@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.ast.semantics
 
+import org.neo4j.cypher.internal.ast.semantics.SemanticExpressionCheck.TypeMismatch
 import org.neo4j.cypher.internal.expressions.DoubleLiteral
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.Expression.DefaultTypeMismatchMessageGenerator
@@ -83,7 +84,7 @@ trait SemanticAnalysisTooling {
     _.specifyType(expression, possibleTypes)
 
   def expectType(typeGen: TypeGenerator, expression: Expression): SemanticCheck =
-    (s: SemanticState) => expectType(s, typeGen(s), expression)
+    (s: SemanticState) => expectType(s, typeGen(s), expression, TypeMismatch.EMPTY)
 
   def expectType(possibleTypes: TypeSpec, opt: Option[Expression]): SemanticCheck =
     opt.foldSemanticCheck(expectType(possibleTypes, _))
@@ -91,16 +92,17 @@ trait SemanticAnalysisTooling {
   def expectType(
     typeGen: TypeGenerator,
     expression: Expression,
+    typeMismatch: TypeMismatch.TypeMismatchVal,
     messageGen: (String, String) => String
   ): SemanticCheck =
-    (s: SemanticState) => expectType(s, typeGen(s), expression, messageGen)
+    (s: SemanticState) => expectType(s, typeGen(s), expression, typeMismatch, messageGen)
 
   def expectType[Exp <: Expression](possibleTypes: TypeSpec, expressions: Iterable[Exp]): SemanticCheck =
     (state: SemanticState) =>
       expressions.foldLeft(SemanticCheckResult.success(state)) {
         (r1: SemanticCheckResult, o: Exp) =>
           {
-            val r2 = expectType(r1.state, possibleTypes, o)
+            val r2 = expectType(r1.state, possibleTypes, o, TypeMismatch.EMPTY)
             SemanticCheckResult(r2.state, r1.errors ++ r2.errors)
           }
       }
@@ -116,21 +118,23 @@ trait SemanticAnalysisTooling {
     possibleTypes: => TypeSpec,
     expression: Expression
   ): SemanticCheck = (s: SemanticState) => {
-    expectType(s, possibleTypes, expression)
+    expectType(s, possibleTypes, expression, TypeMismatch.EMPTY)
   }
 
   def expectType(
     possibleTypes: => TypeSpec,
     expression: Expression,
+    typeMismatchVal: TypeMismatch.TypeMismatchVal,
     messageGen: (String, String) => String
   ): SemanticCheck = (s: SemanticState) => {
-    expectType(s, possibleTypes, expression, messageGen)
+    expectType(s, possibleTypes, expression, typeMismatchVal, messageGen)
   }
 
   def expectType(
     s: SemanticState,
     possibleTypes: => TypeSpec,
     expression: Expression,
+    typeMismatchVal: TypeMismatch.TypeMismatchVal,
     messageGen: (String, String) => String = DefaultTypeMismatchMessageGenerator
   ): SemanticCheckResult = {
     s.expectType(expression, possibleTypes) match {
@@ -144,15 +148,29 @@ trait SemanticAnalysisTooling {
             ) => // See literalReplacement for list of all AUTOs
             SemanticCheckResult.error(
               ss,
-              SemanticError(
+              SemanticError.invalidEntityType(
+                existingTypesString,
+                s"${typeMismatchVal.txt} parameter: ${p.name}",
+                possibleTypes.toStrings.toList,
                 "Type mismatch for parameter '" + p.name + "': " + messageGen(expectedTypesString, existingTypesString),
                 expression.position
               )
             )
           case _ =>
+            val context =
+              if (typeMismatchVal != TypeMismatch.EMPTY)
+                typeMismatchVal.txt
+              else if (expression.asCanonicalStringVal.length < 30)
+                expression.asCanonicalStringVal
+              else
+                expression.asCanonicalStringVal.substring(0, 27) + "..."
+
             SemanticCheckResult.error(
               ss,
-              SemanticError(
+              SemanticError.invalidEntityType(
+                existingTypesString,
+                context,
+                possibleTypes.toStrings.toList,
                 "Type mismatch: " + messageGen(expectedTypesString, existingTypesString),
                 expression.position
               )
@@ -172,7 +190,7 @@ trait SemanticAnalysisTooling {
           accumulator
         case ((possibilities, r1), arg) =>
           val argTypes = possibilities.foldLeft(TypeSpec.none) { _ | _.argumentTypes.head.covariant }
-          val r2 = expectType(r1.state, argTypes, arg)
+          val r2 = expectType(r1.state, argTypes, arg, TypeMismatch.EMPTY)
 
           val actualTypes = types(arg)(r2.state)
           val remainingPossibilities = possibilities.filter {
@@ -318,6 +336,41 @@ trait SemanticAnalysisTooling {
 
   def error(gqlStatusObject: ErrorGqlStatusObject, msg: String, position: InputPosition): SemanticCheck =
     SemanticCheck.error(SemanticError(gqlStatusObject, msg, position))
+
+  def unsupportedRequestErrorOnSystemDatabase(
+    invalidInput: String,
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheck =
+    SemanticCheck.error(SemanticError.unsupportedRequestOnSystemDatabase(invalidInput, legacyMessage, position))
+
+  def invalidInputError(
+    wrongInput: String,
+    forField: String,
+    expectedInput: List[String],
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheck =
+    SemanticCheck.error(SemanticError.invalidInput(wrongInput, forField, expectedInput, legacyMessage, position))
+
+  def specifiedNumberOutOfRangeError(
+    component: String,
+    valueType: String,
+    lower: Number,
+    upper: Number,
+    inputValue: String,
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticCheck =
+    SemanticCheck.error(SemanticError.specifiedNumberOutOfRange(
+      component,
+      valueType,
+      lower,
+      upper,
+      inputValue,
+      legacyMessage,
+      position
+    ))
 
   def warn(notification: InternalNotification): SemanticCheck = SemanticCheck.warn(notification)
 

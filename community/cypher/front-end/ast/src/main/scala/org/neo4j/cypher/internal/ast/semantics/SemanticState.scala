@@ -385,7 +385,10 @@ case class SemanticState(
         } else {
           val existingTypes = symbol.types.mkString(", ", " or ")
           val expectedTypes = possibleTypes.mkString(", ", " or ")
-          Left(SemanticError(
+          Left(SemanticError.invalidEntityType(
+            existingTypes,
+            variable.name,
+            possibleTypes.toStrings.toList,
             s"Type mismatch: ${variable.name} defined with conflicting type $existingTypes (expected $expectedTypes)",
             variable.position
           ))

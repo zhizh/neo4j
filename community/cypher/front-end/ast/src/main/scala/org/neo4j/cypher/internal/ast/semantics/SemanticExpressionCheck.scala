@@ -168,6 +168,18 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
    */
   def simple(expression: Expression): SemanticCheck = check(SemanticContext.Simple, expression)
 
+  object TypeMismatch extends Enumeration {
+
+    case class TypeMismatchVal(txt: String) extends super.Val {
+      def getText: String = txt
+    }
+    val ACCUMULATOR: TypeMismatchVal = TypeMismatchVal("accumulator")
+    val LIST_INDEX: TypeMismatchVal = TypeMismatchVal("list index")
+    val MAP_KEY: TypeMismatchVal = TypeMismatchVal("map key")
+    val NODE_OR_RELATIONSHIP_PROPERTY_KEY: TypeMismatchVal = TypeMismatchVal("node or relationship property key")
+    val EMPTY: TypeMismatchVal = TypeMismatchVal("")
+  }
+
   /**
    * Build a semantic check for the given expression and context.
    */
@@ -565,6 +577,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
           expectType(
             s => types(x.init)(s) coerceOrConvert types(x.expression)(s),
             x.expression,
+            TypeMismatch.ACCUMULATOR,
             AccumulatorExpressionTypeMismatchMessageGenerator
           ) chain
           specifyType(s => types(x.init)(s) leastUpperBounds types(x.expression)(s), x) chain
@@ -616,18 +629,21 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
                       expectType(
                         CTInteger.covariant,
                         x.idx,
+                        TypeMismatch.LIST_INDEX,
                         (_: String, actual: String) => s"list index must be given as Integer, but was $actual"
                       )
                   } else if (exprIsMap) {
                     expectType(
                       CTString.covariant,
                       x.idx,
+                      TypeMismatch.MAP_KEY,
                       (_: String, actual: String) => s"map key must be given as String, but was $actual"
                     )
                   } else if (exprIsNodeOrRel) {
                     expectType(
                       CTString.covariant,
                       x.idx,
+                      TypeMismatch.NODE_OR_RELATIONSHIP_PROPERTY_KEY,
                       (_: String, actual: String) =>
                         s"node or relationship property key must be given as String, but was $actual"
                     )

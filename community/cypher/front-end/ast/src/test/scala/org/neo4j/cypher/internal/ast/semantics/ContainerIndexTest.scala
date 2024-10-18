@@ -92,7 +92,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyList, DecimalDoubleLiteral("1.3")(DummyPosition(5)))(DummyPosition(4))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "Float",
+      "list index",
+      List("Integer"),
       "Type mismatch: list index must be given as Integer, but was Float",
       index.idx.position
     )))
@@ -102,7 +105,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyList, StringLiteral("1.3")(DummyPosition(5).withInputLength(2)))(DummyPosition(4))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "String",
+      "list index",
+      List("Integer"),
       "Type mismatch: list index must be given as Integer, but was String",
       index.idx.position
     )))
@@ -112,7 +118,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyMap, SignedDecimalIntegerLiteral("1")(DummyPosition(5)))(DummyPosition(4))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "Integer",
+      "map key",
+      List("String"),
       "Type mismatch: map key must be given as String, but was Integer",
       index.idx.position
     )))
@@ -122,7 +131,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyNode, SignedDecimalIntegerLiteral("1")(DummyPosition(5)))(DummyPosition(4))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "Integer",
+      "node or relationship property key",
+      List("String"),
       "Type mismatch: node or relationship property key must be given as String, but was Integer",
       index.idx.position
     )))
@@ -132,7 +144,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyRelationship, SignedDecimalIntegerLiteral("1")(DummyPosition(5)))(DummyPosition(4))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "Integer",
+      "node or relationship property key",
+      List("String"),
       "Type mismatch: node or relationship property key must be given as String, but was Integer",
       index.idx.position
     )))
@@ -142,7 +157,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyInteger, dummyInteger)(DummyPosition(10))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "Integer",
+      "DummyExpression(TypeSpec(In...",
+      List("List<T>"),
       "Type mismatch: expected List<T> but was Integer",
       index.idx.position
     )))
@@ -152,7 +170,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyInteger, dummyString)(DummyPosition(10))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "Integer",
+      "DummyExpression(TypeSpec(In...",
+      List("Map", "Node", "Relationship"),
       "Type mismatch: expected Map, Node or Relationship but was Integer",
       index.idx.position
     )))
@@ -162,7 +183,10 @@ class ContainerIndexTest extends SemanticFunSuite {
     val index = ContainerIndex(dummyInteger, dummyFloat)(DummyPosition(10))
 
     val result = SemanticExpressionCheck.simple(index).run(SemanticState.clean)
-    result.errors should equal(Seq(SemanticError(
+    result.errors should equal(Seq(SemanticError.invalidEntityType(
+      "Integer",
+      "DummyExpression(TypeSpec(In...",
+      List("Map", "Node", "Relationship", "List<T>"),
       "Type mismatch: expected Map, Node, Relationship or List<T> but was Integer",
       index.idx.position
     )))

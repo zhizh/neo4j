@@ -125,6 +125,16 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject getGql22N27(
+            String input, String variable, List<String> validTypes, int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N27)
+                .withParam(GqlParams.StringParam.input, input)
+                .withParam(GqlParams.StringParam.variable, variable)
+                .withParam(GqlParams.ListParam.valueTypeList, validTypes)
+                .atPosition(line, column, offset)
+                .build();
+    }
+
     public static ErrorGqlStatusObject get22N69_52N02(String idxDescrOrName, String proc) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N69)
                 .withParam(GqlParams.StringParam.idxDescrOrName, idxDescrOrName)

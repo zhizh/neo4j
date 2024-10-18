@@ -125,5 +125,17 @@ class ReduceExpressionTest extends SemanticFunSuite {
     result.errors should have size 1
     result.errors.head.msg should equal("Type mismatch: accumulator is Number or String but expression has type Node")
     result.errors.head.position should equal(reduceExpression.position)
+
+    result.errors.head match {
+      case e: SemanticError =>
+        assert(e.gqlStatusObject.gqlStatus() == "42001")
+        assert(e.gqlStatusObject.cause.isPresent)
+        assert(e.gqlStatusObject.cause.get().gqlStatus() == "22N27")
+        assert(
+          e.gqlStatusObject.cause.get().statusDescription() == "error: data exception - invalid entity type. Invalid input 'Node' for `accumulator`. Expected to be one of Number or String."
+        )
+      case _ => fail("Wrong error thrown")
+    }
+
   }
 }

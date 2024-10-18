@@ -137,7 +137,10 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
 
   test("n:$(1)") {
     runSemanticAnalysis().errors shouldEqual Seq(
-      SemanticError(
+      SemanticError.invalidEntityType(
+        "Integer",
+        "1",
+        List("String", "List<String>"),
         "Type mismatch: expected String or List<String> but was Integer",
         if (statement == ChangeStatement.SET) InputPosition(23, 1, 24) else InputPosition(26, 1, 27)
       )
@@ -146,7 +149,10 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
 
   test("n:$([1])") {
     runSemanticAnalysis().errors shouldEqual Seq(
-      SemanticError(
+      SemanticError.invalidEntityType(
+        "List<Integer>",
+        "[1]",
+        List("String", "List<String>"),
         "Type mismatch: expected String or List<String> but was List<Integer>",
         if (statement == ChangeStatement.SET) InputPosition(23, 1, 24) else InputPosition(26, 1, 27)
       )
@@ -155,7 +161,10 @@ abstract class LabelExpressionSemanticAnalysisTestSuiteWithChangeStatement(state
 
   test("n:$(point({x : 1, y: 1}))") {
     runSemanticAnalysis().errors shouldEqual Seq(
-      SemanticError(
+      SemanticError.invalidEntityType(
+        "Point",
+        "point({x: 1, y: 1})",
+        List("String", "List<String>"),
         "Type mismatch: expected String or List<String> but was Point",
         if (statement == ChangeStatement.SET) InputPosition(23, 1, 24) else InputPosition(26, 1, 27)
       )

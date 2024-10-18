@@ -1689,7 +1689,16 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
     )
     queries.foreach {
       case (query, pos) =>
-        expectErrorsFrom(query, Set(SemanticError("Type mismatch: expected Boolean but was Integer", pos)))
+        expectErrorsFrom(
+          query,
+          Set(SemanticError.invalidEntityType(
+            "Integer",
+            "42",
+            List("Boolean"),
+            "Type mismatch: expected Boolean but was Integer",
+            pos
+          ))
+        )
     }
   }
 
@@ -1957,7 +1966,13 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
     val query = "RETURN size(COUNT{ (n) }) AS foo"
     expectErrorsFrom(
       query,
-      Set(SemanticError("Type mismatch: expected String or List<T> but was Integer", InputPosition(12, 1, 13)))
+      Set(SemanticError.invalidEntityType(
+        "Integer",
+        "CountExpression(SingleQuery...",
+        List("String", "List<T>"),
+        "Type mismatch: expected String or List<T> but was Integer",
+        InputPosition(12, 1, 13)
+      ))
     )
   }
 
@@ -2011,7 +2026,13 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
     val query = "RETURN normalize(1) AS normalize"
     expectErrorsFrom(
       query,
-      Set(SemanticError("Type mismatch: expected String but was Integer", InputPosition(17, 1, 18)))
+      Set(SemanticError.invalidEntityType(
+        "Integer",
+        "1",
+        List("String"),
+        "Type mismatch: expected String but was Integer",
+        InputPosition(17, 1, 18)
+      ))
     )
   }
 

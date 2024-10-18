@@ -76,7 +76,13 @@ class ExistsTest extends SemanticFunSuite {
       SemanticExpressionCheck.simple(expression).run(semanticState)
 
     result.errors shouldBe Seq(
-      SemanticError("Type mismatch: n defined with conflicting type Boolean (expected Node)", pos)
+      SemanticError.invalidEntityType(
+        "Boolean",
+        "n",
+        List("Node"),
+        "Type mismatch: n defined with conflicting type Boolean (expected Node)",
+        pos
+      )
     )
   }
 
@@ -140,7 +146,13 @@ class ExistsTest extends SemanticFunSuite {
     val result = SemanticExpressionCheck.simple(expression).run(semanticState)
 
     result.errors shouldBe Seq(
-      SemanticError("Type mismatch: n defined with conflicting type Boolean (expected Node)", pos)
+      SemanticError.invalidEntityType(
+        "Boolean",
+        "n",
+        List("Node"),
+        "Type mismatch: n defined with conflicting type Boolean (expected Node)",
+        pos
+      )
     )
   }
 }

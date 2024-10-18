@@ -273,7 +273,13 @@ object ListCoercedToBooleanCheck extends ExpectedBooleanTypeCheck {
     baseState.statement().folder.treeFold(Seq.empty[SemanticError]) {
       case p: Expression
         if isListCoercedToBoolean(baseState.semanticTable(), p) && !p.isInstanceOf[PatternExpression] =>
-        errors => SkipChildren(errors :+ SemanticError(errorMessage, p.position))
+        errors =>
+          SkipChildren(errors :+ SemanticError.invalidCoercion(
+            "LIST",
+            "BOOLEAN",
+            errorMessage,
+            p.position
+          ))
     }
   }
 

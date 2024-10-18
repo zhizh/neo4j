@@ -34,7 +34,10 @@ class SetClauseSemanticAnalysisTest
 
   test("MATCH (n), (m) SET n[1] = 3") {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      SemanticError(
+      SemanticError.invalidEntityType(
+        "Integer",
+        "node or relationship property key",
+        List("String"),
         "Type mismatch: node or relationship property key must be given as String, but was Integer",
         InputPosition(21, 1, 22)
       )
@@ -43,7 +46,10 @@ class SetClauseSemanticAnalysisTest
 
   test("MATCH (n)-[r]->(m) SET r[5.0] = 3") {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      SemanticError(
+      SemanticError.invalidEntityType(
+        "Float",
+        "node or relationship property key",
+        List("String"),
         "Type mismatch: node or relationship property key must be given as String, but was Float",
         InputPosition(25, 1, 26)
       )
@@ -52,7 +58,10 @@ class SetClauseSemanticAnalysisTest
 
   test("WITH 5 AS var MATCH (n) SET n[var] = 3") {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      SemanticError(
+      SemanticError.invalidEntityType(
+        "Integer",
+        "node or relationship property key",
+        List("String"),
         "Type mismatch: node or relationship property key must be given as String, but was Integer",
         InputPosition(30, 1, 31)
       )
@@ -61,7 +70,10 @@ class SetClauseSemanticAnalysisTest
 
   test("WITH {key: 1} AS var SET var['key'] = 3") {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      SemanticError(
+      SemanticError.invalidEntityType(
+        "Map",
+        "var",
+        List("Node", "Relationship"),
         "Type mismatch: expected Node or Relationship but was Map",
         InputPosition(25, 1, 26)
       )

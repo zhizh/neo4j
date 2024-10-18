@@ -289,14 +289,91 @@ object SemanticError {
     pos: InputPosition
   ): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(pos.line, pos.column, pos.offset)
       .withCause(
         ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N04)
+          .atPosition(pos.line, pos.column, pos.offset)
           .withParam(GqlParams.StringParam.input, wrongInput)
           .withParam(GqlParams.StringParam.context, forField)
           .withParam(GqlParams.ListParam.inputList, java.util.List.of(expectedInput))
           .build()
       )
       .build()
+    SemanticError(
+      gql,
+      legacyMessage,
+      pos
+    )
+  }
+
+  def invalidEntityType(
+    invalidInput: String,
+    variable: String,
+    expectedValueList: List[String],
+    legacyMessage: String,
+    pos: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(pos.line, pos.column, pos.offset)
+      .withCause(GqlHelper.getGql22N27(
+        invalidInput,
+        variable,
+        expectedValueList.asJava,
+        pos.line,
+        pos.column,
+        pos.offset
+      ))
+      .build()
+
+    SemanticError(
+      gql,
+      legacyMessage,
+      pos
+    )
+  }
+
+  def invalidCoercion(
+    cannotCoerceFrom: String,
+    cannotCoerceTo: String,
+    legacyMessage: String,
+    pos: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(pos.line, pos.column, pos.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N37)
+        .atPosition(pos.line, pos.column, pos.offset)
+        .withParam(GqlParams.StringParam.value, cannotCoerceFrom)
+        .withParam(GqlParams.StringParam.valueType, cannotCoerceTo)
+        .build())
+      .build()
+
+    SemanticError(
+      gql,
+      legacyMessage,
+      pos
+    )
+  }
+
+  def specifiedNumberOutOfRange(
+    component: String,
+    valueType: String,
+    lower: Number,
+    upper: Number,
+    inputValue: String,
+    legacyMessage: String,
+    pos: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(pos.line, pos.column, pos.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N31)
+        .atPosition(pos.line, pos.column, pos.offset)
+        .withParam(GqlParams.StringParam.component, component)
+        .withParam(GqlParams.StringParam.valueType, valueType)
+        .withParam(GqlParams.NumberParam.lower, lower)
+        .withParam(GqlParams.NumberParam.upper, upper)
+        .withParam(GqlParams.StringParam.value, inputValue).build())
+      .build()
+
     SemanticError(
       gql,
       legacyMessage,

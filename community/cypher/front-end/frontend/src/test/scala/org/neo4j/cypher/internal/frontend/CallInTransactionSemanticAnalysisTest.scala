@@ -239,7 +239,15 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("Invalid input. '0' is not a valid value. Must be a positive integer.", InputPosition(40, 3, 22))
+        SemanticError.specifiedNumberOutOfRange(
+          "OF ... ROWS",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "0",
+          "Invalid input. '0' is not a valid value. Must be a positive integer.",
+          InputPosition(40, 3, 22)
+        )
       )
     )
   }
@@ -253,7 +261,15 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("Invalid input. '-1' is not a valid value. Must be a positive integer.", InputPosition(40, 3, 22))
+        SemanticError.specifiedNumberOutOfRange(
+          "OF ... ROWS",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "-1",
+          "Invalid input. '-1' is not a valid value. Must be a positive integer.",
+          InputPosition(40, 3, 22)
+        )
       )
     )
   }
@@ -267,11 +283,22 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError(
+        SemanticError.specifiedNumberOutOfRange(
+          "OF ... ROWS",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "1.5",
           "Invalid input. '1.5' is not a valid value. Must be a positive integer.",
           InputPosition(40, 3, 22)
         ),
-        SemanticError("Type mismatch: expected Integer but was Float", InputPosition(40, 3, 22))
+        SemanticError.invalidEntityType(
+          "Float",
+          "1.5",
+          List("Integer"),
+          "Type mismatch: expected Integer but was Float",
+          InputPosition(40, 3, 22)
+        )
       )
     )
   }
@@ -285,11 +312,19 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError(
+        SemanticError.specifiedNumberOutOfRange(
+          "OF ... ROWS",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "foo",
           "Invalid input. 'foo' is not a valid value. Must be a positive integer.",
           InputPosition(40, 3, 22).withInputLength(5)
         ),
-        SemanticError(
+        SemanticError.invalidEntityType(
+          "String",
+          "foo",
+          List("Integer"),
           "Type mismatch: expected Integer but was String",
           InputPosition(40, 3, 22).withInputLength(5)
         )
@@ -306,7 +341,12 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError(
+        SemanticError.specifiedNumberOutOfRange(
+          "OF ... ROWS",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "NULL",
           "Invalid input. 'NULL' is not a valid value. Must be a positive integer.",
           InputPosition(40, 3, 22)
         )
@@ -378,7 +418,13 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
           "It is not allowed to use patterns in the expression for OF ... ROWS, so that the value for OF ... ROWS can be statically calculated.",
           InputPosition(40, 3, 22)
         ),
-        SemanticError("Type mismatch: expected Integer but was List<Integer>", InputPosition(40, 3, 22))
+        SemanticError.invalidEntityType(
+          "List<Integer>",
+          "ListComprehension(ExtractSc...",
+          List("Integer"),
+          "Type mismatch: expected Integer but was List<Integer>",
+          InputPosition(40, 3, 22)
+        )
       )
     )
   }
@@ -418,7 +464,15 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("Invalid input. '0' is not a valid value. Must be a positive integer.", InputPosition(24, 3, 6))
+        SemanticError.specifiedNumberOutOfRange(
+          "IN ... CONCURRENT",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "0",
+          "Invalid input. '0' is not a valid value. Must be a positive integer.",
+          InputPosition(24, 3, 6)
+        )
       )
     )
   }
@@ -432,7 +486,15 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("Invalid input. '-1' is not a valid value. Must be a positive integer.", InputPosition(24, 3, 6))
+        SemanticError.specifiedNumberOutOfRange(
+          "IN ... CONCURRENT",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "-1",
+          "Invalid input. '-1' is not a valid value. Must be a positive integer.",
+          InputPosition(24, 3, 6)
+        )
       )
     )
   }
@@ -446,11 +508,22 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError(
+        SemanticError.specifiedNumberOutOfRange(
+          "IN ... CONCURRENT",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "1.5",
           "Invalid input. '1.5' is not a valid value. Must be a positive integer.",
           InputPosition(24, 3, 6)
         ),
-        SemanticError("Type mismatch: expected Integer but was Float", InputPosition(24, 3, 6))
+        SemanticError.invalidEntityType(
+          "Float",
+          "1.5",
+          List("Integer"),
+          "Type mismatch: expected Integer but was Float",
+          InputPosition(24, 3, 6)
+        )
       )
     )
   }
@@ -464,11 +537,19 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError(
+        SemanticError.specifiedNumberOutOfRange(
+          "IN ... CONCURRENT",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "foo",
           "Invalid input. 'foo' is not a valid value. Must be a positive integer.",
           InputPosition(24, 3, 6).withInputLength(5)
         ),
-        SemanticError(
+        SemanticError.invalidEntityType(
+          "String",
+          "foo",
+          List("Integer"),
           "Type mismatch: expected Integer but was String",
           InputPosition(24, 3, 6).withInputLength(5)
         )
@@ -485,7 +566,12 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError(
+        SemanticError.specifiedNumberOutOfRange(
+          "IN ... CONCURRENT",
+          "INTEGER",
+          1,
+          Long.MaxValue,
+          "NULL",
           "Invalid input. 'NULL' is not a valid value. Must be a positive integer.",
           InputPosition(24, 3, 6)
         )
@@ -557,7 +643,13 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
           "It is not allowed to use patterns in the expression for IN ... CONCURRENT, so that the value for IN ... CONCURRENT can be statically calculated.",
           InputPosition(24, 3, 6)
         ),
-        SemanticError("Type mismatch: expected Integer but was List<Integer>", InputPosition(24, 3, 6))
+        SemanticError.invalidEntityType(
+          "List<Integer>",
+          "ListComprehension(ExtractSc...",
+          List("Integer"),
+          "Type mismatch: expected Integer but was List<Integer>",
+          InputPosition(24, 3, 6)
+        )
       )
     )
   }

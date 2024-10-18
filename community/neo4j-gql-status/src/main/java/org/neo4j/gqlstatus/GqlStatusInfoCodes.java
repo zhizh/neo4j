@@ -1373,7 +1373,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlStatus("22N37"),
             """
                     Cannot coerce { %s } to { %s }.""",
-            new GqlParams.GqlParam[] {GqlParams.NumberParam.value, GqlParams.StringParam.valueType},
+            new GqlParams.GqlParam[] {GqlParams.StringParam.value, GqlParams.StringParam.valueType},
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "invalid coercion",
@@ -3118,7 +3118,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
                 GqlParams.StringParam.valueType,
                 GqlParams.NumberParam.lower,
                 GqlParams.NumberParam.upper,
-                GqlParams.NumberParam.value
+                GqlParams.StringParam.value
             },
             emptyMap(),
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,

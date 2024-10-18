@@ -101,7 +101,13 @@ object ASTSlicingPhrase extends SemanticAnalysisTooling {
         case i: SignedDecimalIntegerLiteral if i.value == 0 && acceptsZero => SemanticCheck.success
         case lit: Literal =>
           val accepted = if (acceptsZero) "non-negative" else "positive"
-          error(
+          val lowerBound = if (acceptsZero) 0 else 1
+          specifiedNumberOutOfRangeError(
+            name,
+            "INTEGER",
+            lowerBound,
+            Long.MaxValue,
+            lit.asCanonicalStringVal,
             s"Invalid input. '${lit.asCanonicalStringVal}' is not a valid value. Must be a $accepted integer.",
             lit.position
           )

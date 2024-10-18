@@ -119,7 +119,13 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
                   invocation.position
                 ))
               case e =>
-                Some(SemanticError(s"Argument to ${invocation.name}(...) is not a pattern", e.position))
+                Some(SemanticError.invalidEntityType(
+                  "argument",
+                  invocation.name,
+                  List("pattern"),
+                  s"Argument to ${invocation.name}(...) is not a pattern",
+                  e.position
+                ))
             })
         } chain specifyType(CTBoolean, invocation)
 
@@ -263,13 +269,23 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
       case i: IntegerLiteral if i.value == 0L || i.value == 1L =>
         SemanticCheck.success
       case d: DoubleLiteral =>
-        error(
+        specifiedNumberOutOfRangeError(
+          "percentile range",
+          "FLOAT",
+          0.0,
+          1.0,
+          String.valueOf(d.value),
           s"Invalid input '${d.value}' is not a valid argument, must be a number in the range 0.0 to 1.0",
           d.position
         )
 
       case l: Literal =>
-        error(
+        specifiedNumberOutOfRangeError(
+          "percentile range",
+          "FLOAT",
+          0.0,
+          1.0,
+          l.asCanonicalStringVal,
           s"Invalid input '${l.asCanonicalStringVal}' is not a valid argument, must be a number in the range 0.0 to 1.0",
           l.position
         )
@@ -320,15 +336,54 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
 
       if (correctType) SemanticCheckResult.success(s)
       else {
-        val msg = invocation.function match {
+        val error = invocation.function match {
           case ToString =>
-            s"Type mismatch: expected Boolean, Float, Integer, Point, String, Duration, Date, Time, LocalTime, LocalDateTime or DateTime but was ${specifiedType.mkString(", ")}"
+            SemanticCheckResult.error(
+              s,
+              SemanticError.invalidEntityType(
+                specifiedType.mkString(", "),
+                "toString",
+                List(
+                  "Boolean",
+                  "Float",
+                  "Integer",
+                  "Point",
+                  "String",
+                  "Duration",
+                  "Date",
+                  "Time",
+                  "LocalTime",
+                  "LocalDateTime",
+                  "DateTime"
+                ),
+                s"Type mismatch: expected Boolean, Float, Integer, Point, String, Duration, Date, Time, LocalTime, LocalDateTime or DateTime but was ${specifiedType.mkString(", ")}",
+                argument.position
+              )
+            )
           case ToBoolean =>
-            s"Type mismatch: expected Boolean, Integer or String but was ${specifiedType.mkString(", ")}"
+            SemanticCheckResult.error(
+              s,
+              SemanticError.invalidEntityType(
+                specifiedType.mkString(", "),
+                "toBoolean",
+                List("Boolean", "Integer", "String"),
+                s"Type mismatch: expected Boolean, Integer or String but was ${specifiedType.mkString(", ")}",
+                argument.position
+              )
+            )
           case _ =>
-            s"Type mismatch: expected Boolean or String but was ${specifiedType.mkString(", ")}"
+            SemanticCheckResult.error(
+              s,
+              SemanticError.invalidEntityType(
+                specifiedType.mkString(", "),
+                invocation.function.name,
+                List("Boolean", "String"),
+                s"Type mismatch: expected Boolean or String but was ${specifiedType.mkString(", ")}",
+                argument.position
+              )
+            )
         }
-        SemanticCheckResult.error(s, msg, argument.position)
+        error
       }
     }
 }
