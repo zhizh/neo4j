@@ -5123,19 +5123,12 @@ List<CLAUSE> TerminateTransactions( Token start ) throws Exception:
     List<CLAUSE> tailClauses = null;
 }
 {
-    ( <TRANSACTION> | <TRANSACTIONS> )
+    ( <TRANSACTION> | <TRANSACTIONS> ) idEither=stringsOrExpression()
     (
-        LOOKAHEAD(composableCommandClauses()) tailClauses=composableCommandClauses()
-        | ( LOOKAHEAD(stringsOrExpression() (WhereClause() | YieldClause()))
-              idEither=stringsOrExpression() (
-                  ( yieldClause=YieldClause() ( returnClause=ReturnClause() ) ? )
-                  | where=WhereClause()
-              )
-          | LOOKAHEAD(YieldClause()) yieldClause=YieldClause() ( returnClause=ReturnClause() ) ?
-          | LOOKAHEAD(WhereClause()) where=WhereClause()
-          | idEither=stringsOrExpression()
-        ) ( tailClauses=composableCommandClauses() )?
+        ( yieldClause=YieldClause() ( returnClause=ReturnClause() )? )
+        | where=WhereClause()
     )?
+    ( tailClauses=composableCommandClauses() )?
     {
         if ( yieldClause != null )
         {

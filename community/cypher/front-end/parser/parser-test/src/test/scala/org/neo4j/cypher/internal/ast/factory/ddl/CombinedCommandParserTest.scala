@@ -294,6 +294,12 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         showFunction(ast.AllFunctions, None, _, _, _)
       ),
       (
+        "SHOW SETTINGS",
+        showSetting(Left(List.empty), _, _, _),
+        "SHOW TRANSACTIONS",
+        showTx(Left(List.empty), _, _, _)
+      ),
+      (
         "SHOW ALL FUNCTIONS EXECUTABLE BY SHOW",
         showFunction(ast.AllFunctions, Some(ast.User("SHOW")), _, _, _),
         "SHOW TRANSACTIONS 'db1-transaction-123'",
@@ -345,8 +351,8 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       (
         "SHOW FUNCTIONS EXECUTABLE BY TERMINATE",
         showFunction(ast.AllFunctions, Some(ast.User("TERMINATE")), _, _, _),
-        "TERMINATE TRANSACTIONS",
-        terminateTx(Left(List.empty), _, _, _)
+        "TERMINATE TRANSACTIONS 'db1-transaction-123'",
+        terminateTx(Right(literalString("db1-transaction-123")), _, _, _)
       ),
       (
         "TERMINATE TRANSACTIONS 'db1-transaction-123'",
@@ -357,8 +363,8 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       (
         "SHOW PROCEDURES EXECUTABLE BY TERMINATE",
         showProcedure(Some(ast.User("TERMINATE")), _, _, _),
-        "TERMINATE TRANSACTIONS",
-        terminateTx(Left(List.empty), _, _, _)
+        "TERMINATE TRANSACTIONS 'db1-transaction-123'",
+        terminateTx(Right(literalString("db1-transaction-123")), _, _, _)
       ),
       (
         "TERMINATE TRANSACTIONS 'db1-transaction-123'",
@@ -369,8 +375,8 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       (
         "SHOW CONSTRAINTS",
         showConstraint(ast.AllConstraints, _, _, _),
-        "TERMINATE TRANSACTIONS",
-        terminateTx(Left(List.empty), _, _, _)
+        "TERMINATE TRANSACTIONS 'db1-transaction-123'",
+        terminateTx(Right(literalString("db1-transaction-123")), _, _, _)
       ),
       (
         "TERMINATE TRANSACTIONS 'db1-transaction-123'",
@@ -381,8 +387,8 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       (
         "SHOW INDEXES",
         showIndex(ast.AllIndexes, _, _, _),
-        "TERMINATE TRANSACTIONS",
-        terminateTx(Left(List.empty), _, _, _)
+        "TERMINATE TRANSACTIONS 'db1-transaction-123'",
+        terminateTx(Right(literalString("db1-transaction-123")), _, _, _)
       ),
       // show settings combined with remaining commands
       (
@@ -512,7 +518,12 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
 
   private val commandCombinationsAll: Seq[(String, CommandClauseNoNames, String, CommandClauseNoNames)] =
     commandCombinationsAllowingStringExpressions.map { case (firstCommand, firstClause, secondCommand, secondClause) =>
-      (firstCommand, firstClause(Left(List.empty), _, _, _), secondCommand, secondClause(Left(List.empty), _, _, _))
+      (
+        s"$firstCommand 'txId1'",
+        firstClause(Right(literalString("txId1")), _, _, _),
+        s"$secondCommand 'txId2'",
+        secondClause(Right(literalString("txId2")), _, _, _)
+      )
     } ++ commandCombinationsWithoutExpressions
 
   private def updateForCypher5(clause: ast.Clause): ast.Clause = clause match {
@@ -868,20 +879,6 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
 
   commandCombinationsAllowingStringExpressions.foreach {
     case (firstCommand, firstClause, secondCommand, secondClause) =>
-      test(s"$firstCommand ${secondCommand}S 'db1-transaction-123'") {
-        assertAst(
-          firstClause(Left(List.empty), None, false, List.empty)(defaultPos),
-          secondClause(Right(literalString("db1-transaction-123")), None, false, List.empty)(pos)
-        )
-      }
-
-      test(s"$firstCommand 'db1-transaction-123' $secondCommand") {
-        assertAst(
-          firstClause(Right(literalString("db1-transaction-123")), None, false, List.empty)(defaultPos),
-          secondClause(Left(List.empty), None, false, List.empty)(pos)
-        )
-      }
-
       test(s"$firstCommand 'db1-transaction-123' $secondCommand 'db1-transaction-123'") {
         assertAst(
           firstClause(Right(literalString("db1-transaction-123")), None, false, List.empty)(defaultPos),
@@ -905,10 +902,10 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         )
       }
 
-      test(s"$firstCommand WHERE transactionId = '123' $secondCommand 'db1-transaction-123'") {
+      test(s"$firstCommand 'id' WHERE transactionId = '123' $secondCommand 'db1-transaction-123'") {
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             Some((where(equals(varFor("transactionId"), literalString("123"))), getWherePosition())),
             false,
             List.empty
@@ -917,9 +914,9 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         )
       }
 
-      test(s"$firstCommand $secondCommand 'db1-transaction-123' WHERE transactionId = '123'") {
+      test(s"$firstCommand 'id' $secondCommand 'db1-transaction-123' WHERE transactionId = '123'") {
         assertAst(
-          firstClause(Left(List.empty), None, false, List.empty)(defaultPos),
+          firstClause(Right(literalString("id")), None, false, List.empty)(defaultPos),
           secondClause(
             Right(literalString("db1-transaction-123")),
             Some((where(equals(varFor("transactionId"), literalString("123"))), getWherePosition())),
@@ -930,13 +927,13 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       }
 
       test(
-        s"$firstCommand WHERE transactionId = '123' $secondCommand 'db1-transaction-123' WHERE transactionId = '123'"
+        s"$firstCommand 'id' WHERE transactionId = '123' $secondCommand 'db1-transaction-123' WHERE transactionId = '123'"
       ) {
         val where1Pos = getWherePosition()
         val where2Pos = getWherePosition(where1Pos.offset + 1)
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             Some((where(equals(varFor("transactionId"), literalString("123"))), where1Pos)),
             false,
             List.empty
@@ -950,10 +947,10 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         )
       }
 
-      test(s"$firstCommand YIELD transactionId AS txId $secondCommand 'db1-transaction-123'") {
+      test(s"$firstCommand 'id' YIELD transactionId AS txId $secondCommand 'db1-transaction-123'") {
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             None,
             false,
             List(commandResultItem("transactionId", Some("txId")))
@@ -963,9 +960,9 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         )
       }
 
-      test(s"$firstCommand $secondCommand 'db1-transaction-123' YIELD transactionId AS txId") {
+      test(s"$firstCommand 'id' $secondCommand 'db1-transaction-123' YIELD transactionId AS txId") {
         assertAst(
-          firstClause(Left(List.empty), None, false, List.empty)(defaultPos),
+          firstClause(Right(literalString("id")), None, false, List.empty)(defaultPos),
           secondClause(
             Right(literalString("db1-transaction-123")),
             None,
@@ -977,11 +974,11 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       }
 
       test(
-        s"$firstCommand YIELD transactionId AS txId $secondCommand 'db1-transaction-123' YIELD username"
+        s"$firstCommand 'id' YIELD transactionId AS txId $secondCommand 'db1-transaction-123' YIELD username"
       ) {
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             None,
             false,
             List(commandResultItem("transactionId", Some("txId")))
@@ -998,11 +995,11 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       }
 
       test(
-        s"$firstCommand YIELD transactionId AS txId RETURN txId $secondCommand 'db1-transaction-123' YIELD username RETURN txId, username"
+        s"$firstCommand 'id' YIELD transactionId AS txId RETURN txId $secondCommand 'db1-transaction-123' YIELD username RETURN txId, username"
       ) {
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             None,
             false,
             List(commandResultItem("transactionId", Some("txId")))
@@ -1021,11 +1018,11 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       }
 
       test(
-        s"$firstCommand YIELD transactionId AS txId $secondCommand 'db1-transaction-123' YIELD username RETURN txId, username"
+        s"$firstCommand 'id' YIELD transactionId AS txId $secondCommand 'db1-transaction-123' YIELD username RETURN txId, username"
       ) {
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             None,
             false,
             List(commandResultItem("transactionId", Some("txId")))
@@ -1218,10 +1215,10 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
 
       // general expression and not just string/param
 
-      test(s"${firstCommand}S YIELD transactionId AS txId $secondCommand txId") {
+      test(s"${firstCommand}S 'id' YIELD transactionId AS txId $secondCommand txId") {
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             None,
             false,
             List(commandResultItem("transactionId", Some("txId")))
@@ -1259,10 +1256,10 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         )
       }
 
-      test(s"${firstCommand}S YIELD transactionId AS txId $secondCommand txId + '123'") {
+      test(s"${firstCommand}S 'id' YIELD transactionId AS txId $secondCommand txId + '123'") {
         assertAst(
           firstClause(
-            Left(List.empty),
+            Right(literalString("id")),
             None,
             false,
             List(commandResultItem("transactionId", Some("txId")))
@@ -1343,7 +1340,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
 
   test(
     "SHOW TRANSACTIONS YIELD a1, b1 AS c1, d1 AS d1, e1 AS f1, g1 AS e1 ORDER BY a1, b1, d1, e1 WHERE a1 AND b1 AND d1 AND e1 " +
-      "TERMINATE TRANSACTIONS YIELD a2, b2 AS c2, d2 AS d2, e2 AS f2, g2 AS e2 ORDER BY a2, b2, d2, e2 WHERE a2 AND b2 AND d2 AND e2 " +
+      "TERMINATE TRANSACTIONS 'id' YIELD a2, b2 AS c2, d2 AS d2, e2 AS f2, g2 AS e2 ORDER BY a2, b2, d2, e2 WHERE a2 AND b2 AND d2 AND e2 " +
       "SHOW SETTINGS YIELD a3, b3 AS c3, d3 AS d3, e3 AS f3, g3 AS e3 ORDER BY a3, b3, d3, e3 WHERE a3 AND b3 AND d3 AND e3 " +
       "SHOW FUNCTIONS YIELD a4, b4 AS c4, d4 AS d4, e4 AS f4, g4 AS e4 ORDER BY a4, b4, d4, e4 WHERE a4 AND b4 AND d4 AND e4 " +
       "SHOW PROCEDURES YIELD a5, b5 AS c5, d5 AS d5, e5 AS f5, g5 AS e5 ORDER BY a5, b5, d5, e5 WHERE a5 AND b5 AND d5 AND e5 " +
@@ -1386,7 +1383,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         ))
       ),
       terminateTx(
-        Left(List.empty),
+        Right(literalString("id")),
         None,
         yieldAll = false,
         List(
@@ -1590,28 +1587,28 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
 
   test(
     "SHOW TRANSACTIONS YIELD a " +
-      "TERMINATE TRANSACTIONS YIELD a " +
+      "TERMINATE TRANSACTIONS 'id' YIELD a " +
       "SHOW SETTINGS YIELD a " +
       "SHOW FUNCTIONS YIELD a " +
       "SHOW PROCEDURES YIELD a " +
       "SHOW INDEXES YIELD a " +
       "SHOW CONSTRAINTS YIELD a " +
       "SHOW TRANSACTIONS YIELD a " +
-      "TERMINATE TRANSACTIONS YIELD a " +
+      "TERMINATE TRANSACTIONS 'id' YIELD a " +
       "SHOW SETTINGS YIELD a " +
       "SHOW FUNCTIONS YIELD a " +
       "SHOW PROCEDURES YIELD a " +
       "SHOW INDEXES YIELD a " +
       "SHOW CONSTRAINTS YIELD a " +
       "SHOW TRANSACTIONS YIELD a " +
-      "TERMINATE TRANSACTIONS YIELD a " +
+      "TERMINATE TRANSACTIONS 'id' YIELD a " +
       "SHOW SETTINGS YIELD a " +
       "SHOW FUNCTIONS YIELD a " +
       "SHOW PROCEDURES YIELD a " +
       "SHOW INDEXES YIELD a " +
       "SHOW CONSTRAINTS YIELD a " +
       "SHOW TRANSACTIONS YIELD a " +
-      "TERMINATE TRANSACTIONS YIELD a " +
+      "TERMINATE TRANSACTIONS 'id' YIELD a " +
       "SHOW SETTINGS YIELD a " +
       "SHOW FUNCTIONS YIELD a " +
       "SHOW PROCEDURES YIELD a " +
@@ -1628,7 +1625,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       ),
       withFromYield(returnAllItems.withDefaultOrderOnColumns(List("a"))),
       terminateTx(
-        Left(List.empty),
+        Right(literalString("id")),
         None,
         yieldAll = false,
         List(commandResultItem("a"))
@@ -1678,7 +1675,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       ),
       withFromYield(returnAllItems.withDefaultOrderOnColumns(List("a"))),
       terminateTx(
-        Left(List.empty),
+        Right(literalString("id")),
         None,
         yieldAll = false,
         List(commandResultItem("a"))
@@ -1728,7 +1725,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       ),
       withFromYield(returnAllItems.withDefaultOrderOnColumns(List("a"))),
       terminateTx(
-        Left(List.empty),
+        Right(literalString("id")),
         None,
         yieldAll = false,
         List(commandResultItem("a"))
@@ -1778,7 +1775,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       ),
       withFromYield(returnAllItems.withDefaultOrderOnColumns(List("a"))),
       terminateTx(
-        Left(List.empty),
+        Right(literalString("id")),
         None,
         yieldAll = false,
         List(commandResultItem("a"))
@@ -2169,6 +2166,40 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         )(pos)
       )
     )
+  }
+
+  test("TERMINATE TRANSACTION SHOW SETTINGS") {
+    failsParsing[ast.Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input 'SETTINGS'")
+      case _ => _.withSyntaxError(
+          """Invalid input 'SETTINGS': expected an expression, 'SHOW', 'TERMINATE', 'WHERE', 'YIELD' or <EOF> (line 1, column 28 (offset: 27))
+            |"TERMINATE TRANSACTION SHOW SETTINGS"
+            |                            ^""".stripMargin
+        )
+    }
+  }
+
+  test("SHOW FUNCTIONS TERMINATE TRANSACTION") {
+    failsParsing[ast.Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("Invalid input ''")
+      case _ => _.withSyntaxError(
+          """Invalid input '': expected a string or an expression (line 1, column 37 (offset: 36))
+            |"SHOW FUNCTIONS TERMINATE TRANSACTION"
+            |                                     ^""".stripMargin
+        )
+    }
+  }
+
+  test("SHOW TRANSACTIONS TERMINATE TRANSACTION") {
+    failsParsing[ast.Statements].in {
+      // javaCC parses TERMINATE as a variable
+      case Cypher5JavaCc => _.withMessageStart("Invalid input 'TRANSACTION'")
+      case _ => _.withSyntaxError(
+          """Invalid input '': expected a string or an expression (line 1, column 40 (offset: 39))
+            |"SHOW TRANSACTIONS TERMINATE TRANSACTION"
+            |                                        ^""".stripMargin
+        )
+    }
   }
 
   test("MATCH (n) TERMINATE TRANSACTION") {

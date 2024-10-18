@@ -985,7 +985,7 @@ showTransactions
    ;
 
 terminateTransactions
-   : transactionToken namesAndClauses
+   : transactionToken stringsOrExpression showCommandYield? composableCommandClauses?
    ;
 
 showSettings

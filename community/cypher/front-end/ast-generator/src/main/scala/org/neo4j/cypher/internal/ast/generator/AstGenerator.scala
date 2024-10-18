@@ -1850,7 +1850,7 @@ class AstGenerator(
   }
 
   def _terminateTransactions: Gen[Query] = for {
-    ids <- namesOrNameExpression
+    ids <- namesOrNameExpressionNonEmpty
     yields <- option(_yield)
     yieldAll <- boolean
     returns <- option(_return)
@@ -1961,7 +1961,7 @@ class AstGenerator(
   }
 
   private def terminateAsPartOfCombined: Gen[Seq[Clause]] = for {
-    ids <- namesOrNameExpression
+    ids <- namesOrNameExpressionNonEmpty
     yields <- _yield
     yieldAll <- boolean
   } yield {
@@ -1982,6 +1982,14 @@ class AstGenerator(
     idList <- oneOf(List.empty, multiIdList)
     expr <- _expression
     ids <- oneOf(Left(idList), Right(expr))
+  } yield {
+    ids
+  }
+
+  private def namesOrNameExpressionNonEmpty: Gen[Either[List[String], Expression]] = for {
+    multiIdList <- twoOrMore(string)
+    expr <- _expression
+    ids <- oneOf(Left(multiIdList), Right(expr))
   } yield {
     ids
   }

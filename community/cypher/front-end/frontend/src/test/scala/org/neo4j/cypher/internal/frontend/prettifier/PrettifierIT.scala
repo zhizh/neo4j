@@ -1439,8 +1439,6 @@ class PrettifierIT extends CypherFunSuite {
 
     // terminate transactions
 
-    "terminate transaction" ->
-      "TERMINATE TRANSACTIONS",
     "terminate transactions 'db1-transaction-123'" ->
       """TERMINATE TRANSACTIONS "db1-transaction-123"""",
     "terminate transactions $param" ->
@@ -1474,9 +1472,9 @@ class PrettifierIT extends CypherFunSuite {
 
     // combine show and terminate transactions
 
-    "show transaction terminate transaction" ->
+    "show transaction terminate transaction 'id'" ->
       """SHOW TRANSACTIONS
-        |TERMINATE TRANSACTIONS""".stripMargin,
+        |TERMINATE TRANSACTIONS "id"""".stripMargin,
     """terminate transaction $x+'123' yield transactionId AS txIdT
       |show transaction txIdT yield transactionId AS txIdS""".stripMargin ->
       """TERMINATE TRANSACTIONS $x + "123"

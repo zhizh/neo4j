@@ -21,6 +21,7 @@ package org.neo4j.cypher
 
 import org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME
 import org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME
+import org.neo4j.exceptions.InvalidSemanticsException
 import org.neo4j.exceptions.SyntaxException
 import org.neo4j.kernel.impl.api.KernelTransactions
 import org.neo4j.test.DoubleLatch
@@ -804,8 +805,18 @@ class CommunityTransactionCommandAcceptanceTest extends TransactionCommandAccept
     }
 
     // THEN
+    exception.getMessage should startWith("Invalid input '': expected a string or an expression")
+  }
+
+  test("Should fail to terminate transaction when passing empty list as parameter") {
+    // WHEN
+    val exception = the[InvalidSemanticsException] thrownBy {
+      execute("TERMINATE TRANSACTION $id", Map("id" -> List()))
+    }
+
+    // THEN
     exception.getMessage should startWith(
-      "Missing transaction id to terminate, the transaction id can be found using `SHOW TRANSACTIONS`"
+      "Missing transaction id to terminate, the transaction id can be found using `SHOW TRANSACTIONS`."
     )
   }
 

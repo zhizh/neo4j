@@ -28,12 +28,6 @@ import org.neo4j.cypher.internal.util.symbols.IntegerType
 class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaCommandParserTestBase {
 
   Seq("TRANSACTION", "TRANSACTIONS").foreach { transactionKeyword =>
-    test(s"TERMINATE $transactionKeyword") {
-      assertAst(
-        singleQuery(TerminateTransactionsClause(Left(List.empty), List.empty, yieldAll = false, None)(defaultPos))
-      )
-    }
-
     test(s"TERMINATE $transactionKeyword 'db1-transaction-123'") {
       assertAst(
         singleQuery(TerminateTransactionsClause(
@@ -192,11 +186,11 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     )(defaultPos)))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD username") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD username") {
     assertAst(
       singleQuery(
         TerminateTransactionsClause(
-          Left(List.empty),
+          Right(literalString("id")),
           List(commandResultItem("username")),
           yieldAll = false,
           None
@@ -438,11 +432,11 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     )
   }
 
-  test("TERMINATE TRANSACTIONS YIELD yield") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD yield") {
     assertAst(
       singleQuery(
         TerminateTransactionsClause(
-          Left(List.empty),
+          Right(literalString("id")),
           List(commandResultItem("yield")),
           yieldAll = false,
           None
@@ -538,10 +532,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     )
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a ORDER BY a WHERE a = 1") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a ORDER BY a WHERE a = 1") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a")),
         yieldAll = false,
         None
@@ -554,10 +548,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     ))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a AS b ORDER BY b WHERE b = 1") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a AS b ORDER BY b WHERE b = 1") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a", Some("b"))),
         yieldAll = false,
         None
@@ -570,10 +564,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     ))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a AS b ORDER BY a WHERE a = 1") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a AS b ORDER BY a WHERE a = 1") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a", Some("b"))),
         yieldAll = false,
         None
@@ -586,10 +580,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     ))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a ORDER BY EXISTS { (a) } WHERE EXISTS { (a) }") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a ORDER BY EXISTS { (a) } WHERE EXISTS { (a) }") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a")),
         yieldAll = false,
         None
@@ -602,10 +596,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     ))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a ORDER BY EXISTS { (b) } WHERE EXISTS { (b) }") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a ORDER BY EXISTS { (b) } WHERE EXISTS { (b) }") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a")),
         yieldAll = false,
         None
@@ -618,10 +612,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     ))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a AS b ORDER BY COUNT { (b) } WHERE EXISTS { (b) }") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a AS b ORDER BY COUNT { (b) } WHERE EXISTS { (b) }") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a", Some("b"))),
         yieldAll = false,
         None
@@ -634,10 +628,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     ))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a AS b ORDER BY EXISTS { (a) } WHERE COLLECT { MATCH (a) RETURN a } <> []") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a AS b ORDER BY EXISTS { (a) } WHERE COLLECT { MATCH (a) RETURN a } <> []") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a", Some("b"))),
         yieldAll = false,
         None
@@ -653,10 +647,10 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
     ))
   }
 
-  test("TERMINATE TRANSACTIONS YIELD a AS b ORDER BY b + COUNT { () } WHERE b OR EXISTS { () }") {
+  test("TERMINATE TRANSACTIONS 'id' YIELD a AS b ORDER BY b + COUNT { () } WHERE b OR EXISTS { () }") {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a", Some("b"))),
         yieldAll = false,
         None
@@ -670,11 +664,11 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
   }
 
   test(
-    "TERMINATE TRANSACTIONS YIELD a AS b ORDER BY a + EXISTS { () } WHERE a OR ALL (x IN [1, 2] WHERE x IS :: INT)"
+    "TERMINATE TRANSACTIONS 'id' YIELD a AS b ORDER BY a + EXISTS { () } WHERE a OR ALL (x IN [1, 2] WHERE x IS :: INT)"
   ) {
     assertAst(singleQuery(
       TerminateTransactionsClause(
-        Left(List.empty),
+        Right(literalString("id")),
         List(commandResultItem("a", Some("b"))),
         yieldAll = false,
         None
@@ -718,6 +712,20 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
   }
 
   // Negative tests
+
+  test("TERMINATE TRANSACTION") {
+    failsParsing[Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("""Invalid input '': expected "\"", "\'" or an expression""")
+      case _             => _.withSyntaxErrorContaining("Invalid input '': expected a string or an expression")
+    }
+  }
+
+  test("TERMINATE TRANSACTIONS") {
+    failsParsing[Statements].in {
+      case Cypher5JavaCc => _.withMessageStart("""Invalid input '': expected "\"", "\'" or an expression""")
+      case _             => _.withSyntaxErrorContaining("Invalid input '': expected a string or an expression")
+    }
+  }
 
   test("TERMINATE TRANSACTIONS 'db1-transaction-123' YIELD") {
     // missing what is yielded
@@ -807,13 +815,12 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
       }
     }
 
-    test(s"$prefix TERMINATE TRANSACTIONS YIELD * WITH * MATCH (n) RETURN n") {
+    test(s"$prefix TERMINATE TRANSACTIONS 'id' YIELD * WITH * MATCH (n) RETURN n") {
       // Can't parse WITH after TERMINATE
       failsParsing[Statements].in {
         case Cypher5JavaCc => _.withMessageStart("Invalid input 'WITH': expected")
-        // Antlr parses YIELD * WITH * MATCH (n) as an expression
         case _ => _.withSyntaxErrorContaining(
-            """Invalid input 'RETURN': expected an expression, 'SHOW', 'TERMINATE', 'WHERE', 'YIELD' or <EOF>"""
+            "Invalid input 'WITH': expected 'ORDER BY', 'LIMIT', 'OFFSET', 'RETURN', 'SHOW', 'SKIP', 'TERMINATE', 'WHERE' or <EOF>"
           )
       }
     }
@@ -878,7 +885,7 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
       }
     }
 
-    test(s"$prefix TERMINATE TRANSACTIONS YIELD a WITH a RETURN a") {
+    test(s"$prefix TERMINATE TRANSACTIONS 'id' YIELD a WITH a RETURN a") {
       failsParsing[Statements].in {
         case Cypher5JavaCc => _.withMessageStart("Invalid input 'WITH': expected")
         case _ => _.withSyntaxErrorContaining(
@@ -897,7 +904,7 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
       }
     }
 
-    test(s"$prefix TERMINATE TRANSACTIONS YIELD as UNWIND as as a RETURN a") {
+    test(s"$prefix TERMINATE TRANSACTIONS 'id' YIELD as UNWIND as as a RETURN a") {
       failsParsing[Statements].in {
         case Cypher5JavaCc => _.withMessageStart("Invalid input 'UNWIND': expected")
         case _ => _.withSyntaxErrorContaining(

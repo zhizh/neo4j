@@ -2595,12 +2595,7 @@ case class TerminateTransactionsClause(
   val unfilteredColumns: DefaultOrAllShowColumns =
     DefaultOrAllShowColumns(useAllColumns = yieldItems.nonEmpty || yieldAll, columns, columns)
 
-  override def clauseSpecificSemanticCheck: SemanticCheck = when(names match {
-    case Left(ls) => ls.size < 1
-    case Right(_) => false // expression list length needs to be checked at runtime
-  }) {
-    error("Missing transaction id to terminate, the transaction id can be found using `SHOW TRANSACTIONS`", position)
-  } chain when(wherePos.isDefined) {
+  override def clauseSpecificSemanticCheck: SemanticCheck = when(wherePos.isDefined) {
     error(
       "`WHERE` is not allowed by itself, please use `TERMINATE TRANSACTION ... YIELD ... WHERE ...` instead",
       wherePos.get

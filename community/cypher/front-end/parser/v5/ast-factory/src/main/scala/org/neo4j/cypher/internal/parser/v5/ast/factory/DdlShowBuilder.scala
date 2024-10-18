@@ -426,7 +426,12 @@ trait DdlShowBuilder extends Cypher5ParserListener {
   final override def exitTerminateTransactions(
     ctx: Cypher5Parser.TerminateTransactionsContext
   ): Unit = {
-    ctx.ast = ctx.namesAndClauses().ast[ShowWrapper]().buildTerminateTransaction(pos(ctx.getParent))
+    ctx.ast = decomposeYield(astOpt(ctx.showCommandYield()))
+      .copy(
+        composableClauses = astOpt[Seq[Clause]](ctx.composableCommandClauses()),
+        names = ctx.stringsOrExpression().ast[Either[List[String], Expression]]
+      )
+      .buildTerminateTransaction(pos(ctx.getParent))
   }
 
   final override def exitShowSettings(
