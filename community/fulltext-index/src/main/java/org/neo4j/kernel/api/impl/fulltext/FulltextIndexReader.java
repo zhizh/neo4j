@@ -23,6 +23,7 @@ import static org.neo4j.kernel.api.impl.fulltext.FulltextIndexSettings.isEventua
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.LongPredicate;
@@ -38,10 +39,10 @@ import org.eclipse.collections.impl.block.factory.primitive.LongPredicates;
 import org.neo4j.configuration.Config;
 import org.neo4j.internal.kernel.api.IndexQueryConstraints;
 import org.neo4j.internal.kernel.api.PropertyIndexQuery;
+import org.neo4j.internal.kernel.api.PropertyIndexQuery.FulltextSearchPredicate;
 import org.neo4j.internal.kernel.api.QueryContext;
 import org.neo4j.internal.kernel.api.exceptions.schema.IndexNotApplicableKernelException;
 import org.neo4j.internal.schema.IndexDescriptor;
-import org.neo4j.internal.schema.IndexQuery.IndexQueryType;
 import org.neo4j.io.IOUtils;
 import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.kernel.api.impl.index.SearcherReference;
@@ -99,8 +100,8 @@ public class FulltextIndexReader implements ValueIndexReader {
             IndexQueryConstraints constraints,
             PropertyIndexQuery... queries)
             throws IndexNotApplicableKernelException {
-        validateQueries(queries);
-        final var query = toLuceneQuery(queries);
+        final var predicate = validateQuery(queries);
+        final var query = toLuceneQuery(predicate);
         context.monitor().queried(index);
         usageTracker.queried();
 
@@ -110,46 +111,50 @@ public class FulltextIndexReader implements ValueIndexReader {
         client.initializeQuery(index, progressor, true, false, constraints, queries);
     }
 
-    private void validateQueries(PropertyIndexQuery... predicates) throws IndexNotApplicableKernelException {
+    private PropertyIndexQuery validateQuery(PropertyIndexQuery... predicates)
+            throws IndexNotApplicableKernelException {
         if (predicates.length > 1) {
-            for (int i = 1; i < predicates.length; i++) {
-                final var predicate = predicates[i];
-                if (predicate.type() == IndexQueryType.ALL_ENTRIES) {
-                    throw new IndexNotApplicableKernelException(
-                            "A fulltext schema index cannot answer composite queries containing a %s query"
-                                    .formatted(predicate.type()));
-                }
-            }
+            throw invalidCompositeQuery(IndexNotApplicableKernelException::new, predicates);
         }
 
-        for (final var predicate : predicates) {
-            if (!index.getCapability().isQuerySupported(predicate.type(), predicate.valueCategory())) {
-                throw invalidQuery(IndexNotApplicableKernelException::new, predicate);
-            }
+        final var predicate = predicates[0];
+        if (!index.getCapability().isQuerySupported(predicate.type(), predicate.valueCategory())) {
+            throw invalidQuery(IndexNotApplicableKernelException::new, predicate);
         }
+
+        return predicate;
     }
 
-    private Query toLuceneQuery(PropertyIndexQuery... predicates) {
-        if (predicates.length == 1 && predicates[0].type() == IndexQueryType.ALL_ENTRIES) {
-            return new MatchAllDocsQuery();
-        }
+    private <E extends Exception> E invalidCompositeQuery(
+            Function<String, E> constructor, PropertyIndexQuery... predicates) {
+        final var indexType = index.getIndexType();
+        return constructor.apply(("Tried to query a %s index with a composite query. "
+                        + "Composite queries are not supported by a %s index. "
+                        + "Query was: %s ")
+                .formatted(indexType, indexType, Arrays.toString(predicates)));
+    }
 
-        final var queryBuilder = new BooleanQuery.Builder();
-        for (final var predicate : predicates) {
-            if (predicate.type() != IndexQueryType.FULLTEXT_SEARCH) {
-                throw invalidQuery(IllegalArgumentException::new, predicate);
+    private Query toLuceneQuery(PropertyIndexQuery predicate) {
+        return switch (predicate.type()) {
+            case ALL_ENTRIES -> new MatchAllDocsQuery();
+            case FULLTEXT_SEARCH -> {
+                final var fulltextSearchPredicate = (FulltextSearchPredicate) predicate;
+                try {
+                    // todo: is the boolean query needed?
+                    final var query = parseFulltextQuery(
+                            fulltextSearchPredicate.query(), fulltextSearchPredicate.queryAnalyzer());
+                    yield new BooleanQuery.Builder()
+                            .add(query, BooleanClause.Occur.SHOULD)
+                            .build();
+                } catch (ParseException parseException) {
+                    throw new RuntimeException(
+                            "Could not parse the given fulltext search query: '%s'."
+                                    .formatted(fulltextSearchPredicate.query()),
+                            parseException);
+                }
             }
-            final var fulltextSearch = (PropertyIndexQuery.FulltextSearchPredicate) predicate;
-            try {
-                queryBuilder.add(
-                        parseFulltextQuery(fulltextSearch.query(), fulltextSearch.queryAnalyzer()),
-                        BooleanClause.Occur.SHOULD);
-            } catch (ParseException e) {
-                throw new RuntimeException(
-                        "Could not parse the given fulltext search query: '" + fulltextSearch.query() + "'.", e);
-            }
-        }
-        return queryBuilder.build();
+            default -> throw invalidQuery(IllegalArgumentException::new, predicate);
+        };
     }
 
     private <E extends Exception> E invalidQuery(Function<String, E> constructor, PropertyIndexQuery query) {
