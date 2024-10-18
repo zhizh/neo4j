@@ -20,8 +20,14 @@
 package org.neo4j.gqlstatus;
 
 public class ErrorMessageHolder {
+
+    // Adding a real feature flag in GraphDatabaseInternalSettings would cause a circle dependency,
+    // so we need to settle for a global variable
+    public static boolean USE_NEW_ERROR_MESSAGES = false;
+
     public static String getMessage(ErrorGqlStatusObject gqlStatusObject, String oldMessage) {
-        if (gqlStatusObject instanceof ErrorGqlStatusObjectImplementation gso && gso.isCause()) {
+        if (gqlStatusObject instanceof ErrorGqlStatusObjectImplementation gso && gso.isCause()
+                || USE_NEW_ERROR_MESSAGES) {
             return gqlStatusObject.getMessage();
         }
         // if this is a top-level error we need to send the old error message for backwards-compatibility

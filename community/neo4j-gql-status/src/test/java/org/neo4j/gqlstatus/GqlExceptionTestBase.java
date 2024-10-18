@@ -202,11 +202,23 @@ abstract class GqlExceptionTestBase {
     }
 
     @Test
+    void getMessageShouldGiveNewMessageWhenFeatureFlagIsOn() {
+        ErrorMessageHolder.USE_NEW_ERROR_MESSAGES = true;
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22012)
+                .build();
+        var exception = testException(gql, "legacy message");
+
+        assertEquals("22012", exception.getMessage());
+        assertEquals("22012", exception.gqlStatusObject().getMessage());
+        ErrorMessageHolder.USE_NEW_ERROR_MESSAGES = false;
+    }
+
+    @Test
     void getMessageForTopLevelExceptionWithMessagePart() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N06)
                 .withParam(GqlParams.StringParam.option, "myOption")
                 .build();
-        var exception = testException(gql, "legacy message") ;
+        var exception = testException(gql, "legacy message");
 
         assertEquals("legacy message", exception.getMessage());
         assertEquals(
