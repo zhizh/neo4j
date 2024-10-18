@@ -114,9 +114,7 @@ case class SetOwnPasswordExecutionPlanner(
               s"User '${currentUser(p)}' failed to alter their own password: Invalid principal or credentials."
             ))
           else if (oldCredentials.matchesPassword(newValue))
-            ThrowException(new InvalidArgumentException(
-              s"User '${currentUser(p)}' failed to alter their own password: Old password and new password cannot be the same."
-            ))
+            ThrowException(InvalidArgumentException.oldPasswordEqualsNew(currentUser(p), true))
           else
             Continue
         })

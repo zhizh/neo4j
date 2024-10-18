@@ -77,10 +77,8 @@ public class GqlHelper {
 
     public static ErrorGqlStatusObject get22N69_52N02(String idxDescrOrName, String proc) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N69)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.idxDescrOrName, idxDescrOrName)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.proc, proc)
                         .build())
                 .build();
@@ -214,6 +212,16 @@ public class GqlHelper {
                         .withParam(GqlParams.StringParam.msg, msg)
                         .withClassification(ErrorClassification.CLIENT_ERROR)
                         .atPosition(line, column, offset)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql42002_42N00(String db) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42002)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N00)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.db, db)
                         .build())
                 .build();
     }

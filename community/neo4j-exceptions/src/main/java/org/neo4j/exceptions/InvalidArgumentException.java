@@ -20,6 +20,8 @@
 package org.neo4j.exceptions;
 
 import java.util.List;
+import java.util.Locale;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlHelper;
@@ -156,5 +158,89 @@ public class InvalidArgumentException extends Neo4jException {
                 "Incorrect format of encrypted password. Correct format is '<encryption-version>,<hash>,<salt>'.");
         var gql = GqlHelper.getGql42001_22N04("*", "password format", List.of("'<encryption-version>,<hash>,<salt>'"));
         return new InvalidArgumentException(gql, innerException.getMessage(), innerException);
+    }
+
+    public static InvalidArgumentException alterRemoteAliasToLocal(String alias) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N91)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.alias, alias)
+                .build();
+        return new InvalidArgumentException(
+                gql,
+                String.format(
+                        "Failed to alter the specified database alias '%s': alter a local alias to a remote alias is not supported.",
+                        alias));
+    }
+
+    public static InvalidArgumentException alterLocalAliasToRemote(String alias) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N91)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.alias, alias)
+                .build();
+        return new InvalidArgumentException(
+                gql,
+                String.format(
+                        "Failed to alter the specified database alias '%s': alter a remote alias to a local alias is not supported.",
+                        alias));
+    }
+
+    public static InvalidArgumentException renameEntityNotFound(
+            ErrorGqlStatusObject gql, String entity, String fromName, String toName) {
+        return new InvalidArgumentException(
+                gql,
+                String.format("Failed to rename the specified %s '%s' to ", entity, fromName)
+                        + String.format("'%s': The %s '%s' does not exist.", toName, entity, fromName));
+    }
+
+    public static InvalidArgumentException renameEntityAlreadyExists(
+            ErrorGqlStatusObject gql, String entity, String fromName, String toName, Throwable cause) {
+        return new InvalidArgumentException(
+                gql,
+                String.format("Failed to rename the specified %s '%s' to ", entity.toLowerCase(Locale.ROOT), fromName)
+                        + String.format("'%s': %s '%s' already exists.", toName, entity, toName),
+                cause);
+    }
+
+    public static InvalidArgumentException oldPasswordEqualsNew(String user, Boolean onSelf) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N05)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.input, "***")
+                .withParam(GqlParams.StringParam.context, user + " password")
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N89)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .build())
+                .build();
+        var msg = onSelf
+                ? String.format(
+                        "User '%s' failed to alter their own password: Old password and new password cannot be the same.",
+                        user)
+                : String.format(
+                        "Failed to alter the specified user '%s': Old password and new password cannot be the same.",
+                        user);
+        return new InvalidArgumentException(gql, msg);
+    }
+
+    public static InvalidArgumentException shortPassword(int minLength) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N05)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.input, "***")
+                .withParam(GqlParams.StringParam.context, "password")
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N85)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.NumberParam.lower, minLength)
+                        .build())
+                .build();
+        return new InvalidArgumentException(
+                gql, String.format("A password must be at least %s characters.", minLength));
+    }
+
+    public static InvalidArgumentException parameterizedDbWildcards(String syntax, String messageStart) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N86)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withParam(GqlParams.StringParam.syntax, syntax)
+                .build();
+        return new InvalidArgumentException(
+                gql,
+                String.format("%s: Parameterized database and graph names do not support wildcards.", messageStart));
     }
 }

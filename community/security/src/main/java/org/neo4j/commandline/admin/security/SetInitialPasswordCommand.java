@@ -114,7 +114,7 @@ public class SetInitialPasswordCommand extends AbstractAdminCommand implements P
         if (password == null || password.length() == 0) {
             throw new InvalidPasswordException("A password cannot be empty.");
         } else if (password.codePoints().count() < minimumPasswordLength) {
-            throw new InvalidPasswordException("A password must be at least " + minimumPasswordLength + " characters.");
+            throw InvalidPasswordException.shortPassword(minimumPasswordLength);
         }
     }
 }

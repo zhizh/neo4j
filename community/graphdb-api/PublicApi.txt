@@ -55,6 +55,11 @@ org.neo4j.dbms.api.DatabaseNotFoundException::DatabaseNotFoundException(org.neo4
 org.neo4j.dbms.api.DatabaseNotFoundException::DatabaseNotFoundException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.String) void public
 org.neo4j.dbms.api.DatabaseNotFoundException::DatabaseNotFoundException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.String, java.lang.Throwable) void public
 org.neo4j.dbms.api.DatabaseNotFoundException::DatabaseNotFoundException(org.neo4j.gqlstatus.ErrorGqlStatusObject, java.lang.Throwable) void public
+org.neo4j.dbms.api.DatabaseNotFoundException::failedAction(java.lang.String, java.lang.String) org.neo4j.dbms.api.DatabaseNotFoundException public static
+org.neo4j.dbms.api.DatabaseNotFoundException::failedActionAlias(java.lang.String, java.lang.String, java.lang.String) org.neo4j.dbms.api.DatabaseNotFoundException public static
+org.neo4j.dbms.api.DatabaseNotFoundException::failedCreateCompositeAlias(java.lang.String, java.lang.String) org.neo4j.dbms.api.DatabaseNotFoundException public static
+org.neo4j.dbms.api.DatabaseNotFoundException::failedDeleteComposite(java.lang.String) org.neo4j.dbms.api.DatabaseNotFoundException public static
+org.neo4j.dbms.api.DatabaseNotFoundException::noNameOrAlias(java.lang.String) org.neo4j.dbms.api.DatabaseNotFoundException public static
 org.neo4j.dbms.api.DatabaseNotFoundException::status() org.neo4j.kernel.api.exceptions.Status public
 org.neo4j.graphdb.ConstraintViolationException public class extends java.lang.RuntimeException
 org.neo4j.graphdb.ConstraintViolationException::ConstraintViolationException(java.lang.String) void public

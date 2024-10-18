@@ -61,7 +61,9 @@ object PrivilegeGQLCodeEntity {
           .withParam(GqlParams.StringParam.role, value)
           .build()
       case PrivilegeGQLCodeEntity.Database() =>
-        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N51)
+        ErrorGqlStatusObjectImplementation.from(
+          GqlStatusInfoCodes.STATUS_42N00
+        )
           .withParam(GqlParams.StringParam.db, value)
           .build()
     }

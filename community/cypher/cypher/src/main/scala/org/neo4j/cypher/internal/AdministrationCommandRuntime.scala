@@ -145,7 +145,7 @@ object AdministrationCommandRuntime {
     val cb = StandardCharsets.UTF_8.decode(ByteBuffer.wrap(password))
     try {
       if (cb.codePoints.count < minimumPasswordLength)
-        throw new InvalidArgumentException(s"A password must be at least $minimumPasswordLength characters.")
+        throw InvalidArgumentException.shortPassword(minimumPasswordLength)
       password
     } finally {
       for (i <- 0 until cb.length) cb.put(i, '0')
@@ -606,9 +606,7 @@ object AdministrationCommandRuntime {
                   SystemGraphCredential.deserialize(value.stringValue(), secureHasher)
                 val newValue = p.get(newPw.bytesKey).asInstanceOf[ByteArray].asObject()
                 if (oldCredentials.matchesPassword(newValue)) {
-                  ThrowException(new InvalidArgumentException(
-                    s"Failed to alter the specified user '${runtimeStringValue(userName, p)}': Old password and new password cannot be the same."
-                  ))
+                  ThrowException(InvalidArgumentException.oldPasswordEqualsNew(runtimeStringValue(userName, p), false))
                 } else validateAuth(externalAuths, nativeAuth)
             }.getOrElse(validateAuth(externalAuths, nativeAuth))
           case (2, value: BooleanValue, _) if !value.booleanValue() =>
@@ -679,19 +677,21 @@ object AdministrationCommandRuntime {
       ),
       QueryHandler
         .handleNoResult(p => {
-          Some(ThrowException(new InvalidArgumentException(
+          Some(ThrowException(InvalidArgumentException.renameEntityNotFound(
             entityNotFoundGqlStatus(entity, entity.toString),
-            s"Failed to rename the specified ${entity.toString.toLowerCase(Locale.ROOT)} '${runtimeStringValue(fromName, p)}' to " +
-              s"'${runtimeStringValue(toName, p)}': The ${entity.toString.toLowerCase(Locale.ROOT)} '${runtimeStringValue(fromName, p)}' does not exist."
+            entity.toString.toLowerCase(Locale.ROOT),
+            runtimeStringValue(fromName, p),
+            runtimeStringValue(toName, p)
           )))
         })
         .handleError((error, p) =>
           (error, error.getCause) match {
             case (_, _: UniquePropertyValueValidationException) =>
-              new InvalidArgumentException(
+              InvalidArgumentException.renameEntityAlreadyExists(
                 entityAlreadyExistsGqlStatus(entity, entity.toString),
-                s"Failed to rename the specified ${entity.toString.toLowerCase(Locale.ROOT)} '${runtimeStringValue(fromName, p)}' to " +
-                  s"'${runtimeStringValue(toName, p)}': " + s"$entity '${runtimeStringValue(toName, p)}' already exists.",
+                entity.toString,
+                runtimeStringValue(fromName, p),
+                runtimeStringValue(toName, p),
                 error
               )
             case (e: HasStatus, _) if e.status() == Status.Cluster.NotALeader =>
