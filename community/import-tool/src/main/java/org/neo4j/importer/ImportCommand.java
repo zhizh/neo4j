@@ -423,7 +423,6 @@ public class ImportCommand {
         @Option(
                 names = "--input-type",
                 showDefaultValue = ALWAYS,
-                required = true,
                 paramLabel = "csv|parquet",
                 defaultValue = "csv",
                 description = "File type to import from. Can be csv or parquet. Defaults to csv.",
