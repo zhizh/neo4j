@@ -42,7 +42,14 @@ class PropertyPrivilegeAdministrationCommandParserTestBase extends Administratio
     trueLiteral,
     falseLiteral,
     parameter("value", CTAny),
-    nullLiteral // Semantically invalid
+    nullLiteral, // Semantically invalid
+    function("date", literalString("2024-10-09")),
+    function("datetime", literalString("2024-10-09T12:10:09:40+02:00")),
+    function("localdatetime", literalString("2024-10-09T12:10:09:40")),
+    function("time", literalString("12:10:09:40+02:00")),
+    function("localtime", literalString("12:10:09:40")),
+    function("duration", literalString("PT1S")),
+    function("point", mapOfInt("x" -> 1, "y" -> 2))
   ).flatMap(l =>
     Seq(
       l,

@@ -38,6 +38,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.neo4j.values.storable.DateTimeValue;
+import org.neo4j.values.storable.DateValue;
+import org.neo4j.values.storable.DurationValue;
+import org.neo4j.values.storable.LocalDateTimeValue;
+import org.neo4j.values.storable.LocalTimeValue;
+import org.neo4j.values.storable.PointValue;
+import org.neo4j.values.storable.TimeValue;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -52,6 +59,8 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.NO_VALUE, EQUAL, false),
                 of(Values.of("one"), Values.of(1), EQUAL, false),
                 of(Values.of(1), Values.of("one"), EQUAL, false),
+                of(DateValue.date(2024, 10, 11), DateValue.date(2024, 10, 11), EQUAL, true),
+                of(DateValue.date(2024, 10, 11), DateValue.date(2023, 10, 11), EQUAL, false),
                 of(Values.of(2), Values.of(1), NOT_EQUAL, true),
                 of(Values.of(1), Values.of(1), NOT_EQUAL, false),
                 of(Values.NO_VALUE, Values.NO_VALUE, NOT_EQUAL, false),
@@ -59,6 +68,16 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.NO_VALUE, NOT_EQUAL, false),
                 of(Values.of("one"), Values.of(1), NOT_EQUAL, true),
                 of(Values.of(1), Values.of("one"), NOT_EQUAL, true),
+                of(
+                        DateTimeValue.datetime(2024, 10, 11, 14, 0, 0, 0, "+01:00"),
+                        DateTimeValue.datetime(2024, 10, 11, 14, 0, 0, 0, "+01:00"),
+                        NOT_EQUAL,
+                        false),
+                of(
+                        DateTimeValue.datetime(2023, 10, 11, 14, 0, 0, 0, "+01:00"),
+                        DateTimeValue.datetime(2024, 10, 11, 14, 0, 0, 0, "+01:00"),
+                        NOT_EQUAL,
+                        true),
                 of(Values.of(1), Values.of(2), GREATER_THAN, false),
                 of(Values.of(1), Values.of(1), GREATER_THAN, false),
                 of(Values.of(2), Values.of(1), GREATER_THAN, true),
@@ -67,6 +86,22 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.NO_VALUE, GREATER_THAN, false),
                 of(Values.of("one"), Values.of(1), GREATER_THAN, false),
                 of(Values.of(1), Values.of("one"), GREATER_THAN, false),
+                of(
+                        LocalDateTimeValue.localDateTime(2024, 10, 11, 14, 0, 0, 20),
+                        LocalDateTimeValue.localDateTime(2024, 10, 11, 14, 0, 0, 20),
+                        GREATER_THAN,
+                        false),
+                of(
+                        LocalDateTimeValue.localDateTime(2024, 10, 11, 14, 0, 0, 21),
+                        LocalDateTimeValue.localDateTime(2024, 10, 11, 14, 0, 0, 20),
+                        GREATER_THAN,
+                        true),
+                of(
+                        PointValue.parse("{x:2, y:2}"),
+                        PointValue.parse("{x:1, y:2}"),
+                        GREATER_THAN,
+                        false), // We do not support comparison of points (they will always be false if they are not
+                // equal)
                 of(Values.of(1), Values.of(2), GREATER_THAN_OR_EQUAL, false),
                 of(Values.of(1), Values.of(1), GREATER_THAN_OR_EQUAL, true),
                 of(Values.of(2), Values.of(1), GREATER_THAN_OR_EQUAL, true),
@@ -75,6 +110,16 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.NO_VALUE, GREATER_THAN_OR_EQUAL, false),
                 of(Values.of("one"), Values.of(1), GREATER_THAN_OR_EQUAL, false),
                 of(Values.of(1), Values.of("one"), GREATER_THAN_OR_EQUAL, false),
+                of(
+                        LocalTimeValue.localTime(14, 0, 0, 20),
+                        LocalTimeValue.localTime(14, 0, 0, 21),
+                        GREATER_THAN_OR_EQUAL,
+                        false),
+                of(
+                        LocalTimeValue.localTime(14, 0, 0, 20),
+                        LocalTimeValue.localTime(14, 0, 0, 20),
+                        GREATER_THAN_OR_EQUAL,
+                        true),
                 of(Values.of(1), Values.of(2), LESS_THAN, true),
                 of(Values.of(1), Values.of(1), LESS_THAN, false),
                 of(Values.of(2), Values.of(1), LESS_THAN, false),
@@ -83,6 +128,8 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.NO_VALUE, LESS_THAN, false),
                 of(Values.of("one"), Values.of(1), LESS_THAN, false),
                 of(Values.of(1), Values.of("one"), LESS_THAN, false),
+                of(TimeValue.time(14, 0, 0, 20, "+01:00"), TimeValue.time(14, 0, 0, 20, "+01:00"), LESS_THAN, false),
+                of(TimeValue.time(14, 0, 0, 20, "+00:00"), TimeValue.time(14, 0, 0, 20, "+01:00"), LESS_THAN, false),
                 of(Values.of(1), Values.of(2), LESS_THAN_OR_EQUAL, true),
                 of(Values.of(1), Values.of(1), LESS_THAN_OR_EQUAL, true),
                 of(Values.of(2), Values.of(1), LESS_THAN_OR_EQUAL, false),
@@ -91,6 +138,21 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.NO_VALUE, LESS_THAN_OR_EQUAL, false),
                 of(Values.of("one"), Values.of(1), LESS_THAN_OR_EQUAL, false),
                 of(Values.of(1), Values.of("one"), LESS_THAN_OR_EQUAL, false),
+                of(
+                        DurationValue.duration(10, 10, 10, 10),
+                        DurationValue.duration(10, 10, 10, 10),
+                        LESS_THAN_OR_EQUAL,
+                        true),
+                of(
+                        DurationValue.duration(10, 10, 10, 9),
+                        DurationValue.duration(10, 10, 10, 10),
+                        LESS_THAN_OR_EQUAL,
+                        false), // can not compare different durations
+                of(
+                        DurationValue.duration(10, 10, 10, 11),
+                        DurationValue.duration(10, 10, 10, 10),
+                        LESS_THAN_OR_EQUAL,
+                        false),
                 of(Values.of(1), Values.of(new String[] {"one", "two"}), IN, false),
                 of(Values.of("one"), Values.of(new String[] {"one", "two"}), IN, true),
                 of(Values.of(1), Values.of(new int[] {1, 2}), IN, true),
@@ -102,6 +164,11 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.NO_VALUE, IN, false),
                 of(Values.NO_VALUE, Values.NO_VALUE, IN, false),
                 of(Values.NO_VALUE, Values.of(new int[] {1, 2}), IN, false),
+                of(
+                        PointValue.parse("{x:1, y:2}"),
+                        Values.of(new PointValue[] {PointValue.parse("{x:1, y:2}"), PointValue.parse("{x:2, y:2}")}),
+                        IN,
+                        true),
                 of(Values.of(1), Values.of(new String[] {"one", "two"}), NOT_IN, true),
                 of(Values.of("one"), Values.of(new String[] {"one", "two"}), NOT_IN, false),
                 of(Values.of(1), Values.of(new int[] {1, 2}), NOT_IN, false),
@@ -112,7 +179,12 @@ public class PropertyRuleTest {
                 of(Values.of(1), Values.of("one"), NOT_IN, true),
                 of(Values.of(1), Values.NO_VALUE, NOT_IN, false),
                 of(Values.NO_VALUE, Values.NO_VALUE, NOT_IN, false),
-                of(Values.NO_VALUE, Values.of(new int[] {1, 2}), NOT_IN, false));
+                of(Values.NO_VALUE, Values.of(new int[] {1, 2}), NOT_IN, false),
+                of(
+                        PointValue.parse("{x:1, y:2}"),
+                        Values.of(new PointValue[] {PointValue.parse("{x:10, y:2}"), PointValue.parse("{x:2, y:2}")}),
+                        NOT_IN,
+                        true));
     }
 
     private static Stream<Arguments> ValuePredicateStrings() {

@@ -23,6 +23,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.neo4j.internal.helpers.NameUtil;
 import org.neo4j.util.Preconditions;
+import org.neo4j.values.storable.DateTimeValue;
+import org.neo4j.values.storable.DateValue;
+import org.neo4j.values.storable.DurationValue;
+import org.neo4j.values.storable.LocalDateTimeValue;
+import org.neo4j.values.storable.LocalTimeValue;
+import org.neo4j.values.storable.PointValue;
+import org.neo4j.values.storable.TimeValue;
 import org.neo4j.values.storable.Value;
 import org.neo4j.values.storable.Values;
 
@@ -80,12 +87,34 @@ public interface PatternSegment extends Segment {
         public String pattern() {
             return String.format(
                     "%s WHERE %s",
-                    nodeString(), this.operator.toPredicateString(propertyString(), this.value.prettyPrint()));
+                    nodeString(), this.operator.toPredicateString(propertyString(), prettyPrintValue(this.value)));
         }
 
         @Override
         public String toString() {
             return String.format("FOR(%s)", pattern());
+        }
+
+        private String prettyPrintValue(Value value) {
+            String method = null;
+            String prettyPrintedValue = value.prettyPrint();
+
+            if (value instanceof DateValue) {
+                method = "date";
+            } else if (value instanceof LocalDateTimeValue) {
+                method = "localdatetime";
+            } else if (value instanceof DateTimeValue) {
+                method = "datetime";
+            } else if (value instanceof LocalTimeValue) {
+                method = "localtime";
+            } else if (value instanceof TimeValue) {
+                method = "time";
+            } else if (value instanceof DurationValue) {
+                method = "duration";
+            } else if (value instanceof PointValue) {
+                prettyPrintedValue = value.toString();
+            }
+            return method == null ? prettyPrintedValue : String.format("%s('%s')", method, prettyPrintedValue);
         }
     }
 

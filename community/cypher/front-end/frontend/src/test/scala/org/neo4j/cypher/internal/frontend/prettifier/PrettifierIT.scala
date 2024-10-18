@@ -2550,12 +2550,12 @@ class PrettifierIT extends CypherFunSuite {
             s"$action TRAVERSE ON GRAPH `#%¤` NODE `()/&` $preposition role",
           s"$action traverse on graph foo nodes A,B,C (*) $preposition x,y,z" ->
             s"$action TRAVERSE ON GRAPH foo NODES A, B, C $preposition x, y, z",
-          s"$action traverse on graph * for (a) where a.b=1 $preposition role" ->
-            s"$action TRAVERSE ON GRAPH * FOR (a) WHERE a.b = 1 $preposition role",
+          s"""$action traverse on graph * for (a) where a.b=time("14:42:30") $preposition role""" ->
+            s"""$action TRAVERSE ON GRAPH * FOR (a) WHERE a.b = time("14:42:30") $preposition role""",
           s"$action traverse on graph * for (a) where not a.b=1 $preposition role" ->
             s"$action TRAVERSE ON GRAPH * FOR (a) WHERE NOT a.b = 1 $preposition role",
-          s"$action traverse on graph * for (a) where a.b = 1 (*) $preposition role" ->
-            s"$action TRAVERSE ON GRAPH * FOR (a) WHERE a.b = 1 $preposition role",
+          s"""$action traverse on graph * for (a) where a.b = duration("5 min") (*) $preposition role""" ->
+            s"""$action TRAVERSE ON GRAPH * FOR (a) WHERE a.b = duration("5 min") $preposition role""",
           s"$action traverse on graph foo for (n) where n.a=true $preposition role" ->
             s"$action TRAVERSE ON GRAPH foo FOR (n) WHERE n.a = true $preposition role",
           s"$action traverse on graph $$foo for (:A {a:$$foo}) $preposition $$role" ->
@@ -2568,24 +2568,24 @@ class PrettifierIT extends CypherFunSuite {
             s"""$action TRAVERSE ON GRAPH `#%¤` FOR (`()/&`) WHERE `()/&`.`¤` = "&" $preposition role""",
           s"$action traverse on graph foo for (n:A|B|C) where n.prop<>true $preposition x,y,z" ->
             s"$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE n.prop <> true $preposition x, y, z",
-          s"$action traverse on graph foo for (n:A|B|C) where NOT n.prop<>true $preposition x,y,z" ->
-            s"$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE NOT n.prop <> true $preposition x, y, z",
+          s"""$action traverse on graph foo for (n:A|B|C) where NOT n.prop<>localtime("14:42:30") $preposition x,y,z""" ->
+            s"""$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE NOT n.prop <> localtime("14:42:30") $preposition x, y, z""",
           s"$action traverse on graph foo for (n:A|B|C {prop:true}) $preposition x,y,z" ->
             s"$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE n.prop = true $preposition x, y, z",
-          s"$action traverse on graph foo for (n:A|B|C where n.prop<>true) $preposition x,y,z" ->
-            s"$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE n.prop <> true $preposition x, y, z",
+          s"""$action traverse on graph foo for (n:A|B|C where n.prop<>localdatetime("2024-10-10T14:42:30")) $preposition x,y,z""" ->
+            s"""$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE n.prop <> localdatetime("2024-10-10T14:42:30") $preposition x, y, z""",
           s"$action traverse on graph foo for (n:A|B|C where n.prop is not null) $preposition x,y,z" ->
             s"$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE n.prop IS NOT NULL $preposition x, y, z",
           s"$action traverse on graph foo for (n:A|B|C where not n.prop is not null) $preposition x,y,z" ->
             s"$action TRAVERSE ON GRAPH foo FOR (n:A|B|C) WHERE NOT n.prop IS NOT NULL $preposition x, y, z",
           s"$action traverse on graph FoO for (Bar) where Bar.fOO in [$$foo] $preposition role" ->
             s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE Bar.fOO IN [$$foo] $preposition role",
-          s"$action traverse on graph FoO for (Bar) where not Bar.fOO in [1] $preposition role" ->
-            s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO IN [1] $preposition role",
+          s"""$action traverse on graph FoO for (Bar) where not Bar.fOO in [datetime("2024-10-10T14:42:30:5")] $preposition role""" ->
+            s"""$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO IN [datetime("2024-10-10T14:42:30:5")] $preposition role""",
           s"$action traverse on graph FoO for (Bar) where not Bar.fOO in [1,2,3] $preposition role" ->
             s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO IN [1, 2, 3] $preposition role",
-          s"$action traverse on graph FoO for (Bar) where not Bar.fOO in [1,'string',false] $preposition role" ->
-            s"""$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO IN [1, "string", false] $preposition role""",
+          s"""$action traverse on graph FoO for (Bar) where not Bar.fOO in [1,'string',false, point({x: 1, y: 2, z: 0})] $preposition role""" ->
+            s"""$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO IN [1, "string", false, point({x: 1, y: 2, z: 0})] $preposition role""",
           s"$action traverse on graph FoO FOR (Bar) WHERE not Bar.fOO in $$foo $preposition role" ->
             s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO IN $$foo $preposition role",
           s"$action traverse on graph FoO FOR (Bar) WHERE 1 > Bar.fOO $preposition role" ->
@@ -2600,8 +2600,8 @@ class PrettifierIT extends CypherFunSuite {
             s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE Bar.fOO < 1 $preposition role",
           s"$action traverse on graph FoO FOR (Bar) WHERE not Bar.fOO < $$foo $preposition role" ->
             s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO < $$foo $preposition role",
-          s"$action traverse on graph FoO FOR (Bar) WHERE Bar.fOO <= 1.0 $preposition role" ->
-            s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE Bar.fOO <= 1.0 $preposition role",
+          s"""$action traverse on graph FoO FOR (Bar) WHERE Bar.fOO <= date("2024-10-10") $preposition role""" ->
+            s"""$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE Bar.fOO <= date("2024-10-10") $preposition role""",
           s"$action traverse on graph FoO FOR (Bar) WHERE not Bar.fOO <= $$foo $preposition role" ->
             s"$action TRAVERSE ON GRAPH FoO FOR (Bar) WHERE NOT Bar.fOO <= $$foo $preposition role",
           s"$action traverse on graph * relationships * $preposition role" ->

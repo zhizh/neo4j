@@ -36,6 +36,7 @@ import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.Expression.SemanticContext
+import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.GreaterThan
 import org.neo4j.cypher.internal.expressions.GreaterThanOrEqual
 import org.neo4j.cypher.internal.expressions.In
@@ -912,11 +913,33 @@ sealed abstract class PrivilegeCommand(
       ExpressionStringifier.apply(_.asCanonicalStringVal).apply(expression)
     }
 
+    def unsupportedExpression = s"$FAILED_PROPERTY_RULE The expression: `$stringifyExpression` is not supported. " +
+      s"Only single, literal-based predicate expressions are allowed for property-based access control."
+
+    def checkScalarExpression(value: Expression): SemanticCheck = {
+      value match {
+        case _: Literal | _: ExplicitParameter => SemanticCheck.success
+        case f: FunctionInvocation
+          if Seq("date", "datetime", "localdatetime", "localtime", "time", "duration", "point").contains(
+            f.functionName.name
+          ) =>
+          SemanticCheck.success
+        case _ => error(unsupportedExpression, expression.position)
+      }
+    }
+
+    def checkListExpression(value: Expression): SemanticCheck = {
+      value match {
+        case ll: ListLiteral          => checkTypesInList(ll)
+        case param: ExplicitParameter => SemanticCheck.success
+        case _                        => error(unsupportedExpression, expression.position)
+      }
+    }
+
     def checkTypesInList(listLiteral: ListLiteral): SemanticCheck =
       if (
         listLiteral.expressions.forall {
-          case _: Literal | _: ExplicitParameter => true
-          case _                                 => false
+          checkScalarExpression(_) == SemanticCheck.success
         }
       ) SemanticCheck.success
       else error(
@@ -1003,25 +1026,17 @@ sealed abstract class PrivilegeCommand(
           l.position,
           " Use `WHERE` syntax in combination with `IS NULL` instead."
         )
-      case Equals(_: Property, _: Literal) | NotEquals(_: Property, _: Literal) |
-        Equals(_: Property, _: ExplicitParameter) | NotEquals(_: Property, _: ExplicitParameter) |
-        In(_: Property, _: ExplicitParameter) |
-        Not(In(_: Property, _: ExplicitParameter)) |
-        IsNull(_: Property) | IsNotNull(_: Property) |
-        MapExpression(Seq((_: PropertyKeyName, _: Literal))) |
-        MapExpression(Seq((_: PropertyKeyName, _: ExplicitParameter))) |
-        GreaterThan(_: Property, _: Literal) | GreaterThan(_: Property, _: ExplicitParameter) |
-        GreaterThanOrEqual(_: Property, _: Literal) | GreaterThanOrEqual(_: Property, _: ExplicitParameter) |
-        LessThan(_: Property, _: Literal) | LessThan(_: Property, _: ExplicitParameter) |
-        LessThanOrEqual(_: Property, _: Literal) | LessThanOrEqual(_: Property, _: ExplicitParameter) =>
-        SemanticCheck.success
-      case In(_: Property, listLiteral: ListLiteral)      => checkTypesInList(listLiteral)
-      case Not(In(_: Property, listLiteral: ListLiteral)) => checkTypesInList(listLiteral)
-      case _ => error(
-          s"$FAILED_PROPERTY_RULE The expression: `$stringifyExpression` is not supported. " +
-            s"Only single, literal-based predicate expressions are allowed for property-based access control.",
-          expression.position
-        )
+      case Equals(_: Property, e: Expression)                      => checkScalarExpression(e)
+      case NotEquals(_: Property, e: Expression)                   => checkScalarExpression(e)
+      case In(_: Property, e: Expression)                          => checkListExpression(e)
+      case Not(In(_: Property, e: Expression))                     => checkListExpression(e)
+      case IsNull(_: Property) | IsNotNull(_: Property)            => SemanticCheck.success
+      case MapExpression(Seq((_: PropertyKeyName, e: Expression))) => checkScalarExpression(e)
+      case GreaterThan(_: Property, e: Expression)                 => checkScalarExpression(e)
+      case GreaterThanOrEqual(_: Property, e: Expression)          => checkScalarExpression(e)
+      case LessThan(_: Property, e: Expression)                    => checkScalarExpression(e)
+      case LessThanOrEqual(_: Property, e: Expression)             => checkScalarExpression(e)
+      case _                                                       => error(unsupportedExpression, expression.position)
     }
   }
 

@@ -432,6 +432,30 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           }) shouldBe true
         }
 
+        // e.g. FOR (n) WHERE n.prop1 = date.realtime()
+        test(
+          s"property rules using WHERE syntax with sub functions of temporal functions should fail semantic checking ($qualifierDescription)($operator)"
+        ) {
+          val privilege = new GrantPrivilege(
+            GraphPrivilege(TraverseAction, HomeGraphScope()(p))(p),
+            false,
+            None,
+            qualifierFn(
+              Some(Variable("n")(p)),
+              op(
+                prop(varFor("n"), "prop1"),
+                function("date.realtime")
+              )
+            ),
+            Seq(literalString("role1"))
+          )(p)
+
+          val result = privilege.semanticCheck.run(initialState, SemanticCheckContext.default)
+          result.errors.exists(s => {
+            s.msg == s"Failed to administer property rule. The expression: `n.prop1 $operator `date.realtime`()` is not supported. Only single, literal-based predicate expressions are allowed for property-based access control."
+          }) shouldBe true
+        }
+
         // e.g. FOR (n) WHERE n.prop1 = [1, 2]
         test(
           s"property rules using WHERE syntax with List of literals should fail semantic checking ($qualifierDescription)($operator)"
@@ -455,6 +479,66 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
               prop(varFor("n"), "prop1"),
               listOf(parameter("value", CTAny), parameter("value2", CTAny))
             ), // n.prop = [$value, $value2]
+
+            // List of temporal values
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("date", literalString("2024-10-09")),
+                function("date", literalString("2024-10-11"))
+              )
+            ), // n.prop = [date("2024-10-09"), date("2024-10-11")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("datetime", literalString("2024-10-09T12:10:09:40+02:00")),
+                function("datetime", literalString("2024-10-11T11:10:09:40+02:00"))
+              )
+            ), // n.prop = [datetime("2024-10-09T12:10:09:40+02:00"), datetime("2024-10-11T11:10:09:40+02:00")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("localdatetime", literalString("2024-10-09T12:50:35.5")),
+                function("localdatetime", literalString("2024-10-09T12:55:35.5"))
+              )
+            ), // n.prop = [localdatetime("2024-10-09T12:50:35.5"), localdatetime("2024-10-09T12:55:35.5")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("time", literalString("12:10:09:40+02:00")),
+                function("time", literalString("11:10:09:40+02:00"))
+              )
+            ), // n.prop = [time("12:10:09:40+02:00"), time("11:10:09:40+02:00")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("localtime", literalString("12:50:35.5")),
+                function("localtime", literalString("12:55:35.5"))
+              )
+            ), // n.prop = [localtime("2024-10-09T12:50:35.5"), localtime("2024-10-09T12:55:35.5")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("duration", literalString("PT1S")),
+                function("duration", literalString("PT2S"))
+              )
+            ), // n.prop = [duration("PT1S"), duration("PT2S")]
+
+            // List of points
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("point", mapOfInt("x" -> 1, "y" -> 2)),
+                function("point", mapOfInt("x" -> 3, "y" -> 4))
+              )
+            ), // n.prop = [point({x: 1, y: 2}), point({x: 3, y: 4})]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("point", mapOfInt("x" -> 1, "y" -> 2, "z" -> 1)),
+                function("point", mapOfInt("x" -> 3, "y" -> 4, "z" -> 2))
+              )
+            ), // n.prop = [point({x: 1, y: 2, z: 1}), point({x: 3, y: 4, z: 2})]
 
             // Mixed list
             op(prop(varFor("n"), "prop1"), mixedList) // n.prop = [1, 's', 1.1, false, $value1]
@@ -497,6 +581,52 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
 
             // List of floats
             op(prop(varFor("n"), "prop1"), listOf(literalFloat(1.1))), // n.prop = [1.1]
+
+            // List of temporal values
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("date", literalString("2024-10-09"))
+              )
+            ), // n.prop = [date("2024-10-09")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("datetime", literalString("2024-10-09T12:10:09:40+02:00"))
+              )
+            ), // n.prop = [datetime("2024-10-09T12:10:09:40+02:00")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("localdatetime", literalString("2024-10-09T12:50:35.5"))
+              )
+            ), // n.prop = [localdatetime("2024-10-09T12:50:35.5")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("time", literalString("12:10:09:40+02:00"))
+              )
+            ), // n.prop = [time("12:10:09:40+02:00")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("localtime", literalString("12:50:35.5"))
+              )
+            ), // n.prop = [localtime("2024-10-09T12:50:35.5")]
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("duration", literalString("PT1S"))
+              )
+            ), // n.prop = [duration("PT1S")]
+
+            // List of points
+            op(
+              prop(varFor("n"), "prop1"),
+              listOf(
+                function("point", mapOfInt("x" -> 1, "y" -> 2))
+              )
+            ), // n.prop = [point({x: 1, y: 2})]
 
             // List of parameters
             op(
@@ -633,6 +763,82 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             Seq((propName("prop1"), listOf(literalFloat(1.1), literalFloat(1.2))))
           )(p), // {prop1: [1.1, 2.2]}
 
+          // List of temporal values
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("date", literalString("2024-10-09")),
+                function("date", literalString("2024-10-11"))
+              )
+            ))
+          )(p), // {prop1: [date("2024-10-09"), date("2024-10-11")]}
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("datetime", literalString("2024-10-09T12:10:09:40+02:00")),
+                function("datetime", literalString("2024-10-11T11:10:09:40+02:00"))
+              )
+            ))
+          )(p), // {prop1: [datetime("2024-10-09T12:10:09:40+02:00"), datetime("2024-10-11T11:10:09:40+02:00")]}
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("localdatetime", literalString("2024-10-09T12:50:35.5")),
+                function("localdatetime", literalString("2024-10-09T12:55:35.5"))
+              )
+            ))
+          )(p), // {prop1: [localdatetime("2024-10-09T12:50:35.5"), localdatetime("2024-10-09T12:55:35.5")]}
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("time", literalString("12:10:09:40+02:00")),
+                function("time", literalString("11:10:09:40+02:00"))
+              )
+            ))
+          )(p), // {prop1: [time("12:10:09:40+02:00"), time("11:10:09:40+02:00")]}
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("localtime", literalString("12:50:35.5")),
+                function("localtime", literalString("12:55:35.5"))
+              )
+            ))
+          )(p), // {prop1: [localtime("2024-10-09T12:50:35.5"), localtime("2024-10-09T12:55:35.5")]}
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("duration", literalString("PT1S")),
+                function("duration", literalString("PT2S"))
+              )
+            ))
+          )(p), // {prop1: [duration("PT1S"), duration("PT2S")]}
+
+          // List of points
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("point", mapOfInt("x" -> 1, "y" -> 2)),
+                function("point", mapOfInt("x" -> 3, "y" -> 4))
+              )
+            ))
+          )(p), // {prop1: [point({x: 1, y: 2}), point({x: 3, y: 4})]}
+          MapExpression(
+            Seq((
+              propName("prop1"),
+              listOf(
+                function("point", mapOfInt("x" -> 1, "y" -> 2, "z" -> 1)),
+                function("point", mapOfInt("x" -> 3, "y" -> 4, "z" -> 2))
+              )
+            ))
+          )(p), // {prop1: [point({x: 1, y: 2, z: 1}), point({x: 3, y: 4, z: 2})]}
+
           // List of parameters
           MapExpression(
             Seq((propName("prop1"), listOf(parameter("value", CTAny), parameter("value2", CTAny))))
@@ -680,14 +886,40 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           MapExpression(Seq((propName("prop1"), listOf(trueLiteral))))(p), // {prop1: [true]}
 
           // List of floats
-          MapExpression(
-            Seq((propName("prop1"), listOf(literalFloat(1.1))))
-          )(p), // {prop1: [1.1]}
+          MapExpression(Seq((propName("prop1"), listOf(literalFloat(1.1)))))(p), // {prop1: [1.1]}
+
+          // List of temporal values
+          MapExpression(Seq((propName("prop1"), listOf(function("date", literalString("2024-10-09"))))))(
+            p
+          ), // {prop1: [date("2024-10-09")]}
+          MapExpression(Seq((
+            propName("prop1"),
+            listOf(function("datetime", literalString("2024-10-09T12:10:09:40+02:00")))
+          )))(p), // {prop1: [datetime("2024-10-09T12:10:09:40+02:00")]}
+          MapExpression(Seq((
+            propName("prop1"),
+            listOf(function("localdatetime", literalString("2024-10-09T12:50:35.5")))
+          )))(p), // {prop1: [localdatetime("2024-10-09T12:50:35.5")]}
+          MapExpression(Seq((propName("prop1"), listOf(function("time", literalString("12:10:09:40+02:00"))))))(
+            p
+          ), // {prop1: [time("12:10:09:40+02:00")]}
+          MapExpression(Seq((propName("prop1"), listOf(function("localtime", literalString("12:50:35.5"))))))(
+            p
+          ), // {prop1: [localtime("2024-10-09T12:50:35.5")]}
+          MapExpression(Seq((propName("prop1"), listOf(function("duration", literalString("PT1S"))))))(
+            p
+          ), // {prop1: [duration("PT1S")]}
+
+          // List of points
+          MapExpression(Seq((propName("prop1"), listOf(function("point", mapOfInt("x" -> 1, "y" -> 2))))))(
+            p
+          ), // {prop1: [point({x: 1, y: 2})]}
+          MapExpression(Seq((propName("prop1"), listOf(function("point", mapOfInt("x" -> 1, "y" -> 2, "z" -> 1))))))(
+            p
+          ), // {prop1: [point({x: 1, y: 2, z: 1})]}
 
           // List of parameters
-          MapExpression(
-            Seq((propName("prop1"), listOf(parameter("value", CTAny))))
-          )(p) // {prop1: [$value]}
+          MapExpression(Seq((propName("prop1"), listOf(parameter("value", CTAny)))))(p) // {prop1: [$value]}
         ).foreach { expression =>
           withClue(expressionStringifier(expression)) {
             val privilege = new GrantPrivilege(
@@ -720,7 +952,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
         Seq(
           // List of ints
           In(prop(varFor("n"), "prop1"), listOfInt(1))(p), // n.prop IN [1]
-          In(prop(varFor("n"), "prop1"), listOfInt(1))(p), // NOT n.prop IN [1]
+          Not(In(prop(varFor("n"), "prop1"), listOfInt(1))(p))(p), // NOT n.prop IN [1]
 
           // List of strings
           In(prop(varFor("n"), "prop1"), listOfString("s1"))(p), // n.prop IN ['s1']
@@ -733,6 +965,42 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           // List of floats
           In(prop(varFor("n"), "prop1"), listOf(literalFloat(1.1)))(p), // n.prop IN [1.1]
           Not(In(prop(varFor("n"), "prop1"), listOf(literalFloat(1.1)))(p))(p), // NOT n.prop IN [1.1]
+
+          // List of temporal values
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("date", literalString("2024-10-09")))
+          )(p), // n.prop IN [date("2024-10-09")]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("datetime", literalString("2024-10-09T12:10:09:40+02:00")))
+          )(p))(p), // NOT n.prop IN [datetime("2024-10-09T12:10:09:40+02:00")]
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("localdatetime", literalString("2024-10-09T12:50:35.5")))
+          )(p), // n.prop IN [localdatetime("2024-10-09T12:50:35.5")]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("time", literalString("12:10:09:40+02:00")))
+          )(p))(p), // NOT n.prop IN [time("12:10:09:40+02:00")]
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("localtime", literalString("12:50:35.5")))
+          )(p), // n.prop IN [localtime("2024-10-09T12:50:35.5")]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("duration", literalString("PT1S")))
+          )(p))(p), // NOT n.prop IN [duration("PT1S")]
+
+          // List of points
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("point", mapOfInt("x" -> 1, "y" -> 2)))
+          )(p), // n.prop IN [point({x: 1, y: 2})]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(function("point", mapOfInt("x" -> 1, "y" -> 2, "z" -> 1)))
+          )(p))(p), // NOT n.prop IN [point({x: 1, y: 2, z: 1})]
 
           // List of parameters
           In(prop(varFor("n"), "prop1"), listOf(parameter("value", CTAny)))(p), // n.prop IN [$value]
@@ -773,7 +1041,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
         Seq(
           // List of ints
           In(prop(varFor("n"), "prop1"), listOfInt(1, 2))(p), // n.prop IN [1, 2]
-          In(prop(varFor("n"), "prop1"), listOfInt(1, 2))(p), // NOT n.prop IN [1, 2]
+          Not(In(prop(varFor("n"), "prop1"), listOfInt(1, 2))(p))(p), // NOT n.prop IN [1, 2]
 
           // List of strings
           In(prop(varFor("n"), "prop1"), listOfString("s1", "s2"))(p), // n.prop IN ['s1', 's2']
@@ -789,6 +1057,68 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             prop(varFor("n"), "prop1"),
             listOf(literalFloat(1.1), literalFloat(2.2))
           )(p))(p), // NOT n.prop IN [1.1, 2.2]
+
+          // List of temporal values
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("date", literalString("2024-10-09")),
+              function("date", literalString("2024-10-11"))
+            )
+          )(p), // n.prop IN [date("2024-10-09"), date("2024-10-11")]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("datetime", literalString("2024-10-09T12:10:09:40+02:00")),
+              function("datetime", literalString("2024-10-11T11:10:09:40+02:00"))
+            )
+          )(p))(
+            p
+          ), // NOT n.prop IN [datetime("2024-10-09T12:10:09:40+02:00"), datetime("2024-10-11T11:10:09:40+02:00")]
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("localdatetime", literalString("2024-10-09T12:50:35.5")),
+              function("localdatetime", literalString("2024-10-09T12:55:35.5"))
+            )
+          )(p), // n.prop IN [localdatetime("2024-10-09T12:50:35.5"), localdatetime("2024-10-09T12:55:35.5")]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("time", literalString("12:10:09:40+02:00")),
+              function("time", literalString("11:10:09:40+02:00"))
+            )
+          )(p))(p), // NOT n.prop IN [time("12:10:09:40+02:00"), time("11:10:09:40+02:00")]
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("localtime", literalString("12:50:35.5")),
+              function("localtime", literalString("12:55:35.5"))
+            )
+          )(p), // n.prop IN [localtime("2024-10-09T12:50:35.5"), localtime("2024-10-09T12:55:35.5")]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("duration", literalString("PT1S")),
+              function("duration", literalString("PT2S"))
+            )
+          )(p))(p), // NOT n.prop IN [duration("PT1S"), duration("PT2S")]
+
+          // List of points
+          In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("point", mapOfInt("x" -> 1, "y" -> 2)),
+              function("point", mapOfInt("x" -> 3, "y" -> 4))
+            )
+          )(p), // n.prop IN [point({x: 1, y: 2}), point({x: 3, y: 4})]
+          Not(In(
+            prop(varFor("n"), "prop1"),
+            listOf(
+              function("point", mapOfInt("x" -> 1, "y" -> 2, "z" -> 1)),
+              function("point", mapOfInt("x" -> 3, "y" -> 4, "z" -> 2))
+            )
+          )(p))(p), // NOT n.prop IN [point({x: 1, y: 2, z: 1}), point({x: 3, y: 4, z: 2})]
 
           // List of parameters
           In(
