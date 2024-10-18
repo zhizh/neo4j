@@ -537,4 +537,27 @@ abstract class SetPropertyTestBase[CONTEXT <: RuntimeContext](
       .withStatistics(propertiesSet = sizeHint)
     nodes.map(_.getProperty("prop")).foreach(i => i should equal(1))
   }
+
+  test("should handle filter evaluating property that is later set in the same pipeline") {
+    val nodes = givenGraph {
+      nodePropertyGraph(sizeHint, { case _ => Map("prop" -> 0) })
+    }
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("n")
+      .nonFuseable()
+      .unwind(s"range(1, 10) AS r2")
+      .setProperty("n", "prop", "n.prop + 1")
+      .filter("n.prop = 0")
+      .allNodeScan("n")
+      .build(readOnly = false)
+
+    // then
+    val runtimeResult: RecordingRuntimeResult = execute(logicalQuery, runtime)
+    runtimeResult should beColumns("n")
+      .withRows(singleColumn(nodes.flatMap(n => Seq.fill(10)(n))))
+      .withStatistics(propertiesSet = sizeHint)
+    nodes.map(_.getProperty("prop")).foreach(i => i should equal(1))
+  }
 }
