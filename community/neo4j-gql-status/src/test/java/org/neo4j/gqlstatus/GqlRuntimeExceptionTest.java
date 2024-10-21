@@ -19,68 +19,15 @@
  */
 package org.neo4j.gqlstatus;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+class GqlRuntimeExceptionTest extends GqlExceptionTestBase {
 
-import java.util.Optional;
-import org.junit.jupiter.api.Test;
-
-class GqlRuntimeExceptionTest {
-    @Test
-    void shouldNotConvertJavaExceptionToCause() {
-        ErrorGqlStatusObject gqlObject = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                .build();
-        Throwable cause = new RuntimeException();
-        ErrorGqlStatusObject errorWithJavaExceptionCause = new GqlRuntimeException(gqlObject, "message", cause) {};
-        assertEquals(Optional.empty(), errorWithJavaExceptionCause.cause());
+    @Override
+    GqlRuntimeException testException(ErrorGqlStatusObject innerObject, String message) {
+        return new GqlRuntimeException(innerObject, message) {};
     }
 
-    @Test
-    void shouldConvertGqlExceptionToCause() {
-        ErrorGqlStatusObject gqlObject = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                .build();
-        ErrorGqlStatusObject causeGqlObject = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N08)
-                .withParam(GqlParams.StringParam.option1, "myOption")
-                .withParam(GqlParams.StringParam.option2, "yourOption")
-                .build();
-        Throwable cause = new GqlRuntimeException(causeGqlObject, "inner message") {};
-        ErrorGqlStatusObject errorWithGqlExceptionCause = new GqlRuntimeException(gqlObject, "message", cause) {};
-        assertTrue(errorWithGqlExceptionCause.cause().isPresent());
-        assertEquals(
-                GqlStatusInfoCodes.STATUS_22N08.getStatusString(),
-                errorWithGqlExceptionCause.cause().get().gqlStatus());
-        assertThat(errorWithGqlExceptionCause.cause().get().statusDescription())
-                .contains("cannot combine 'myOption' with 'yourOption'");
-    }
-
-    @Test
-    void shouldAppendGqlExceptionToExistingGqlCause() {
-        ErrorGqlStatusObject existingCauseGqlObject = ErrorGqlStatusObjectImplementation.from(
-                        GqlStatusInfoCodes.STATUS_22N06)
-                .withParam(GqlParams.StringParam.option, "option")
-                .build();
-
-        ErrorGqlStatusObject gqlObject = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                .withCause(existingCauseGqlObject)
-                .build();
-
-        ErrorGqlStatusObject exceptionCauseGqlObject = ErrorGqlStatusObjectImplementation.from(
-                        GqlStatusInfoCodes.STATUS_22N08)
-                .withParam(GqlParams.StringParam.option1, "myOption")
-                .withParam(GqlParams.StringParam.option2, "yourOption")
-                .build();
-        Throwable cause = new GqlRuntimeException(exceptionCauseGqlObject, "inner message") {};
-        ErrorGqlStatusObject errorWithGqlExceptionCause = new GqlRuntimeException(gqlObject, "message", cause) {};
-
-        assertTrue(errorWithGqlExceptionCause.cause().isPresent());
-        ErrorGqlStatusObject firstCause = errorWithGqlExceptionCause.cause().get();
-        assertEquals(GqlStatusInfoCodes.STATUS_22N06.getStatusString(), firstCause.gqlStatus());
-        assertThat(firstCause.statusDescription()).contains("'option' needs to be specified");
-
-        assertTrue(firstCause.cause().isPresent());
-        ErrorGqlStatusObject secondCause = firstCause.cause().get();
-        assertEquals(GqlStatusInfoCodes.STATUS_22N08.getStatusString(), secondCause.gqlStatus());
-        assertThat(secondCause.statusDescription()).contains("cannot combine 'myOption' with 'yourOption'");
+    @Override
+    GqlRuntimeException testException(ErrorGqlStatusObject innerObject, String message, Throwable cause) {
+        return new GqlRuntimeException(innerObject, message, cause) {};
     }
 }

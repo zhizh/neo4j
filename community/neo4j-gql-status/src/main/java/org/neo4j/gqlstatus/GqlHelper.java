@@ -328,12 +328,35 @@ public class GqlHelper {
         if (gqlStatusObject.gqlStatusObject() instanceof ErrorGqlStatusObjectImplementation gsoImplementation) {
             ErrorGqlStatusObject newCause;
             if (gqlStatusObject.cause().isPresent()) {
-                newCause =
-                        getErrorObjectWithRewrittenCause(gqlStatusObject.cause().get(), exceptionCause);
+                var currentCause = gqlStatusObject.cause().get();
+                if (currentCause.equals(exceptionCause)) {
+                    // The gql status object already has the exception cause as a GQL cause => abort
+                    return gqlStatusObject;
+                }
+                // The gql status object already has another GQL cause => keep recursing down the cause chain
+                newCause = getErrorObjectWithRewrittenCause(currentCause, exceptionCause);
             } else {
-                newCause = exceptionCause;
+                // Bottom of the current cause chain => add the Java cause as a GQL cause here
+                if (exceptionCause.gqlStatusObject() != null) {
+                    /*
+                     * The Java cause is an exception implementing ErrorGqlStatusObject
+                     * and is having an inner error object
+                     * => add the inner error object as GQL cause
+                     */
+                    newCause = exceptionCause.gqlStatusObject();
+                } else {
+                    /*
+                     * The Java cause is an exception implementing ErrorGqlStatusObject
+                     * but is not is having an inner error object
+                     * => the cause was not ported to the new framework yet
+                     * => add the default error object as GQL cause
+                     */
+                    newCause = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_50N42)
+                            .build();
+                }
             }
-            return gsoImplementation.copyWithCause(newCause);
+            gsoImplementation.setCause(newCause);
+            return gsoImplementation;
         }
         return gqlStatusObject;
     }

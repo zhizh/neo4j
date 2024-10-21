@@ -27,7 +27,7 @@ import java.util.Optional;
 
 public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImplementation
         implements ErrorGqlStatusObject {
-    private final Optional<ErrorGqlStatusObject> cause;
+    private Optional<ErrorGqlStatusObject> cause;
     private final Map<GqlParams.GqlParam, Object> paramMap;
     private final GqlStatusInfoCodes gqlStatusInfoCode;
 
@@ -69,11 +69,8 @@ public class ErrorGqlStatusObjectImplementation extends CommonGqlStatusObjectImp
         return this;
     }
 
-    public ErrorGqlStatusObject copyWithCause(ErrorGqlStatusObject cause) {
-        return new Builder(this.gqlStatusInfoCode)
-                .withParamMap(this.paramMap)
-                .withCause(cause)
-                .build();
+    public void setCause(ErrorGqlStatusObject cause) {
+        this.cause = Optional.of(cause);
     }
 
     @Override
