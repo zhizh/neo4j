@@ -167,6 +167,7 @@ public class KernelTransactions extends LifecycleAdapter
     private final ConstraintSemantics constraintSemantics;
     private final AtomicInteger activeTransactionCounter = new AtomicInteger();
     private final ApplyEnrichmentStrategy enrichmentStrategy;
+    private final DatabaseReferenceRepository databaseReferenceRepository;
     private final AbstractSecurityLog securityLog;
     private final boolean multiVersioned;
     private final TopologyGraphDbmsModel.HostedOnMode mode;
@@ -268,6 +269,7 @@ public class KernelTransactions extends LifecycleAdapter
                 activeTransactionCounter,
                 config);
         this.enrichmentStrategy = this.databaseDependencies.resolveDependency(ApplyEnrichmentStrategy.class);
+        this.databaseReferenceRepository = databaseDependencies.resolveDependency(DatabaseReferenceRepository.class);
         this.transactionStateBehaviour = new KernelTransactionsStateBehaviour(storageEngine, enrichmentStrategy);
         this.securityLog = this.databaseDependencies.resolveDependency(AbstractSecurityLog.class);
         this.databaseSerialGuard = multiVersioned ? new MultiVersionDatabaseSerialGuard(allTransactions) : EMPTY_GUARD;
@@ -281,29 +283,28 @@ public class KernelTransactions extends LifecycleAdapter
             ClientConnectionInfo clientInfo,
             TransactionTimeout timeout) {
         assertCurrentThreadIsNotBlockingNewTransactions();
-        PrivilegeDatabaseReference sessionDatabase;
-        if (namedDatabaseId.isSystemDatabase()) {
-            // avoid recursive update to databaseReferenceRepository
-            sessionDatabase = new DatabaseReferenceImpl.Internal(
-                    new NormalizedDatabaseName(namedDatabaseId.name()), namedDatabaseId, true);
-        } else if (loginContext.equals(LoginContext.AUTH_DISABLED)
-                || (loginContext instanceof SecurityContext
-                        && ((SecurityContext) loginContext).databaseAccessMode().equals(DatabaseAccessMode.FULL))) {
-            // the repository does not contain databases until after they are stared.
-            sessionDatabase = new PrivilegeDatabaseReferenceImpl(namedDatabaseId.name(), null);
-        } else {
-            sessionDatabase = databaseDependencies
-                    .resolveDependency(DatabaseReferenceRepository.class)
-                    .getByAlias(namedDatabaseId.name())
-                    .get();
-        }
         ProcedureView procedureView = globalProcedures.getCurrentView();
         BooleanSupplier isStale = () -> !globalProcedures.getCurrentView().equals(procedureView);
+        PrivilegeDatabaseReference sessionDatabase = getDatabaseReference(loginContext);
         SecurityContext securityContext = loginContext.authorize(
                 new TokenHoldersIdLookup(tokenHolders, procedureView, isStale), sessionDatabase, securityLog);
         var tx = newKernelTransaction(type, clientInfo, timeout, securityContext, procedureView);
         databaseSerialGuard.acquireSerialLock(tx);
         return tx;
+    }
+
+    private PrivilegeDatabaseReference getDatabaseReference(LoginContext loginContext) {
+        if (namedDatabaseId.isSystemDatabase()) {
+            // avoid recursive update to databaseReferenceRepository
+            return new DatabaseReferenceImpl.Internal(
+                    new NormalizedDatabaseName(namedDatabaseId.name()), namedDatabaseId, true);
+        } else if (LoginContext.AUTH_DISABLED.equals(loginContext)
+                || (loginContext instanceof SecurityContext sc
+                        && DatabaseAccessMode.FULL.equals(sc.databaseAccessMode()))) {
+            // the repository does not contain databases until after they are stared.
+            return new PrivilegeDatabaseReferenceImpl(namedDatabaseId.name(), null);
+        }
+        return databaseReferenceRepository.getByAlias(namedDatabaseId.name()).orElseThrow();
     }
 
     protected KernelTransaction newKernelTransaction(
