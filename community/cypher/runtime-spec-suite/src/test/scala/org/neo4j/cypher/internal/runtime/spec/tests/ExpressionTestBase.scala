@@ -1064,6 +1064,62 @@ abstract class ExpressionTestBase[CONTEXT <: RuntimeContext](edition: Edition[CO
     runtimeResult should beColumns("n").withNoRows()
   }
 
+  test("should handle filtering relationships with dynamic label disjunction expression") {
+    val rels = givenGraph {
+      val l = label("S")
+      val relType = RelationshipType.withName("R")
+
+      val s1 = tx.createNode(l)
+      val s2 = tx.createNode(l)
+      s1.setProperty("prop", relType.name())
+      s2.setProperty("prop", "X")
+
+      Seq(
+        s1.createRelationshipTo(tx.createNode(), relType),
+        s2.createRelationshipTo(tx.createNode(), relType)
+      )
+    }
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("r")
+      .filterExpression(hasAnyDynamicType(varFor("r"), prop("s", "prop")))
+      .expand("(s)-[r]->(t)")
+      .nodeByLabelScan("s", "S")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    runtimeResult should beColumns("r").withRows(singleColumn(Seq(rels(0))))
+  }
+
+  test("should handle filtering relationships with dynamic label conjunction expression") {
+    val rels = givenGraph {
+      val l = label("S")
+      val relType = RelationshipType.withName("R")
+
+      val s1 = tx.createNode(l)
+      val s2 = tx.createNode(l)
+      s1.setProperty("prop", relType.name())
+      s2.setProperty("prop", "X")
+
+      Seq(
+        s1.createRelationshipTo(tx.createNode(), relType),
+        s2.createRelationshipTo(tx.createNode(), relType)
+      )
+    }
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("r")
+      .filterExpression(hasDynamicType(varFor("r"), prop("s", "prop")))
+      .expand("(s)-[r]->(t)")
+      .nodeByLabelScan("s", "S")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    runtimeResult should beColumns("r").withRows(singleColumn(Seq(rels(0))))
+  }
+
   test("should get type of relationship") {
     // given
     val size = 11

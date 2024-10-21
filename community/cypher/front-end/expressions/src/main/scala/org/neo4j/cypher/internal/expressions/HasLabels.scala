@@ -104,7 +104,7 @@ case class HasALabel(expression: Expression)(val position: InputPosition) extend
     s"${expression.asCanonicalStringVal}:%"
 }
 
-/*
+/**
  * Checks if expression has all types
  */
 case class HasTypes(expression: Expression, types: Seq[RelTypeName])(val position: InputPosition)
@@ -112,6 +112,30 @@ case class HasTypes(expression: Expression, types: Seq[RelTypeName])(val positio
 
   override def asCanonicalStringVal =
     s"${expression.asCanonicalStringVal}${types.map(_.asCanonicalStringVal).mkString(":", ":", "")}"
+
+  override def isConstantForQuery: Boolean = false
+}
+
+/**
+ * Checks if expression has exactly this dynamic type
+ */
+case class HasDynamicType(expression: Expression, types: Seq[Expression])(val position: InputPosition)
+    extends BooleanExpression {
+
+  override def asCanonicalStringVal =
+    s"${expression.asCanonicalStringVal}${types.map(t => s"$$all(${t.asCanonicalStringVal})").mkString(":", "&", "")}"
+
+  override def isConstantForQuery: Boolean = false
+}
+
+/**
+ * Checks if expression has any of the specified dynamic types
+ */
+case class HasAnyDynamicType(expression: Expression, types: Seq[Expression])(val position: InputPosition)
+    extends BooleanExpression {
+
+  override def asCanonicalStringVal =
+    s"${expression.asCanonicalStringVal}${types.map(t => s"$$any(${t.asCanonicalStringVal})").mkString(":", "|", "")}"
 
   override def isConstantForQuery: Boolean = false
 }

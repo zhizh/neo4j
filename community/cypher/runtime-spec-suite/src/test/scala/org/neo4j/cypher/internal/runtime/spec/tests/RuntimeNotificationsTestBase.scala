@@ -28,6 +28,8 @@ import org.neo4j.cypher.internal.runtime.spec.RecordingRuntimeResult
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
 import org.neo4j.cypher.internal.util.AggregationSkippedNull
 import org.neo4j.cypher.internal.util.DeprecatedBooleanCoercion
+import org.neo4j.cypher.internal.util.RuntimeUnsatisfiableRelationshipTypeExpression
+import org.neo4j.graphdb.RelationshipType
 
 abstract class RuntimeNotificationsTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
@@ -155,6 +157,25 @@ abstract class RuntimeNotificationsTestBase[CONTEXT <: RuntimeContext](
     runtimeResult should beColumns("i")
       .withNoRows()
       .withNotifications(DeprecatedBooleanCoercion)
+  }
+
+  test("hasDynamicType warns when multiple types specified") {
+    givenGraph {
+      val relType = RelationshipType.withName("R")
+      tx.createNode().createRelationshipTo(tx.createNode(), relType)
+    }
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("r")
+      .filterExpression(hasDynamicType(varFor("r"), literal(Seq("A", "B"))))
+      .allRelationshipsScan("()-[r]-()")
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    runtimeResult should beColumns("r")
+      .withNoRows()
+      .withNotifications(RuntimeUnsatisfiableRelationshipTypeExpression)
   }
 
 }

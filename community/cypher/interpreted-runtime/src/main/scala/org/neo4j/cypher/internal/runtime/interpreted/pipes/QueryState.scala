@@ -28,6 +28,7 @@ import org.neo4j.cypher.internal.runtime.NoInput
 import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.QueryStatistics
 import org.neo4j.cypher.internal.runtime.ReadableRow
+import org.neo4j.cypher.internal.runtime.RuntimeNotifier
 import org.neo4j.cypher.internal.runtime.SelectivityTrackerStorage
 import org.neo4j.cypher.internal.runtime.interpreted.CSVResources
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState.createDefaultInCache
@@ -71,7 +72,7 @@ class QueryState(
   val input: InputDataStream = NoInput,
   val profileInformation: InterpretedProfileInformation = null,
   val transactionWorkerExecutor: Option[CallableExecutor] = None
-) extends AutoCloseable {
+) extends AutoCloseable with RuntimeNotifier {
 
   private var _rowFactory: CypherRowFactory = _
   private var _closed = false

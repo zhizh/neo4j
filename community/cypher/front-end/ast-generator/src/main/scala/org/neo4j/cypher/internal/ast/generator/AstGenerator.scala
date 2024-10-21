@@ -379,8 +379,10 @@ import org.neo4j.cypher.internal.expressions.GreaterThanOrEqual
 import org.neo4j.cypher.internal.expressions.HasALabel
 import org.neo4j.cypher.internal.expressions.HasALabelOrType
 import org.neo4j.cypher.internal.expressions.HasAnyDynamicLabel
+import org.neo4j.cypher.internal.expressions.HasAnyDynamicType
 import org.neo4j.cypher.internal.expressions.HasAnyLabel
 import org.neo4j.cypher.internal.expressions.HasDynamicLabels
+import org.neo4j.cypher.internal.expressions.HasDynamicType
 import org.neo4j.cypher.internal.expressions.HasLabels
 import org.neo4j.cypher.internal.expressions.HasLabelsOrTypes
 import org.neo4j.cypher.internal.expressions.HasTypes
@@ -1053,6 +1055,14 @@ class AstGenerator(
       labels <- oneOrMore(_stringLit)
     } yield HasAnyDynamicLabel(variable, labels)(pos)
 
+    def _hasDynamicType(): Gen[HasDynamicType] = for {
+      relTypes <- oneOrMore(_stringLit)
+    } yield HasDynamicType(variable, relTypes)(pos)
+
+    def _hasAnyDynamicType(): Gen[HasAnyDynamicType] = for {
+      relTypes <- oneOrMore(_stringLit)
+    } yield HasAnyDynamicType(variable, relTypes)(pos)
+
     oneOf(
       _hasLabels(),
       _hasAnyLabel(),
@@ -1060,6 +1070,8 @@ class AstGenerator(
       _hasTypes(),
       _hasDynamicLabels(),
       _hasAnyDynamicLabel(),
+      _hasDynamicType(),
+      _hasAnyDynamicType(),
       lzy(HasALabelOrType(variable)(pos)),
       lzy(HasALabel(variable)(pos))
     )

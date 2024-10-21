@@ -292,6 +292,9 @@ case class CommunityExpressionConverter(
       case e: internal.expressions.HasAnyLabel        => hasAnyLabel(id, e, self)
       case e: internal.expressions.HasAnyDynamicLabel => hasAnyDynamicLabel(id, e, self)
       case e: internal.expressions.HasTypes           => hasTypes(id, e, self)
+      case e: internal.expressions.HasDynamicType     => hasDynamicType(id, e, self)
+      case e: internal.expressions.HasAnyDynamicType  => hasAnyDynamicType(id, e, self)
+
       case e: internal.expressions.ListLiteral =>
         commands.expressions.ListLiteral(toCommandExpression(id, e.expressions, self): _*)
       case e: internal.expressions.MapExpression => commands.expressions.LiteralMap(mapItems(id, e.items, self))
@@ -969,6 +972,28 @@ case class CommunityExpressionConverter(
         ): Predicate
     }
     commands.predicates.Ands(preds: _*)
+  }
+
+  private def hasDynamicType(
+    id: Id,
+    e: internal.expressions.HasDynamicType,
+    self: ExpressionConverters
+  ): Predicate = {
+    predicates.HasDynamicType(
+      self.toCommandExpression(id, e.expression),
+      e.types.map(self.toCommandExpression(id, _))
+    ): Predicate
+  }
+
+  private def hasAnyDynamicType(
+    id: Id,
+    e: internal.expressions.HasAnyDynamicType,
+    self: ExpressionConverters
+  ): Predicate = {
+    predicates.HasAnyDynamicType(
+      self.toCommandExpression(id, e.expression),
+      e.types.map(self.toCommandExpression(id, _))
+    ): Predicate
   }
 
   private def mapItems(

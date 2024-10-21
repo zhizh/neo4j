@@ -50,6 +50,7 @@ object InternalNotification {
     "DeprecatedIdentifierWhitespaceUnicode",
     "DeprecatedIdentifierUnicode",
     "UnsatisfiableRelationshipTypeExpression",
+    "RuntimeUnsatisfiableRelationshipTypeExpression",
     "RepeatedRelationshipReference",
     "RepeatedVarLengthRelationshipReference",
     "DeprecatedConnectComponentsPlannerPreParserOption",
@@ -186,3 +187,7 @@ case object DeprecatedBooleanCoercion extends InternalNotification {
 case class DeprecatedOptionInOptionMap(oldOption: String, newOption: String) extends InternalNotification
 
 case object InsecureProtocol extends InternalNotification
+
+case object RuntimeUnsatisfiableRelationshipTypeExpression extends InternalNotification {
+  def instance: RuntimeUnsatisfiableRelationshipTypeExpression.type = this
+}

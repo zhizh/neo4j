@@ -52,6 +52,9 @@ import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.neo4j.cypher.internal.expressions.NormalForm;
 import org.neo4j.cypher.internal.runtime.DbAccess;
 import org.neo4j.cypher.internal.runtime.ExpressionCursors;
+import org.neo4j.cypher.internal.runtime.QueryContext;
+import org.neo4j.cypher.internal.runtime.RuntimeNotifier;
+import org.neo4j.cypher.internal.util.RuntimeUnsatisfiableRelationshipTypeExpression;
 import org.neo4j.cypher.internal.util.symbols.AnyType;
 import org.neo4j.cypher.internal.util.symbols.BooleanType;
 import org.neo4j.cypher.internal.util.symbols.ClosedDynamicUnionType;
@@ -1161,10 +1164,7 @@ public final class CypherFunctions {
     }
 
     private static boolean hasLabel(
-            VirtualNodeValue node,
-            TextValue textLabel,
-            NodeCursor nodeCursor,
-            org.neo4j.cypher.internal.runtime.QueryContext queryContext)
+            VirtualNodeValue node, TextValue textLabel, NodeCursor nodeCursor, QueryContext queryContext)
             throws IllegalTokenNameException {
         var validName = TokenWrite.checkValidTokenName(textLabel.stringValue());
         var tokenId = queryContext.nodeLabel(validName);
@@ -1177,10 +1177,7 @@ public final class CypherFunctions {
 
     @CalledFromGeneratedCode
     public static boolean hasDynamicLabels(
-            AnyValue entity,
-            AnyValue[] labelNames,
-            NodeCursor nodeCursor,
-            org.neo4j.cypher.internal.runtime.QueryContext queryContext)
+            AnyValue entity, AnyValue[] labelNames, NodeCursor nodeCursor, QueryContext queryContext)
             throws IllegalTokenNameException {
         assert entity != NO_VALUE : "NO_VALUE checks need to happen outside this call";
         if (entity instanceof VirtualNodeValue node) {
@@ -1271,10 +1268,7 @@ public final class CypherFunctions {
 
     @CalledFromGeneratedCode
     public static boolean hasAnyDynamicLabel(
-            AnyValue entity,
-            AnyValue[] labels,
-            NodeCursor nodeCursor,
-            org.neo4j.cypher.internal.runtime.QueryContext queryContext)
+            AnyValue entity, AnyValue[] labels, NodeCursor nodeCursor, QueryContext queryContext)
             throws IllegalTokenNameException {
         assert entity != NO_VALUE : "NO_VALUE checks need to happen outside this call";
         if (entity instanceof VirtualNodeValue node) {
@@ -1360,6 +1354,111 @@ public final class CypherFunctions {
         } else {
             throw new CypherTypeException("Expected a Relationship, got: " + entity);
         }
+    }
+
+    private static boolean hasType(
+            VirtualRelationshipValue relationship,
+            TextValue textValue,
+            RelationshipScanCursor relCursor,
+            DbAccess queryContext)
+            throws IllegalTokenNameException {
+        var validName = TokenWrite.checkValidTokenName(textValue.stringValue());
+        var tokenId = queryContext.relationshipType(validName);
+        return queryContext.isTypeSetOnRelationship(tokenId, relationship.id(), relCursor);
+    }
+
+    @CalledFromGeneratedCode
+    public static boolean hasDynamicType(
+            AnyValue entity,
+            AnyValue[] dynamicTypes,
+            RelationshipScanCursor relCursor,
+            DbAccess queryContext,
+            RuntimeNotifier notifier)
+            throws IllegalTokenNameException {
+        assert entity != NO_VALUE : "NO_VALUE checks need to happen outside this call";
+
+        TextValue singleValue = null;
+        if (entity instanceof VirtualRelationshipValue relationship) {
+            for (var value : dynamicTypes) {
+                if (value instanceof TextValue textValue) {
+                    if (singleValue == null) {
+                        singleValue = textValue;
+                    } else if (!singleValue.equals(textValue)) {
+                        notifier.newRuntimeNotification(RuntimeUnsatisfiableRelationshipTypeExpression.instance());
+                        return false;
+                    }
+                } else if (value instanceof SequenceValue sequenceValue) {
+                    for (var t : sequenceValue) {
+                        if (t instanceof TextValue textValue) {
+                            if (singleValue == null) {
+                                singleValue = textValue;
+                            } else if (!singleValue.equals(textValue)) {
+                                notifier.newRuntimeNotification(
+                                        RuntimeUnsatisfiableRelationshipTypeExpression.instance());
+                                return false;
+                            }
+                        } else {
+                            throw new CypherTypeException(format(
+                                    "Invalid input for function 'hasDynamicType()': Expected %s to be a string, but it was a `%s`",
+                                    t, t.getTypeName()));
+                        }
+                    }
+                } else {
+                    throw new CypherTypeException(format(
+                            "Invalid input for function 'hasDynamicType()': Expected %s to be a string or list of strings, but it was a `%s`",
+                            value, value.getTypeName()));
+                }
+            }
+
+            if (singleValue == null) {
+                // weird but if we have no value by this point then the list was empty and all(for n in []) == true
+                return true;
+            }
+
+            return hasType(relationship, singleValue, relCursor, queryContext);
+        } else {
+            throw new CypherTypeException(format(
+                    "Invalid input for function 'hasDynamicType()': Expected %s to be a relationship, but it was a `%s`",
+                    entity, entity.getTypeName()));
+        }
+    }
+
+    @CalledFromGeneratedCode
+    public static boolean hasAnyDynamicType(
+            AnyValue entity, AnyValue[] dynamicTypes, RelationshipScanCursor relCursor, QueryContext queryContext)
+            throws IllegalTokenNameException {
+        assert entity != NO_VALUE : "NO_VALUE checks need to happen outside this call";
+        if (entity instanceof VirtualRelationshipValue relationship) {
+            for (var typ : dynamicTypes) {
+                if (typ instanceof TextValue textValue) {
+                    if (hasType(relationship, textValue, relCursor, queryContext)) {
+                        return true;
+                    }
+                } else if (typ instanceof SequenceValue typeSeq) {
+                    for (var t : typeSeq) {
+                        if (t instanceof TextValue textValue) {
+                            if (hasType(relationship, textValue, relCursor, queryContext)) {
+                                return true;
+                            }
+                        } else {
+                            throw new CypherTypeException(format(
+                                    "Invalid input for function 'hasAnyDynamicType()': Expected %s to be a string, but it was a `%s`",
+                                    t, t.getTypeName()));
+                        }
+                    }
+                } else {
+                    throw new CypherTypeException(format(
+                            "Invalid input for function 'hasAnyDynamicType()': Expected %s to be a string or list of strings, but it was a `%s`",
+                            typ, typ.getTypeName()));
+                }
+            }
+        } else {
+            throw new CypherTypeException(format(
+                    "Invalid input for function 'hasAnyDynamicType()': Expected %s to be a relationship, but it was a `%s`",
+                    entity, entity.getTypeName()));
+        }
+
+        return false;
     }
 
     public static AnyValue nodes(AnyValue in) {

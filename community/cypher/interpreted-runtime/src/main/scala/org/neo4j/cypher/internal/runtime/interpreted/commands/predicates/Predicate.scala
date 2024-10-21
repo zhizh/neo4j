@@ -769,6 +769,59 @@ case class HasType(entity: Expression, typ: KeyToken) extends Predicate {
   override def arguments: Seq[Expression] = Seq(entity)
 }
 
+case class HasDynamicType(entity: Expression, typ: Seq[Expression]) extends Predicate {
+
+  override def isMatch(ctx: ReadableRow, state: QueryState): IsMatchResult = {
+    entity(ctx, state) match {
+      case IsNoValue() => IsUnknown
+
+      case value =>
+        IsMatchResult(
+          CypherFunctions.hasDynamicType(
+            value,
+            typ.iterator.map(_(ctx, state)).toArray,
+            state.cursors.relationshipScanCursor,
+            state.query,
+            state
+          )
+        )
+    }
+  }
+
+  override def rewrite(f: Expression => Expression): Expression = {
+    f(HasDynamicType(entity.rewrite(f), typ.map(_.rewrite(f))))
+  }
+
+  override def arguments: collection.Seq[Expression] = entity +: typ
+
+  override def children: collection.Seq[AstNode[_]] = entity +: typ
+}
+
+case class HasAnyDynamicType(entity: Expression, typ: Seq[Expression]) extends Predicate {
+
+  override def isMatch(ctx: ReadableRow, state: QueryState): IsMatchResult = {
+    entity(ctx, state) match {
+      case IsNoValue() => IsUnknown
+
+      case value =>
+        IsMatchResult(CypherFunctions.hasAnyDynamicType(
+          value,
+          typ.iterator.map(_(ctx, state)).toArray,
+          state.cursors.relationshipScanCursor,
+          state.query
+        ))
+    }
+  }
+
+  override def rewrite(f: Expression => Expression): Expression = {
+    f(HasAnyDynamicType(entity.rewrite(f), typ.map(_.rewrite(f))))
+  }
+
+  override def arguments: collection.Seq[Expression] = entity +: typ
+
+  override def children: collection.Seq[AstNode[_]] = entity +: typ
+}
+
 case class CoercedPredicate(inner: Expression) extends Predicate {
   override def arguments: Seq[Expression] = Seq(inner)
 
