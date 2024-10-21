@@ -91,6 +91,7 @@ import org.neo4j.service.Services;
 import org.neo4j.storageengine.api.DeprecatedFormatWarning;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.token.TokenHolders;
+import org.neo4j.token.api.NamedToken;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -235,6 +236,20 @@ public class MigrateStoreCommand extends AbstractAdminCommand {
                             resultLog.warn(DeprecatedFormatWarning.getTargetFormatWarning(formatForDb));
                         }
 
+                        if (currentStorageEngineFactory.tokenLengthLimit()
+                                > targetStorageEngineFactory.tokenLengthLimit()) {
+                            TokenHolders tokens = currentStorageEngineFactory.loadReadOnlyTokens(
+                                    fs,
+                                    databaseLayout,
+                                    config,
+                                    pageCache,
+                                    pageCacheTracer,
+                                    false,
+                                    contextFactory,
+                                    memoryTracker);
+                            printTooLongTokens(targetStorageEngineFactory.tokenLengthLimit(), tokens, resultLog);
+                        }
+
                         var indexProviderMap = getIndexProviderMap(
                                 fs,
                                 databaseLayout,
@@ -315,6 +330,33 @@ public class MigrateStoreCommand extends AbstractAdminCommand {
     }
 
     record FailedMigration(String dbName, Exception e) {}
+
+    private void printTooLongTokens(int maxTokenLength, TokenHolders tokens, InternalLog resultLog) {
+        var labels = tokens.labelTokens().getAllTokens();
+        var propertyKeys = tokens.propertyKeyTokens().getAllTokens();
+        var relTypes = tokens.relationshipTypeTokens().getAllTokens();
+
+        List<String> tooLongTokens = new ArrayList<>();
+        addTooLong(labels, maxTokenLength, tooLongTokens, "Label: ");
+        addTooLong(propertyKeys, maxTokenLength, tooLongTokens, "Property Key: ");
+        addTooLong(relTypes, maxTokenLength, tooLongTokens, "Relationship Type: ");
+
+        if (!tooLongTokens.isEmpty()) {
+            String message = "Found the following " + tooLongTokens.size()
+                    + " token(s) with too long name(s). It may cause the migration to crash if they are used."
+                    + System.lineSeparator() + String.join(System.lineSeparator(), tooLongTokens);
+            resultLog.warn(message);
+        }
+    }
+
+    private static void addTooLong(
+            Iterable<NamedToken> tokens, int maxLength, List<String> tooLongTokens, String type) {
+        for (NamedToken token : tokens) {
+            if (token.name().length() > maxLength) {
+                tooLongTokens.add(type + token.name());
+            }
+        }
+    }
 
     private static void upgradeSystemDb(
             Config config, Log4jLogProvider logProvider, Log4jLogProvider systemDbStartupLogProvider) {

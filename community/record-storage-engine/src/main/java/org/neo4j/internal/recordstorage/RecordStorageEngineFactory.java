@@ -975,6 +975,11 @@ public class RecordStorageEngineFactory implements StorageEngineFactory {
         return true;
     }
 
+    @Override
+    public int tokenLengthLimit() {
+        return Integer.MAX_VALUE;
+    }
+
     public static SchemaRuleMigrationAccess createMigrationTargetSchemaRuleAccess(
             NeoStores stores, CursorContextFactory contextFactory, MemoryTracker memoryTracker) {
         SchemaStore dstSchema = stores.getSchemaStore();

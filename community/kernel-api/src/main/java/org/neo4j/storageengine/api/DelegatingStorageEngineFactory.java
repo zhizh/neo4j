@@ -236,6 +236,11 @@ public class DelegatingStorageEngineFactory implements StorageEngineFactory {
     }
 
     @Override
+    public int tokenLengthLimit() {
+        return delegate.tokenLengthLimit();
+    }
+
+    @Override
     public MetadataProvider transactionMetaDataStore(
             FileSystemAbstraction fs,
             DatabaseLayout databaseLayout,

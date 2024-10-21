@@ -257,6 +257,12 @@ public interface StorageEngineFactory {
             throws IOException;
 
     /**
+     * Returns the maximum number of characters that is allowed for token names in the specific format.
+     * @return the token length limit.
+     */
+    int tokenLengthLimit();
+
+    /**
      * Instantiates a fully functional {@link MetadataProvider}, which is a union of {@link TransactionIdStore}
      * and {@link LogVersionRepository}.
      * @return a fully functional {@link MetadataProvider}.
