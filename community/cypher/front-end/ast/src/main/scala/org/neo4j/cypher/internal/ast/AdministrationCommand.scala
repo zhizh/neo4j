@@ -145,37 +145,37 @@ sealed trait ReadAdministrationCommand extends AdministrationCommand {
       }
       invalid.map {
         case exp: ExistsExpression =>
-          unsupportedRequestErrorOnSystemDatabase(
+          AdministrationCommandSemanticAnalysis.unsupportedRequestErrorOnSystemDatabase(
             "EXISTS expression on SHOW commands",
             "The EXISTS expression is not valid on SHOW commands.",
             exp.position
           )
         case exp: CollectExpression =>
-          unsupportedRequestErrorOnSystemDatabase(
+          AdministrationCommandSemanticAnalysis.unsupportedRequestErrorOnSystemDatabase(
             "COLLECT expression on SHOW commands",
             "The COLLECT expression is not valid on SHOW commands.",
             exp.position
           )
         case exp: CountExpression =>
-          unsupportedRequestErrorOnSystemDatabase(
+          AdministrationCommandSemanticAnalysis.unsupportedRequestErrorOnSystemDatabase(
             "COUNT expression on SHOW commands",
             "The COUNT expression is not valid on SHOW commands.",
             exp.position
           )
         case exp: PatternExpression =>
-          unsupportedRequestErrorOnSystemDatabase(
+          AdministrationCommandSemanticAnalysis.unsupportedRequestErrorOnSystemDatabase(
             "Pattern expressions on SHOW commands",
             "Pattern expressions are not valid on SHOW commands.",
             exp.position
           )
         case exp: PatternComprehension =>
-          unsupportedRequestErrorOnSystemDatabase(
+          AdministrationCommandSemanticAnalysis.unsupportedRequestErrorOnSystemDatabase(
             "Pattern comprehensions on SHOW commands",
             "Pattern comprehensions are not valid on SHOW commands.",
             exp.position
           )
         case exp =>
-          unsupportedRequestErrorOnSystemDatabase(
+          AdministrationCommandSemanticAnalysis.unsupportedRequestErrorOnSystemDatabase(
             "Subquery expressions on SHOW commands",
             "Subquery expressions are not valid on SHOW commands.",
             exp.position
@@ -348,7 +348,7 @@ sealed trait UserAuth extends SemanticAnalysisTooling {
 
   protected def checkDuplicateAuth: SemanticCheck = newStyleAuth.groupBy(_.provider).collectFirst {
     case (_, List(_, duplicate, _*)) =>
-      duplicateClauseError(
+      AdministrationCommandSemanticAnalysis.duplicateClauseError(
         s"SET AUTH '${duplicate.provider}'",
         s"Duplicate `SET AUTH '${duplicate.provider}'` clause.",
         duplicate.position
@@ -526,7 +526,11 @@ sealed trait AuthImpl extends ASTNode with SemanticAnalysisTooling {
 
   def checkDuplicates: SemanticCheck = authAttributes.groupBy(_.name).collectFirst {
     case (_, List(_, duplicate, _*)) =>
-      duplicateClauseError(duplicate.name, s"Duplicate `${duplicate.name}` clause.", duplicate.position)
+      AdministrationCommandSemanticAnalysis.duplicateClauseError(
+        duplicate.name,
+        s"Duplicate `${duplicate.name}` clause.",
+        duplicate.position
+      )
   }.getOrElse(success)
 
   def checkProviderName: SemanticCheck =
@@ -536,7 +540,12 @@ sealed trait AuthImpl extends ASTNode with SemanticAnalysisTooling {
   protected def requiredAttributes(func: AuthAttribute => Boolean, name: String): SemanticCheck =
     authAttributes.find(func) match {
       case Some(_) => success
-      case None    => missingMandatoryAuthClauseError(name, provider, missingRequiredClauseErrorMessage(name), position)
+      case None => AdministrationCommandSemanticAnalysis.missingMandatoryAuthClauseError(
+          name,
+          provider,
+          missingRequiredClauseErrorMessage(name),
+          position
+        )
     }
 
   protected def noUnsupportedAttributes(func: AuthAttribute => Boolean): SemanticCheck = {
@@ -593,7 +602,7 @@ final case class ExternalAuth(provider: String, authAttributes: List[AuthAttribu
 
   def checkIdIsStringLiteralOrParameter: SemanticCheck =
     maybeId.map(id => checkIsStringLiteralOrParameter("id", id))
-      .getOrElse(missingMandatoryAuthClauseError(
+      .getOrElse(AdministrationCommandSemanticAnalysis.missingMandatoryAuthClauseError(
         "SET ID",
         provider,
         missingRequiredClauseErrorMessage("SET ID"),
@@ -1820,7 +1829,7 @@ final case class AlterRemoteDatabaseAlias(
         val isLocalAlias = targetName.isDefined && url.isEmpty
         val isRemoteAlias = url.isDefined || username.isDefined || password.isDefined || driverSettings.isDefined
         if (isLocalAlias && isRemoteAlias) {
-          invalidInputError(
+          AdministrationCommandSemanticAnalysis.invalidInputError(
             Prettifier.escapeName(aliasName),
             "database alias",
             List("url of a remote alias target"),

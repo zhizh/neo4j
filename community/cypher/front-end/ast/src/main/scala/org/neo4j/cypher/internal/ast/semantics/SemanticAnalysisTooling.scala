@@ -319,37 +319,6 @@ trait SemanticAnalysisTooling {
   def error(gqlStatusObject: ErrorGqlStatusObject, msg: String, position: InputPosition): SemanticCheck =
     SemanticCheck.error(SemanticError(gqlStatusObject, msg, position))
 
-  def unsupportedRequestErrorOnSystemDatabase(
-    invalidInput: String,
-    legacyMessage: String,
-    position: InputPosition
-  ): SemanticCheck =
-    SemanticCheck.error(SemanticError.unsupportedRequestOnSystemDatabase(invalidInput, legacyMessage, position))
-
-  def invalidInputError(
-    wrongInput: String,
-    forField: String,
-    expectedInput: List[String],
-    legacyMessage: String,
-    position: InputPosition
-  ): SemanticCheck =
-    SemanticCheck.error(SemanticError.invalidInput(wrongInput, forField, expectedInput, legacyMessage, position))
-
-  def missingMandatoryAuthClauseError(
-    clause: String,
-    authProvider: String,
-    legacyMessage: String,
-    position: InputPosition
-  ): SemanticCheck =
-    SemanticCheck.error(SemanticError.missingMandatoryAuthClause(clause, authProvider, legacyMessage, position))
-
-  def duplicateClauseError(
-    clause: String,
-    legacyMessage: String,
-    position: InputPosition
-  ): SemanticCheck =
-    SemanticCheck.error(SemanticError.duplicateClause(clause, legacyMessage, position))
-
   def warn(notification: InternalNotification): SemanticCheck = SemanticCheck.warn(notification)
 
   def possibleTypes(expression: Expression): TypeGenerator =
