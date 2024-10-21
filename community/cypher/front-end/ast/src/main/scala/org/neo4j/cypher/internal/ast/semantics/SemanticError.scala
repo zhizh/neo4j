@@ -527,13 +527,18 @@ object SemanticError {
 
   def accessingMultipleGraphsError(legacyMessage: String, position: InputPosition): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build()).build();
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+        .atPosition(position.line, position.column, position.offset)
+        .build())
+      .build();
     SemanticError(
       gql,
       legacyMessage,
       position
     )
   }
+
   def numberTooLarge(numberType: String, value: String, position: InputPosition): SemanticError = {
     val gql = GqlHelper.getGql22003(value, position.line, position.column, position.offset)
     SemanticError(gql, s"$numberType is too large", position)
@@ -586,9 +591,9 @@ object SemanticError {
     SemanticError(gql, s"`GRANT`, `DENY` and `REVOKE` are not supported for `$cmd`", position)
   }
 
-
   def unableToRouteUseClauseError(legacyMessage: String, position: InputPosition): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N04)
+      .atPosition(position.line, position.column, position.offset)
       .withParam(GqlParams.StringParam.clause, "`USE` clause")
       .build()
     SemanticError(

@@ -271,9 +271,9 @@ case class FabricStitcher(
     val invalidOverride = stitched.useAppearances.flatMap(_.isInvalidOverride).headOption
 
     (compositeContext, nonStatic, nonEqual, invalidOverride) match {
-      case (false, Some(use), _, _) => failDynamicGraph(use)
-      case (false, _, Some(use), _) => failMultipleGraphs(use)
-      case (true, _, _, Some(use))  => failInvalidOverride(use)
+      case (false, Some(use), _, _)                 => failDynamicGraph(use)
+      case (false, _, Some(use), _)                 => failMultipleGraphs(use)
+      case (true, _, _, Some((useOuter, useInner))) => failInvalidOverride(useOuter, useInner)
 
       case (_, _, None, None) =>
         val init = Fragment.Init(stitched.lastUse, fragment.argumentColumns, fragment.importColumns)
@@ -321,14 +321,14 @@ case class FabricStitcher(
       use.position.offset
     )
 
-  private def failInvalidOverride(use: Use): Nothing =
+  private def failInvalidOverride(useOuter: Use, useInner: Use): Nothing =
     throw SyntaxException.invalidNestedUseClause(
-      Use.show(use), // TODO: verify this
-      "???", // TODO: what is the other database name
+      Use.show(useOuter),
+      Use.show(useInner),
       s"""Nested subqueries must use the same graph as their parent query.
-         |Attempted to access graph ${Use.show(use)}""".stripMargin,
+         |Attempted to access graph ${Use.show(useInner)}""".stripMargin,
       queryString,
-      use.position.offset
+      useInner.position.offset
     )
 
   private def failFabricTransactionalSubquery(pos: InputPosition): Nothing =
@@ -357,7 +357,7 @@ case class FabricStitcher(
   sealed private trait UseAppearance {
     def nonStatic: Option[Use] = uses.find(use => !UseEvaluation.isStatic(use.graphSelection))
     def nonEqual: Option[Use] = uses.find(use => use.graphSelection != uses.head.graphSelection)
-    def isInvalidOverride: Option[Use] = None
+    def isInvalidOverride: Option[(Use, Use)] = None
     def uses: Seq[Use]
   }
 
@@ -368,12 +368,12 @@ case class FabricStitcher(
   final private case class ChainUse(outer: Option[Use], inner: Use) extends UseAppearance {
     def uses: Seq[Use] = outer.toSeq :+ inner
 
-    override def isInvalidOverride: Option[Use] = outer match {
+    override def isInvalidOverride: Option[(Use, Use)] = outer match {
       case None => None
       case Some(outer) =>
         def outerIsComposite = useHelper.useTargetsCompositeContext(outer)
         def same = outer.graphSelection == inner.graphSelection
-        if (!outerIsComposite && !same) Some(inner) else None
+        if (!outerIsComposite && !same) Some(outer, inner) else None
     }
   }
 

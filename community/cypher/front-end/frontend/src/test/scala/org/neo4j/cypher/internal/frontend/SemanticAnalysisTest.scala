@@ -31,8 +31,6 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
-import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
@@ -593,7 +591,9 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       Set(
         SemanticError(
           ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .atPosition(1, 17, 16)
             .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+              .atPosition(1, 17, 16)
               .build())
             .build(),
           messageProvider.createMultipleGraphReferencesError("comp.c1"),
@@ -731,7 +731,10 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       Set(
         SemanticError(
           ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .atPosition(5, 1, 22)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+              .atPosition(5, 1, 22)
+              .build())
             .build(),
           messageProvider.createMultipleGraphReferencesError("y"),
           InputPosition(22, 5, 1)
@@ -760,7 +763,10 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       Set(
         SemanticError(
           ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .atPosition(5, 5, 29)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+              .atPosition(5, 5, 29)
+              .build())
             .build(),
           messageProvider.createMultipleGraphReferencesError("B"),
           InputPosition(29, 5, 5)
@@ -789,7 +795,10 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       Set(
         SemanticError(
           ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .atPosition(5, 5, 27)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+              .atPosition(5, 5, 27)
+              .build())
             .build(),
           messageProvider.createMultipleGraphReferencesError("B"),
           InputPosition(27, 5, 5)

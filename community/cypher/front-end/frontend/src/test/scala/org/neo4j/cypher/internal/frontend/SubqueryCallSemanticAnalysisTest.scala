@@ -606,7 +606,10 @@ class SubqueryCallSemanticAnalysisTest
       Set(
         SemanticError(
           ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .atPosition(5, 3, 31)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+              .atPosition(5, 3, 31)
+              .build())
             .build(),
           messageProvider.createMultipleGraphReferencesError("y"),
           InputPosition(31, 5, 3)
@@ -633,7 +636,10 @@ class SubqueryCallSemanticAnalysisTest
       Set(
         SemanticError(
           ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
-            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5).build())
+            .atPosition(5, 3, 28)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA5)
+              .atPosition(5, 3, 28)
+              .build())
             .build(),
           messageProvider.createMultipleGraphReferencesError("y"),
           InputPosition(28, 5, 3)
