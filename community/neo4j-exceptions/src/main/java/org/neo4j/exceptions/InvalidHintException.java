@@ -19,19 +19,32 @@
  */
 package org.neo4j.exceptions;
 
+import java.util.List;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlParams;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 
 /**
  * The hint in the query does not make sense in itself, regardless of availability of indexes.
  */
 public class InvalidHintException extends Neo4jException {
-    public InvalidHintException(String message) {
-        super(message);
+    private InvalidHintException(ErrorGqlStatusObject gqlStatusObject, String message) {
+        super(gqlStatusObject, message);
     }
 
-    public InvalidHintException(ErrorGqlStatusObject gqlStatusObject, String message) {
-        super(gqlStatusObject, message);
+    public static InvalidHintException cannotUseTextIndexHint(
+            String legacyMessage, String hint, String entity, String variable) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N76)
+                .withParam(GqlParams.ListParam.hintList, List.of(hint))
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N77)
+                        .withParam(GqlParams.StringParam.hint, hint)
+                        .withParam(GqlParams.StringParam.entityType, entity)
+                        .withParam(GqlParams.StringParam.variable, variable)
+                        .build())
+                .build();
+        return new InvalidHintException(gql, legacyMessage);
     }
 
     @Override

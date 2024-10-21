@@ -350,6 +350,26 @@ object SemanticError {
     )
   }
 
+  def missingHintPredicate(
+    legacyMessage: String,
+    hint: String,
+    entity: String,
+    variable: String,
+    position: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N76)
+      .withParam(GqlParams.ListParam.hintList, Seq(hint).asJava)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N77)
+        .withParam(GqlParams.StringParam.hint, hint)
+        .withParam(GqlParams.StringParam.entityType, entity)
+        .withParam(GqlParams.StringParam.variable, variable)
+        .atPosition(position.line, position.column, position.offset)
+        .build())
+      .build()
+    SemanticError(gql, legacyMessage, position)
+  }
+
   def functionRequiresWhereClause(func: String, position: InputPosition): SemanticError = {
     val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
       .atPosition(position.line, position.column, position.offset)

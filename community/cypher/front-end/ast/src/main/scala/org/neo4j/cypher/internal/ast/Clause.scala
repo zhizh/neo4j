@@ -963,13 +963,24 @@ case class Match(
     val error: Option[SemanticErrorDef] = hints.collectFirst {
       case hint @ UsingIndexHint(Variable(variable), LabelOrRelTypeName(labelOrRelTypeName), _, _, _)
         if !containsLabelOrRelTypePredicate(variable, labelOrRelTypeName) =>
-        SemanticError(getMissingEntityKindError(variable, labelOrRelTypeName, hint), hint.position)
+        val prettyHint = hintPrettifier.asString(hint)
+        val isNode = semanticState.isNode(variable)
+        val entity = if (isNode) "NODE" else "RELATIONSHIP"
+        val legacyMessage = getMissingEntityKindError(variable, labelOrRelTypeName, hint)
+        SemanticError.missingHintPredicate(legacyMessage, prettyHint, entity, variable, hint.position)
       case hint @ UsingIndexHint(Variable(variable), LabelOrRelTypeName(_), properties, _, _)
         if !containsPropertyPredicates(variable, properties) =>
-        SemanticError(getMissingPropertyError(hint), hint.position)
+        val prettyHint = hintPrettifier.asString(hint)
+        val isNode = semanticState.isNode(variable)
+        val entity = if (isNode) "NODE" else "RELATIONSHIP"
+        SemanticError.missingHintPredicate(getMissingPropertyError(hint), prettyHint, entity, variable, hint.position)
       case hint @ UsingScanHint(Variable(variable), LabelOrRelTypeName(labelOrRelTypeName))
         if !containsLabelOrRelTypePredicate(variable, labelOrRelTypeName) =>
-        SemanticError(getMissingEntityKindError(variable, labelOrRelTypeName, hint), hint.position)
+        val prettyHint = hintPrettifier.asString(hint)
+        val isNode = semanticState.isNode(variable)
+        val entity = if (isNode) "NODE" else "RELATIONSHIP"
+        val legacyMessage = getMissingEntityKindError(variable, labelOrRelTypeName, hint)
+        SemanticError.missingHintPredicate(legacyMessage, prettyHint, entity, variable, hint.position)
       case hint @ UsingJoinHint(_) if pattern.length == 0 =>
         SemanticError.cannotUseJoinHint(hint, hintPrettifier.asString(hint))
     }

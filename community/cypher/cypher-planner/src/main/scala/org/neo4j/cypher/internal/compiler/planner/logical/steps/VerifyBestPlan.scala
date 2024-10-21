@@ -126,7 +126,13 @@ object VerifyBestPlan {
     context: LogicalPlanningContext,
     unfulfillableIndexHints: UnfulfillableIndexHints
   ): Unit = {
-    unfulfillableIndexHints.wrongPropertyTypeHints.headOption.foreach(hint => throw hint.toException)
+    unfulfillableIndexHints.wrongPropertyTypeHints.headOption.foreach {
+      wrongHint: WrongPropertyTypeHint =>
+        val entityType = context.semanticTable.typeFor(wrongHint.hint.variable)
+        val entity = if (entityType.is(CTNode)) "NODE" else "RELATIONSHIP"
+
+        throw wrongHint.toException(entity)
+    }
     val hints = unfulfillableIndexHints.missingIndexHints
     if (hints.nonEmpty) {
       // hints referred to non-existent indexes ("explicit hints")
@@ -206,11 +212,14 @@ object VerifyBestPlan {
    */
   case class WrongPropertyTypeHint(hint: UsingIndexHint, foundPredicates: Set[IndexCompatiblePredicate]) {
 
-    def toException: Neo4jException =
-      new InvalidHintException(MessageUtil.createTextIndexHintError(
-        prettifier.asString(hint),
+    def toException(entity: String): Neo4jException = {
+      val prettifiedHint = prettifier.asString(hint)
+      val legacyMessage = MessageUtil.createTextIndexHintError(
+        prettifiedHint,
         Numerus.of(foundPredicates.size)
-      ))
+      )
+      InvalidHintException.cannotUseTextIndexHint(legacyMessage, prettifiedHint, entity, hint.variable.name)
+    }
   }
 
   private case class UnfulfillableIndexHints(
