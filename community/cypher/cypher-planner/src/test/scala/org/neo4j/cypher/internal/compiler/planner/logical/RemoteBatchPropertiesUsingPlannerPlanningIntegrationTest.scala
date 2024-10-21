@@ -1112,4 +1112,27 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
       .nodeByLabelScan("a", "Person")
       .build())
   }
+
+  test("should plan pruning var expand if it has remoteBatchProperties") {
+    val query =
+      """
+        |MATCH path=(:Person {id:$Person})-[:KNOWS*1..3]-(friend)
+        |WHERE friend.firstName=$Name
+        |RETURN friend.firstName, min(length(path)) AS distance
+        |""".stripMargin
+
+    planner.plan(query).stripProduceResults shouldEqual
+      planner.subPlanBuilder()
+        .aggregation(Seq("cacheN[friend.firstName] AS `friend.firstName`"), Seq("min(anon_1) AS distance"))
+        .filter("cacheN[friend.firstName] = $Name")
+        .remoteBatchProperties("cacheNFromStore[friend.firstName]")
+        .bfsPruningVarExpand("(anon_0)-[:KNOWS*1..3]-(friend)", depthName = Some("anon_1"), mode = ExpandAll)
+        .nodeIndexOperator(
+          "anon_0:Person(id = ???)",
+          paramExpr = Some(parameter("Person", CTAny)),
+          getValue = Map("id" -> DoNotGetValue),
+          unique = true
+        )
+        .build()
+  }
 }
