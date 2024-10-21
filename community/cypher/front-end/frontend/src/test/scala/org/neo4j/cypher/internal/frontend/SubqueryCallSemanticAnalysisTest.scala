@@ -834,6 +834,9 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          SemanticError.invalidPlacementOfUseClause(
+            InputPosition(37, 5, 3)
+          ).gqlStatusObject,
           "USE clause must be the first clause in a (sub-)query.",
           InputPosition(37, 5, 3)
         )
