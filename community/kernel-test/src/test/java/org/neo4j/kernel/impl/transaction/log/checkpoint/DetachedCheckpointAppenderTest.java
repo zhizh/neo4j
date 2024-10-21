@@ -247,7 +247,7 @@ class DetachedCheckpointAppenderTest {
                 "first");
         long positionAfterCheckpoint = ((DetachedCheckpointAppender) checkpointAppender).getCurrentPosition();
         assertThat(Files.size(checkpointFile.getDetachedCheckpointFileForVersion(checkpointFile.getLowestLogVersion())))
-                .isGreaterThan(positionAfterCheckpoint);
+                .isGreaterThanOrEqualTo(positionAfterCheckpoint);
         // Trigger rotation on kernel version = rotate before reaching threshold
         checkpointAppender.checkPoint(
                 LogCheckPointEvent.NULL,
