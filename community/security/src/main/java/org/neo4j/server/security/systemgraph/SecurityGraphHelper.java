@@ -21,27 +21,19 @@ package org.neo4j.server.security.systemgraph;
 
 import static org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME;
 import static org.neo4j.kernel.database.NamedDatabaseId.NAMED_SYSTEM_DATABASE_ID;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.AUTH_ID;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.AUTH_LABEL;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.AUTH_PROVIDER;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.HAS_AUTH;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_CREDENTIALS;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_EXPIRED;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_ID;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_LABEL;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_NAME;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_SUSPENDED;
 
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Set;
 import org.neo4j.dbms.database.DatabaseContextProvider;
 import org.neo4j.function.Suppliers;
-import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
-import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.ResourceIterable;
-import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.security.AuthProviderFailedException;
 import org.neo4j.internal.kernel.api.security.AbstractSecurityLog;
 import org.neo4j.kernel.api.security.AuthToken;
@@ -54,9 +46,9 @@ import org.neo4j.server.security.SystemGraphCredential;
 public class SecurityGraphHelper {
     public static final String NATIVE_AUTH = AuthToken.NATIVE_REALM;
 
-    private final AbstractSecurityLog securityLog;
-    private final Suppliers.Lazy<GraphDatabaseService> systemSupplier;
-    private final SecureHasher secureHasher;
+    protected final AbstractSecurityLog securityLog;
+    protected final Suppliers.Lazy<GraphDatabaseService> systemSupplier;
+    protected final SecureHasher secureHasher;
 
     public SecurityGraphHelper(
             Suppliers.Lazy<GraphDatabaseService> systemSupplier,
@@ -128,9 +120,8 @@ public class SecurityGraphHelper {
         }
     }
 
-    private User getUser(Node userNode) {
+    protected User getUser(Node userNode) {
         var userId = (String) userNode.getProperty(USER_ID);
-        boolean suspended = (boolean) userNode.getProperty(USER_SUSPENDED);
         String username = (String) userNode.getProperty(USER_NAME);
         boolean requirePasswordChange = (boolean) userNode.getProperty(USER_EXPIRED, false);
         Credential credential = null;
@@ -144,84 +135,26 @@ public class SecurityGraphHelper {
             }
         }
 
-        try (ResourceIterable<Relationship> authRels = userNode.getRelationships(Direction.OUTGOING, HAS_AUTH)) {
-            var auths = new HashSet<User.Auth>();
-            if (!authRels.iterator().hasNext()) {
-                // old users have no auth object associated with them
-                if (credential != null) {
-                    auths.add(new User.Auth(NATIVE_AUTH, userId));
-                }
-            }
-            for (Relationship rel : authRels) {
-                Node authNode = rel.getEndNode();
-                String authProvider = (String) authNode.getProperty(AUTH_PROVIDER);
-                var id = (String) authNode.getProperty(AUTH_ID);
-                var auth = new User.Auth(authProvider, id);
-                auths.add(auth);
-            }
-            User user = new User(
-                    username,
-                    userId,
-                    new User.SensitiveCredential(credential),
-                    requirePasswordChange,
-                    suspended,
-                    auths);
-            securityLog.debug(String.format("Found user: %s", user));
-            return user;
-        }
+        User user = new User(
+                username,
+                userId,
+                new User.SensitiveCredential(credential),
+                requirePasswordChange,
+                false,
+                credential == null ? Collections.emptySet() : Set.of(new User.Auth(NATIVE_AUTH, userId)));
+        securityLog.debug(String.format("Found user: %s", user));
+        return user;
     }
 
     public User getUserByAuth(String provider, String authId) {
-        securityLog.debug(String.format("Looking up user with auth provider: %s, auth id: %s", provider, authId));
-        try (var tx = systemSupplier.get().beginTx()) {
-            try (ResourceIterator<Node> authNodeIterator =
-                    tx.findNodes(AUTH_LABEL, AUTH_ID, authId, AUTH_PROVIDER, provider)) {
-                if (authNodeIterator.hasNext()) {
-                    Node authNode = authNodeIterator.next();
-                    Relationship hasAuth = authNode.getSingleRelationship(HAS_AUTH, Direction.INCOMING);
-                    if (hasAuth == null) {
-                        securityLog.debug(
-                                String.format("No user found with auth provider: %s, auth id: %s", provider, authId));
-                        return null;
-                    }
-                    return getUser(hasAuth.getStartNode());
-                } else {
-                    securityLog.debug(String.format("No auth for auth provider: %s, auth id: %s", provider, authId));
-                    return null;
-                }
-            }
-        }
+        return null;
     }
 
     public String getAuthId(String provider, String username) {
-        securityLog.debug(String.format("Looking up '%s' auth for user '%s'", provider, username));
-        User user = getUserByName(username);
-        String id = null;
-        if (user != null) {
-            id = user.auth().stream()
-                    .filter(auth -> auth.provider().equals(provider))
-                    .map(User.Auth::id)
-                    .findFirst()
-                    .orElse(null);
-            if (id == null) {
-                securityLog.debug(String.format("'%s' auth not found for user '%s'", provider, username));
-            }
-        }
-        return id;
+        return null;
     }
 
     public boolean hasExternalAuth(String username) {
-        securityLog.debug(String.format("Checking whether user '%s' has an external auth", username));
-        User user = getUserByName(username);
-        if (user == null) {
-            return false;
-        }
-        boolean externalAuth = user.auth().stream().anyMatch(a -> !a.provider().equals(NATIVE_AUTH));
-        if (externalAuth) {
-            securityLog.debug(String.format("External auth found for user '%s'", username));
-        } else {
-            securityLog.debug(String.format("No external auth found for user '%s'", username));
-        }
-        return externalAuth;
+        return false;
     }
 }

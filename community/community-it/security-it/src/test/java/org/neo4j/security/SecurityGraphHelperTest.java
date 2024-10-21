@@ -25,20 +25,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.neo4j.kernel.database.NamedDatabaseId.SYSTEM_DATABASE_NAME;
 import static org.neo4j.server.security.systemgraph.SecurityGraphHelper.NATIVE_AUTH;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.AUTH_ID;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.AUTH_LABEL;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.AUTH_PROVIDER;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.HAS_AUTH;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_CREDENTIALS;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_EXPIRED;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_ID;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_LABEL;
 import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_NAME;
-import static org.neo4j.server.security.systemgraph.versions.KnownCommunitySecurityComponentVersion.USER_SUSPENDED;
 
-import java.util.List;
 import java.util.Set;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.neo4j.dbms.api.DatabaseManagementService;
@@ -69,183 +62,6 @@ public class SecurityGraphHelperTest {
         securityLog = mock(AbstractSecurityLog.class);
         securityGraphHelper =
                 new SecurityGraphHelper(Suppliers.lazySingleton(() -> system), new SecureHasher(), securityLog);
-    }
-
-    @AfterEach
-    void tearDown() {
-        try (var tx = system.beginTx()) {
-            List<String> users = tx.execute("SHOW USERS YIELD user").map(m -> (String) m.get("user")).stream()
-                    .toList();
-            for (String user : users) {
-                tx.execute("DROP USER " + user);
-            }
-            tx.commit();
-        }
-    }
-
-    @Test
-    void getAuthShouldFindAuthObjectForUserNameAndProvider() {
-        // GIVEN
-        createUser(new User("alice", "aliceId", null, false, false, Set.of(new User.Auth("provider1", "sub123"))));
-
-        // WHEN
-        String result = securityGraphHelper.getAuthId("provider1", "alice");
-
-        // THEN
-        assertThat(result).isEqualTo("sub123");
-        verify(securityLog).debug("Looking up 'provider1' auth for user 'alice'");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog)
-                .debug(
-                        "Found user: User[name=alice, id=aliceId, credential=null, passwordChangeRequired=false, suspended=false, auth=[Auth[provider=provider1, id=sub123]]]");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void getAuthShouldFindNativeAuth() {
-        // GIVEN
-        createUser(new User("alice", "uuid", null, false, false, Set.of(new User.Auth(NATIVE_AUTH, "aliceId"))));
-
-        // WHEN
-        String result = securityGraphHelper.getAuthId(NATIVE_AUTH, "alice");
-
-        // THEN
-        assertThat(result).isEqualTo("aliceId");
-        verify(securityLog).debug("Looking up 'native' auth for user 'alice'");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog)
-                .debug(
-                        "Found user: User[name=alice, id=uuid, credential=null, passwordChangeRequired=false, suspended=false, auth=[Auth[provider=native, id=aliceId]]]");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void getAuthShouldReturnNullAndLogWhenUserDoesNotExist() {
-        // WHEN
-        String result = securityGraphHelper.getAuthId("provider1", "alice");
-
-        // THEN
-        assertThat(result).isNull();
-        verify(securityLog).debug("Looking up 'provider1' auth for user 'alice'");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog).debug("User 'alice' not found");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void getAuthShouldReturnNullAndLogWhenAuthDoesNotExists() {
-        // GIVEN
-        createUser(new User("alice", "userId", null, false, false));
-
-        // WHEN
-        String result = securityGraphHelper.getAuthId("provider1", "alice");
-
-        // THEN
-        assertThat(result).isNull();
-        verify(securityLog).debug("Looking up 'provider1' auth for user 'alice'");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog)
-                .debug(
-                        "Found user: User[name=alice, id=userId, credential=null, passwordChangeRequired=false, suspended=false, auth=[]]");
-        verify(securityLog).debug("'provider1' auth not found for user 'alice'");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void hasExternalAuthShouldReturnTrueWhenUserHasExternalAuth() {
-        // GIVEN
-        createUser(new User("alice", "aliceId", null, false, false, Set.of(new User.Auth("provider1", "sub123"))));
-
-        // WHEN
-        boolean result = securityGraphHelper.hasExternalAuth("alice");
-
-        // THEN
-        assertThat(result).isTrue();
-
-        verify(securityLog).debug("Checking whether user 'alice' has an external auth");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog)
-                .debug(
-                        "Found user: User[name=alice, id=aliceId, credential=null, passwordChangeRequired=false, suspended=false, auth=[Auth[provider=provider1, id=sub123]]]");
-        verify(securityLog).debug("External auth found for user 'alice'");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void hasExternalAuthObjectShouldReturnFalseWhenUserHasNativeAuthObject() {
-        // GIVEN
-        createUser(new User("alice", "aliceId", null, false, false, Set.of(new User.Auth(NATIVE_AUTH, "aliceId"))));
-
-        // WHEN
-        boolean result = securityGraphHelper.hasExternalAuth("alice");
-
-        // THEN
-        assertThat(result).isFalse();
-        verify(securityLog).debug("Checking whether user 'alice' has an external auth");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog)
-                .debug(
-                        "Found user: User[name=alice, id=aliceId, credential=null, passwordChangeRequired=false, suspended=false, auth=[Auth[provider=native, id=aliceId]]]");
-        verify(securityLog).debug("No external auth found for user 'alice'");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void hasAuthObjectShouldReturnFalseWhenUserDoesNotExist() {
-        // WHEN
-        boolean result = securityGraphHelper.hasExternalAuth("alice");
-
-        // THEN
-        assertThat(result).isFalse();
-        verify(securityLog).debug("Checking whether user 'alice' has an external auth");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog).debug("User 'alice' not found");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void hasAuthObjectShouldReturnFalseWhenNoAuthObjectExists() {
-        // GIVEN
-        createUser(new User("alice", "userId", null, false, false));
-
-        // WHEN
-        boolean result = securityGraphHelper.hasExternalAuth("alice");
-
-        // THEN
-        assertThat(result).isFalse();
-        verify(securityLog).debug("Checking whether user 'alice' has an external auth");
-        verify(securityLog).debug("Looking up user 'alice'");
-        verify(securityLog)
-                .debug(
-                        "Found user: User[name=alice, id=userId, credential=null, passwordChangeRequired=false, suspended=false, auth=[]]");
-        verify(securityLog).debug("No external auth found for user 'alice'");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void getUserByAuthShouldReturnUser() {
-        createUser(new User("alice", "userId", null, false, false, Set.of(new User.Auth("provider1", "sub123"))));
-        User result = securityGraphHelper.getUserByAuth("provider1", "sub123");
-        assertThat(result.name()).isEqualTo("alice");
-        assertThat(result.id()).isEqualTo("userId");
-        assertThat(result.passwordChangeRequired()).isFalse();
-        assertThat(result.suspended()).isFalse();
-        assertThat(result.auth()).isEqualTo(Set.of(new User.Auth("provider1", "sub123")));
-        verify(securityLog).debug("Looking up user with auth provider: provider1, auth id: sub123");
-        verify(securityLog)
-                .debug(
-                        "Found user: User[name=alice, id=userId, credential=null, passwordChangeRequired=false, suspended=false, auth=[Auth[provider=provider1, id=sub123]]]");
-        verifyNoMoreInteractions(securityLog);
-    }
-
-    @Test
-    void getUserByAuthShouldReturnNullWhenAuthDoesNotExist() {
-        createUser(new User("alice", "userId", null, false, false, Set.of(new User.Auth("provider1", "sub456"))));
-        User result = securityGraphHelper.getUserByAuth("provider1", "sub123");
-        assertThat(result).isNull();
-        verify(securityLog).debug("Looking up user with auth provider: provider1, auth id: sub123");
-        verify(securityLog).debug("No auth for auth provider: provider1, auth id: sub123");
-        verifyNoMoreInteractions(securityLog);
     }
 
     @Test
@@ -319,13 +135,6 @@ public class SecurityGraphHelperTest {
             if (user.credential() != null && user.credential().value() != null) {
                 userNode.setProperty(USER_CREDENTIALS, user.credential().value().serialize());
                 userNode.setProperty(USER_EXPIRED, user.passwordChangeRequired());
-            }
-            userNode.setProperty(USER_SUSPENDED, user.suspended());
-            for (User.Auth auth : user.auth()) {
-                Node authNode = tx.createNode(AUTH_LABEL);
-                authNode.setProperty(AUTH_PROVIDER, auth.provider());
-                authNode.setProperty(AUTH_ID, auth.id());
-                userNode.createRelationshipTo(authNode, HAS_AUTH);
             }
             tx.commit();
         }
