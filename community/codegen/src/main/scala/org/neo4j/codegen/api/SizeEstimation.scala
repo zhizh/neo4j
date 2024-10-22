@@ -206,6 +206,8 @@ object SizeEstimation {
           case t: TryCatch =>
             declare(t.typeReference, t.name)
             JUMP_INSTRUCTION + localVarInstruction(t.name)
+          case _: Comment     => 0
+          case _: PlaceHolder => 0
 
           case unknown => throw new IllegalStateException(s"Don't know how many bytes $unknown will use")
         }

@@ -40,8 +40,9 @@ object DebugSupport {
   final val DEBUG_PROGRESS = false
   final val DEBUG_WORKERS_ON_PROGRESS_STALL = false
   final val DEBUG_MEMORY_TRACKING = false
-  final val DEBUG_GENERATED_SOURCE_CODE = false
   final val DEBUG_CONCURRENT_TRANSACTIONS = false
+  final val DEBUG_GENERATED_SOURCE_CODE = false
+  final val DEBUG_GENERATED_IR_CODE = false
 
   /** LOGS */
 
@@ -62,6 +63,7 @@ object DebugSupport {
   final val PROGRESS = new DebugLog(DEBUG_PROGRESS, Bold + Underline)
   final val CONCURRENT_TRANSACTIONS = new DebugLog(DEBUG_CONCURRENT_TRANSACTIONS, "")
   final val CONCURRENT_TRANSACTIONS_WORKER = new DebugLog(DEBUG_CONCURRENT_TRANSACTIONS, BrightBlue)
+  final val GENERATED_IR_CODE = new DebugLog(DEBUG_GENERATED_IR_CODE, "")
 
   /** COLORS AND FORMATTING **/
 

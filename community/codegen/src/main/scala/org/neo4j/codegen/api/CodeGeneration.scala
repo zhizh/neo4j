@@ -360,6 +360,15 @@ class CodeGeneration(methodLimit: Int, val codeGenerationMode: CodeGenerationMod
       case Block(ops) =>
         if (ops.isEmpty) codegen.Expression.EMPTY else ops.map(compileExpression(_, block)).last
 
+      // run multiple ops in a block, the value of the block is the last expression
+      case p: PlaceHolder =>
+        val ops = p.ops
+        if (ops.isEmpty) codegen.Expression.EMPTY else ops.map(compileExpression(_, block)).last
+
+      case Comment(c: String) =>
+        block.comment(c)
+        codegen.Expression.EMPTY
+
       // if (test) {onTrue}
       case Condition(test, onTrue, None) =>
         beginBlock(block.ifStatement(compileExpression(test, block)))(compileExpression(onTrue, _))

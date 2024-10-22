@@ -277,4 +277,9 @@ class ByteCodeMethodWriter implements MethodWriter {
         // these are equivalent when it comes to bytecode
         assign(local, value);
     }
+
+    @Override
+    public void comment(String comment) {
+        // noop in bytecode
+    }
 }

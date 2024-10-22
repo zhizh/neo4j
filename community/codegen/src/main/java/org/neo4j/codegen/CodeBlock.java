@@ -206,6 +206,10 @@ public class CodeBlock implements AutoCloseable {
         writer.breaks(labelName);
     }
 
+    public void comment(String comment) {
+        writer.comment(comment);
+    }
+
     public void throwException(Expression exception) {
         writer.throwException(exception);
     }

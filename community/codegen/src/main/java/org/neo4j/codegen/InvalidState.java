@@ -145,4 +145,9 @@ class InvalidState implements MethodWriter {
     public void beginCatch(LocalVariable exception) {
         throw new IllegalStateException(reason);
     }
+
+    @Override
+    public void comment(String comment) {
+        throw new IllegalStateException(reason);
+    }
 }

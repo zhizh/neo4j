@@ -554,6 +554,38 @@ case class OneTime(inner: IntermediateRepresentation)(private var used: Boolean)
 }
 
 /**
+ * A mutable block that can be updated at a later point, but only before its operations are first read.
+ */
+case class PlaceHolder(
+  private var originalOps: collection.Seq[IntermediateRepresentation],
+  private var prependOps: collection.Seq[IntermediateRepresentation] = Seq.empty[IntermediateRepresentation],
+  private var appendOps: collection.Seq[IntermediateRepresentation] = Seq.empty[IntermediateRepresentation]
+) extends IntermediateRepresentation {
+  private[this] var read: Boolean = false
+
+  def prepend(ops: collection.Seq[IntermediateRepresentation]): Unit = {
+    if (read) throw new IllegalStateException("Update not allowed after read")
+    prependOps = ops ++ prependOps
+  }
+
+  def append(ops: collection.Seq[IntermediateRepresentation]): Unit = {
+    if (read) throw new IllegalStateException("Update not allowed after read")
+    appendOps = appendOps ++ ops
+  }
+
+  def ops: collection.Seq[IntermediateRepresentation] = {
+    read = true // From now on, updating is no longer allowed
+    prependOps ++ originalOps ++ appendOps
+  }
+
+  override def typeReference: TypeReference = TypeReference.VOID
+}
+
+case class Comment(comment: String) extends IntermediateRepresentation {
+  override def typeReference: TypeReference = TypeReference.VOID
+}
+
+/**
  * Box a primitive value
  * @param expression the value to box
  */
@@ -1674,4 +1706,7 @@ object IntermediateRepresentation {
     GetStatic(Some(typeReference), typeReference, "MODULE$")
   }
 
+  def placeHolder(ops: IntermediateRepresentation*): PlaceHolder = PlaceHolder(ops)
+
+  def comment(comment: String): Comment = Comment(comment)
 }

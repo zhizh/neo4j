@@ -516,6 +516,15 @@ class JavaSourceMethodWriter implements MethodWriter, ExpressionVisitor {
         expression.accept(this);
     }
 
+    @Override
+    public void comment(String comment) {
+        append("\n");
+        indent();
+        append("// ");
+        append(comment);
+        append("\n");
+    }
+
     private void binaryOperation(Expression lhs, Expression rhs, String operator) {
         append("(");
         lhs.accept(this);

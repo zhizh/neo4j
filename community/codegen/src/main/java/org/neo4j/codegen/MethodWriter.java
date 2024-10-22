@@ -64,4 +64,6 @@ public interface MethodWriter {
     void declare(LocalVariable local);
 
     void assignVariableInScope(LocalVariable local, Expression value);
+
+    void comment(String comment);
 }
