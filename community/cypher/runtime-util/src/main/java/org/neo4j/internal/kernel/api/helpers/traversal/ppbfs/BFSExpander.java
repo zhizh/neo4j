@@ -197,7 +197,10 @@ final class BFSExpander implements AutoCloseable {
                 var rel = relTree[depth - 1].removeLast();
                 rels[direction.isBackward() ? (rels.length - depth) : depth - 1] = rel;
 
-                if (expansion.compoundPredicate().test(startNode.id(), rels, nodes, endNode)) {
+                var start = direction.isBackward() ? endNode : startNode.id();
+                var end = direction.isBackward() ? startNode.id() : endNode;
+
+                if (expansion.compoundPredicate().test(start, rels, nodes, end)) {
                     var nextNode = encounter(endNode, expansion.endState(direction), direction);
 
                     var relIds = new long[rels.length];

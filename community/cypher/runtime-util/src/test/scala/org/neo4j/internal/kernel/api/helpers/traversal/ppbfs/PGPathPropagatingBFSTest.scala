@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.function.Predicates
 import org.neo4j.graphdb.Direction
 import org.neo4j.internal.kernel.api.RelationshipTraversalEntities
+import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.PGPathPropagatingBFSTest._
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.AddTarget
@@ -34,12 +35,15 @@ import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.NextLevel
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.EventRecorder.ReturnPath
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion
+import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion.CompoundPredicate
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.PGStateBuilder.MultiRelationshipBuilder.r
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.RelationshipPredicate
 import org.neo4j.memory.EmptyMemoryTracker
 import org.neo4j.memory.LocalMemoryTracker
 import org.neo4j.memory.MemoryTracker
+import org.neo4j.values.virtual.VirtualRelationshipValue
 import org.scalatest.Inspectors
 
 import scala.collection.mutable
@@ -1049,6 +1053,51 @@ class PGPathPropagatingBFSTest extends CypherFunSuite with PGPathPropagatingBFST
     lengths shouldBe Seq(2, 2)
     count should not be empty
     Inspectors.forAll(count.values) { _ shouldBe 1 }
+  }
+
+  test(
+    "compound predicate in multiple relationship expansion is evaluated with correct nodes in backward bidirectional search"
+  ) {
+    // the double outgoing rel at node 2 makes the algorithm prefer the backwards expansion of node 4
+    val graph = TestGraph.fromTemplate("""
+     (1)-->(2)-->(3)-->(4)
+            |
+            v
+           ( )
+      """)
+
+    // in the predicate we rely on the fact that the test graph nodes are generated with ascending ID from left to right
+    (1 to 4).foreach { id =>
+      graph node id.toString shouldBe id
+    }
+
+    val paths = fixture()
+      .withGraph(graph.graph)
+      .from(graph node "2")
+      .into(graph node "4")
+      .withNfa { sb =>
+        val s = sb.newState("s", isStartState = true)
+        val a = sb.newState("a")
+        val b = sb.newState("b")
+        val t = sb.newState("t", isFinalState = true)
+
+        val predicate: CompoundPredicate =
+          (startNode: Long, _: Array[VirtualRelationshipValue], _: Array[Long], endNode: Long) =>
+            startNode < endNode
+
+        s.addNodeJuxtaposition(a)
+        a.addMultiRelationshipExpansion(
+          b,
+          Array(new MultiRelationshipExpansion.Rel(_ => true, null, Direction.OUTGOING, SlotOrName.None)),
+          Array.empty,
+          predicate
+        )
+        b.addNodeJuxtaposition(a)
+        b.addNodeJuxtaposition(t)
+      }
+      .toList
+
+    paths should not be empty
   }
 
   /****************************************
