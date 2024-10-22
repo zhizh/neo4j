@@ -54,6 +54,7 @@ import org.neo4j.codegen.source.SourceVisitor
 import org.neo4j.cypher.internal.options.CypherDebugOption
 import org.neo4j.cypher.internal.options.CypherDebugOptions
 import org.neo4j.exceptions.CantCompileQueryException
+import org.neo4j.exceptions.InternalException
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -136,6 +137,10 @@ object CodeGeneration {
 class CodeGeneration(methodLimit: Int, val codeGenerationMode: CodeGenerationMode) {
 
   def createGenerator(): CodeGenerator = {
+    createGenerator(classOf[IntermediateRepresentation].getClassLoader)
+  }
+
+  def createGenerator(parentClassLoader: ClassLoader): CodeGenerator = {
     var (strategy, options) = (codeGenerationMode, DEBUG_PRINT_SOURCE) match {
       case (SourceCodeGeneration(saver), _)   => (SOURCECODE, saver.options)
       case (ByteCodeGeneration(saver), true)  => (SOURCECODE, saver.options)
@@ -144,7 +149,7 @@ class CodeGeneration(methodLimit: Int, val codeGenerationMode: CodeGenerationMod
     if (DEBUG_PRINT_SOURCE) options ::= PRINT_SOURCE
     if (DEBUG_PRINT_BYTECODE) options ::= PRINT_BYTECODE
 
-    generateCode(classOf[IntermediateRepresentation].getClassLoader, strategy, options: _*)
+    generateCode(parentClassLoader, strategy, options: _*)
   }
 
   def compileClass[T](c: ClassDeclaration[T], generator: CodeGenerator): ClassHandle = {
@@ -273,13 +278,24 @@ class CodeGeneration(methodLimit: Int, val codeGenerationMode: CodeGenerationMod
       // loads local variable by name
       case Load(variable, _) => block.load(variable)
 
-      // loads field
-      case LoadField(f) =>
+      // loads field on this object
+      case LoadField(None, f) =>
         codegen.Expression.get(block.self(), field(block.owner(), f.typ, f.name))
 
-      // sets a field
-      case SetField(f, v) =>
+      // loads field on the given owner object
+      case LoadField(Some(owner), f) =>
+        val ownerExpr = compileExpression(owner, block)
+        codegen.Expression.get(ownerExpr, field(ownerExpr.`type`, f.typ, f.name))
+
+      // sets a field on this object
+      case SetField(None, f, v) =>
         block.put(block.self(), field(block.owner(), f.typ, f.name), compileExpression(v, block))
+        codegen.Expression.EMPTY
+
+      // sets a field on the given owner object
+      case SetField(Some(owner), f, v) =>
+        val ownerExpr = compileExpression(owner, block)
+        block.put(ownerExpr, field(ownerExpr.`type`, f.typ, f.name), compileExpression(v, block))
         codegen.Expression.EMPTY
 
       // loads a given constant
@@ -521,7 +537,8 @@ class CodeGeneration(methodLimit: Int, val codeGenerationMode: CodeGenerationMod
       c.extendsClass.getOrElse(codegen.TypeReference.OBJECT),
       c.packageName,
       c.className,
-      c.implementsInterfaces.toSeq: _*
+      c.classDependencies.toArray,
+      c.implementsInterfaces.toArray
     )) { (clazz: codegen.ClassGenerator) =>
       generateConstructor(
         clazz,
@@ -557,15 +574,35 @@ class CodeGeneration(methodLimit: Int, val codeGenerationMode: CodeGenerationMod
     }
     m.throws.foreach(method.throwsException)
 
-    beginBlock(clazz.generate(method)) { block =>
-      m.localVariables.distinct.foreach { v =>
-        block.assign(v.typ, v.name, compileExpression(v.value, block))
+    try {
+      beginBlock(clazz.generate(method)) { block =>
+        m.localVariables.distinct.foreach { v =>
+          block.assign(v.typ, v.name, compileExpression(v.value, block))
+        }
+        if (m.returnType == codegen.TypeReference.VOID) {
+          block.expression(compileExpression(m.body, block))
+        } else {
+          block.returns(compileExpression(m.body, block))
+        }
       }
-      if (m.returnType == codegen.TypeReference.VOID) {
-        block.expression(compileExpression(m.body, block))
-      } else {
-        block.returns(compileExpression(m.body, block))
-      }
+    } catch {
+      case e: ArrayIndexOutOfBoundsException =>
+        // NOTE: This could be a CantCompileQueryException, but then it would be handled at runtime, and may pass unnoticed
+        throw new InternalException(
+          s"""Method '${m.methodName}' in class '${clazz.handle().name()}' failed in code generation: ${e.getClass.getSimpleName} '${e.getMessage}
+             |This could mean that an intermediate representation instruction has been generated with an incorrect type.
+             |One common mistake is that a method type parameter of an invoke has been set to the wrong type:
+             | -> Check that type parameters of e.g. invoke(..., method[OWNER, OUT, IN1, IN2, ...](...), ...) are exactly matching the method's declaration.
+             |If your problem is something different, please extend this error message with more examples.""".stripMargin,
+          e
+        )
+
+      case e: Exception =>
+        // NOTE: This could be a CantCompileQueryException, but then it would be handled at runtime, and may pass unnoticed
+        throw new InternalException(
+          s"Method '${m.methodName}' in class '${clazz.handle().name()}' failed in code generation: ${e.getClass.getSimpleName} '${e.getMessage}",
+          e
+        )
     }
   }
 }

@@ -45,6 +45,11 @@ import java.lang.reflect.Modifier
  */
 sealed trait IntermediateRepresentation extends Foldable {
   def typeReference: TypeReference
+
+  def prettyString(indent: Int): String = {
+    val i = " " * indent
+    s"${i}${this.toString}"
+  }
 }
 
 /**
@@ -124,19 +129,22 @@ case class Load(variable: String, typeReference: TypeReference) extends Intermed
 /**
  * Load a field
  *
+ * @param owner the object to load the field from, or None to load a field from this object
  * @param field the field to load
  */
-case class LoadField(field: Field) extends IntermediateRepresentation {
+case class LoadField(owner: Option[IntermediateRepresentation], field: Field) extends IntermediateRepresentation {
   override def typeReference: TypeReference = field.typ
 }
 
 /**
  * Set a field to a value
  *
+ * @param owner the object to set the field on, or None to set field on this object
  * @param field the field to set
  * @param value the value to set
  */
-case class SetField(field: Field, value: IntermediateRepresentation) extends IntermediateRepresentation {
+case class SetField(owner: Option[IntermediateRepresentation], field: Field, value: IntermediateRepresentation)
+    extends IntermediateRepresentation {
   override def typeReference: TypeReference = TypeReference.VOID
 }
 
@@ -348,6 +356,13 @@ case class IsNull(test: IntermediateRepresentation) extends IntermediateRepresen
  */
 case class Block(ops: collection.Seq[IntermediateRepresentation]) extends IntermediateRepresentation {
   override def typeReference: TypeReference = ops.last.typeReference
+
+  override def prettyString(indent: Int): String = {
+    val i = " " * indent
+    s"""${i}Block(
+       |${i}${ops.map(_.prettyString(indent + 2)).mkString(s"\n${i}")}
+       |${i})""".stripMargin
+  }
 }
 
 /**
@@ -607,6 +622,7 @@ case class Unbox(expression: IntermediateRepresentation) extends IntermediateRep
  * @param params the parameter to the constructor
  */
 case class Constructor(owner: codegen.TypeReference, params: Seq[codegen.TypeReference]) {
+  require(owner != null, "owner cannot be null")
 
   def asReference: codegen.MethodReference =
     if (params.isEmpty) codegen.MethodReference.constructorReference(owner)
@@ -692,13 +708,60 @@ case class ClassDeclaration[T](
   className: String,
   extendsClass: Option[codegen.TypeReference],
   implementsInterfaces: collection.Seq[codegen.TypeReference],
+  classDependencies: collection.Seq[codegen.TypeReference],
   constructorParameters: collection.Seq[Parameter],
   initializationCode: IntermediateRepresentation,
   genFields: () => collection.Seq[Field],
-  methods: Seq[MethodDeclaration]
+  methods: Seq[MethodDeclaration],
+  tag: String = "",
+  generatorContext: AnyRef = null
 ) {
 
-  def fields: collection.Seq[Field] = genFields()
+  private[this] var _fields: collection.Seq[Field] = _
+
+  def fields: collection.Seq[Field] = {
+    if (_fields == null) {
+      _fields = genFields()
+    }
+    _fields
+  }
+
+  override def toString: String = prettyString(2)
+
+  def prettyString(indent: Int): String = {
+    val i = " " * indent
+    val nl = System.lineSeparator()
+    val fieldsWithInit = fields.filter(f =>
+      f match {
+        case i: InstanceField if i.initializer.isDefined => true
+        case _                                           => false
+      }
+    ).map(_.asInstanceOf[InstanceField])
+
+    s"""${i}ClassDeclaration(
+       |${i}  packageName = \"$packageName\"
+       |${i}  className = \"$className\"
+       |${i}  extendsClass = ${extendsClass.map(_.simpleName())}
+       |${i}  implementsInterfaces = ${implementsInterfaces.map(_.simpleName())}
+       |${i}  constructorParameters = (${constructorParameters.map(p => s"${p.name}: ${p.typ.simpleName()}").mkString(
+        ", "
+      )})
+       |${i}  fields = (${fields.map(f => s"${f.name}: ${f.typ.simpleName()}").mkString(", ")})
+       |${i}  initializationCode = {
+       |${i}    // Instance field initializations
+       |${i}    ${fieldsWithInit.map(f => s"${f.name} = ${PrettyIR.pretty(f.initializer.get(), indent + 4)}").mkString(
+        s"$nl${i}    "
+      )}
+       |
+       |${i}    // Initialization code
+       |${i}    ${PrettyIR.pretty(initializationCode, indent + 4)}
+       |${i}  }
+       |${i}  methods = {
+       |${i}${methods.map(_.prettyString(indent + 2)).mkString("\n")}
+       |${i}  }
+       |${i})
+       |""".stripMargin
+  }
 }
 
 case class MethodDeclaration(
@@ -711,7 +774,35 @@ case class MethodDeclaration(
   throws: Option[TypeReference] = None,
   modifiers: Int = Modifier.PUBLIC
 ) {
-  def localVariables: Seq[LocalVariable] = genLocalVariables()
+
+  private[this] var _localVariables: Seq[LocalVariable] = _
+
+  def localVariables: Seq[LocalVariable] = {
+    if (_localVariables == null) {
+      _localVariables = genLocalVariables()
+    }
+    _localVariables
+  }
+
+  def prettyString(indent: Int): String = {
+    val i = " " * indent
+    val nl = System.lineSeparator()
+    s"""${i}MethodDeclaration(
+       |${i}  methodName = \"$methodName\"
+       |${i}  returnType = ${returnType.simpleName}
+       |${i}  parameters = (${parameters.map(p => s"${p.name}: ${p.typ.simpleName()}").mkString(", ")})
+       |${i}  localVariables = (${localVariables.map(v => s"${v.name}: ${v.typ.simpleName()}").mkString(", ")})
+       |${i}  body = {
+       |${i}    // Local variable initializations
+       |${i}    ${localVariables.map(v => s"${v.name} = ${PrettyIR.pretty(v.value, indent + 4)}").mkString(
+        s"$nl${i}    "
+      )}
+       |
+       |${i}    // Body code
+       |${i}    ${PrettyIR.pretty(body, indent + 4)}
+       |${i}  }
+       |${i})""".stripMargin
+  }
 }
 
 case class ConstructorDeclaration(constructor: Constructor, body: IntermediateRepresentation)
@@ -749,10 +840,23 @@ object IntermediateRepresentation {
 
   def typeRefOf[TYPE](implicit typ: Manifest[TYPE]): codegen.TypeReference = typeRef(typ)
 
+  def typeRefOf(packageName: String, className: String): codegen.TypeReference = {
+    TypeReference.fullTypeReference(
+      packageName,
+      className,
+      0,
+      false,
+      null,
+      Modifier.PUBLIC
+    )
+  }
+
   def nonGenericTypeRefOf[TYPE](implicit typ: Manifest[TYPE]): codegen.TypeReference =
     codegen.TypeReference.typeReference(manifest.runtimeClass)
 
   def field[TYPE](name: String)(implicit typ: Manifest[TYPE]): InstanceField = InstanceField(typeRef(typ), name)(None)
+
+  def field(typ: TypeReference, name: String): InstanceField = InstanceField(typ, name)(None)
 
   def field[TYPE](name: String, initializer: IntermediateRepresentation)(implicit typ: Manifest[TYPE]): InstanceField =
     InstanceField(typeRef(typ), name)(Some(() => initializer))
@@ -1382,21 +1486,40 @@ object IntermediateRepresentation {
 
   def load(parameter: Parameter): Load = Load(parameter.name, parameter.typ)
 
+  def load(typ: TypeReference, variable: String): Load = Load(variable, typ)
+
   def cast[TO](expression: IntermediateRepresentation)(implicit to: Manifest[TO]): IntermediateRepresentation = {
     val toType = typeRef(to)
-    if (expression.typeReference == toType) {
+    cast(toType, expression)
+  }
+
+  def cast(typ: TypeReference, expression: IntermediateRepresentation): IntermediateRepresentation = {
+    if (expression.typeReference == typ) {
       expression
     } else {
-      Cast(toType, expression)
+      Cast(typ, expression)
     }
   }
 
   def instanceOf[T](expression: IntermediateRepresentation)(implicit t: Manifest[T]): InstanceOf =
     InstanceOf(typeRef(t), expression)
 
-  def loadField(field: Field): IntermediateRepresentation = LoadField(field)
+  def instanceOf(typ: TypeReference, expression: IntermediateRepresentation): InstanceOf =
+    InstanceOf(typ, expression)
 
-  def setField(field: Field, value: IntermediateRepresentation): IntermediateRepresentation = SetField(field, value)
+  def loadField(field: Field): IntermediateRepresentation = LoadField(None, field)
+
+  def loadField(owner: IntermediateRepresentation, field: Field): IntermediateRepresentation =
+    LoadField(Some(owner), field)
+
+  def setField(field: Field, value: IntermediateRepresentation): IntermediateRepresentation =
+    SetField(None, field, value)
+
+  def setField(
+    owner: IntermediateRepresentation,
+    field: Field,
+    value: IntermediateRepresentation
+  ): IntermediateRepresentation = SetField(Some(owner), field, value)
 
   def getStatic[OUT](name: String)(implicit out: Manifest[OUT]): GetStatic = GetStatic(None, typeRef(out), name)
 
@@ -1580,11 +1703,17 @@ object IntermediateRepresentation {
   def declare(typeReference: codegen.TypeReference, name: String): DeclareLocalVariable =
     DeclareLocalVariable(typeReference, name)
 
+  def declare(load: Load): IntermediateRepresentation =
+    DeclareLocalVariable(load.typeReference, load.variable)
+
   def assign(name: String, value: IntermediateRepresentation): AssignToLocalVariable =
     AssignToLocalVariable(name, value)
 
   def assign(variable: LocalVariable, value: IntermediateRepresentation): AssignToLocalVariable =
     AssignToLocalVariable(variable.name, value)
+
+  def assign(load: Load, value: IntermediateRepresentation): AssignToLocalVariable =
+    AssignToLocalVariable(load.variable, value)
 
   def declareAndAssign(name: String, value: IntermediateRepresentation): IntermediateRepresentation =
     block(declareAndAssignList(value.typeReference, name, value): _*)
@@ -1693,6 +1822,8 @@ object IntermediateRepresentation {
   def unbox(expression: IntermediateRepresentation): Unbox = Unbox(expression)
 
   def self[TYPE](implicit typ: Manifest[TYPE]): IntermediateRepresentation = Self(typeRef(typ))
+
+  def self(typ: TypeReference): IntermediateRepresentation = Self(typ)
 
   def booleanValue(ir: IntermediateRepresentation): IntermediateRepresentation = {
     simplifyPredicates(invokeStatic(method[Values, BooleanValue, Boolean]("booleanValue"), ir))

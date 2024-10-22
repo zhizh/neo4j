@@ -1150,6 +1150,7 @@ class SizeEstimationTest extends CypherFunSuite {
       None,
       Seq.empty,
       Seq.empty,
+      Seq.empty,
       noop(),
       () => Seq(field[String]("field", constant("hello field")), arrayField),
       Seq(MethodDeclaration(

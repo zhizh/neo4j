@@ -21,20 +21,18 @@ package org.neo4j.codegen.api
 
 import org.neo4j.codegen.TypeReference
 
-import scala.annotation.nowarn
-
 object PrettyIR {
   val indentSize = 2
 
-  def pretty(ir: IntermediateRepresentation): String = {
-    val pb = new PrettyBuilder()
+  def pretty(ir: IntermediateRepresentation, indent: Int = 0): String = {
+    val pb = new PrettyBuilder(indent)
     pb.pretty(ir)
     pb.result
   }
 
-  class PrettyBuilder {
+  class PrettyBuilder(startIndent: Int) {
     val sb = new StringBuilder()
-    var indent = 0
+    var indent = startIndent
 
     var onNewLine = false
 
@@ -66,13 +64,15 @@ object PrettyIR {
     def result: String = sb.result()
 
     // noinspection NameBooleanParameters
-    @nowarn("msg=(Exhaustivity analysis)|(match may not be exhaustive)")
     def pretty(ir: IntermediateRepresentation): PrettyBuilder = {
       ir match {
         case Block(Seq(d @ DeclareLocalVariable(_, name), AssignToLocalVariable(name2, value))) if name == name2 =>
           pretty(d).append(" = ").pretty(value)
 
         case Block(Seq()) => append("{ }")
+
+        case Block(ops) if ops.head.isInstanceOf[Block] =>
+          pretty(Block(ops.head.asInstanceOf[Block].ops ++ ops.tail))
 
         case Block(ops) =>
           append("{").newLine()
@@ -109,6 +109,18 @@ object PrettyIR {
         case NewInstance(constructor, params) =>
           append("new ").prettyType(constructor.owner).prettyParams(params)
 
+        case NewInstanceInnerClass(clazz, arguments) =>
+          append("new ").append(clazz.name).prettyParams(arguments)
+
+        case NewArray(typ, size) =>
+          append("new ").prettyType(typ).append("[").append(s"$size").append("]")
+
+        case NewArrayDynamicSize(typ, size) =>
+          append("new ").prettyType(typ).append("[").pretty(size).append("]")
+
+        case Returns(value) =>
+          append("return ").pretty(value)
+
         case Invoke(target, method, params) =>
           pretty(target).prettyInvoke(method, params)
 
@@ -120,6 +132,12 @@ object PrettyIR {
 
         case InvokeStaticSideEffect(method, params) =>
           append(method.owner.simpleName()).prettyInvoke(method, params)
+
+        case InvokeLocal(method, params) =>
+          append("this.").prettyInvoke(method, params)
+
+        case InvokeLocalSideEffect(method, params) =>
+          append("this.").prettyInvoke(method, params)
 
         case GetStatic(owner, _, name) =>
           if (name == "NO_VALUE") {
@@ -136,38 +154,60 @@ object PrettyIR {
         case Load(name, _) =>
           append(name)
 
+        case Self(_) =>
+          append("this")
+
         case Eq(lhs, rhs) =>
-          pretty(lhs).append(" == ").pretty(rhs)
+          append("(").pretty(lhs).append(" == ").pretty(rhs).append(")")
 
         case NotEq(lhs, rhs) =>
-          pretty(lhs).append(" != ").pretty(rhs)
+          append("(").pretty(lhs).append(" != ").pretty(rhs).append(")")
+
+        case Lt(lhs, rhs) =>
+          append("(").pretty(lhs).append(" < ").pretty(rhs).append(")")
+
+        case Lte(lhs, rhs) =>
+          append("(").pretty(lhs).append(" <= ").pretty(rhs).append(")")
+
+        case Gt(lhs, rhs) =>
+          append("(").pretty(lhs).append(" > ").pretty(rhs).append(")")
+
+        case Gte(lhs, rhs) =>
+          append("(").pretty(lhs).append(" >= ").pretty(rhs).append(")")
 
         case Add(lhs, rhs) =>
-          pretty(lhs).append(" + ").pretty(rhs)
+          append("(").pretty(lhs).append(" + ").pretty(rhs).append(")")
 
         case Subtract(lhs, rhs) =>
-          pretty(lhs).append(" - ").pretty(rhs)
+          append("(").pretty(lhs).append(" - ").pretty(rhs).append(")")
+
+        case Multiply(lhs, rhs) =>
+          append("(").pretty(lhs).append(" * ").pretty(rhs).append(")")
+
+        case Ternary(condition, onTrue, onFalse) =>
+          append("( (").pretty(condition).append(") ? ").pretty(onTrue).append(" : ").pretty(onFalse).append(" )")
 
         case BooleanOr(as) =>
           val size = as.size
+          append("(")
           as.zipWithIndex.foreach {
             case (v, i) if i < size - 1 => pretty(v).append(" || ")
             case (v, _)                 => pretty((v))
           }
+          append(")")
 
         case BooleanAnd(as) =>
           val size = as.size
+          append("(")
           as.zipWithIndex.foreach {
             case (v, i) if i < size - 1 => pretty(v).append(" && ")
             case (v, _)                 => pretty((v))
           }
+          append(")")
 
         case Condition(test, onTrue, onFalse) =>
           append("if (").pretty(test).append(") ").pretty(onTrue)
           onFalse.foreach(ir => append(" else ").pretty(ir))
-
-        case Ternary(test, onTrue, onFalse) =>
-          pretty(test).append(" ? ").pretty(onTrue).append(" : ").pretty(onFalse)
 
         case Loop(test, body, labelName) =>
           if (labelName != null)
@@ -198,17 +238,65 @@ object PrettyIR {
             .decrIndent()
             .append("}")
 
+        case Break(labelName) =>
+          append("break ").append(labelName)
+
         case Throw(error) =>
           append("throw ").pretty(error)
 
         case Cast(to, expression) =>
-          append("(").prettyType(to).append(")").pretty(expression)
+          append("((").prettyType(to).append(") ").pretty(expression).append(")")
+
+        case InstanceOf(typ, expression) =>
+          pretty(expression).append(" instanceof ").prettyType(typ)
 
         case Noop =>
 
-        case Not(Eq(lhs, rhs)) => pretty(lhs).append(" != ").pretty(rhs)
+        case IsNull(expr) =>
+          append("(").pretty(expr).append(" == ").append("null").append(")")
+
+        case Not(IsNull(expr)) =>
+          append("(").pretty(expr).append(" != ").append("null").append(")")
+
+        case Not(Eq(lhs, rhs)) =>
+          append("(").pretty(lhs).append(" != ").pretty(rhs).append(")")
 
         case Not(expr) => append("!(").pretty(expr).append(")")
+
+        case LoadField(None, field) =>
+          append("this.").append(field.name)
+
+        case LoadField(Some(owner), field) =>
+          pretty(owner).append(".").append(field.name)
+
+        case SetField(None, field, value) =>
+          append("this.").append(field.name).append(" = ").pretty(value)
+
+        case SetField(Some(owner), field, value) =>
+          pretty(owner).append(".").append(field.name).append(" = ").pretty(value)
+
+        case Box(expression) =>
+          append("|<box>|(").pretty(expression).append(")")
+
+        case Unbox(expression) =>
+          append("|<unbox>|(").pretty(expression).append(")")
+
+        case Comment(comment) =>
+          append(s"// $comment")
+
+        case ArrayLiteral(typ, values) =>
+          append("new ").prettyType(typ).append("[] { ")
+          values.zipWithIndex.foreach {
+            case (value, i) =>
+              pretty(value)
+              if (i < values.size - 1) {
+                append(", ")
+              }
+          }
+          append(" }")
+
+        case instruction =>
+          throw new IllegalArgumentException(s"Please add the missing pretty IR string case for: $instruction")
       }
       this
     }
@@ -218,7 +306,15 @@ object PrettyIR {
       prettyParams(params)
     }
 
+    private def prettyInvoke(method: PrivateMethod, params: Seq[IntermediateRepresentation]): PrettyBuilder = {
+      append(s".${method.name}")
+      prettyParams(params)
+    }
+
     private def prettyType(typeReference: TypeReference): PrettyBuilder = {
+      if (typeReference == null) {
+        println("typeReference is null")
+      }
       append(typeReference.name())
 
       if (typeReference.isGeneric) {

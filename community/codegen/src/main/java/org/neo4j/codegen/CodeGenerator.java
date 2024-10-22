@@ -79,6 +79,8 @@ public abstract class CodeGenerator {
         return codeGenerator(requireNonNull(loader, "ClassLoader"), strategy, options);
     }
 
+    public static final TypeReference[] NO_DEPENDENCIES = new TypeReference[0];
+
     public CodeGenerator(ClassLoader loader) {
         this.loader = new CodeLoader(loader);
     }
@@ -116,11 +118,26 @@ public abstract class CodeGenerator {
         return generateClass(openClass(packageName, name, base), base, interfaces);
     }
 
-    private ClassGenerator generateClass(ClassHandle handle, TypeReference base, TypeReference... interfaces) {
-        return new ClassGenerator(handle, generate(handle, base, interfaces));
+    public ClassGenerator generateClass(
+            TypeReference base,
+            String packageName,
+            String name,
+            TypeReference[] dependencies,
+            TypeReference[] interfaces) {
+        return generateClass(openClass(packageName, name, base), base, dependencies, interfaces);
     }
 
-    protected abstract ClassWriter generate(TypeReference type, TypeReference base, TypeReference... interfaces);
+    private ClassGenerator generateClass(ClassHandle handle, TypeReference base, TypeReference... interfaces) {
+        return generateClass(handle, base, NO_DEPENDENCIES, interfaces);
+    }
+
+    private ClassGenerator generateClass(
+            ClassHandle handle, TypeReference base, TypeReference[] dependencies, TypeReference[] interfaces) {
+        return new ClassGenerator(handle, generate(handle, base, dependencies, interfaces));
+    }
+
+    protected abstract ClassWriter generate(
+            TypeReference type, TypeReference base, TypeReference[] dependencies, TypeReference[] interfaces);
 
     // COMPILE AND LOAD
 

@@ -64,6 +64,10 @@ class CodeLoader extends ClassLoader {
     protected synchronized Class<?> findClass(String name) throws ClassNotFoundException {
         ByteCodes clazz = stagedClasses.remove(name);
         if (clazz == null) {
+            var parent = getParent();
+            if (parent instanceof CodeLoader) {
+                return ((CodeLoader) parent).findClass(name);
+            }
             throw new ClassNotFoundException(name);
         }
         String packageName = name.substring(0, name.lastIndexOf('.'));

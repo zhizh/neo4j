@@ -45,6 +45,16 @@ class JavaSourceClassWriter implements ClassWriter {
         append("package ").append(type.packageName()).append(";\n");
     }
 
+    void declareImport(TypeReference type) {
+        append("// TODO: We need to make sure compiled source files for extra classes are loadable at compile time.\n");
+        append("//       But if you keep the generated source files and run again it should work.\n");
+        append("import ")
+                .append(type.packageName())
+                .append(".")
+                .append(type.name())
+                .append(";\n");
+    }
+
     void javadoc(String javadoc) {
         append("/** ").append(javadoc).append(" */\n");
     }
