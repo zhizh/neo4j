@@ -23,6 +23,7 @@ import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.logical.plans.LogicalBinaryPlan
 import org.neo4j.cypher.internal.logical.plans.LogicalLeafPlan
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
+import org.neo4j.cypher.internal.logical.plans.MultiEntityLogicalLeafPlan
 import org.neo4j.cypher.internal.logical.plans.NestedPlanExpression
 import org.neo4j.cypher.internal.logical.plans.Projection
 import org.neo4j.cypher.internal.macros.AssertMacros
@@ -102,6 +103,9 @@ object LivenessAnalysis {
         // Nested plan expressions can have dependencies to the outer plan.
         // Only through Argument, but lets be conservative here.
         acc => SkipChildren(acc ++ findAllVariables(np))
+      // MultiEntityLogicalLeafPlans are special and we must also examine the inner plans
+      case m: MultiEntityLogicalLeafPlan =>
+        acc => SkipChildren(acc ++ m.innerLogicalPlans.flatMap(s => findVariablesInPlan(s, s.id)))
     }
   }
 

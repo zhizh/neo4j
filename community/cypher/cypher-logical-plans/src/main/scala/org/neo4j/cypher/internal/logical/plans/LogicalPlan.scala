@@ -450,6 +450,7 @@ sealed abstract class RelationshipLogicalLeafPlan(idGen: IdGen) extends LogicalL
 
 sealed trait MultiEntityLogicalLeafPlan extends PhysicalPlanningPlan {
   def idNames: Set[LogicalVariable]
+  def innerLogicalPlans: Seq[LogicalPlan]
 }
 
 sealed trait IndexedPropertyProvidingPlan {
@@ -962,6 +963,8 @@ idGen: IdGen)
     nodeIndexSeeks.map(_.idName).toSet
 
   override val distinctness: Distinctness = AtMostOneRow
+
+  override def innerLogicalPlans: Seq[LogicalPlan] = nodeIndexSeeks
 }
 
 /**
@@ -1033,6 +1036,8 @@ case class AssertingMultiRelationshipIndexSeek(
   override def idName: LogicalVariable = relationship
 
   override val distinctness: Distinctness = AtMostOneRow
+
+  override def innerLogicalPlans: Seq[LogicalPlan] = relIndexSeeks
 }
 
 /**
@@ -2756,6 +2761,8 @@ case class MultiNodeIndexSeek(nodeIndexSeeks: Seq[NodeIndexSeekLeafPlan])(implic
 
   override def idNames: Set[LogicalVariable] =
     nodeIndexSeeks.map(_.idName).toSet
+
+  override def innerLogicalPlans: Seq[LogicalPlan] = nodeIndexSeeks
 }
 
 /**

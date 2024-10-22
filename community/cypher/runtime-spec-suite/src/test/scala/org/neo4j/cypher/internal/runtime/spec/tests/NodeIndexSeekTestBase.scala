@@ -51,6 +51,7 @@ import org.neo4j.values.storable.Values
 import org.neo4j.values.utils.ValueBooleanLogic
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 // Supported by all runtimes
@@ -1622,6 +1623,50 @@ abstract class NodeIndexSeekTestBase[CONTEXT <: RuntimeContext](
 
     // then
     runtimeResult should beColumns("x").withSingleRow(n)
+  }
+
+  test("should handle multi-index seek under apply with an eager on the lhs") {
+    // given
+    val size = Math.max(sizeHint, 10)
+    nodeIndex(IndexType.RANGE, "Label", "prop")
+    val nodes = givenGraph {
+      nodePropertyGraph(
+        size,
+        {
+          case i: Int => Map("prop" -> i % 10)
+        },
+        "Label"
+      )
+    }
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("n", "m")
+      .apply()
+      // Note that this is being rewritten to a multi-node index seek in pipelined runtime
+      // we don't want to rely on .multiNodeIndexSeek(...) here since it doesn't treat the id's of the individual
+      // plans in the same way
+      .|.cartesianProduct()
+      .|.|.nodeIndexOperator("n:Label(prop=???)", paramExpr = Some(prop("row", "i")), indexType = IndexType.RANGE)
+      .|.nodeIndexOperator("m:Label(prop=???)", paramExpr = Some(prop("row", "i")), indexType = IndexType.RANGE)
+      .eager()
+      .unwind("[{i:0}, {i:1},{i:2}] AS row")
+      .argument()
+      .build()
+
+    // then
+    val expected = new ArrayBuffer[Array[Node]]
+    (0 to 2).foreach { i =>
+      val ns = nodes.filter(_.getProperty("prop").asInstanceOf[Int] == i)
+      val ms = nodes.filter(_.getProperty("prop").asInstanceOf[Int] == i)
+      val cartesian = for {
+        n <- ns
+        m <- ms
+      } yield Array(n, m)
+      expected ++= cartesian
+    }
+    val runtimeResult = execute(logicalQuery, runtime)
+    runtimeResult should beColumns("n", "m").withRows(expected)
   }
 
   private def propFilter(predicate: Value => Boolean): Node => Boolean = {
