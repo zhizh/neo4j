@@ -210,7 +210,7 @@ class SlottedPipeMapperTest extends CypherFunSuite with LogicalPlanningTestSuppo
   test("eagerize before create node") {
     val allNodeScan: AllNodesScan = AllNodesScan(varFor("x"), Set.empty)
     val eager = Eager(allNodeScan)
-    val createNode = Create(eager, List(CreateNode(varFor("z"), Set(label), None)))
+    val createNode = Create(eager, List(CreateNode(varFor("z"), Set(label), Set.empty, None)))
 
     // when
     val pipe = build(createNode)
@@ -229,14 +229,14 @@ class SlottedPipeMapperTest extends CypherFunSuite with LogicalPlanningTestSuppo
           AllNodesScanSlottedPipe("x", beforeEagerSlots)(),
           afterEagerSlots
         )(),
-        Array(CreateNodeSlottedCommand(afterEagerSlots.getLongOffsetFor("z"), Seq(LazyLabel(label)), None))
+        Array(CreateNodeSlottedCommand(afterEagerSlots.getLongOffsetFor("z"), Seq(LazyLabel(label)), Seq.empty, None))
       )()
     )
   }
 
   test("create node") {
     val argument = Argument()
-    val createNode = Create(argument, List(CreateNode(varFor("z"), Set(label), None)))
+    val createNode = Create(argument, List(CreateNode(varFor("z"), Set(label), Set.empty, None)))
 
     // when
     val pipe = build(createNode)
@@ -246,7 +246,7 @@ class SlottedPipeMapperTest extends CypherFunSuite with LogicalPlanningTestSuppo
     pipe should equal(
       CreateSlottedPipe(
         ArgumentSlottedPipe()(),
-        Array(CreateNodeSlottedCommand(slots.getLongOffsetFor("z"), Seq(LazyLabel(label)), None))
+        Array(CreateNodeSlottedCommand(slots.getLongOffsetFor("z"), Seq(LazyLabel(label)), Seq.empty, None))
       )()
     )
   }

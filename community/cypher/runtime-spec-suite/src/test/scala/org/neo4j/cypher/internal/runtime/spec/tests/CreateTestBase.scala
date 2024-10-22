@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.CypherRuntime
 import org.neo4j.cypher.internal.RuntimeContext
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithDynamicLabels
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithProperties
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationship
 import org.neo4j.cypher.internal.logical.plans.IndexOrderNone
@@ -31,12 +32,15 @@ import org.neo4j.cypher.internal.runtime.spec.Edition
 import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
 import org.neo4j.cypher.internal.runtime.spec.RecordingRuntimeResult
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
+import org.neo4j.exceptions.CypherTypeException
 import org.neo4j.exceptions.InternalException
 import org.neo4j.graphdb.Label.label
 import org.neo4j.graphdb.RelationshipType
 import org.neo4j.internal.helpers.collection.Iterables
 import org.neo4j.internal.helpers.collection.Iterators
+import org.neo4j.internal.kernel.api.exceptions.schema.IllegalTokenNameException
 
+import scala.jdk.CollectionConverters.IterableHasAsJava
 import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
@@ -82,6 +86,46 @@ abstract class CreateTestBase[CONTEXT <: RuntimeContext](
     val node = Iterables.single(tx.getAllNodes)
     runtimeResult should beColumns("n").withNoRows().withStatistics(nodesCreated = 1, labelsAdded = 3)
     node.getLabels.asScala.map(_.name()).toList should equal(List("A", "B", "C"))
+  }
+
+  test("should create dynamic labels") {
+    // given an empty database
+    val labels = inputValues(Array("A"), Array(List("B", "C").asJava), Array("D"))
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("n")
+      .create(createNodeWithDynamicLabels("n", varFor("label")))
+      .input(variables = Seq("label"))
+      .build(readOnly = false)
+
+    // then
+    val runtimeResult: RecordingRuntimeResult = execute(logicalQuery, runtime, labels)
+    consume(runtimeResult)
+    runtimeResult should beColumns("n").withStatistics(nodesCreated = 3, labelsAdded = 4)
+
+    val labelResults = tx.getAllNodes.asScala.map(_.getLabels)
+    labelResults.map(_.asScala.map(_.name)).toList should equal(List(List("A"), List("B", "C"), List("D")))
+  }
+
+  test("should throw the correct error if the dynamic label is invalid") {
+    // given an empty database
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("n")
+      .create(createNodeWithDynamicLabels("n", varFor("label")))
+      .input(variables = Seq("label"))
+      .build(readOnly = false)
+
+    // then
+    a[CypherTypeException] shouldBe thrownBy(consume(execute(logicalQuery, runtime, inputValues(Array(1)))))
+    an[IllegalTokenNameException] shouldBe thrownBy(consume(execute(logicalQuery, runtime, inputValues(Array("")))))
+    an[IllegalTokenNameException] shouldBe thrownBy(consume(execute(
+      logicalQuery,
+      runtime,
+      inputValues(Array("\u0000"))
+    )))
   }
 
   test("should create node with properties") {

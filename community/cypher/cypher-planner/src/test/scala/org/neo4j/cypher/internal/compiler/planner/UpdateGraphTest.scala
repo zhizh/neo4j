@@ -305,7 +305,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
       IndexedSeq(
         DeleteExpression(Variable("a")(pos), detachDelete = false),
         MergeNodePattern(
-          CreateNode(v"b", Set(LabelName("L3")(pos), LabelName("L3")(pos)), None),
+          CreateNode(v"b", Set(LabelName("L3")(pos), LabelName("L3")(pos)), Set.empty, None),
           QueryGraph.empty,
           Seq.empty,
           Seq.empty
@@ -386,7 +386,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
     forAll(tests) {
       case (pattern, expected) =>
         val merge = MergeNodePattern(
-          CreateNode(v"b", Set.empty, None),
+          CreateNode(v"b", Set.empty, Set.empty, None),
           QueryGraph.empty,
           Seq(pattern),
           Seq.empty
@@ -399,7 +399,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
     forAll(tests) {
       case (pattern, expected) =>
         val merge = MergeNodePattern(
-          CreateNode(v"b", Set.empty, None),
+          CreateNode(v"b", Set.empty, Set.empty, None),
           QueryGraph.empty,
           Seq.empty,
           Seq(pattern)
@@ -516,7 +516,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
     val ug = QueryGraph(mutatingPatterns =
       IndexedSeq(
         MergeNodePattern(
-          CreateNode(v"b", Set(labelName("Label")), Some(mapOfInt("prop" -> 123))),
+          CreateNode(v"b", Set(labelName("Label")), Set.empty, Some(mapOfInt("prop" -> 123))),
           QueryGraph.empty,
           Seq.empty,
           Seq.empty
@@ -536,7 +536,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
     val ug = QueryGraph(mutatingPatterns =
       IndexedSeq(
         MergeNodePattern(
-          CreateNode(v"b", Set(labelName("Label")), Some(mapOfInt("prop" -> 123))),
+          CreateNode(v"b", Set(labelName("Label")), Set.empty, Some(mapOfInt("prop" -> 123))),
           QueryGraph.empty,
           Seq.empty,
           Seq.empty
@@ -557,7 +557,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
     val ug = QueryGraph(mutatingPatterns =
       IndexedSeq(
         MergeNodePattern(
-          CreateNode(v"b", Set(labelName("OtherLabel")), Some(mapOfInt("prop" -> 123))),
+          CreateNode(v"b", Set(labelName("OtherLabel")), Set.empty, Some(mapOfInt("prop" -> 123))),
           QueryGraph.empty,
           Seq.empty,
           Seq.empty
@@ -648,7 +648,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
     val ug = QueryGraph(mutatingPatterns =
       IndexedSeq(
         MergeNodePattern(
-          CreateNode(v"q", Set(labelName("Label")), None),
+          CreateNode(v"q", Set(labelName("Label")), Set.empty, None),
           QueryGraph.empty,
           Seq.empty,
           Seq.empty
@@ -662,7 +662,7 @@ class UpdateGraphTest extends CypherFunSuite with AstConstructionTestSupport wit
   }
 
   private def createNode(name: String, labels: String*) =
-    CreatePattern(List(CreateNode(varFor(name), labels.map(l => LabelName(l)(pos)).toSet, None)))
+    CreatePattern(List(CreateNode(varFor(name), labels.map(l => LabelName(l)(pos)).toSet, Set.empty, None)))
 
   private def createRelationship(name: String, start: String, relType: String, end: String) =
     CreatePattern(

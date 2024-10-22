@@ -4610,7 +4610,7 @@ class EagerWhereNeededRewriterTest extends CypherFunSuite with LogicalPlanTestOp
       .produceResults("count")
       .aggregation(Seq.empty, Seq("count(*) AS count"))
       .deleteNode("n")
-      .create(CreateNode(v"x", Set.empty, Some(mapOf("p" -> nestedPlanExpression))))
+      .create(CreateNode(v"x", Set.empty, Set.empty, Some(mapOf("p" -> nestedPlanExpression))))
       .allNodeScan("n")
     val plan = planBuilder.build()
     val result = eagerizePlan(planBuilder, plan)
@@ -4624,7 +4624,7 @@ class EagerWhereNeededRewriterTest extends CypherFunSuite with LogicalPlanTestOp
           ReadDeleteConflict("x").withConflict(Conflict(Id(2), Id(3))),
           ReadDeleteConflict("m").withConflict(Conflict(Id(2), Id(3)))
         ))
-        .create(CreateNode(v"x", Set.empty, Some(mapOf("p" -> nestedPlanExpression))))
+        .create(CreateNode(v"x", Set.empty, Set.empty, Some(mapOf("p" -> nestedPlanExpression))))
         .allNodeScan("n")
         .build()
     )

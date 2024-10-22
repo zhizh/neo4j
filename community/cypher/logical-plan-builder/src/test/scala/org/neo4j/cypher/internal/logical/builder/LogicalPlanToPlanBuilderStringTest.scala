@@ -37,6 +37,7 @@ import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Trai
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.WalkParameters
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.column
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithDynamicLabels
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithProperties
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createPattern
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationship
@@ -1052,6 +1053,18 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
         createNodeWithProperties("a", Seq("A"), "{foo: 42}"),
         createNodeWithProperties("b", Seq.empty, "{bar: 'hello'}"),
         createNodeWithProperties("c", Seq.empty, mapOfInt("baz" -> 42))
+      )
+      .argument()
+      .build()
+  )
+
+  testPlan(
+    "create with dynamic labels",
+    new TestPlanBuilder()
+      .produceResults("x", "y")
+      .create(
+        createNodeWithDynamicLabels("a", literal("L")),
+        createNodeWithDynamicLabels("b", varFor("label"), prop(varFor("n"), "label"))
       )
       .argument()
       .build()
@@ -2985,6 +2998,7 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.column
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createPattern
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
+            |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeFull
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithProperties
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationship
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.delete

@@ -405,7 +405,7 @@ object ClauseConverters {
       // CREATE (n :L1:L2 {prop: 42})
       case PathPatternPart(NodePattern(Some(id), labelExpression, props, None)) =>
         val labels = getLabelNameSet(labelExpression)
-        commands += CreateNode(id, labels, props)
+        commands += CreateNode(id, labels, Set.empty, props)
         seenPatternNodes += id
         ()
 
@@ -456,7 +456,7 @@ object ClauseConverters {
 
   private def createNodeCommand(pattern: NodePattern): CreateNodeCommand = pattern match {
     case NodePattern(Some(variable), labelExpression, props, None) =>
-      CreateNodeCommand(CreateNode(variable, getLabelNameSet(labelExpression), props), variable)
+      CreateNodeCommand(CreateNode(variable, getLabelNameSet(labelExpression), Set.empty, props), variable)
     case _ => throw new InternalException("All nodes must be named at this instance")
   }
 
@@ -766,7 +766,7 @@ object ClauseConverters {
         val labels = getLabelNameSet(labelExpression)
         val labelPredicates = labels.map(l => HasLabels(id, Seq(l))(id.position))
         val propertyPredicates = toPropertySelection(id, toPropertyMap(props))
-        val createNodePattern = CreateNode(id, labels, props)
+        val createNodePattern = CreateNode(id, labels, Set.empty, props)
 
         val selections = asSelections(clause.where) ++ Selections.from(labelPredicates ++ propertyPredicates)
 

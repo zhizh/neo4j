@@ -3474,12 +3474,15 @@ case class LogicalPlan2PlanDescription(
   }
 
   private def createNodeDescription(cn: CreateNode) = {
-    val CreateNode(node, labels, properties) = cn
-    val separator = if (labels.isEmpty) pretty": " else pretty" "
+    val CreateNode(node, labels, labelExpressions, properties) = cn
+    val separator = if (labels.isEmpty && labelExpressions.isEmpty) pretty": " else pretty" "
     val labelsString =
       if (labels.nonEmpty) labels.map(x => asPrettyString(x.name)).mkPrettyString(":", ":", "") else pretty""
+    val labelExpressionsString =
+      if (labelExpressions.nonEmpty) labelExpressions.map(asPrettyString(_)).mkPrettyString(":$(", "):$(", ")")
+      else pretty""
     val propsString = properties.map(p => pretty"$separator${asPrettyString(p)}").getOrElse(pretty"")
-    pretty"(${asPrettyString(node)}$labelsString$propsString)"
+    pretty"(${asPrettyString(node)}$labelsString$labelExpressionsString$propsString)"
   }
 
   private def expandExpressionDescription(

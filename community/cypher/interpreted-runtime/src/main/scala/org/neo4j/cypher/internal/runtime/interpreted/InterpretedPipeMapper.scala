@@ -1035,9 +1035,14 @@ case class InterpretedPipeMapper(
       sideEffect match {
         case CreatePattern(commands) =>
           commands.map {
-            case org.neo4j.cypher.internal.ir.CreateNode(node, labels, properties) =>
+            case org.neo4j.cypher.internal.ir.CreateNode(node, labels, labelExpressions, properties) =>
               CreateNode(
-                CreateNodeCommand(node.name, labels.toSeq.map(LazyLabel.apply), properties.map(buildExpression)),
+                CreateNodeCommand(
+                  node.name,
+                  labels.toSeq.map(LazyLabel.apply),
+                  labelExpressions.toSeq.map(buildExpression),
+                  properties.map(buildExpression)
+                ),
                 allowNullOrNaNProperty = true
               )
             case r: org.neo4j.cypher.internal.ir.CreateRelationship =>
@@ -1641,7 +1646,12 @@ case class InterpretedPipeMapper(
           source,
           commands.map {
             case n: org.neo4j.cypher.internal.ir.CreateNode =>
-              CreateNodeCommand(n.variable.name, n.labels.toSeq.map(LazyLabel.apply), n.properties.map(buildExpression))
+              CreateNodeCommand(
+                n.variable.name,
+                n.labels.toSeq.map(LazyLabel.apply),
+                n.labelExpressions.toSeq.map(buildExpression),
+                n.properties.map(buildExpression)
+              )
             case r: org.neo4j.cypher.internal.ir.CreateRelationship =>
               CreateRelationshipCommand(
                 r.variable.name,
@@ -1655,9 +1665,14 @@ case class InterpretedPipeMapper(
 
       case Merge(_, createNodes, createRelationships, onMatch, onCreate, nodesToLock) =>
         val creates = createNodes.map {
-          case org.neo4j.cypher.internal.ir.CreateNode(node, labels, properties) =>
+          case org.neo4j.cypher.internal.ir.CreateNode(node, labels, dynamicLabels, properties) =>
             CreateNode(
-              CreateNodeCommand(node.name, labels.toSeq.map(LazyLabel.apply), properties.map(buildExpression)),
+              CreateNodeCommand(
+                node.name,
+                labels.toSeq.map(LazyLabel.apply),
+                dynamicLabels.toSeq.map(buildExpression),
+                properties.map(buildExpression)
+              ),
               allowNullOrNaNProperty = false
             )
         } ++ createRelationships.map {

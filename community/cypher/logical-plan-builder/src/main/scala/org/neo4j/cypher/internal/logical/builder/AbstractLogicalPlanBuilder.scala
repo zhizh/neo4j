@@ -3359,13 +3359,42 @@ object AbstractLogicalPlanBuilder {
   }
 
   def createNode(node: String, labels: String*): CreateNode =
-    CreateNode(varFor(node), labels.map(LabelName(_)(pos)).toSet, None)
+    createNodeFull(node, labels = labels)
+
+  def createNodeWithDynamicLabels(node: String, dynamicLabels: Expression*): CreateNode =
+    createNodeFullExpression(node, dynamicLabels = dynamicLabels)
 
   def createNodeWithProperties(node: String, labels: Seq[String], properties: String): CreateNode =
-    CreateNode(varFor(node), labels.map(LabelName(_)(pos)).toSet, Some(Parser.parseExpression(properties)))
+    createNodeFullExpression(node, labels, properties = Some(Parser.parseExpression(properties)))
 
   def createNodeWithProperties(node: String, labels: Seq[String], properties: MapExpression): CreateNode =
-    CreateNode(varFor(node), labels.map(LabelName(_)(pos)).toSet, Some(properties))
+    createNodeFullExpression(node, labels, properties = Some(properties))
+
+  def createNodeFull(
+    node: String,
+    labels: Seq[String] = Seq.empty,
+    dynamicLabels: Seq[String] = Seq.empty,
+    properties: Option[String] = None
+  ): CreateNode =
+    createNodeFullExpression(
+      node,
+      labels = labels,
+      dynamicLabels = dynamicLabels.map(Parser.parseExpression),
+      properties = properties.map(Parser.parseExpression)
+    )
+
+  def createNodeFullExpression(
+    node: String,
+    labels: Seq[String] = Seq.empty,
+    dynamicLabels: Seq[Expression] = Seq.empty,
+    properties: Option[Expression] = None
+  ): CreateNode =
+    CreateNode(
+      varFor(node),
+      labels.map(LabelName(_)(pos)).toSet,
+      dynamicLabels.toSet,
+      properties
+    )
 
   def createRelationship(
     relationship: String,

@@ -962,11 +962,12 @@ class SlottedPipeMapper(
 
       case CreatePattern(commands) =>
         commands.map {
-          case CreateNode(node, labels, properties) =>
+          case CreateNode(node, labels, labelExpressions, properties) =>
             CreateSlottedNode(
               CreateNodeSlottedCommand(
                 slots.getLongOffsetFor(node),
                 labels.toSeq.map(l => LazyLabel(l)(semanticTable)),
+                labelExpressions.toSeq.map(convertExpressions),
                 properties.map(convertExpressions)
               ),
               allowNullOrNaNProperty = true
@@ -1395,6 +1396,7 @@ class SlottedPipeMapper(
               CreateNodeSlottedCommand(
                 slots.getLongOffsetFor(n.variable),
                 n.labels.toSeq.map(l => LazyLabel(l)(semanticTable)),
+                n.labelExpressions.toSeq.map(convertExpressions),
                 n.properties.map(convertExpressions)
               )
 
@@ -1414,11 +1416,12 @@ class SlottedPipeMapper(
 
       case Merge(_, createNodes, createRelationships, onMatch, onCreate, nodesToLock) =>
         val creates = createNodes.map {
-          case CreateNode(node, labels, properties) =>
+          case CreateNode(node, labels, labelExpressions, properties) =>
             CreateSlottedNode(
               CreateNodeSlottedCommand(
                 slots.getLongOffsetFor(node),
                 labels.toSeq.map(l => LazyLabel(l)(semanticTable)),
+                labelExpressions.toSeq.map(convertExpressions),
                 properties.map(convertExpressions)
               ),
               allowNullOrNaNProperty = false

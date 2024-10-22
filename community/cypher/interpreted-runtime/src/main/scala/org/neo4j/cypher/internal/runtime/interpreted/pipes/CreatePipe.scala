@@ -30,6 +30,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.IsMap
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.makeValueNeoSafe
 import org.neo4j.cypher.internal.util.attribution.Id
+import org.neo4j.cypher.operations.CypherFunctions
 import org.neo4j.exceptions.CypherTypeException
 import org.neo4j.exceptions.InternalException
 import org.neo4j.values.AnyValue
@@ -38,6 +39,8 @@ import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.VirtualNodeValue
 import org.neo4j.values.virtual.VirtualRelationshipValue
 import org.neo4j.values.virtual.VirtualValues
+
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 /**
  * Extends PipeWithSource with methods for setting properties and labels on entities.
@@ -86,7 +89,12 @@ abstract class EntityCreatePipe(src: Pipe) extends BaseCreatePipe(src) {
     state: QueryState,
     data: CreateNodeCommand
   ): (String, VirtualNodeValue) = {
-    val labelIds = data.labels.map(_.getOrCreateId(state.query)).toArray
+    val dynamicLabels = CreateNodeCommand.resolveLabelExpressions(data.labelExpressions, context, state)
+
+    val labelIds =
+      data.labels.map(_.getOrCreateId(state.query)).toArray ++
+        dynamicLabels.map(state.query.getOrCreateLabelId)
+
     val node = state.query.createNodeId(labelIds)
 
     data.properties.foreach(setProperties(context, state, node, _, state.query.nodeWriteOps))
@@ -151,12 +159,24 @@ sealed trait CreateCommand {
   def idName: String
 }
 
-case class CreateNodeCommand(idName: String, labels: Seq[LazyLabel], properties: Option[Expression])
-    extends CreateCommand {
+case class CreateNodeCommand(
+  idName: String,
+  labels: Seq[LazyLabel],
+  labelExpressions: Seq[Expression],
+  properties: Option[Expression]
+) extends CreateCommand {
   checkOnlyWhenAssertionsAreEnabled(labels.toSet.size == labels.size)
+  checkOnlyWhenAssertionsAreEnabled(labelExpressions.toSet.size == labelExpressions.size)
 
   override def createEntity(pipe: CreatePipe, context: CypherRow, state: QueryState): (String, AnyValue) =
     pipe.createNode(context, state, this)
+}
+
+object CreateNodeCommand {
+
+  def resolveLabelExpressions(labelExpressions: Seq[Expression], context: CypherRow, state: QueryState): Seq[String] = {
+    labelExpressions.flatMap(label => CypherFunctions.asStringList(label(context, state)).asScala)
+  }
 }
 
 case class CreateRelationshipCommand(

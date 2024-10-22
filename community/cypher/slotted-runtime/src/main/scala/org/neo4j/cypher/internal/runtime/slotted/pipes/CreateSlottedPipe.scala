@@ -26,6 +26,7 @@ import org.neo4j.cypher.internal.runtime.LenientCreateRelationship
 import org.neo4j.cypher.internal.runtime.ReadableRow
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.BaseCreatePipe
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.CreateNodeCommand
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.LazyLabel
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.LazyType
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.Pipe
@@ -46,7 +47,12 @@ abstract class EntityCreateSlottedPipe(source: Pipe) extends BaseCreatePipe(sour
    * Create node and return id.
    */
   def createNode(context: CypherRow, state: QueryState, command: CreateNodeSlottedCommand): Long = {
-    val labelIds = command.labels.map(_.getOrCreateId(state.query)).toArray
+    val dynamicLabels =
+      CreateNodeCommand.resolveLabelExpressions(command.labelExpressions, context, state)
+
+    val labelIds =
+      command.labels.map(_.getOrCreateId(state.query)).toArray ++
+        dynamicLabels.map(state.query.getOrCreateLabelId)
     val nodeId = state.query.createNodeId(labelIds)
     command.properties.foreach(setProperties(context, state, nodeId, _, state.query.nodeWriteOps))
     nodeId
@@ -84,9 +90,14 @@ sealed trait CreateSlottedCommand {
   def idOffset: Int
 }
 
-case class CreateNodeSlottedCommand(idOffset: Int, labels: Seq[LazyLabel], properties: Option[Expression])
-    extends CreateSlottedCommand {
+case class CreateNodeSlottedCommand(
+  idOffset: Int,
+  labels: Seq[LazyLabel],
+  labelExpressions: Seq[Expression],
+  properties: Option[Expression]
+) extends CreateSlottedCommand {
   checkOnlyWhenAssertionsAreEnabled(labels.toSet.size == labels.size)
+  checkOnlyWhenAssertionsAreEnabled(labelExpressions.toSet.size == labelExpressions.size)
 
   override def createEntity(pipe: CreateSlottedPipe, context: CypherRow, state: QueryState): Long = {
     pipe.createNode(context, state, this)

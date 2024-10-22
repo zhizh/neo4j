@@ -1839,11 +1839,19 @@ object LogicalPlanToPlanBuilderString {
     case c: CreateRelationship => createRelationshipToString(c)
   }
 
-  private def createNodeToString(createNode: CreateNode) = createNode match {
-    case CreateNode(idName, labels, None) =>
-      s"createNode(${wrapInQuotationsAndMkString(idName.name +: labels.map(_.name).toSeq)})"
-    case CreateNode(idName, labels, Some(props)) =>
-      s"createNodeWithProperties(${wrapInQuotations(idName.name)}, Seq(${wrapInQuotationsAndMkString(labels.map(_.name))}), ${wrapInQuotations(expressionStringifier(props))})"
+  private def createNodeToString(createNode: CreateNode) = {
+    val name = wrapInQuotations(createNode.variable.name)
+    val labels = if (createNode.labels.nonEmpty) {
+      s", labels = Seq(${wrapInQuotationsAndMkString(createNode.labels.map(_.name))})"
+    } else ""
+    val dynamicLabels = if (createNode.labelExpressions.nonEmpty) {
+      s", dynamicLabels = Seq(${wrapInQuotationsAndMkString(createNode.labelExpressions.map(expressionStringifier(_)))})"
+    } else ""
+    val props = createNode.properties.map { p =>
+      s", properties = Some(${wrapInQuotations(expressionStringifier(p))})"
+    }.getOrElse("")
+
+    s"createNodeFull($name$labels$dynamicLabels$props)"
   }
 
   private def createRelationshipToString(rel: CreateRelationship) = {

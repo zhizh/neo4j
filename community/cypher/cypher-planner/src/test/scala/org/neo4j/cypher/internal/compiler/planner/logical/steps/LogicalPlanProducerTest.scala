@@ -506,7 +506,7 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
 
   test("Create should eliminate provided order") {
     shouldEliminateProvidedOrder(ctx =>
-      ctx.producer.planCreate(ctx.lhs, CreatePattern(Seq(CreateNode(v"n", Set(), None))), ctx.context)
+      ctx.producer.planCreate(ctx.lhs, CreatePattern(Seq(CreateNode(v"n", Set(), Set(), None))), ctx.context)
     )
   }
 
@@ -514,7 +514,7 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
     shouldEliminateProvidedOrder(ctx =>
       ctx.producer.planMerge(
         ctx.lhs,
-        Seq(CreateNode(v"n", Set(), None)),
+        Seq(CreateNode(v"n", Set(), Set(), None)),
         Seq.empty,
         Seq(SetNodePropertyPattern(v"x", PropertyKeyName("p")(pos), literalInt(1))),
         Seq.empty,
@@ -528,7 +528,7 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
     shouldRetainProvidedOrder(ctx =>
       ctx.producer.planMerge(
         ctx.lhs,
-        Seq(CreateNode(v"n", Set(), None)),
+        Seq(CreateNode(v"n", Set(), Set(), None)),
         Seq.empty,
         Seq.empty,
         Seq.empty,
@@ -2010,7 +2010,7 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
 
   test("should reset cached properties for planCreate") {
     shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
-      ctx.producer.planCreate(ctx.lhs, CreatePattern(Seq(CreateNode(v"n", Set(), None))), ctx.context)
+      ctx.producer.planCreate(ctx.lhs, CreatePattern(Seq(CreateNode(v"n", Set(), Set(), None))), ctx.context)
     )
   }
 
@@ -2018,7 +2018,7 @@ class LogicalPlanProducerTest extends CypherFunSuite with LogicalPlanningTestSup
     shouldResetCachedPropertiesToEmpty((ctx: PlanCreationContext) =>
       ctx.producer.planMerge(
         ctx.lhs,
-        Seq(CreateNode(v"n", Set(), None)),
+        Seq(CreateNode(v"n", Set(), Set(), None)),
         Seq.empty,
         Seq(SetNodePropertyPattern(v"x", PropertyKeyName("p")(pos), literalInt(1))),
         Seq.empty,

@@ -2901,7 +2901,7 @@ class StatementConvertersTest extends CypherFunSuite with LogicalPlanningTestSup
   }
 
   private def createNodeIr(node: String, properties: Option[String] = None): org.neo4j.cypher.internal.ir.CreateNode =
-    org.neo4j.cypher.internal.ir.CreateNode(varFor(node), Set.empty, properties.map(Parser.parseExpression))
+    org.neo4j.cypher.internal.ir.CreateNode(varFor(node), Set.empty, Set.empty, properties.map(Parser.parseExpression))
 
   private def createRelationshipIr(
     relationship: String,

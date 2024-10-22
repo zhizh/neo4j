@@ -38,11 +38,15 @@ sealed trait CreateCommand extends HasMappableExpressions[CreateCommand] {
 case class CreateNode(
   variable: LogicalVariable,
   labels: Set[LabelName],
+  labelExpressions: Set[Expression],
   properties: Option[Expression]
 ) extends CreateCommand {
-  def dependencies: Set[LogicalVariable] = properties.map(_.dependencies).getOrElse(Set.empty)
 
-  override def mapExpressions(f: Expression => Expression): CreateNode = copy(properties = properties.map(f))
+  def dependencies: Set[LogicalVariable] =
+    (labelExpressions ++ properties).flatMap(_.dependencies)
+
+  override def mapExpressions(f: Expression => Expression): CreateNode =
+    copy(properties = properties.map(f), labelExpressions = labelExpressions.map(f))
 }
 
 /**

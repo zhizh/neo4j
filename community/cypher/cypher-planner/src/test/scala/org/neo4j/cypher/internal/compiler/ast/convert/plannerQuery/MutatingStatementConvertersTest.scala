@@ -346,7 +346,7 @@ class MutatingStatementConvertersTest extends CypherFunSuite with LogicalPlannin
         .empty
         .addSelectivePathPattern(shortestPathPattern)
         .addMutatingPatterns(CreatePattern(Seq(
-          CreateNode(v"x", Set.empty, None),
+          CreateNode(v"x", Set.empty, Set.empty, None),
           CreateRelationship(v"r3", v"v", relTypeName("R"), v"x", OUTGOING, None)
         )))
 
@@ -393,7 +393,7 @@ class MutatingStatementConvertersTest extends CypherFunSuite with LogicalPlannin
   }
 
   private def nodes(names: String*) = {
-    names.map(varFor).map(name => CreateNode(name, Set.empty, None))
+    names.map(varFor).map(name => CreateNode(name, Set.empty, Set.empty, None))
   }
 
   private def relationship(name: String, startNode: String, relType: String, endNode: String) = {
