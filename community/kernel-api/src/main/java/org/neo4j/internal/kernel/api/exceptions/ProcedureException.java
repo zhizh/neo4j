@@ -645,4 +645,34 @@ public class ProcedureException extends KernelException {
                                 + "with this name exists!",
                         databaseName));
     }
+
+    public static ProcedureException invalidNumberOfProcedureOrFunctionArguments(
+            Number expectedNumberOfArgs,
+            Number obtainedNumberOfArgs,
+            String procedureFunction,
+            String signature,
+            String legacyMessage) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I13)
+                        .withParam(GqlParams.NumberParam.count1, expectedNumberOfArgs)
+                        .withParam(GqlParams.NumberParam.count2, obtainedNumberOfArgs)
+                        .withParam(GqlParams.StringParam.procFun, procedureFunction)
+                        .withParam(GqlParams.StringParam.sig, signature)
+                        .build())
+                .build();
+
+        return new ProcedureException(gql, Status.Procedure.ProcedureCallFailed, legacyMessage);
+    }
+
+    public static ProcedureException invalidCallSignature(
+            String procedureFunction, String signature, String legacyMessage) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I51)
+                        .withParam(GqlParams.StringParam.procFun, procedureFunction)
+                        .withParam(GqlParams.StringParam.sig, signature)
+                        .build())
+                .build();
+
+        return new ProcedureException(gql, Status.Procedure.ProcedureCallFailed, legacyMessage);
+    }
 }

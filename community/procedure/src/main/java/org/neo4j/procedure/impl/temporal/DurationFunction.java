@@ -33,7 +33,6 @@ import org.neo4j.internal.kernel.api.procs.FieldSignature;
 import org.neo4j.internal.kernel.api.procs.Neo4jTypes;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
 import org.neo4j.internal.kernel.api.procs.UserFunctionSignature;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.procedure.CallableUserFunction;
 import org.neo4j.kernel.api.procedure.Context;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
@@ -90,9 +89,17 @@ class DurationFunction implements CallableUserFunction {
             } else if (input[0] instanceof MapValue map) {
                 return DurationValue.build(map);
             }
+            throw ProcedureException.invalidCallSignature(
+                    getClass().getSimpleName(),
+                    this.signature().toString(),
+                    "Invalid call signature for " + getClass().getSimpleName() + ": Provided input was "
+                            + Arrays.toString(input));
         }
-        throw new ProcedureException(
-                Status.Procedure.ProcedureCallFailed,
+        throw ProcedureException.invalidNumberOfProcedureOrFunctionArguments(
+                1,
+                input.length,
+                getClass().getSimpleName(),
+                this.signature().toString(),
                 "Invalid call signature for " + getClass().getSimpleName() + ": Provided input was "
                         + Arrays.toString(input));
     }
@@ -164,9 +171,17 @@ class DurationFunction implements CallableUserFunction {
                 if (input[0] instanceof TemporalValue from && input[1] instanceof TemporalValue to) {
                     return DurationValue.between(unit, from, to);
                 }
+                throw ProcedureException.invalidCallSignature(
+                        getClass().getSimpleName(),
+                        this.signature.toString(),
+                        "Invalid call signature for " + getClass().getSimpleName() + ": Provided input was "
+                                + Arrays.toString(input));
             }
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureCallFailed,
+            throw ProcedureException.invalidNumberOfProcedureOrFunctionArguments(
+                    2,
+                    input.length,
+                    getClass().getSimpleName(),
+                    this.signature.toString(),
                     "Invalid call signature for " + getClass().getSimpleName() + ": Provided input was "
                             + Arrays.toString(input));
         }

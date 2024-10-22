@@ -18,6 +18,7 @@ package org.neo4j.cypher.internal.ast.semantics.functions
 
 import org.neo4j.cypher.internal.ast.SemanticCheckInTest.SemanticCheckWithDefaultContext
 import org.neo4j.cypher.internal.ast.semantics.SemanticCheckResult
+import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.ast.semantics.SemanticExpressionCheck
 import org.neo4j.cypher.internal.ast.semantics.SemanticFunSuite
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
@@ -27,6 +28,7 @@ import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.FunctionName
 import org.neo4j.cypher.internal.util.DummyPosition
 import org.neo4j.cypher.internal.util.symbols.TypeSpec
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
 
 abstract class FunctionTestBase(funcName: String) extends SemanticFunSuite {
 
@@ -42,6 +44,14 @@ abstract class FunctionTestBase(funcName: String) extends SemanticFunSuite {
     val (result, _) = evaluateWithTypes(argumentTypes.toIndexedSeq)
     result.errors should not be empty
     result.errors.head.msg should equal(message)
+  }
+
+  protected def testInvalidApplicationWithGql(argumentTypes: TypeSpec*)(message: String)(gql: ErrorGqlStatusObject)
+    : Unit = {
+    val (result, _) = evaluateWithTypes(argumentTypes.toIndexedSeq)
+    result.errors should not be empty
+    result.errors.head.msg should equal(message)
+    result.errors.head.asInstanceOf[SemanticError].gqlStatusObject should equal(gql)
   }
 
   protected def evaluateWithTypes(argumentTypes: IndexedSeq[TypeSpec]): (SemanticCheckResult, FunctionInvocation) = {

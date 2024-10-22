@@ -16,15 +16,42 @@
  */
 package org.neo4j.cypher.internal.ast.semantics.functions
 
+import org.neo4j.cypher.internal.util.DummyPosition
 import org.neo4j.cypher.internal.util.symbols.CTFloat
 import org.neo4j.cypher.internal.util.symbols.CTInteger
 import org.neo4j.cypher.internal.util.symbols.CTNode
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class AbsTest extends FunctionTestBase("abs") {
 
   test("shouldFailIfWrongArguments") {
-    testInvalidApplication()("Insufficient parameters for function 'abs'")
-    testInvalidApplication(CTFloat, CTFloat)("Too many parameters for function 'abs'")
+    val dummy = 5
+    testInvalidApplicationWithGql()("Insufficient parameters for function 'abs'")(
+      ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+        .atPosition(DummyPosition(dummy).line, DummyPosition(dummy).column, DummyPosition(dummy).offset)
+        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I13)
+          .atPosition(DummyPosition(dummy).line, DummyPosition(dummy).column, DummyPosition(dummy).offset)
+          .withParam(GqlParams.NumberParam.count1, 1)
+          .withParam(GqlParams.NumberParam.count2, 0)
+          .withParam(GqlParams.StringParam.procFun, "abs")
+          .withParam(GqlParams.StringParam.sig, "abs(input :: INTEGER | FLOAT) :: INTEGER | FLOAT")
+          .build())
+        .build()
+    )
+    testInvalidApplicationWithGql(CTFloat, CTFloat)("Too many parameters for function 'abs'")(
+      ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+        .atPosition(DummyPosition(dummy).line, DummyPosition(dummy).column, DummyPosition(dummy).offset)
+        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I13)
+          .atPosition(DummyPosition(dummy).line, DummyPosition(dummy).column, DummyPosition(dummy).offset)
+          .withParam(GqlParams.NumberParam.count1, 1)
+          .withParam(GqlParams.NumberParam.count2, 2)
+          .withParam(GqlParams.StringParam.procFun, "abs")
+          .withParam(GqlParams.StringParam.sig, "abs(input :: INTEGER | FLOAT) :: INTEGER | FLOAT")
+          .build())
+        .build()
+    )
   }
 
   test("shouldHandleAllSpecializations") {

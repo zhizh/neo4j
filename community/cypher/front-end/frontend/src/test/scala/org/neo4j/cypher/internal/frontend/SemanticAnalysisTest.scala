@@ -55,7 +55,14 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
     val query = "RETURN max() AS max"
     expectErrorsFrom(
       query,
-      Set(SemanticError("Insufficient parameters for function 'max'", InputPosition(7, 1, 8)))
+      Set(SemanticError.invalidNumberOfProcedureOrFunctionArguments(
+        1,
+        0,
+        "max",
+        "max(input :: ANY) :: ANY",
+        "Insufficient parameters for function 'max'",
+        InputPosition(7, 1, 8)
+      ))
     )
   }
 

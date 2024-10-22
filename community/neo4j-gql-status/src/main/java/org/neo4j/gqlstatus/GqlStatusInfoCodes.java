@@ -2848,6 +2848,15 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
             "token name too long",
             ErrorClassification.CLIENT_ERROR),
+    STATUS_42I51(
+            new GqlStatus("42I51"),
+            """
+                    The procedure or function { %s } must have the signature: { %s }.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.procFun, GqlParams.StringParam.sig},
+            emptyMap(),
+            Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
+            "invalid call signature",
+            ErrorClassification.CLIENT_ERROR),
     STATUS_42N00(
             new GqlStatus("42N00"),
             """

@@ -679,6 +679,32 @@ object SemanticError {
       position
     )
   }
+
+  def invalidNumberOfProcedureOrFunctionArguments(
+    expectedNumberOfArgs: Int,
+    obtainedNumberOfArgs: Int,
+    procedureFunction: String,
+    signature: String,
+    legacyMessage: String,
+    position: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I13)
+        .atPosition(position.line, position.column, position.offset)
+        .withParam(GqlParams.NumberParam.count1, expectedNumberOfArgs)
+        .withParam(GqlParams.NumberParam.count2, obtainedNumberOfArgs)
+        .withParam(GqlParams.StringParam.procFun, procedureFunction)
+        .withParam(GqlParams.StringParam.sig, signature)
+        .build())
+      .build()
+
+    SemanticError(
+      gql,
+      legacyMessage,
+      position
+    )
+  }
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

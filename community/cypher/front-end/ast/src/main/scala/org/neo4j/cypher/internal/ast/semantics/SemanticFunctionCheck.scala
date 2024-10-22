@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.expressions.MapExpression
 import org.neo4j.cypher.internal.expressions.PatternExpression
 import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
+import org.neo4j.cypher.internal.expressions.TypeSignature
 import org.neo4j.cypher.internal.expressions.TypeSignatures
 import org.neo4j.cypher.internal.expressions.functions.AggregatingFunction
 import org.neo4j.cypher.internal.expressions.functions.Coalesce
@@ -99,7 +100,7 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
   protected def semanticCheck(ctx: Expression.SemanticContext, invocation: FunctionInvocation): SemanticCheck =
     invocation.function match {
       case Coalesce =>
-        checkMinArgs(invocation, 1) chain
+        checkMinArgs(invocation, 1, Coalesce.signatures) chain
           expectType(CTAny.covariant, invocation.arguments) chain
           specifyType(unionOfTypes(invocation.arguments), invocation)
 
@@ -109,7 +110,7 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
         }
 
       case Exists =>
-        checkArgs(invocation, 1) ifOkChain {
+        checkArgs(invocation, 1, Exists.signatures) ifOkChain {
           expectType(CTAny.covariant, invocation.arguments.head) chain
             (invocation.arguments.head match {
               case _: PatternExpression => None
@@ -130,7 +131,7 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
         } chain specifyType(CTBoolean, invocation)
 
       case Head =>
-        checkArgs(invocation, 1) ifOkChain {
+        checkArgs(invocation, 1, Head.signatures) ifOkChain {
           expectType(CTList(CTAny).covariant, invocation.arguments.head) chain
             specifyType(possibleTypes(invocation.arguments.head), invocation)
         }
@@ -157,7 +158,7 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
         def possibleTypes(expression: Expression): TypeGenerator = s =>
           (types(expression)(s) constrain CTList(CTAny)).unwrapLists
 
-        checkArgs(invocation, 1) ifOkChain {
+        checkArgs(invocation, 1, Last.signatures) ifOkChain {
           expectType(CTList(CTAny).covariant, invocation.arguments.head) chain
             specifyType(possibleTypes(invocation.arguments.head), invocation)
         }
@@ -188,24 +189,24 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
           checkPointMap(invocation.args(0))
 
       case Reverse =>
-        checkArgs(invocation, 1) ifOkChain {
+        checkArgs(invocation, 1, Reverse.signatures) ifOkChain {
           expectType(CTList(CTAny).covariant | CTString, invocation.arguments.head) chain
             specifyType(types(invocation.arguments.head), invocation)
         }
 
       case Tail =>
-        checkArgs(invocation, 1) ifOkChain {
+        checkArgs(invocation, 1, Tail.signatures) ifOkChain {
           expectType(CTList(CTAny).covariant, invocation.arguments(0)) chain
             specifyType(types(invocation.arguments(0)), invocation)
         }
 
       case ToBoolean =>
-        checkArgs(invocation, 1) ifOkChain
+        checkArgs(invocation, 1, ToBoolean.signatures) ifOkChain
           checkToSpecifiedTypeOfArgument(invocation, Seq(CTString, CTBoolean, CTInteger)) ifOkChain
           specifyType(CTBoolean, invocation)
 
       case ToString =>
-        checkArgs(invocation, 1) ifOkChain
+        checkArgs(invocation, 1, ToString.signatures) ifOkChain
           checkToSpecifiedTypeOfArgument(invocation, ToString.validInputTypes) ifOkChain
           specifyType(CTString, invocation)
 
@@ -217,11 +218,11 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
         SemanticError(s"'distance' has been replaced by 'point.distance'", invocation.position)
 
       case Distance =>
-        checkArgs(invocation, 2) ifOkChain
+        checkArgs(invocation, 2, Distance.signatures) ifOkChain
           specifyType(CTFloat, invocation)
 
       case WithinBBox =>
-        checkArgs(invocation, 3) ifOkChain
+        checkArgs(invocation, 3, WithinBBox.signatures) ifOkChain
           specifyType(CTBoolean, invocation)
 
       case UnresolvedFunction =>
@@ -240,22 +241,48 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
     f: TypeSignatures,
     invocation: FunctionInvocation
   ): SemanticCheck =
-    checkMinArgs(invocation, f.signatureLengths.min) chain
-      checkMaxArgs(invocation, f.signatureLengths.max) chain
+    checkMinArgs(invocation, f.signatureLengths.min, f.signatures) chain
+      checkMaxArgs(invocation, f.signatureLengths.max, f.signatures) chain
       checkTypes(invocation, f.signatures)
 
-  protected def checkArgs(invocation: FunctionInvocation, n: Int): Option[SemanticError] =
-    Vector(checkMinArgs(invocation, n), checkMaxArgs(invocation, n)).flatten.headOption
+  protected def checkArgs(
+    invocation: FunctionInvocation,
+    n: Int,
+    signatures: Vector[TypeSignature]
+  ): Option[SemanticError] =
+    Vector(checkMinArgs(invocation, n, signatures), checkMaxArgs(invocation, n, signatures)).flatten.headOption
 
-  protected def checkMaxArgs(invocation: FunctionInvocation, n: Int): Option[SemanticError] =
+  protected def checkMaxArgs(
+    invocation: FunctionInvocation,
+    n: Int,
+    signatures: Seq[TypeSignature]
+  ): Option[SemanticError] =
     if (invocation.arguments.length > n)
-      Some(SemanticError(s"Too many parameters for function '${invocation.function.name}'", invocation.position))
+      Some(SemanticError.invalidNumberOfProcedureOrFunctionArguments(
+        n,
+        invocation.arguments.length,
+        invocation.name,
+        signatures.map(signature => signature.getSignatureAsString).mkString(" or "),
+        s"Too many parameters for function '${invocation.function.name}'",
+        invocation.position
+      ))
     else
       None
 
-  protected def checkMinArgs(invocation: FunctionInvocation, n: Int): Option[SemanticError] =
+  protected def checkMinArgs(
+    invocation: FunctionInvocation,
+    n: Int,
+    signatures: Seq[TypeSignature]
+  ): Option[SemanticError] =
     if (invocation.arguments.length < n)
-      Some(SemanticError(s"Insufficient parameters for function '${invocation.function.name}'", invocation.position))
+      Some(SemanticError.invalidNumberOfProcedureOrFunctionArguments(
+        n,
+        invocation.arguments.length,
+        invocation.name,
+        signatures.map(signature => signature.getSignatureAsString).mkString(" or "),
+        s"Insufficient parameters for function '${invocation.function.name}'",
+        invocation.position
+      ))
     else
       None
 
