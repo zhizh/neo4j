@@ -62,10 +62,10 @@ class ParquetGroupInputIterator implements InputIterator {
     @Override
     public synchronized boolean next(InputChunk chunk) throws IOException {
         while (true) {
+            if (!source.hasNextFile()) {
+                return false;
+            }
             if (current == null) {
-                if (!source.hasNextFile()) {
-                    return false;
-                }
                 ParquetData data = source.getNextFile();
                 current = new ParquetInputIterator(
                         data, groups, idType, columnInfo, data.defaultTimezoneSupplier(), arrayDelimiter);
