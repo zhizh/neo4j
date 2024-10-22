@@ -26,6 +26,7 @@ import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N07
 
 class ProjectionClauseTest extends CypherFunSuite with AstConstructionTestSupport {
 
@@ -278,8 +279,9 @@ class ProjectionClauseTest extends CypherFunSuite with AstConstructionTestSuppor
     val result = returnObj.semanticCheckContinuation(middleState.currentScope.scope, Some(outerScope)).run(middleState)
 
     // THEN
+    val gql = getGql42001_42N07("x", varPosition.line, varPosition.column, varPosition.offset)
     result.errors shouldEqual Seq(
-      SemanticError("Variable `x` already declared in outer scope", varPosition)
+      SemanticError(gql, "Variable `x` already declared in outer scope", varPosition)
     )
   }
 }

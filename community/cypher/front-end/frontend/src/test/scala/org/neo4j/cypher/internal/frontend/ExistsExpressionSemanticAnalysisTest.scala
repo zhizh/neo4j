@@ -20,6 +20,9 @@ import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N07
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
 
 class ExistsExpressionSemanticAnalysisTest
     extends CypherFunSuite
@@ -30,6 +33,7 @@ class ExistsExpressionSemanticAnalysisTest
          |""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N57("Exists", 2, 8, 17),
         "An Exists Expression cannot contain any updates",
         InputPosition(17, 2, 8)
       )
@@ -65,6 +69,7 @@ class ExistsExpressionSemanticAnalysisTest
          |""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N57("Exists", 2, 8, 17),
         "An Exists Expression cannot contain any updates",
         InputPosition(17, 2, 8)
       )
@@ -76,6 +81,7 @@ class ExistsExpressionSemanticAnalysisTest
          |""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N57("Exists", 2, 8, 17),
         "An Exists Expression cannot contain any updates",
         InputPosition(17, 2, 8)
       )
@@ -87,6 +93,7 @@ class ExistsExpressionSemanticAnalysisTest
          |""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N57("Exists", 2, 8, 17),
         "An Exists Expression cannot contain any updates",
         InputPosition(17, 2, 8)
       )
@@ -165,6 +172,7 @@ class ExistsExpressionSemanticAnalysisTest
          |""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("aNum", 4, 13, 53),
         "The variable `aNum` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(53, 4, 13)
       )
@@ -182,6 +190,7 @@ class ExistsExpressionSemanticAnalysisTest
          |""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("aNum", 5, 13, 91),
         "The variable `aNum` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(91, 5, 13)
       )
@@ -198,6 +207,7 @@ class ExistsExpressionSemanticAnalysisTest
          |""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("a", 4, 13, 56),
         "The variable `a` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(56, 4, 13)
       )
@@ -217,6 +227,7 @@ class ExistsExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("a", 4, 15, 52),
         "The variable `a` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(52, 4, 15)
       )
@@ -239,6 +250,7 @@ class ExistsExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("a", 10, 15, 127),
         "The variable `a` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(127, 10, 15)
       )
@@ -252,6 +264,7 @@ class ExistsExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("a", 1, 48, 47),
         "The variable `a` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(47, 1, 48)
       )
@@ -300,6 +313,7 @@ class ExistsExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("x", 7, 15, 95),
         "The variable `x` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(95, 7, 15)
       )
@@ -335,6 +349,7 @@ class ExistsExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("y", 6, 26, 105),
         "The variable `y` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(105, 6, 26)
       )
@@ -428,6 +443,7 @@ class ExistsExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 73),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(73, 5, 5)
       )
@@ -445,6 +461,7 @@ class ExistsExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(4, 5, 55),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(55, 4, 5)
       )
@@ -462,6 +479,7 @@ class ExistsExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 68),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(68, 5, 5)
       )
@@ -479,6 +497,7 @@ class ExistsExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(4, 5, 55),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(55, 4, 5)
       )
@@ -498,6 +517,7 @@ class ExistsExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(4, 5, 55),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(55, 4, 5)
       )
@@ -519,10 +539,12 @@ class ExistsExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 68),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(68, 5, 5)
       ),
       SemanticError(
+        getGql42001_42N39(8, 5, 105),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(105, 8, 5)
       ),
@@ -548,10 +570,12 @@ class ExistsExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher5), testName).errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 68),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(68, 5, 5)
       ),
       SemanticError(
+        getGql42001_42N39(8, 5, 105),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(105, 8, 5)
       )

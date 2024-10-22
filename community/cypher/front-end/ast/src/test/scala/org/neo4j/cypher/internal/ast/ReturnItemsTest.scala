@@ -24,6 +24,11 @@ import org.neo4j.cypher.internal.expressions.functions.Size
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.CTInteger
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
+
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 class ReturnItemsTest extends CypherFunSuite with AstConstructionTestSupport {
 
@@ -346,7 +351,7 @@ class ReturnItemsTest extends CypherFunSuite with AstConstructionTestSupport {
       val result = ReturnItems.checkAmbiguousGrouping(
         ReturnItems(includeExisting = false, returnItems)(InputPosition.NONE)
       ).run(SemanticState.clean, SemanticCheckContext.default)
-      val expectedErrorMessage = ReturnItems.implicitGroupingExpressionInAggregationColumnErrorMessage(invalidExpr)
+      val expectedErrorMessage = SemanticError.implicitGroupingExpressionInAggregationColumnErrorMessage(invalidExpr)
 
       withClue(
         s"returnItems [${returnItems.map(_.asCanonicalStringVal).mkString(", ")}] did not throw expected error. "
@@ -365,11 +370,21 @@ class ReturnItemsTest extends CypherFunSuite with AstConstructionTestSupport {
     val result = ReturnItems.checkAmbiguousGrouping(
       ReturnItems(includeExisting = false, returnItems)(InputPosition.NONE)
     ).run(SemanticState.clean, SemanticCheckContext.default)
+
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(3, 4, 2)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I18)
+        .atPosition(3, 4, 2)
+        .withParam(GqlParams.ListParam.variableList, Seq("ny").asJava)
+        .build())
+      .build()
+
     result.errors should equal(Seq(
       // Reports all offending return items.
       // Uses position of the first offending return item.
       SemanticError(
-        ReturnItems.implicitGroupingExpressionInAggregationColumnErrorMessage(Seq("ny")),
+        gql,
+        SemanticError.implicitGroupingExpressionInAggregationColumnErrorMessage(Seq("ny")),
         InputPosition(2, 3, 4)
       )
     ))

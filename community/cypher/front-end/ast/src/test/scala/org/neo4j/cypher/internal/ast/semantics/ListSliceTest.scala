@@ -25,6 +25,8 @@ import org.neo4j.cypher.internal.util.DummyPosition
 import org.neo4j.cypher.internal.util.symbols.CTList
 import org.neo4j.cypher.internal.util.symbols.CTNode
 import org.neo4j.cypher.internal.util.symbols.CTString
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class ListSliceTest extends SemanticFunSuite {
 
@@ -47,8 +49,16 @@ class ListSliceTest extends SemanticFunSuite {
   test("shouldRaiseErrorWhenNeitherFromOrTwoSpecified") {
     val slice = ListSlice(dummyList, None, None)(DummyPosition(4))
 
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(slice.position.line, slice.position.column, slice.position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N20)
+        .atPosition(slice.position.line, slice.position.column, slice.position.offset)
+        .build())
+      .build()
+
     val result = SemanticExpressionCheck.simple(slice).run(SemanticState.clean)
     result.errors should equal(Seq(SemanticError(
+      gql,
       "The start or end (or both) is required for a collection slice",
       slice.position
     )))

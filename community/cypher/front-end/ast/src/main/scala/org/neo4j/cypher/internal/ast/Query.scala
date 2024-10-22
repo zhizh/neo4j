@@ -341,12 +341,9 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
         case (semanticErrors, pair) =>
           val optError = pair match {
             case Seq(match1: Match, match2: Match) if match1.optional && !match2.optional =>
-              Some(SemanticError(
-                s"${match2.name} cannot follow OPTIONAL ${match1.name} (perhaps use a WITH clause between them)",
-                match2.position
-              ))
+              Some(SemanticError.invalidUseOfMatch(match2.position))
             case Seq(clause: Return, _) =>
-              Some(SemanticError(s"${clause.name} can only be used at the end of the query.", clause.position))
+              Some(SemanticError.invalidUseOfReturn(clause.name, clause.position))
             case Seq(clause: Finish, _) =>
               Some(SemanticError(s"${clause.name} can only be used at the end of the query.", clause.position))
             case Seq(_: UpdateClause, _: UpdateClause) =>
@@ -436,10 +433,7 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
         if (precedingWrite) {
           Acc(
             precedingWrite,
-            errors :+ SemanticError(
-              "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
-              callInTxs.position
-            )
+            errors :+ SemanticError.invalidUseOfCIT(callInTxs.position)
           )
         } else {
           Acc(precedingWrite, errors)
@@ -835,7 +829,7 @@ sealed trait Union extends Query {
     case (_: UnionDistinct, _: UnionDistinct)                     => None
     case (_: ProjectingUnionAll, _: ProjectingUnionAll)           => None
     case (_: ProjectingUnionDistinct, _: ProjectingUnionDistinct) => None
-    case _ => Some(SemanticError("Invalid combination of UNION and UNION ALL", position))
+    case _                                                        => Some(SemanticError.invalidUseOfUnion(position))
   }
 
   private def checkNoCallInTransactionInsideUnionElement(query: SingleQuery): SemanticCheck =
@@ -904,7 +898,7 @@ sealed trait UnmappedUnion extends Union {
       if (lhsScope.symbolNames == rhsScope.symbolNames) {
         Seq.empty
       } else {
-        Seq(SemanticError("All sub queries in an UNION must have the same return column names", position))
+        Seq(SemanticError.incompatibleReturnColumns(position))
       }
     semantics.SemanticCheckResult(state, errors)
   }

@@ -1325,9 +1325,9 @@ case class Foreach(
   override def clauseSpecificSemanticCheck: SemanticCheck =
     SemanticExpressionCheck.simple(expression) chain
       expectType(CTList(CTAny).covariant | CTAny.covariant, expression) chain
-      updates.filter(!_.isInstanceOf[UpdateClause]).map(c =>
-        SemanticError(s"Invalid use of ${c.name} inside FOREACH", c.position)
-      ) ifOkChain
+      updates.filter(!_.isInstanceOf[UpdateClause]).map(c => {
+        SemanticError.invalidForeach(c.name, c.position)
+      }) ifOkChain
       withScopedState {
         val possibleInnerTypes: TypeGenerator = types(expression)(_).unwrapPotentialLists
         declareVariable(variable, possibleInnerTypes) chain updates.semanticCheck
@@ -1436,9 +1436,9 @@ object ProjectionClause {
     state =>
       returnItems match {
         case li: ReturnItems =>
-          li.items.filter(item => item.alias.isEmpty).map(i =>
-            SemanticError(s"Expression in $clauseName must be aliased (use AS)", i.position)
-          )
+          li.items.filter(item => item.alias.isEmpty).map(i => {
+            SemanticError.unaliasedReturnItem(clauseName, i.position)
+          })
         case _ => Seq()
       }
 }
@@ -1588,7 +1588,7 @@ sealed trait ProjectionClause extends HorizonClause {
                 returnItems.returnVariables.explicitVariables.map(v => v.name -> v).toMap
               val errors = alreadyDeclaredNames.map { name =>
                 val position = explicitReturnVariablesByName.getOrElse(name, returnItems).position
-                SemanticError(s"Variable `$name` already declared in outer scope", position)
+                SemanticError.variableAlreadyDeclaredInOuterScope(name, position)
               }
 
               SemanticCheckResult(result.state, result.errors ++ errors)
@@ -1707,7 +1707,7 @@ case class Return(
   private def checkVariableScope: SemanticState => Seq[SemanticError] = s =>
     returnItems match {
       case ReturnItems(star, _, _) if star && s.currentScope.isEmpty =>
-        Seq(SemanticError("RETURN * is not allowed when there are no variables in scope", position))
+        Seq(SemanticError.invalidUseOfReturnStar(position))
       case _ =>
         Seq.empty
     }

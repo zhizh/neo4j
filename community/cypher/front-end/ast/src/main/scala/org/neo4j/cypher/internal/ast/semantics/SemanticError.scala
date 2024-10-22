@@ -22,6 +22,11 @@ import org.neo4j.cypher.internal.util.symbols.CypherType
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42I25
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N07
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N22
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
@@ -206,6 +211,20 @@ object SemanticError {
     SemanticError(gql, "Cannot use join hint for single node pattern.", hint.position)
   }
 
+  def variableAlreadyDeclaredInOuterScope(name: String, position: InputPosition): SemanticError = {
+    val gql = getGql42001_42N07(name, position.line, position.column, position.offset)
+    SemanticError(gql, s"Variable `$name` already declared in outer scope", position)
+  }
+
+  def variableShadowingOuterScope(name: String, position: InputPosition): SemanticError = {
+    val gql = getGql42001_42N07(name, position.line, position.column, position.offset)
+    SemanticError(
+      gql,
+      s"The variable `$name` is shadowing a variable with the same name from the outer scope and needs to be renamed",
+      position
+    )
+  }
+
   def legacyRelationShipDisjunction(
     sanitizedLabelExpression: String,
     labelExpression: String,
@@ -335,6 +354,162 @@ object SemanticError {
       pos
     )
   }
+
+  def functionRequiresWhereClause(func: String, position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N70)
+        .atPosition(position.line, position.column, position.offset)
+        .withParam(GqlParams.StringParam.fun, func)
+        .build())
+      .build()
+    SemanticError(gql, s"$func(...) requires a WHERE predicate", position)
+  }
+
+  def aExpressionCannotContainUpdates(expr: String, position: InputPosition): SemanticError = {
+    val gql = getGql42001_42N57(expr, position.line, position.column, position.offset)
+    SemanticError(gql, s"A $expr Expression cannot contain any updates", position)
+  }
+
+  def anExpressionCannotContainUpdates(expr: String, position: InputPosition): SemanticError = {
+    val gql = getGql42001_42N57(expr, position.line, position.column, position.offset)
+    SemanticError(gql, s"An $expr Expression cannot contain any updates", position)
+  }
+
+  def singleReturnColumnRequired(position: InputPosition): SemanticError = {
+    val gql = getGql42001_42N22(position.line, position.column, position.offset)
+    SemanticError(gql, "A Collect Expression must end with a single return column.", position)
+  }
+
+  def emptyListRangeOperator(position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N20)
+        .atPosition(position.line, position.column, position.offset)
+        .build())
+      .build()
+    SemanticError(gql, "The start or end (or both) is required for a collection slice", position)
+  }
+
+  def unboundVariablesInPatternExpression(name: String, position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N29)
+        .atPosition(position.line, position.column, position.offset)
+        .withParam(GqlParams.StringParam.variable, name)
+        .build())
+      .build()
+    SemanticError(
+      gql,
+      s"PatternExpressions are not allowed to introduce new variables: '$name'.",
+      position
+    )
+  }
+
+  def incompatibleReturnColumns(position: InputPosition): SemanticError = {
+    val gql = getGql42001_42N39(position.line, position.column, position.offset)
+    SemanticError(gql, "All sub queries in an UNION must have the same return column names", position)
+  }
+
+  def invalidUseOfUnion(position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I40)
+        .atPosition(position.line, position.column, position.offset)
+        .build())
+      .build()
+
+    SemanticError(gql, "Invalid combination of UNION and UNION ALL", position)
+  }
+
+  def invalidUseOfCIT(position: InputPosition): SemanticError = {
+    val gql = getGql42001_42I25(position.line, position.column, position.offset)
+    SemanticError(
+      gql,
+      "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
+      position
+    )
+  }
+
+  def invalidUseOfReturn(name: String, position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I38)
+        .atPosition(position.line, position.column, position.offset)
+        .build())
+      .build()
+
+    SemanticError(gql, s"$name can only be used at the end of the query.", position)
+  }
+
+  def invalidUseOfReturnStar(position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I37)
+        .atPosition(position.line, position.column, position.offset)
+        .build())
+      .build()
+    SemanticError(gql, "RETURN * is not allowed when there are no variables in scope", position)
+  }
+
+  def invalidUseOfMatch(position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I31)
+        .atPosition(position.line, position.column, position.offset)
+        .build())
+      .build()
+
+    SemanticError(
+      gql,
+      "MATCH cannot follow OPTIONAL MATCH (perhaps use a WITH clause between them)",
+      position
+    )
+  }
+
+  def invalidQuantifier(variables: Seq[String], position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I18)
+        .atPosition(position.line, position.column, position.offset)
+        .withParam(GqlParams.ListParam.variableList, variables.asJava)
+        .build())
+      .build()
+
+    val errorMsg = implicitGroupingExpressionInAggregationColumnErrorMessage(variables)
+    SemanticError(gql, errorMsg, position)
+  }
+
+  def invalidForeach(clause: String, position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I01)
+        .atPosition(position.line, position.column, position.offset)
+        .withParam(GqlParams.StringParam.clause, clause)
+        .build())
+      .build()
+
+    SemanticError(gql, s"Invalid use of $clause inside FOREACH", position)
+  }
+
+  def unaliasedReturnItem(clause: String, position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(position.line, position.column, position.offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N21)
+        .atPosition(position.line, position.column, position.offset)
+        .withParam(GqlParams.StringParam.clause, clause)
+        .build())
+      .build()
+
+    SemanticError(gql, s"Expression in $clause must be aliased (use AS)", position)
+  }
+
+  def implicitGroupingExpressionInAggregationColumnErrorMessage(variables: Seq[String]): String =
+    "Aggregation column contains implicit grouping expressions. " +
+      "For example, in 'RETURN n.a, n.a + n.b + count(*)' the aggregation expression 'n.a + n.b + count(*)' includes the implicit grouping key 'n.b'. " +
+      "It may be possible to rewrite the query by extracting these grouping/aggregation expressions into a preceding WITH clause. " +
+      s"Illegal expression(s): ${variables.mkString(", ")}"
+
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

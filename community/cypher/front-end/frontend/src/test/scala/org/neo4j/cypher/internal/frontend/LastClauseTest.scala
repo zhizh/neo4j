@@ -19,6 +19,8 @@ package org.neo4j.cypher.internal.frontend
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class LastClauseTest
     extends CypherFunSuite
@@ -29,6 +31,21 @@ class LastClauseTest
       s"$clause can only be used at the end of the query.",
       InputPosition(offset, line, column)
     )
+
+  def errorCanOnlyBeUsedAtTheEndGql(clause: String, offset: Int, line: Int, column: Int): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+      .atPosition(line, column, offset)
+      .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I38)
+        .atPosition(line, column, offset)
+        .build())
+      .build()
+
+    SemanticError(
+      gql,
+      s"$clause can only be used at the end of the query.",
+      InputPosition(offset, line, column)
+    )
+  }
 
   def errorCannotConcludeWith(clause: String, offset: Int, line: Int, column: Int): SemanticError =
     SemanticError(
@@ -101,14 +118,14 @@ class LastClauseTest
   test("""RETURN 1
          |FINISH""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      errorCanOnlyBeUsedAtTheEnd("RETURN", 0, 1, 1)
+      errorCanOnlyBeUsedAtTheEndGql("RETURN", 0, 1, 1)
     )
   }
 
   test("""RETURN 1
          |MATCH (a)""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      errorCanOnlyBeUsedAtTheEnd("RETURN", 0, 1, 1),
+      errorCanOnlyBeUsedAtTheEndGql("RETURN", 0, 1, 1),
       errorCannotConcludeWith("MATCH", 9, 2, 1)
     )
   }
@@ -117,7 +134,7 @@ class LastClauseTest
          |MATCH (a)
          |FINISH""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      errorCanOnlyBeUsedAtTheEnd("RETURN", 0, 1, 1)
+      errorCanOnlyBeUsedAtTheEndGql("RETURN", 0, 1, 1)
     )
   }
 
@@ -125,14 +142,14 @@ class LastClauseTest
          |MATCH (a)
          |RETURN a""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      errorCanOnlyBeUsedAtTheEnd("RETURN", 0, 1, 1)
+      errorCanOnlyBeUsedAtTheEndGql("RETURN", 0, 1, 1)
     )
   }
 
   test("""RETURN 1
          |CREATE (a)""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      errorCanOnlyBeUsedAtTheEnd("RETURN", 0, 1, 1)
+      errorCanOnlyBeUsedAtTheEndGql("RETURN", 0, 1, 1)
     )
   }
 
@@ -140,7 +157,7 @@ class LastClauseTest
          |CREATE (a)
          |FINISH""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      errorCanOnlyBeUsedAtTheEnd("RETURN", 0, 1, 1)
+      errorCanOnlyBeUsedAtTheEndGql("RETURN", 0, 1, 1)
     )
   }
 
@@ -148,7 +165,7 @@ class LastClauseTest
          |CREATE (a)
          |RETURN a""".stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
-      errorCanOnlyBeUsedAtTheEnd("RETURN", 0, 1, 1)
+      errorCanOnlyBeUsedAtTheEndGql("RETURN", 0, 1, 1)
     )
   }
 

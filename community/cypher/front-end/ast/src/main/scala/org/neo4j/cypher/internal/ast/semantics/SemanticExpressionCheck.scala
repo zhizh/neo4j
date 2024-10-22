@@ -532,10 +532,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
                       if state.recordedScopes(x).symbol(v.name).isEmpty && !SemanticPatternCheck.variableIsGenerated(
                         v
                       ) =>
-                      SemanticError(
-                        s"PatternExpressions are not allowed to introduce new variables: '${v.name}'.",
-                        v.position
-                      )
+                      SemanticError.unboundVariablesInPatternExpression(v.name, v.position)
                   }
                   SemanticCheckResult(state, errors)
                 }
@@ -586,7 +583,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
         check(ctx, x.list) chain
           expectType(CTList(CTAny).covariant, x.list) chain
           when(x.from.isEmpty && x.to.isEmpty) {
-            SemanticError("The start or end (or both) is required for a collection slice", x.position)
+            SemanticError.emptyListRangeOperator(x.position)
           } chain
           check(ctx, x.from) chain
           expectType(CTInteger.covariant, x.from) chain
@@ -775,7 +772,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
           withScopedState {
             x.query.semanticCheckInSubqueryExpressionContext(canOmitReturn = true) chain
               when(x.query.containsUpdates) {
-                SemanticError("An Exists Expression cannot contain any updates", x.position)
+                SemanticError.anExpressionCannotContainUpdates("Exists", x.position)
               } chain
               when(x.query.endsWithFinish) {
                 SemanticError("An Exists Expression cannot contain a query ending with FINISH.", x.position)
@@ -790,7 +787,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
           withScopedState {
             x.query.semanticCheckInSubqueryExpressionContext(canOmitReturn = !x.query.isInstanceOf[UnionDistinct]) chain
               when(x.query.containsUpdates) {
-                SemanticError("A Count Expression cannot contain any updates", x.position)
+                SemanticError.aExpressionCannotContainUpdates("Count", x.position)
               } chain
               when(x.query.endsWithFinish) {
                 SemanticError("A Count Expression cannot contain a query ending with FINISH.", x.position)
@@ -805,10 +802,10 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
           withScopedState {
             x.query.semanticCheckInSubqueryExpressionContext(canOmitReturn = false) chain
               when(x.query.containsUpdates) {
-                SemanticError("A Collect Expression cannot contain any updates", x.position)
+                SemanticError.aExpressionCannotContainUpdates("Collect", x.position)
               } chain
               when(x.query.returnVariables.includeExisting || x.query.returnColumns.size != 1) {
-                SemanticError("A Collect Expression must end with a single return column.", x.position)
+                SemanticError.singleReturnColumnRequired(x.position)
                 // by implication this also ensures that "A Collect Expression cannot contain a query ending with FINISH"
               } chain
               checkForShadowedVariables(x.query.folder.findAllByClass[SubqueryCall]) chain
@@ -928,7 +925,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
 
     def checkPredicateDefined(e: FilteringExpression): SemanticCheck =
       when(e.innerPredicate.isEmpty) {
-        SemanticError(s"${e.name}(...) requires a WHERE predicate", e.position)
+        SemanticError.functionRequiresWhereClause(e.name, e.position)
       }
 
     private def checkInnerPredicate(e: FilteringExpression): SemanticCheck =
@@ -1152,10 +1149,8 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
       }
 
       val errors = shadowedSymbols.map {
-        case (varName, pos) => SemanticError(
-            s"The variable `$varName` is shadowing a variable with the same name from the outer scope and needs to be renamed",
-            pos
-          )
+        case (varName, pos) =>
+          SemanticError.variableShadowingOuterScope(varName, pos)
       }.toSeq
 
       SemanticCheckResult(inner, errors)

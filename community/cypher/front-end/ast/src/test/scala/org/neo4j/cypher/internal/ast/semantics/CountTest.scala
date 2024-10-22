@@ -32,6 +32,7 @@ import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.util.symbols.CTBoolean
 import org.neo4j.cypher.internal.util.symbols.CTNode
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
 
 import scala.collection.compat.immutable.ArraySeq
 
@@ -209,8 +210,10 @@ class CountTest extends SemanticFunSuite {
     val result =
       SemanticExpressionCheck.simple(expression).run(SemanticState.clean)
 
+    val gql = getGql42001_42N57("Count", pos.line, pos.column, pos.offset)
+
     result.errors shouldBe Seq(
-      SemanticError("A Count Expression cannot contain any updates", pos)
+      SemanticError(gql, "A Count Expression cannot contain any updates", pos)
     )
   }
 

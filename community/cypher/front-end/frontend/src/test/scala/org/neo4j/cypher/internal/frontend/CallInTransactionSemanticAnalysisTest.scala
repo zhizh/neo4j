@@ -18,6 +18,7 @@ package org.neo4j.cypher.internal.frontend
 
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42I25
 
 class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
@@ -114,7 +115,11 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("CALL { ... } IN TRANSACTIONS after a write clause is not supported", InputPosition(29, 3, 1))
+        SemanticError(
+          getGql42001_42I25(3, 1, 29),
+          "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
+          InputPosition(29, 3, 1)
+        )
       )
     )
   }
@@ -129,8 +134,16 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("CALL { ... } IN TRANSACTIONS after a write clause is not supported", InputPosition(29, 3, 1)),
-        SemanticError("CALL { ... } IN TRANSACTIONS after a write clause is not supported", InputPosition(65, 4, 1))
+        SemanticError(
+          getGql42001_42I25(3, 1, 29),
+          "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
+          InputPosition(29, 3, 1)
+        ),
+        SemanticError(
+          getGql42001_42I25(4, 1, 65),
+          "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
+          InputPosition(65, 4, 1)
+        )
       )
     )
   }
@@ -145,7 +158,11 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("CALL { ... } IN TRANSACTIONS after a write clause is not supported", InputPosition(65, 4, 1))
+        SemanticError(
+          getGql42001_42I25(4, 1, 65),
+          "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
+          InputPosition(65, 4, 1)
+        )
       )
     )
   }
@@ -159,7 +176,11 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("CALL { ... } IN TRANSACTIONS after a write clause is not supported", InputPosition(56, 3, 1))
+        SemanticError(
+          getGql42001_42I25(3, 1, 56),
+          "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
+          InputPosition(56, 3, 1)
+        )
       )
     )
   }
@@ -173,7 +194,11 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("CALL { ... } IN TRANSACTIONS after a write clause is not supported", InputPosition(34, 3, 1))
+        SemanticError(
+          getGql42001_42I25(3, 1, 34),
+          "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
+          InputPosition(34, 3, 1)
+        )
       )
     )
   }

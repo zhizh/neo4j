@@ -159,12 +159,6 @@ object ReturnItems {
     def empty: ReturnVariables = ReturnVariables(includeExisting = false, Seq.empty)
   }
 
-  def implicitGroupingExpressionInAggregationColumnErrorMessage(variables: Seq[String]): String =
-    "Aggregation column contains implicit grouping expressions. " +
-      "For example, in 'RETURN n.a, n.a + n.b + count(*)' the aggregation expression 'n.a + n.b + count(*)' includes the implicit grouping key 'n.b'. " +
-      "It may be possible to rewrite the query by extracting these grouping/aggregation expressions into a preceding WITH clause. " +
-      s"Illegal expression(s): ${variables.mkString(", ")}"
-
   def checkAmbiguousGrouping(returnItems: ReturnItems): Option[SemanticError] = {
     val returnItemExprs = returnItems.items.map(_.expression).toSet
     // FullSubqueryExpressions can contain aggregates, but they also contain a whole query so that isn't relevant for this check.
@@ -180,13 +174,9 @@ object ReturnItems {
       )
 
     if (ambiguousAggregationExpressions.nonEmpty) {
-      val errorMsg = implicitGroupingExpressionInAggregationColumnErrorMessage(
-        ambiguousAggregationExpressions.map(_.asCanonicalStringVal).toSeq
-      )
-      Some(SemanticError(
-        errorMsg,
-        ambiguousAggregationExpressions.head.position
-      ))
+      val variables = ambiguousAggregationExpressions.map(_.asCanonicalStringVal).toSeq
+      val pos = ambiguousAggregationExpressions.head.position
+      Some(SemanticError.invalidQuantifier(variables, pos))
     } else {
       None
     }

@@ -26,6 +26,11 @@ import org.neo4j.cypher.internal.util.ErrorMessageProvider
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.RepeatedRelationshipReference
 import org.neo4j.cypher.internal.util.symbols.CTAny
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
+import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
@@ -1666,11 +1671,24 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
 
   test("Should disallow introducing variables in pattern expressions") {
     val query = "MATCH (x) WHERE (x)-[r]-(y) RETURN x"
+    val rPos = InputPosition(21, 1, 22)
+    val yPos = InputPosition(25, 1, 26)
+
+    def gql(name: String, position: InputPosition): ErrorGqlStatusObject = {
+      ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+        .atPosition(position.line, position.column, position.offset)
+        .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N29)
+          .atPosition(position.line, position.column, position.offset)
+          .withParam(GqlParams.StringParam.variable, name)
+          .build())
+        .build()
+    }
+
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("PatternExpressions are not allowed to introduce new variables: 'r'.", InputPosition(21, 1, 22)),
-        SemanticError("PatternExpressions are not allowed to introduce new variables: 'y'.", InputPosition(25, 1, 26))
+        SemanticError(gql("r", rPos), "PatternExpressions are not allowed to introduce new variables: 'r'.", rPos),
+        SemanticError(gql("y", yPos), "PatternExpressions are not allowed to introduce new variables: 'y'.", yPos)
       )
     )
   }
@@ -1739,6 +1757,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
             InputPosition(10, 1, 11)
           ),
           SemanticError(
+            getGql42001_42N39(1, 18, 17),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(17, 1, 18)
           )
@@ -1757,6 +1776,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
             InputPosition(35 + extraLength, 1, 36 + extraLength)
           ),
           SemanticError(
+            getGql42001_42N39(1, 20, 19),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(19, 1, 20)
           )
@@ -1770,6 +1790,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
+            getGql42001_42N39(1, 30, 29),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(29, 1, 30)
           )
@@ -1783,6 +1804,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
+            getGql42001_42N39(1, 43, 42),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(42, 1, 43)
           )
@@ -1796,6 +1818,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
+            getGql42001_42N39(1, 26, 25),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(25, 1, 26)
           )
@@ -1809,6 +1832,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
+            getGql42001_42N39(1, 28, 27),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(27, 1, 28)
           )
@@ -1828,10 +1852,17 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
                |UNION$setQuantifier2
                |RETURN 3 AS a""".stripMargin
           val extraLength = setQuantifier1.length
+          val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+            .atPosition(4, 1, 34 + extraLength)
+            .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42I40)
+              .atPosition(4, 1, 34 + extraLength)
+              .build)
+            .build
           expectErrorsFrom(
             query,
             Set(
               SemanticError(
+                gql,
                 "Invalid combination of UNION and UNION ALL",
                 InputPosition(34 + extraLength, 4, 1)
               )

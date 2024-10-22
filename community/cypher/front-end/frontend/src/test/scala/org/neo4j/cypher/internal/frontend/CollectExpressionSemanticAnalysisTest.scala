@@ -20,6 +20,10 @@ import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N07
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N22
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
 
 class CollectExpressionSemanticAnalysisTest
     extends CypherFunSuite
@@ -34,6 +38,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(17, 1, 18)
       ),
       SemanticError(
+        getGql42001_42N22(1, 8, 7),
         "A Collect Expression must end with a single return column.",
         InputPosition(7, 1, 8)
       )
@@ -83,10 +88,12 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N57("Collect", 2, 8, 17),
         "A Collect Expression cannot contain any updates",
         InputPosition(17, 2, 8)
       ),
       SemanticError(
+        getGql42001_42N22(2, 8, 17),
         "A Collect Expression must end with a single return column.",
         InputPosition(17, 2, 8)
       )
@@ -100,10 +107,12 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N57("Collect", 2, 8, 17),
         "A Collect Expression cannot contain any updates",
         InputPosition(17, 2, 8)
       ),
       SemanticError(
+        getGql42001_42N22(2, 8, 17),
         "A Collect Expression must end with a single return column.",
         InputPosition(17, 2, 8)
       )
@@ -117,10 +126,12 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N57("Collect", 2, 8, 17),
         "A Collect Expression cannot contain any updates",
         InputPosition(17, 2, 8)
       ),
       SemanticError(
+        getGql42001_42N22(2, 8, 17),
         "A Collect Expression must end with a single return column.",
         InputPosition(17, 2, 8)
       )
@@ -217,6 +228,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("aNum", 4, 13, 54),
         "The variable `aNum` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(54, 4, 13)
       )
@@ -236,6 +248,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("aNum", 5, 13, 92),
         "The variable `aNum` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(92, 5, 13)
       )
@@ -254,6 +267,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("a", 4, 13, 57),
         "The variable `a` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(57, 4, 13)
       )
@@ -273,6 +287,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("a", 4, 15, 53),
         "The variable `a` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(53, 4, 15)
       )
@@ -295,6 +310,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("a", 10, 15, 128),
         "The variable `a` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(128, 10, 15)
       )
@@ -407,6 +423,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(66, 5, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       )
@@ -426,6 +443,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 74),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(74, 5, 5)
       ),
@@ -434,6 +452,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(88, 6, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       )
@@ -453,6 +472,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(4, 5, 56),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(56, 4, 5)
       ),
@@ -461,6 +481,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(42, 3, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       )
@@ -480,6 +501,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 69),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(69, 5, 5)
       ),
@@ -488,6 +510,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(83, 6, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       )
@@ -507,6 +530,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(4, 5, 56),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(56, 4, 5)
       ),
@@ -515,6 +539,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(42, 3, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       )
@@ -536,6 +561,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(4, 5, 56),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(56, 4, 5)
       ),
@@ -548,6 +574,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(111, 8, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       )
@@ -571,14 +598,17 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 69),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(69, 5, 5)
       ),
       SemanticError(
+        getGql42001_42N39(8, 5, 106),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(106, 8, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       ),
@@ -606,14 +636,17 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher5), testName).errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N39(5, 5, 69),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(69, 5, 5)
       ),
       SemanticError(
+        getGql42001_42N39(8, 5, 106),
         "All sub queries in an UNION must have the same return column names",
         InputPosition(106, 8, 5)
       ),
       SemanticError(
+        getGql42001_42N22(2, 7, 28),
         "A Collect Expression must end with a single return column.",
         InputPosition(28, 2, 7)
       )
@@ -629,6 +662,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N22(1, 8, 7),
         "A Collect Expression must end with a single return column.",
         InputPosition(7, 1, 8)
       )
@@ -644,6 +678,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N22(1, 8, 7),
         "A Collect Expression must end with a single return column.",
         InputPosition(7, 1, 8)
       )
@@ -661,6 +696,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N22(2, 7, 16),
         "A Collect Expression must end with a single return column.",
         InputPosition(16, 2, 7)
       )
@@ -674,6 +710,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N22(2, 8, 17),
         "A Collect Expression must end with a single return column.",
         InputPosition(17, 2, 8)
       )
@@ -724,6 +761,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("x", 7, 15, 96),
         "The variable `x` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(96, 7, 15)
       )
@@ -760,6 +798,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N07("y", 6, 26, 106),
         "The variable `y` is shadowing a variable with the same name from the outer scope and needs to be renamed",
         InputPosition(106, 6, 26)
       )

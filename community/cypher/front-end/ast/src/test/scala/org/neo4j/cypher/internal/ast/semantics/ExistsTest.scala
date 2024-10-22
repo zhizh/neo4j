@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.expressions.RelationshipChain
 import org.neo4j.cypher.internal.expressions.RelationshipPattern
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.util.symbols.CTBoolean
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
 
 class ExistsTest extends SemanticFunSuite {
 
@@ -111,8 +112,10 @@ class ExistsTest extends SemanticFunSuite {
     val result =
       SemanticExpressionCheck.simple(expression).run(SemanticState.clean)
 
+    val gql = getGql42001_42N57("Exists", pos.line, pos.column, pos.offset)
+
     result.errors shouldBe Seq(
-      SemanticError("An Exists Expression cannot contain any updates", pos)
+      SemanticError(gql, "An Exists Expression cannot contain any updates", pos)
     )
   }
 
