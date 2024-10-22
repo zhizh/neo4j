@@ -53,6 +53,7 @@ import org.eclipse.collections.api.tuple.Pair;
 import org.neo4j.batchimport.api.BatchImporter;
 import org.neo4j.batchimport.api.Configuration;
 import org.neo4j.batchimport.api.IndexConfig;
+import org.neo4j.batchimport.api.UnsupportedFormatException;
 import org.neo4j.batchimport.api.input.Collector;
 import org.neo4j.batchimport.api.input.IdType;
 import org.neo4j.batchimport.api.input.Input;
@@ -518,6 +519,8 @@ public class ImportCommand {
                     throw new CommandFailedException("You do not have permission to import.", e, ExitCode.NOPERM);
                 } catch (CsvImportException e) {
                     throw new CommandFailedException("Error importing csv file.", e, ExitCode.SOFTWARE);
+                } catch (UnsupportedFormatException e) {
+                    throw new CommandFailedException("Unsupported format.", e, ExitCode.SOFTWARE);
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);

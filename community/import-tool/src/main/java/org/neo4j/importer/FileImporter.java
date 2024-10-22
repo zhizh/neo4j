@@ -55,6 +55,7 @@ import java.util.function.Supplier;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.neo4j.batchimport.api.Configuration;
+import org.neo4j.batchimport.api.UnsupportedFormatException;
 import org.neo4j.batchimport.api.input.Collector;
 import org.neo4j.batchimport.api.input.IdType;
 import org.neo4j.batchimport.api.input.Input;
@@ -294,6 +295,9 @@ class FileImporter {
                     + "true.");
         } else if (indexOfThrowable(e, InputException.class) != -1) {
             err.println("Error in input data");
+        } else if (e instanceof UnsupportedFormatException exception) {
+            err.println("Incremental import is not supported for a database with the format high_limit.");
+            return exception;
         }
         err.println();
 
