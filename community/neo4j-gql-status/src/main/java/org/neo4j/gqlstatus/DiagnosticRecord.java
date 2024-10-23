@@ -55,7 +55,7 @@ public class DiagnosticRecord {
         innerDiagnosticRecord.put("OPERATION", OPERATION_DEFAULT);
         innerDiagnosticRecord.put("OPERATION_CODE", OPERATION_CODE_DEFAULT);
         innerDiagnosticRecord.put("_severity", severity);
-        innerDiagnosticRecord.put("_classification", String.valueOf(classification));
+        addClassificationToMap(classification, innerDiagnosticRecord);
         innerDiagnosticRecord.put("_position", Map.of("offset", offset, "line", line, "column", column));
         // TODO: enable this line again when re-introducing status parameters
         // innerDiagnosticRecord.put("_status_parameters", statusParameters);
@@ -67,7 +67,7 @@ public class DiagnosticRecord {
         innerDiagnosticRecord.put("OPERATION", OPERATION_DEFAULT);
         innerDiagnosticRecord.put("OPERATION_CODE", OPERATION_CODE_DEFAULT);
         innerDiagnosticRecord.put("_severity", severity);
-        innerDiagnosticRecord.put("_classification", String.valueOf(classification));
+        addClassificationToMap(classification, innerDiagnosticRecord);
         innerDiagnosticRecord.put("_position", Map.of("offset", offset, "line", line, "column", column));
     }
 
@@ -127,6 +127,12 @@ public class DiagnosticRecord {
         return Collections.unmodifiableMap(innerDiagnosticRecord);
     }
 
+    private static void addClassificationToMap(GqlClassification classification, Map<String, Object> map) {
+        if (classification != ErrorClassification.UNKNOWN && classification != NotificationClassification.UNKNOWN) {
+            map.put("_classification", String.valueOf(classification));
+        }
+    }
+
     // This is not used right now, but will be later when Gql is included in logs
     // This returns an Optional since this operation might fail and throw a JsonProcessingException
     // JsonProcessingException is part of the Jackson library, and to avoid other modules depending
@@ -171,7 +177,7 @@ public class DiagnosticRecord {
         }
 
         public Builder withClassification(GqlClassification classification) {
-            innerDiagnosticRecord.put("_classification", classification.toString());
+            addClassificationToMap(classification, innerDiagnosticRecord);
             return this;
         }
 

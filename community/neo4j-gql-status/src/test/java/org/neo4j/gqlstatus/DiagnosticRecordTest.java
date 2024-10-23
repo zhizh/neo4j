@@ -20,6 +20,7 @@
 package org.neo4j.gqlstatus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -65,6 +66,38 @@ class DiagnosticRecordTest {
         assertEquals(1, position.get("offset"));
         assertEquals(2, position.get("line"));
         assertEquals(3, position.get("column"));
+    }
+
+    @Test
+    void shouldNotStoreUnknownErrorClassificationFromConstructor() {
+        Map<String, Object> diagnosticRecordMap =
+                new DiagnosticRecord("", ErrorClassification.UNKNOWN, 0, 0, 0, Map.of()).asMap();
+        assertFalse(diagnosticRecordMap.containsKey("_classification"));
+    }
+
+    @Test
+    void shouldNotStoreUnknownNotificationClassificationFromConstructor() {
+        Map<String, Object> diagnosticRecordMap =
+                new DiagnosticRecord("", NotificationClassification.UNKNOWN, 0, 0, 0, Map.of()).asMap();
+        assertFalse(diagnosticRecordMap.containsKey("_classification"));
+    }
+
+    @Test
+    void shouldNotStoreUnknownErrorClassificationFromBuilder() {
+        DiagnosticRecord.Builder diagnosticRecordBuilder = DiagnosticRecord.from();
+        diagnosticRecordBuilder.withClassification(ErrorClassification.UNKNOWN);
+        Map<String, Object> diagnosticRecordMap =
+                diagnosticRecordBuilder.build().asMap();
+        assertFalse(diagnosticRecordMap.containsKey("_classification"));
+    }
+
+    @Test
+    void shouldNotStoreUnknownNotificationClassificationFromBuilder() {
+        DiagnosticRecord.Builder diagnosticRecordBuilder = DiagnosticRecord.from();
+        diagnosticRecordBuilder.withClassification(NotificationClassification.UNKNOWN);
+        Map<String, Object> diagnosticRecordMap =
+                diagnosticRecordBuilder.build().asMap();
+        assertFalse(diagnosticRecordMap.containsKey("_classification"));
     }
 
     @Disabled("enable this test again when re-introducing status parameters")

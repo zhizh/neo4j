@@ -191,7 +191,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             emptyMap(),
             Condition.WARNING,
             "null value eliminated in set function",
-            NotificationClassification.UNKNOWN),
+            NotificationClassification.UNRECOGNIZED),
     STATUS_01N00(
             new GqlStatus("01N00"),
             """

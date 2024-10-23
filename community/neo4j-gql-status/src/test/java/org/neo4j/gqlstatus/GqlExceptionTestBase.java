@@ -298,4 +298,30 @@ abstract class GqlExceptionTestBase {
                 "50N42: Unexpected error has occurred. See debug log for details.",
                 exception.cause().get().getMessage());
     }
+
+    @Test
+    void shouldStoreClassificationsExceptUnknownInDiagnosticRecord() {
+        var clientError = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .build();
+        var clientException = testException(clientError, "legacy message");
+        assertThat(clientException.diagnosticRecord())
+                .containsEntry("_classification", ErrorClassification.CLIENT_ERROR.name());
+
+        var dbError = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25000)
+                .build();
+        var dbException = testException(dbError, "legacy message");
+        assertThat(dbException.diagnosticRecord())
+                .containsEntry("_classification", ErrorClassification.DATABASE_ERROR.name());
+
+        var transientError = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N00)
+                .build();
+        var transientException = testException(transientError, "legacy message");
+        assertThat(transientException.diagnosticRecord())
+                .containsEntry("_classification", ErrorClassification.TRANSIENT_ERROR.name());
+
+        var unknownError = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08000)
+                .build();
+        var unknownException = testException(unknownError, "legacy message");
+        assertFalse(unknownException.diagnosticRecord().containsKey("_classification"));
+    }
 }
