@@ -99,6 +99,10 @@ public abstract class CodeGenerator {
         this.byteCodeVisitor = visitor;
     }
 
+    public ClassLoader classLoader() {
+        return loader;
+    }
+
     // GENERATE
 
     public ClassGenerator generateClass(String packageName, String name, Class<?> firstInterface, Class<?>... more) {
