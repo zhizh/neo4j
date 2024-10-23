@@ -136,6 +136,7 @@ class ParquetDataReader implements Closeable {
         StringBuilder idValue = new StringBuilder();
         Collection<String> typeCandidates = filterEmptyLabelsAndTrim(parquetDataFile.labelsOrType());
         var type = typeCandidates.isEmpty() ? "" : typeCandidates.iterator().next();
+        var isRelationshipEntity = false;
         for (int i = 0; i < readData.size(); i++) {
             var parquetColumn = columns.get(i);
             Object readDatum = readData.get(i);
@@ -168,9 +169,11 @@ class ParquetDataReader implements Closeable {
             // relationship
             if (parquetColumn.isStartId()) {
                 entityToHydrate.startId(resolveIdByType(readDatum, null), groups.get(relationshipStartIdGroupName));
+                isRelationshipEntity = true;
             }
             if (parquetColumn.isEndId()) {
                 entityToHydrate.endId(resolveIdByType(readDatum, null), groups.get(relationshipEndIdGroupName));
+                isRelationshipEntity = true;
             }
             if (parquetColumn.isType()) {
                 if (readDatum instanceof String typeColumnData && !typeColumnData.isBlank()) {
@@ -178,10 +181,10 @@ class ParquetDataReader implements Closeable {
                 }
             }
         }
-        if (!labels.isEmpty()) {
+        if (!isRelationshipEntity && !labels.isEmpty()) {
             entityToHydrate.labels(labels.toArray(new String[] {}));
         }
-        if (type != null && !type.isBlank()) {
+        if (isRelationshipEntity && type != null && !type.isBlank()) {
             entityToHydrate.type(type);
         }
         if (idType == IdType.STRING && !idValue.isEmpty()) {
