@@ -18,6 +18,7 @@ package org.neo4j.cypher.internal.frontend
 
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlHelper.getGql42001_42I25
 
 class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
@@ -320,10 +321,11 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
          |  CREATE ()
          |} IN TRANSACTIONS OF $batchSize ROWS
          |""".stripMargin
+    val gql = GqlHelper.getGql22003(batchSize, 3, 22, 40)
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("integer is too large", InputPosition(40, 3, 22))
+        SemanticError(gql, "integer is too large", InputPosition(40, 3, 22))
       )
     )
   }
@@ -498,10 +500,11 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
          |  CREATE ()
          |} IN $concurrency CONCURRENT TRANSACTIONS
          |""".stripMargin
+    val gql = GqlHelper.getGql22003(concurrency, 3, 6, 24)
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("integer is too large", InputPosition(24, 3, 6))
+        SemanticError(gql, "integer is too large", InputPosition(24, 3, 6))
       )
     )
   }

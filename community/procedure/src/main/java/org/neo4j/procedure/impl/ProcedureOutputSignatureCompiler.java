@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.FieldSignature;
 import org.neo4j.internal.kernel.api.procs.ProcedureSignature;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.procedure.Description;
 
 /**
@@ -42,10 +41,6 @@ import org.neo4j.procedure.Description;
  * of <tt>MyOut</tt> to produce a signature.
  */
 class ProcedureOutputSignatureCompiler {
-
-    private static final String ERROR_MESSAGE =
-            "Procedures must return a Stream of records, where a record is a concrete class%n"
-                    + "that you define and not a %s.";
 
     ProcedureOutputSignatureCompiler(Cypher5TypeCheckers typeCheckers) {
         this.typeCheckers = typeCheckers;
@@ -67,28 +62,28 @@ class ProcedureOutputSignatureCompiler {
         }
 
         if (cls != Stream.class) {
-            throw invalidReturnType(cls);
+            throw ProcedureException.invalidReturnTypeExtended(method.getName(), cls);
         }
 
         Type genericReturnType = method.getGenericReturnType();
+
         if (!(genericReturnType instanceof ParameterizedType genType)) {
-            throw new ProcedureException(Status.Procedure.TypeError, ERROR_MESSAGE, "raw Stream");
+            throw ProcedureException.invalidReturnType(method.getName(), "raw Stream");
         }
 
         Type recordType = genType.getActualTypeArguments()[0];
         if (recordType instanceof WildcardType) {
-            throw new ProcedureException(Status.Procedure.TypeError, ERROR_MESSAGE, "Stream<?>");
+            throw ProcedureException.invalidReturnType(method.getName(), "Stream<?>");
         }
         if (recordType instanceof ParameterizedType type) {
-            throw new ProcedureException(
-                    Status.Procedure.TypeError, ERROR_MESSAGE, "parameterized type such as " + type);
+            throw ProcedureException.invalidReturnType(method.getName(), "parameterized type such as " + type);
         }
 
-        return fieldSignatures((Class<?>) recordType);
+        return fieldSignatures(method.getName(), (Class<?>) recordType);
     }
 
-    List<FieldSignature> fieldSignatures(Class<?> userClass) throws ProcedureException {
-        assertIsValidRecordClass(userClass);
+    List<FieldSignature> fieldSignatures(String methodName, Class<?> userClass) throws ProcedureException {
+        assertIsValidRecordClass(methodName, userClass);
 
         List<Field> fields = instanceFields(userClass);
         FieldSignature[] signature = new FieldSignature[fields.size()];
@@ -124,28 +119,13 @@ class ProcedureOutputSignatureCompiler {
         return Arrays.asList(signature);
     }
 
-    private void assertIsValidRecordClass(Class<?> userClass) throws ProcedureException {
+    private void assertIsValidRecordClass(String methodName, Class<?> userClass) throws ProcedureException {
         if (userClass.isPrimitive()
                 || userClass.isArray()
                 || userClass.getPackage() != null
                         && userClass.getPackage().getName().startsWith("java.")) {
-            throw invalidReturnType(userClass);
+            throw ProcedureException.invalidReturnTypeExtended(methodName, userClass);
         }
-    }
-
-    private ProcedureException invalidReturnType(Class<?> userClass) {
-        return new ProcedureException(
-                Status.Procedure.TypeError,
-                "Procedures must return a Stream of records, where a record is a concrete class%n"
-                        + "that you define, with public non-final fields defining the fields in the record.%n"
-                        + "If you''d like your procedure to return `%s`, you could define a record class like:%n"
-                        + "public class Output '{'%n"
-                        + "    public %s out;%n"
-                        + "'}'%n"
-                        + "%n"
-                        + "And then define your procedure as returning `Stream<Output>`.",
-                userClass.getSimpleName(),
-                userClass.getSimpleName());
     }
 
     static List<Field> instanceFields(Class<?> userClass) {

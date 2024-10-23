@@ -151,6 +151,7 @@ public class ProcedureOutputSignatureCompilerTest {
     }
 
     private List<FieldSignature> signatures(Class<?> clazz) throws ProcedureException {
-        return new ProcedureOutputSignatureCompiler(new Cypher5TypeCheckers()).fieldSignatures(clazz);
+        return new ProcedureOutputSignatureCompiler(new Cypher5TypeCheckers())
+                .fieldSignatures("dummyMethodName", clazz);
     }
 }

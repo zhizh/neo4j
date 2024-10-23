@@ -21,6 +21,8 @@ import org.neo4j.cypher.internal.expressions.Literal
 import org.neo4j.cypher.internal.expressions.StringLiteral
 import org.neo4j.cypher.internal.expressions.UnsignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.util.symbols.CTString
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
+import org.neo4j.gqlstatus.GqlHelper
 
 class LiteralTest extends SemanticFunSuite {
 
@@ -43,7 +45,9 @@ class LiteralTest extends SemanticFunSuite {
   }
 
   test("throws error for too large unsigned decimal numbers") {
-    assertSemanticError(unsignedDecimal("999999999999999999999999999"), "integer is too large")
+    val bigNumber = "999999999999999999999999999"
+    val gql = GqlHelper.getGql22003(bigNumber, 0, 0, 0)
+    assertSemanticError(gql, unsignedDecimal(bigNumber), "integer is too large")
   }
 
   test("correctly parses signed decimal numbers") {
@@ -60,7 +64,9 @@ class LiteralTest extends SemanticFunSuite {
   }
 
   test("throws error for too large signed decimal numbers") {
-    assertSemanticError(signedDecimal("999999999999999999999999999"), "integer is too large")
+    val bigNumber = "999999999999999999999999999"
+    val gql = GqlHelper.getGql22003(bigNumber, 0, 0, 0)
+    assertSemanticError(gql, signedDecimal(bigNumber), "integer is too large")
   }
 
   test("correctly parses decimal double numbers") {
@@ -106,8 +112,12 @@ class LiteralTest extends SemanticFunSuite {
   }
 
   test("throws error for too large decimal numbers") {
-    assertSemanticError(decimalDouble("1E9999"), "floating point number is too large")
-    assertSemanticError(decimalDouble("1e9999"), "floating point number is too large")
+    var bigNumber = "1E9999"
+    var gql = GqlHelper.getGql22003(bigNumber, 0, 0, 0)
+    assertSemanticError(gql, decimalDouble(bigNumber), "floating point number is too large")
+    bigNumber = "1e9999"
+    gql = GqlHelper.getGql22003(bigNumber, 0, 0, 0)
+    assertSemanticError(gql, decimalDouble(bigNumber), "floating point number is too large")
   }
 
   test("correctly parses old syntax octal numbers") {
@@ -154,15 +164,25 @@ class LiteralTest extends SemanticFunSuite {
   }
 
   test("throws error for too large old syntax octal numbers") {
-    assertSemanticError(signedOctal("077777777777777777777777777777"), "integer is too large")
+    val bigNumber = "077777777777777777777777777777"
+    val gql = GqlHelper.getGql22003(bigNumber, 0, 0, 0)
+    assertSemanticError(gql, signedOctal(bigNumber), "integer is too large")
   }
 
   test("throws error for too large octal numbers") {
-    assertSemanticError(signedOctal("0o77777777777777777777777777777"), "integer is too large")
+    val bigNumber = "0o77777777777777777777777777777"
+    val gql = GqlHelper.getGql22003(bigNumber, 0, 0, 0)
+    assertSemanticError(gql, signedOctal(bigNumber), "integer is too large")
   }
 
   private def assertSemanticError(literal: Literal, errorMessage: String): Unit = {
     val result = SemanticExpressionCheck.simple(literal).run(SemanticState.clean)
     assert(result.errors === Vector(SemanticError(errorMessage, pos)))
   }
+
+  private def assertSemanticError(gql: ErrorGqlStatusObject, literal: Literal, errorMessage: String): Unit = {
+    val result = SemanticExpressionCheck.simple(literal).run(SemanticState.clean)
+    assert(result.errors === Vector(SemanticError(gql, errorMessage, pos)))
+  }
+
 }

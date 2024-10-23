@@ -67,6 +67,13 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject getGql22003(String value, int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
+                .withParam(GqlParams.StringParam.value, value)
+                .atPosition(line, column, offset)
+                .build();
+    }
+
     public static ErrorGqlStatusObject getGql22N27(String input, String variable, List<String> validTypes) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N27)
                 .withParam(GqlParams.StringParam.input, input)
@@ -293,6 +300,16 @@ public class GqlHelper {
 
     public static ErrorGqlStatusObject get51N00() {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .build();
+    }
+
+    public static ErrorGqlStatusObject getGql51N00_51N18(String procMethod) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N18)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.procMethod, procMethod)
+                        .build())
                 .build();
     }
 

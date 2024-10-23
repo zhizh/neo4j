@@ -22,11 +22,6 @@ import org.neo4j.cypher.internal.util.symbols.CypherType
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
-import org.neo4j.gqlstatus.GqlHelper.getGql42001_42I25
-import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N07
-import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N22
-import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
-import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
@@ -212,12 +207,12 @@ object SemanticError {
   }
 
   def variableAlreadyDeclaredInOuterScope(name: String, position: InputPosition): SemanticError = {
-    val gql = getGql42001_42N07(name, position.line, position.column, position.offset)
+    val gql = GqlHelper.getGql42001_42N07(name, position.line, position.column, position.offset)
     SemanticError(gql, s"Variable `$name` already declared in outer scope", position)
   }
 
   def variableShadowingOuterScope(name: String, position: InputPosition): SemanticError = {
-    val gql = getGql42001_42N07(name, position.line, position.column, position.offset)
+    val gql = GqlHelper.getGql42001_42N07(name, position.line, position.column, position.offset)
     SemanticError(
       gql,
       s"The variable `$name` is shadowing a variable with the same name from the outer scope and needs to be renamed",
@@ -367,17 +362,17 @@ object SemanticError {
   }
 
   def aExpressionCannotContainUpdates(expr: String, position: InputPosition): SemanticError = {
-    val gql = getGql42001_42N57(expr, position.line, position.column, position.offset)
+    val gql = GqlHelper.getGql42001_42N57(expr, position.line, position.column, position.offset)
     SemanticError(gql, s"A $expr Expression cannot contain any updates", position)
   }
 
   def anExpressionCannotContainUpdates(expr: String, position: InputPosition): SemanticError = {
-    val gql = getGql42001_42N57(expr, position.line, position.column, position.offset)
+    val gql = GqlHelper.getGql42001_42N57(expr, position.line, position.column, position.offset)
     SemanticError(gql, s"An $expr Expression cannot contain any updates", position)
   }
 
   def singleReturnColumnRequired(position: InputPosition): SemanticError = {
-    val gql = getGql42001_42N22(position.line, position.column, position.offset)
+    val gql = GqlHelper.getGql42001_42N22(position.line, position.column, position.offset)
     SemanticError(gql, "A Collect Expression must end with a single return column.", position)
   }
 
@@ -407,7 +402,7 @@ object SemanticError {
   }
 
   def incompatibleReturnColumns(position: InputPosition): SemanticError = {
-    val gql = getGql42001_42N39(position.line, position.column, position.offset)
+    val gql = GqlHelper.getGql42001_42N39(position.line, position.column, position.offset)
     SemanticError(gql, "All sub queries in an UNION must have the same return column names", position)
   }
 
@@ -423,7 +418,7 @@ object SemanticError {
   }
 
   def invalidUseOfCIT(position: InputPosition): SemanticError = {
-    val gql = getGql42001_42I25(position.line, position.column, position.offset)
+    val gql = GqlHelper.getGql42001_42I25(position.line, position.column, position.offset)
     SemanticError(
       gql,
       "CALL { ... } IN TRANSACTIONS after a write clause is not supported",
@@ -509,6 +504,16 @@ object SemanticError {
       "For example, in 'RETURN n.a, n.a + n.b + count(*)' the aggregation expression 'n.a + n.b + count(*)' includes the implicit grouping key 'n.b'. " +
       "It may be possible to rewrite the query by extracting these grouping/aggregation expressions into a preceding WITH clause. " +
       s"Illegal expression(s): ${variables.mkString(", ")}"
+
+  def numberTooLarge(numberType: String, value: String, position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql22003(value, position.line, position.column, position.offset)
+    SemanticError(gql, s"$numberType is too large", position)
+  }
+
+  def integerOperationCannotBeRepresented(operation: String, position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql22003(operation, position.line, position.column, position.offset)
+    SemanticError(gql, s"result of $operation cannot be represented as an integer", position)
+  }
 
 }
 

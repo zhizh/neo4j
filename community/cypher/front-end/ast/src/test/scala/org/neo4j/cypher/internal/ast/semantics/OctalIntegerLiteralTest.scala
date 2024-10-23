@@ -20,6 +20,8 @@ import org.neo4j.cypher.internal.ast.SemanticCheckInTest.SemanticCheckWithDefaul
 import org.neo4j.cypher.internal.expressions.Expression.SemanticContext
 import org.neo4j.cypher.internal.expressions.SignedOctalIntegerLiteral
 import org.neo4j.cypher.internal.util.DummyPosition
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
+import org.neo4j.gqlstatus.GqlHelper
 
 class OctalIntegerLiteralTest extends SemanticFunSuite {
 
@@ -56,11 +58,15 @@ class OctalIntegerLiteralTest extends SemanticFunSuite {
 
   // old syntax
   test("throws error for too large old syntax octal numbers") {
-    assertSemanticError("010000000000000000000000", "integer is too large")
+    val bigNumber = "010000000000000000000000"
+    val gql = GqlHelper.getGql22003(bigNumber, 0, 4, 4)
+    assertSemanticError(gql, bigNumber, "integer is too large")
   }
 
   test("throws error for too large octal numbers") {
-    assertSemanticError("0o10000000000000000000000", "integer is too large")
+    val bigNumber = "0o10000000000000000000000"
+    val gql = GqlHelper.getGql22003(bigNumber, 0, 4, 4)
+    assertSemanticError(gql, bigNumber, "integer is too large")
   }
 
   // old syntax
@@ -76,5 +82,11 @@ class OctalIntegerLiteralTest extends SemanticFunSuite {
     val literal = SignedOctalIntegerLiteral(stringValue)(DummyPosition(4))
     val result = SemanticExpressionCheck.check(SemanticContext.Simple, literal).run(SemanticState.clean)
     assert(result.errors === Vector(SemanticError(errorMessage, DummyPosition(4))))
+  }
+
+  private def assertSemanticError(gql: ErrorGqlStatusObject, stringValue: String, errorMessage: String): Unit = {
+    val literal = SignedOctalIntegerLiteral(stringValue)(DummyPosition(4))
+    val result = SemanticExpressionCheck.check(SemanticContext.Simple, literal).run(SemanticState.clean)
+    assert(result.errors === Vector(SemanticError(gql, errorMessage, DummyPosition(4))))
   }
 }

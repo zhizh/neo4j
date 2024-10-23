@@ -669,7 +669,9 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlStatus("22003"),
             """
                     The numeric value { %s } is outside the required range.""",
-            new GqlParams.GqlParam[] {GqlParams.NumberParam.value},
+            new GqlParams.GqlParam[] {GqlParams.StringParam.value
+            }, // StringParam since sometimes we will have ex. value > Long.MaxValue which would need to be parsed out
+            // (and then back to String in the end)
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "numeric value out of range",

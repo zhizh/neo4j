@@ -64,17 +64,14 @@ object procsHelpers {
 
   def asOption[T](optional: Optional[T]): Option[T] = if (optional.isPresent) Some(optional.get()) else None
 
-  def asCypherProcMode(mode: Mode): ProcedureAccessMode = mode match {
+  def asCypherProcMode(signature: String, mode: Mode): ProcedureAccessMode = mode match {
     case Mode.READ    => ProcedureReadOnlyAccess
     case Mode.DEFAULT => ProcedureReadOnlyAccess
     case Mode.WRITE   => ProcedureReadWriteAccess
     case Mode.SCHEMA  => ProcedureSchemaWriteAccess
     case Mode.DBMS    => ProcedureDbmsAccess
 
-    case _ => throw new CypherExecutionException(
-        "Unable to execute procedure, because it requires an unrecognized execution mode: " + mode.name(),
-        null
-      )
+    case _ => throw CypherExecutionException.unrecognisedExecutionMode(signature, mode.name())
   }
 
   def asCypherValue(neo4jValue: DefaultParameterValue): AnyValue = ValueUtils.of(neo4jValue.value())
@@ -134,7 +131,7 @@ object procsHelpers {
         ).toIndexedSeq
       )
     val deprecatedBy = asOption(signature.deprecated())
-    val mode = asCypherProcMode(signature.mode())
+    val mode = asCypherProcMode(signature.name().name(), signature.mode())
     val description = asOption(signature.description())
     val warning = asOption(signature.warning())
     val threadSafe = signature.threadSafe()

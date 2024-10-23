@@ -20,6 +20,8 @@ import org.neo4j.cypher.internal.ast.SemanticCheckInTest.SemanticCheckWithDefaul
 import org.neo4j.cypher.internal.expressions.Expression.SemanticContext
 import org.neo4j.cypher.internal.expressions.SignedHexIntegerLiteral
 import org.neo4j.cypher.internal.util.DummyPosition
+import org.neo4j.gqlstatus.ErrorGqlStatusObject
+import org.neo4j.gqlstatus.GqlHelper
 
 class HexIntegerLiteralTest extends SemanticFunSuite {
 
@@ -39,7 +41,9 @@ class HexIntegerLiteralTest extends SemanticFunSuite {
   }
 
   test("throws error for too large hexadecimal numbers") {
-    assertSemanticError("0xfffffffffffffffff", "integer is too large")
+    val bigNumber = "0xfffffffffffffffff"
+    val gql = GqlHelper.getGql22003(bigNumber, 0, 4, 4)
+    assertSemanticError(gql, bigNumber, "integer is too large")
   }
 
   test("correctly parse hexadecimal Long.MIN_VALUE") {
@@ -50,5 +54,11 @@ class HexIntegerLiteralTest extends SemanticFunSuite {
     val literal = SignedHexIntegerLiteral(stringValue)(DummyPosition(4))
     val result = SemanticExpressionCheck.check(SemanticContext.Simple, literal).run(SemanticState.clean)
     assert(result.errors === Vector(SemanticError(errorMessage, DummyPosition(4))))
+  }
+
+  private def assertSemanticError(gql: ErrorGqlStatusObject, stringValue: String, errorMessage: String): Unit = {
+    val literal = SignedHexIntegerLiteral(stringValue)(DummyPosition(4))
+    val result = SemanticExpressionCheck.check(SemanticContext.Simple, literal).run(SemanticState.clean)
+    assert(result.errors === Vector(SemanticError(gql, errorMessage, DummyPosition(4))))
   }
 }

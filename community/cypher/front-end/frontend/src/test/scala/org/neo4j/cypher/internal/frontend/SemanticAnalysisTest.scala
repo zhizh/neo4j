@@ -28,7 +28,7 @@ import org.neo4j.cypher.internal.util.RepeatedRelationshipReference
 import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
-import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
@@ -1757,7 +1757,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
             InputPosition(10, 1, 11)
           ),
           SemanticError(
-            getGql42001_42N39(1, 18, 17),
+            GqlHelper.getGql42001_42N39(1, 18, 17),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(17, 1, 18)
           )
@@ -1776,7 +1776,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
             InputPosition(35 + extraLength, 1, 36 + extraLength)
           ),
           SemanticError(
-            getGql42001_42N39(1, 20, 19),
+            GqlHelper.getGql42001_42N39(1, 20, 19),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(19, 1, 20)
           )
@@ -1790,7 +1790,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
-            getGql42001_42N39(1, 30, 29),
+            GqlHelper.getGql42001_42N39(1, 30, 29),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(29, 1, 30)
           )
@@ -1804,7 +1804,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
-            getGql42001_42N39(1, 43, 42),
+            GqlHelper.getGql42001_42N39(1, 43, 42),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(42, 1, 43)
           )
@@ -1818,7 +1818,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
-            getGql42001_42N39(1, 26, 25),
+            GqlHelper.getGql42001_42N39(1, 26, 25),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(25, 1, 26)
           )
@@ -1832,7 +1832,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
-            getGql42001_42N39(1, 28, 27),
+            GqlHelper.getGql42001_42N39(1, 28, 27),
             "All sub queries in an UNION must have the same return column names",
             InputPosition(27, 1, 28)
           )
@@ -2006,21 +2006,25 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
   }
 
   test("Should not allow too large lower bound in variable length relationship") {
-    val query = "MATCH ()-[*9999999999999999999999999999999999999999999..]->() RETURN 1"
+    val bigNumber = "9999999999999999999999999999999999999999999"
+    val query = s"MATCH ()-[*$bigNumber..]->() RETURN 1"
+    val gql = GqlHelper.getGql22003(bigNumber, 1, 12, 11)
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("integer is too large", InputPosition(11, 1, 12))
+        SemanticError(gql, "integer is too large", InputPosition(11, 1, 12))
       )
     )
   }
 
   test("Should not allow too large upper bound in variable length relationship") {
-    val query = "MATCH ()-[*..9999999999999999999999999999999999999999999]->() RETURN 1"
+    val bigNumber = "9999999999999999999999999999999999999999999"
+    val query = s"MATCH ()-[*..$bigNumber]->() RETURN 1"
+    val gql = GqlHelper.getGql22003(bigNumber, 1, 14, 13)
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("integer is too large", InputPosition(13, 1, 14))
+        SemanticError(gql, "integer is too large", InputPosition(13, 1, 14))
       )
     )
   }

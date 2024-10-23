@@ -136,7 +136,9 @@ object SignatureResolver {
             )
           )),
       deprecationInfo = Some(DeprecationInfo(signature.isDeprecated, deprecatedBy)),
-      accessMode = asCypherProcMode(signature.mode()),
+      accessMode = {
+        asCypherProcMode(signature.name().name(), signature.mode())
+      },
       description = signature.description().asScala,
       warning = signature.warning().asScala,
       eager = signature.eager(),
@@ -207,17 +209,14 @@ object SignatureResolver {
       )
   }
 
-  private def asCypherProcMode(mode: Mode): ProcedureAccessMode = mode match {
+  private def asCypherProcMode(signature: String, mode: Mode): ProcedureAccessMode = mode match {
     case Mode.READ    => ProcedureReadOnlyAccess
     case Mode.DEFAULT => ProcedureReadOnlyAccess
     case Mode.WRITE   => ProcedureReadWriteAccess
     case Mode.SCHEMA  => ProcedureSchemaWriteAccess
     case Mode.DBMS    => ProcedureDbmsAccess
 
-    case _ => throw new CypherExecutionException(
-        "Unable to execute procedure, because it requires an unrecognized execution mode: " + mode.name(),
-        null
-      )
+    case _ => throw CypherExecutionException.unrecognisedExecutionMode(signature, mode.name())
   }
 
   implicit private class OptionalOps[T](optional: Optional[T]) {

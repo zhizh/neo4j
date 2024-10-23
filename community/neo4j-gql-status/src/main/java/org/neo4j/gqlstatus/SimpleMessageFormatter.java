@@ -41,7 +41,6 @@ public class SimpleMessageFormatter {
         int prevOffset = 0;
 
         for (int offset : offsets) {
-            checkParamType(params, currentParam);
             message.append(template, prevOffset, offset);
             var formattedParam = processParam(statusParameterKeys, joinStyles, params, currentParam++);
             message.append(formattedParam);
@@ -67,20 +66,6 @@ public class SimpleMessageFormatter {
             return key.process(list, joinStyle);
         } else {
             return paramKey.process(params[currentParam]);
-        }
-    }
-
-    private static void checkParamType(Object[] params, int currentParam) {
-        if (!(params == null)
-                && !(params[currentParam] == null)
-                && !(params[currentParam] instanceof String)
-                && !(params[currentParam] instanceof Boolean)
-                && !(params[currentParam] instanceof Integer)
-                && !(params[currentParam] instanceof Long)
-                && !(params[currentParam] instanceof List)) {
-            throw new IllegalArgumentException(
-                    "Expected parameter to be String, Boolean, Integer, Long or List<String> but was "
-                            + params[currentParam]);
         }
     }
 }

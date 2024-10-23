@@ -681,7 +681,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
       case x: DecimalIntegerLiteral =>
         when(!validNumber(x)) {
           if (x.stringVal matches "^-?[1-9][0-9]*$") {
-            SemanticError("integer is too large", x.position)
+            SemanticError.numberTooLarge("integer", x.stringVal, x.position)
           } else {
             SemanticError("invalid literal number", x.position)
           }
@@ -691,7 +691,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
         val stringVal = x.stringVal
         when(!validNumber(x)) {
           if (stringVal matches "^-?0o?[0-7]+$") {
-            SemanticError("integer is too large", x.position)
+            SemanticError.numberTooLarge("integer", x.stringVal, x.position)
           } else {
             SemanticError("invalid literal number", x.position)
           }
@@ -720,7 +720,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
         val stringVal = x.stringVal
         when(!validNumber(x)) {
           if (stringVal matches "^-?0x[0-9a-fA-F]+$") {
-            SemanticError("integer is too large", x.position)
+            SemanticError.numberTooLarge("integer", x.stringVal, x.position)
           } else {
             SemanticError("invalid literal number", x.position)
           }
@@ -745,7 +745,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
           SemanticError("invalid literal number", x.position)
         } ifOkChain
           when(x.value.isInfinite) {
-            SemanticError("floating point number is too large", x.position)
+            SemanticError.numberTooLarge("floating point number", x.stringVal, x.position)
           } chain specifyType(CTFloat, x)
 
       case x: StringLiteral =>
@@ -945,15 +945,18 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
   private def checkAddBoundary(add: Add): SemanticCheck =
     (add.lhs, add.rhs) match {
       case (l: IntegerLiteral, r: IntegerLiteral) if Try(Math.addExact(l.value, r.value)).isFailure =>
-        SemanticError(s"result of ${l.stringVal} + ${r.stringVal} cannot be represented as an integer", add.position)
+        SemanticError.integerOperationCannotBeRepresented(
+          s"${l.stringVal} + ${r.stringVal}",
+          add.position
+        )
       case _ => SemanticCheck.success
     }
 
   private def checkSubtractBoundary(subtract: Subtract): SemanticCheck =
     (subtract.lhs, subtract.rhs) match {
       case (l: IntegerLiteral, r: IntegerLiteral) if Try(Math.subtractExact(l.value, r.value)).isFailure =>
-        SemanticError(
-          s"result of ${l.stringVal} - ${r.stringVal} cannot be represented as an integer",
+        SemanticError.integerOperationCannotBeRepresented(
+          s"${l.stringVal} - ${r.stringVal}",
           subtract.position
         )
       case _ => SemanticCheck.success
@@ -962,15 +965,18 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
   private def checkUnarySubtractBoundary(subtract: UnarySubtract): SemanticCheck =
     subtract.rhs match {
       case r: IntegerLiteral if Try(Math.subtractExact(0, r.value)).isFailure =>
-        SemanticError(s"result of -${r.stringVal} cannot be represented as an integer", subtract.position)
+        SemanticError.integerOperationCannotBeRepresented(
+          s"-${r.stringVal}",
+          subtract.position
+        )
       case _ => SemanticCheck.success
     }
 
   private def checkMultiplyBoundary(multiply: Multiply): SemanticCheck =
     (multiply.lhs, multiply.rhs) match {
       case (l: IntegerLiteral, r: IntegerLiteral) if Try(Math.multiplyExact(l.value, r.value)).isFailure =>
-        SemanticError(
-          s"result of ${l.stringVal} * ${r.stringVal} cannot be represented as an integer",
+        SemanticError.integerOperationCannotBeRepresented(
+          s"${l.stringVal} * ${r.stringVal}",
           multiply.position
         )
       case _ => SemanticCheck.success

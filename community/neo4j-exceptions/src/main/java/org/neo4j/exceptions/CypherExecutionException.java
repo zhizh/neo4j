@@ -19,6 +19,7 @@
  */
 package org.neo4j.exceptions;
 
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
@@ -73,6 +74,20 @@ public class CypherExecutionException extends Neo4jException {
                 .withParam(GqlParams.StringParam.msg, cause.getMessage())
                 .build();
         return new CypherExecutionException(gql, cause.getMessage(), cause);
+    }
+
+    public static CypherExecutionException unrecognisedExecutionMode(String procedure, String mode) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02)
+                .withClassification(ErrorClassification.DATABASE_ERROR)
+                .withParam(GqlParams.StringParam.proc, procedure)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N03)
+                        .withClassification(ErrorClassification.DATABASE_ERROR)
+                        .withParam(GqlParams.StringParam.proc, procedure)
+                        .withParam(GqlParams.StringParam.procExeMode, mode)
+                        .build())
+                .build();
+        return new CypherExecutionException(
+                gql, "Unable to execute procedure, because it requires an unrecognized execution mode: " + mode, null);
     }
 
     @Override

@@ -23,6 +23,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 import java.util.List;
 import org.neo4j.exceptions.KernelException;
+import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlHelper;
@@ -593,5 +594,37 @@ public class ProcedureException extends KernelException {
                 "Failed to invoke %s: %s",
                 typeAndName,
                 "Caused by: " + (rootCause != null ? rootCause : cause));
+    }
+
+    public static ProcedureException invalidReturnType(String methodName, String badReturnValue) {
+        String msg = String.format(
+                "Procedures must return a Stream of records, where a record is a concrete class%n"
+                        + "that you define and not a %s.",
+                badReturnValue);
+        var gql = GqlHelper.getGql51N00_51N18(methodName);
+        return new ProcedureException(gql, Status.Procedure.TypeError, msg);
+    }
+
+    public static ProcedureException invalidReturnTypeExtended(String methodName, Class<?> userClass) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N18)
+                        .withClassification(ErrorClassification.CLIENT_ERROR)
+                        .withParam(GqlParams.StringParam.procMethod, methodName)
+                        .build())
+                .build();
+        return new ProcedureException(
+                gql,
+                Status.Procedure.TypeError,
+                "Procedures must return a Stream of records, where a record is a concrete class%n"
+                        + "that you define, with public non-final fields defining the fields in the record.%n"
+                        + "If you''d like your procedure to return `%s`, you could define a record class like:%n"
+                        + "public class Output '{'%n"
+                        + "    public %s out;%n"
+                        + "'}'%n"
+                        + "%n"
+                        + "And then define your procedure as returning `Stream<Output>`.",
+                userClass.getSimpleName(),
+                userClass.getSimpleName());
     }
 }

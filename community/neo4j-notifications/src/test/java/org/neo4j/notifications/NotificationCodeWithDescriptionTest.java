@@ -23,7 +23,6 @@ import static java.util.Arrays.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.neo4j.notifications.NotificationCodeWithDescription.aggregationSkippedNull;
 import static org.neo4j.notifications.NotificationCodeWithDescription.authProviderNotDefined;
 import static org.neo4j.notifications.NotificationCodeWithDescription.cartesianProduct;
@@ -1800,19 +1799,6 @@ class NotificationCodeWithDescriptionTest {
                         .build())
                 .isExactlyInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Expected parameterKeys: [relType] and parameterValues: [A, B] to have the same length.");
-    }
-
-    @Test
-    void notificationsShouldNotHaveParameterValuesOfUnsupportedType() {
-        var notificationBuilder = new NotificationImplementation.NotificationBuilder(
-                NotificationCodeWithDescription.DEPRECATED_PROCEDURE_WITH_REPLACEMENT);
-
-        Exception e = assertThrows(IllegalArgumentException.class, () -> {
-            notificationBuilder.setMessageParameters(new Object[] {"A", 1.13});
-            notificationBuilder.build();
-        });
-        assertThat(e.getMessage())
-                .isEqualTo("Expected parameter to be String, Boolean, Integer, Long or List<String> but was 1.13");
     }
 
     /**
