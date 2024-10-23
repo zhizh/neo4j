@@ -2126,7 +2126,7 @@ public final class CypherFunctions {
         return Values.booleanValue(result);
     }
 
-    private static final CypherTypeValueMapper CYPHER_TYPE_NAME_VALUE_MAPPER = new CypherTypeValueMapper();
+    public static final CypherTypeValueMapper CYPHER_TYPE_NAME_VALUE_MAPPER = new CypherTypeValueMapper();
 
     public static Value valueType(AnyValue in) {
         return Values.stringValue(

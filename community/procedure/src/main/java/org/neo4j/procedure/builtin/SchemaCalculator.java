@@ -19,6 +19,8 @@
  */
 package org.neo4j.procedure.builtin;
 
+import static org.neo4j.cypher.operations.CypherFunctions.CYPHER_TYPE_NAME_VALUE_MAPPER;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import java.util.stream.Stream;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.impl.factory.primitive.IntSets;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
+import org.neo4j.cypher.internal.util.symbols.CypherType;
 import org.neo4j.internal.kernel.api.CursorFactory;
 import org.neo4j.internal.kernel.api.NodeCursor;
 import org.neo4j.internal.kernel.api.PropertyCursor;
@@ -53,13 +56,15 @@ public class SchemaCalculator {
     private final CursorFactory cursors;
     private final CursorContext cursorContext;
     private final MemoryTracker memoryTracker;
+    private boolean useCypherTypes;
 
-    SchemaCalculator(KernelTransaction ktx) {
+    SchemaCalculator(KernelTransaction ktx, boolean useCypherTypes) {
         this.dataRead = ktx.dataRead();
         this.tokenRead = ktx.tokenRead();
         this.cursors = ktx.cursors();
         this.cursorContext = ktx.cursorContext();
         this.memoryTracker = ktx.memoryTracker();
+        this.useCypherTypes = useCypherTypes;
 
         // the only one that is common for both nodes and rels so thats why we can do it here
         propertyIdToPropertyNameMapping = new HashMap<>(tokenRead.propertyKeyCount());
@@ -194,7 +199,10 @@ public class SchemaCalculator {
                     Value currentValue = propertyCursor.propertyValue();
                     var key = new RelationshipTypePropertyKey(typeId, propertyKey);
                     updateValueTypeInMapping(
-                            currentValue, key, relMappings.relationshipTypeIdANDPropertyTypeIdToValueType);
+                            currentValue,
+                            key,
+                            relMappings.relationshipTypeIdANDPropertyTypeIdToValueType,
+                            this.useCypherTypes);
 
                     propertyIds.add(propertyKey);
                 }
@@ -250,7 +258,11 @@ public class SchemaCalculator {
                     Value currentValue = propertyCursor.propertyValue();
                     int propertyKeyId = propertyCursor.propertyKey();
                     var key = new LabelSetPropertyKey(labels, propertyKeyId);
-                    updateValueTypeInMapping(currentValue, key, nodeMappings.labelSetANDNodePropertyKeyIdToValueType);
+                    updateValueTypeInMapping(
+                            currentValue,
+                            key,
+                            nodeMappings.labelSetANDNodePropertyKeyIdToValueType,
+                            this.useCypherTypes);
 
                     propertyIds.add(propertyKeyId);
                 }
@@ -292,10 +304,10 @@ public class SchemaCalculator {
     }
 
     private static <T> void updateValueTypeInMapping(
-            Value currentValue, T key, Map<T, ValueTypeListHelper> mappingToUpdate) {
+            Value currentValue, T key, Map<T, ValueTypeListHelper> mappingToUpdate, boolean useCypherTypes) {
         ValueTypeListHelper helper = mappingToUpdate.get(key);
         if (helper == null) {
-            helper = new ValueTypeListHelper(currentValue);
+            helper = new ValueTypeListHelper(currentValue, useCypherTypes);
             mappingToUpdate.put(key, helper);
         } else {
             helper.updateValueTypesWith(currentValue);
@@ -312,9 +324,11 @@ public class SchemaCalculator {
     private static class ValueTypeListHelper {
         private final Set<String> seenValueTypes;
         private boolean isMandatory = true;
+        private boolean useCypherTypes;
 
-        ValueTypeListHelper(Value v) {
+        ValueTypeListHelper(Value v, boolean useCypherTypes) {
             seenValueTypes = new HashSet<>();
+            this.useCypherTypes = useCypherTypes;
             updateValueTypesWith(v);
         }
 
@@ -334,7 +348,12 @@ public class SchemaCalculator {
             if (newValue == null) {
                 throw new IllegalArgumentException();
             }
-            seenValueTypes.add(newValue.getTypeName());
+
+            seenValueTypes.add(
+                    useCypherTypes
+                            ? CypherType.normalizeTypes(newValue.map(CYPHER_TYPE_NAME_VALUE_MAPPER))
+                                    .description()
+                            : newValue.getTypeName());
         }
     }
 

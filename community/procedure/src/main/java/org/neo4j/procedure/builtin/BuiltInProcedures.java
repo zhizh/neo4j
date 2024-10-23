@@ -47,6 +47,8 @@ import org.neo4j.internal.kernel.api.security.AccessMode;
 import org.neo4j.internal.kernel.api.security.SecurityContext;
 import org.neo4j.internal.schema.IndexProviderDescriptor;
 import org.neo4j.kernel.api.KernelTransaction;
+import org.neo4j.kernel.api.QueryLanguage;
+import org.neo4j.kernel.api.procedure.QueryLanguageScope;
 import org.neo4j.kernel.api.procedure.SystemProcedure;
 import org.neo4j.kernel.impl.api.index.IndexingService;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
@@ -251,6 +253,23 @@ public class BuiltInProcedures {
 
     @SystemProcedure
     @NotThreadSafe
+    @QueryLanguageScope(scope = {QueryLanguage.CYPHER_5})
+    @Procedure(
+            name = "db.schema.nodeTypeProperties",
+            mode = Mode.READ,
+            warning = "The field `propertyTypes` will change output format in the next major version.")
+    @Description("Show the derived property schema of the nodes in tabular form.")
+    public Stream<NodePropertySchemaInfoResult> nodePropertySchemaCypher5() {
+        if (callContext.isSystemDatabase()) {
+            return Stream.empty();
+        }
+
+        return new SchemaCalculator(kernelTransaction, false).calculateTabularResultStreamForNodes();
+    }
+
+    @SystemProcedure
+    @NotThreadSafe
+    @QueryLanguageScope(scope = {QueryLanguage.CYPHER_25})
     @Procedure(name = "db.schema.nodeTypeProperties", mode = Mode.READ)
     @Description("Show the derived property schema of the nodes in tabular form.")
     public Stream<NodePropertySchemaInfoResult> nodePropertySchema() {
@@ -258,11 +277,28 @@ public class BuiltInProcedures {
             return Stream.empty();
         }
 
-        return new SchemaCalculator(kernelTransaction).calculateTabularResultStreamForNodes();
+        return new SchemaCalculator(kernelTransaction, true).calculateTabularResultStreamForNodes();
     }
 
     @SystemProcedure
     @NotThreadSafe
+    @QueryLanguageScope(scope = {QueryLanguage.CYPHER_5})
+    @Procedure(
+            name = "db.schema.relTypeProperties",
+            mode = Mode.READ,
+            warning = "The field `propertyTypes` will change output format in the next major version.")
+    @Description("Show the derived property schema of the relationships in tabular form.")
+    public Stream<RelationshipPropertySchemaInfoResult> relationshipPropertySchemaCypher5() {
+        if (callContext.isSystemDatabase()) {
+            return Stream.empty();
+        }
+
+        return new SchemaCalculator(kernelTransaction, false).calculateTabularResultStreamForRels();
+    }
+
+    @SystemProcedure
+    @NotThreadSafe
+    @QueryLanguageScope(scope = {QueryLanguage.CYPHER_25})
     @Procedure(name = "db.schema.relTypeProperties", mode = Mode.READ)
     @Description("Show the derived property schema of the relationships in tabular form.")
     public Stream<RelationshipPropertySchemaInfoResult> relationshipPropertySchema() {
@@ -270,7 +306,7 @@ public class BuiltInProcedures {
             return Stream.empty();
         }
 
-        return new SchemaCalculator(kernelTransaction).calculateTabularResultStreamForRels();
+        return new SchemaCalculator(kernelTransaction, true).calculateTabularResultStreamForRels();
     }
 
     @SystemProcedure
