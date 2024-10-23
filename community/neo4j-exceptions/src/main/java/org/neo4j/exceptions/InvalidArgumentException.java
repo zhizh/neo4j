@@ -133,6 +133,7 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException bothAllowedAndDeniedDbs() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N85)
+                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new InvalidArgumentException(gql, "Can't specify both allowed and denied databases");
     }
@@ -251,5 +252,17 @@ public class InvalidArgumentException extends Neo4jException {
                 .withParam(GqlParams.StringParam.auth, authProvider)
                 .build();
         return new InvalidArgumentException(gql, legacyMessage);
+    }
+
+    public static InvalidArgumentException couldNotGetPassword() {
+        var msg = "Could not get password name field from password expression.";
+        var gql = GqlHelper.get50N00(InvalidArgumentException.class.getSimpleName(), msg);
+        return new InvalidArgumentException(gql, msg);
+    }
+
+    public static InvalidArgumentException remoteDatabaseUrl() {
+        var msg = "Could not validate remote database alias url.";
+        var gql = GqlHelper.get50N00(InvalidArgumentException.class.getSimpleName(), msg);
+        return new InvalidArgumentException(gql, msg);
     }
 }

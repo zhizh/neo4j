@@ -133,9 +133,7 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
   }
 
   def throwCantCompile(unknownPlan: LogicalPlan): Nothing = {
-    throw new CantCompileQueryException(
-      s"Plan is not a schema command: ${unknownPlan.getClass.getSimpleName}"
-    )
+    throw CantCompileQueryException.planNotSchemaCommand(unknownPlan.getClass.getSimpleName)
   }
 
   def queryType(logicalPlan: LogicalPlan): Option[InternalQueryType] =

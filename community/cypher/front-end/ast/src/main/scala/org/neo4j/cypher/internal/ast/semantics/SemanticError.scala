@@ -515,6 +515,11 @@ object SemanticError {
     SemanticError(gql, s"result of $operation cannot be represented as an integer", position)
   }
 
+  def notSupported(pos: InputPosition): SemanticError = {
+    val msg = "Not supported."
+    val gql = GqlHelper.get50N00(SemanticError.getClass.getSimpleName, msg, pos.line, pos.column, pos.offset)
+    SemanticError(gql, msg, pos)
+  }
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

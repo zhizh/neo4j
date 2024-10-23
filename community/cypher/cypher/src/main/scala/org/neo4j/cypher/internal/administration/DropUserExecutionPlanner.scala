@@ -65,10 +65,7 @@ case class DropUserExecutionPlanner(
               s"Failed to delete the specified user '${runtimeStringValue(userName, p)}'",
               error
             )
-          case (error, p) => new CypherExecutionException(
-              s"Failed to delete the specified user '${runtimeStringValue(userName, p)}'.",
-              error
-            )
+          case (error, p) => CypherExecutionException.deleteEntityCause("user", runtimeStringValue(userName, p), error)
         },
       sourcePlan,
       parameterTransformer = ParameterTransformer().convert(userNameFields.nameConverter)

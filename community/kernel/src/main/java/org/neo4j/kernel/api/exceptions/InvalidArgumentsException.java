@@ -65,6 +65,27 @@ public class InvalidArgumentsException extends GqlException implements Status.Ha
                 gql, String.format("Option `%s` requires positive integer argument, got `%d`", option, value));
     }
 
+    public static InvalidArgumentsException invalidResource(String typeString) {
+        var gqlMsg = String.format("Found invalid resource (%s) in the system graph.", typeString);
+        var gql = GqlHelper.get50N00(InvalidArgumentsException.class.getSimpleName(), gqlMsg);
+        return new InvalidArgumentsException(
+                gql, String.format("Found not valid resource (%s) in the system graph.", typeString));
+    }
+
+    public static InvalidArgumentsException entityResourceInvalidAction(
+            String entity, String action, String legacyFormat) {
+        var msg = String.format(
+                "%s resource cannot be combined with action %s%s%s", entity, legacyFormat, action, legacyFormat);
+        var gql = GqlHelper.get50N00(InvalidArgumentsException.class.getSimpleName(), msg);
+        return new InvalidArgumentsException(gql, msg);
+    }
+
+    public static InvalidArgumentsException internalAlterServer(String name) {
+        var msg = String.format("Server '%s' can't be altered: must specify options", name);
+        var gql = GqlHelper.get50N00(InvalidArgumentsException.class.getSimpleName(), msg);
+        return new InvalidArgumentsException(gql, msg);
+    }
+
     @Override
     public Status status() {
         return status;

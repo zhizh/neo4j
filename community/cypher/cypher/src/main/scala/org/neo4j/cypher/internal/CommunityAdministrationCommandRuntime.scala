@@ -424,7 +424,7 @@ case class CommunityAdministrationCommandRuntime(
                 )
               case (error: Neo4jException, _) => error
               case (error, p) =>
-                new CypherExecutionException(s"User '${currentUser(p)}' failed to alter their own password.", error)
+                CypherExecutionException.alterOwnPassword(currentUser(p), error)
             }
             .handleResult((_, value, _) => {
               if (value eq BooleanValue.TRUE) Continue

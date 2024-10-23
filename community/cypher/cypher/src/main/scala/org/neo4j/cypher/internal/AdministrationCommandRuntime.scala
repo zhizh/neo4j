@@ -341,9 +341,7 @@ object AdministrationCommandRuntime {
       QueryHandler
         .handleNoResult(params =>
           Some(ThrowException(
-            new CypherExecutionException(
-              s"Failed to create the specified user '${runtimeStringValue(userName, params)}'."
-            )
+            CypherExecutionException.createEntity("user", runtimeStringValue(userName, params))
           ))
         )
         .handleError((error, params) =>
@@ -366,10 +364,7 @@ object AdministrationCommandRuntime {
                 s"Failed to create the specified user '${runtimeStringValue(userName, params)}'",
                 error
               )
-            case _ => new CypherExecutionException(
-                s"Failed to create the specified user '${runtimeStringValue(userName, params)}'.",
-                error
-              )
+            case _ => CypherExecutionException.createEntityCause("user", runtimeStringValue(userName, params), error)
           }
         )
         .handleResult { (_, _, _) => validateAuth(externalAuths, nativeAuth) },
@@ -588,10 +583,7 @@ object AdministrationCommandRuntime {
                 s"Failed to alter the specified user '${runtimeStringValue(userName, p)}'",
                 error
               )
-            case _ => new CypherExecutionException(
-                s"Failed to alter the specified user '${runtimeStringValue(userName, p)}'.",
-                error
-              )
+            case _ => CypherExecutionException.alterEntityCause("user", runtimeStringValue(userName, p), error)
           }
         )
         .handleResult {
@@ -702,11 +694,13 @@ object AdministrationCommandRuntime {
                 s"Failed to rename the specified ${entity.toString.toLowerCase(Locale.ROOT)} '${runtimeStringValue(fromName, p)}'",
                 error
               )
-            case _ =>
-              new CypherExecutionException(
-                s"Failed to rename the specified ${entity.toString.toLowerCase(Locale.ROOT)} '${runtimeStringValue(fromName, p)}' to '${runtimeStringValue(toName, p)}'.",
+            case _ => CypherExecutionException.renameEntityCause(
+                entity.toString.toLowerCase(Locale.ROOT),
+                runtimeStringValue(fromName, p),
+                runtimeStringValue(toName, p),
                 error
               )
+
           }
         ),
       sourcePlan,

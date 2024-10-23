@@ -19,9 +19,9 @@
  */
 package org.neo4j.exceptions;
 
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -78,16 +78,128 @@ public class CypherExecutionException extends Neo4jException {
 
     public static CypherExecutionException unrecognisedExecutionMode(String procedure, String mode) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N02)
-                .withClassification(ErrorClassification.DATABASE_ERROR)
                 .withParam(GqlParams.StringParam.proc, procedure)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N03)
-                        .withClassification(ErrorClassification.DATABASE_ERROR)
                         .withParam(GqlParams.StringParam.proc, procedure)
                         .withParam(GqlParams.StringParam.procExeMode, mode)
                         .build())
                 .build();
         return new CypherExecutionException(
                 gql, "Unable to execute procedure, because it requires an unrecognized execution mode: " + mode, null);
+    }
+
+    public static CypherExecutionException failedCopyPrivileges(String to, String from, Throwable cause) {
+        var msg = String.format("Failed to create role '%s' as copy of '%s': Failed to copy privileges.", to, from);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException failedToAlterDb(String dbName, Throwable cause) {
+        var msg = String.format("Failed to alter the specified database '%s'.", dbName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException createEntity(String entity, String name) {
+        var msg = String.format("Failed to create the specified %s '%s'", entity, name);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg);
+    }
+
+    public static CypherExecutionException createEntityCause(String entity, String name, Throwable cause) {
+        var msg = String.format("Failed to create the specified %s '%s'", entity, name);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException deleteEntityCause(String entity, String name, Throwable cause) {
+        var msg = String.format("Failed to delete the specified %s '%s'", entity, name);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException alterEntityCause(String entity, String name, Throwable cause) {
+        var msg = String.format("Failed to alter the specified %s '%s'", entity, name);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException renameEntityCauseNoTargetName(
+            String entity, String oldName, Throwable cause) {
+        var msg = String.format("Failed to rename the specified %s '%s'.", entity, oldName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException renameEntityCause(
+            String entity, String oldName, String newName, Throwable cause) {
+        var msg = String.format("Failed to rename the specified %s '%s' to '%s'.", entity, oldName, newName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException createRoleCopyCause(String role, Throwable cause) {
+        var msg = String.format("Failed to create a role as copy of '%s'", role);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException dbStart(String dbName, Throwable cause) {
+        var msg = String.format("Failed to start the specified database '%s'.", dbName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException dbStop(String dbName, Throwable cause) {
+        var msg = String.format("Failed to stop the specified database '%s'.", dbName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException enableServer(String server, Throwable cause) {
+        var msg = String.format("Failed to enable the specified server '%s'.", server);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException reallocateDbs(Throwable cause) {
+        var msg = String.format("Failed to reallocate databases: %s", cause.getMessage());
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException deallocateServers(String names, Throwable cause) {
+        var msg = String.format("Failed to deallocate the specified server(s) '%s'.", names);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException grantRole(String role, String userName, Throwable cause) {
+        var msg = String.format("Failed to grant role '%s' to user '%s'.", role, userName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException revokeRole(String role, String userName, Throwable cause) {
+        var msg = String.format("Failed to revoke role '%s' from user '%s'.", role, userName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException grantOrDenyExecutionPlan(String msg, Throwable cause) {
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException makeOrRevoke(String msg, Throwable cause) {
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
+    }
+
+    public static CypherExecutionException alterOwnPassword(String userName, Throwable cause) {
+        var msg = String.format("User '%s' failed to alter their own password.", userName);
+        var gql = GqlHelper.get50N00(CypherExecutionException.class.getSimpleName(), msg);
+        return new CypherExecutionException(gql, msg, cause);
     }
 
     @Override

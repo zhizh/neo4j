@@ -909,7 +909,7 @@ sealed abstract class PrivilegeCommand(
               position
             ))
         }
-      case _ => error("Not supported.", position) // We should never end up here
+      case _ => SemanticCheck.error(SemanticError.notSupported(position)) // We should never end up here
     }
   }
 
