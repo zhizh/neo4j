@@ -97,7 +97,7 @@ sealed trait CreateIndex extends SchemaCommand {
 
   override def semanticCheck: SemanticCheck = ifExistsDo match {
     case IfExistsInvalidSyntax | IfExistsReplace =>
-      error("Failed to create index: `OR REPLACE` cannot be used together with this command.", position)
+      SemanticCheck.error(SemanticError.badCommandWithOrReplace("create index", "CREATE INDEX", position))
     case _ =>
       val ctType = if (isNodeIndex) CTNode else CTRelationship
       declareVariable(variable, ctType) chain
@@ -516,10 +516,11 @@ sealed trait CreateConstraint extends SchemaCommand {
 
   protected def checkIfExistsDoAndOptions(): SemanticCheck = ifExistsDo match {
     case IfExistsInvalidSyntax | IfExistsReplace =>
-      error(
-        s"Failed to create ${constraintType.description} constraint: `OR REPLACE` cannot be used together with this command.",
+      SemanticCheck.error(SemanticError.badCommandWithOrReplace(
+        s"create ${constraintType.description} constraint",
+        "CREATE CONSTRAINT",
         position
-      )
+      ))
     case _ =>
       checkOptionsMap(s"${constraintType.description} constraint", options)
   }

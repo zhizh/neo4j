@@ -385,10 +385,8 @@ final case class CreateUser(
   } else success
 
   override def semanticCheck: SemanticCheck = ifExistsDo match {
-    case IfExistsInvalidSyntax => error(
-        s"Failed to create the specified user '$userAsString': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        position
-      )
+    case IfExistsInvalidSyntax =>
+      SemanticCheck.error(SemanticError.bothOrReplaceAndIfNotExists("user", userAsString, position))
     case _ =>
       checkAtLeastOneAuth chain
         checkDuplicateAuth chain
@@ -698,10 +696,7 @@ final case class CreateRole(
     ifExistsDo match {
       case IfExistsInvalidSyntax =>
         val name = Prettifier.escapeName(roleName)
-        error(
-          s"Failed to create the specified role '$name': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-          position
-        )
+        SemanticCheck.error(SemanticError.bothOrReplaceAndIfNotExists("role", name, position))
       case _ =>
         super.semanticCheck chain
           checkIsStringLiteralOrParameter("rolename", roleName) chain
@@ -1068,7 +1063,7 @@ sealed abstract class PrivilegeCommand(
 
     (privilege match {
       case DbmsPrivilege(u: UnassignableAction) =>
-        error(s"`GRANT`, `DENY` and `REVOKE` are not supported for `${u.name}`", position)
+        SemanticCheck.error(SemanticError.grantDenyRevokeUnsupported(u.name, position))
       case _: LoadPrivilege =>
         qualifier match {
           case LoadUrlQualifier(_) :: _ =>
@@ -1138,7 +1133,7 @@ final case class DenyPrivilege(
   override def semanticCheck: SemanticCheck = {
     privilege match {
       case GraphPrivilege(MergeAdminAction, _) =>
-        error(s"`DENY MERGE` is not supported. Use `DENY SET PROPERTY` and `DENY CREATE` instead.", position)
+        SemanticCheck.error(SemanticError.denyMergeUnsupported(position))
       case _ => super.semanticCheck
     }
   }
@@ -1191,7 +1186,7 @@ final case class RevokePrivilege(
   override def semanticCheck: SemanticCheck = {
     (privilege, revokeType) match {
       case (GraphPrivilege(MergeAdminAction, _), RevokeDenyType()) =>
-        error(s"`DENY MERGE` is not supported. Use `DENY SET PROPERTY` and `DENY CREATE` instead.", position)
+        SemanticCheck.error(SemanticError.denyMergeUnsupported(position))
       case _ => super.semanticCheck chain semanticCheckFold(roleNames)(roleName =>
           checkIsStringLiteralOrParameter("rolename", roleName)
         )
@@ -1499,10 +1494,7 @@ final case class CreateDatabase(
   override def semanticCheck: SemanticCheck = (ifExistsDo match {
     case IfExistsInvalidSyntax =>
       val name = Prettifier.escapeName(dbName)
-      error(
-        s"Failed to create the specified database '$name': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        position
-      )
+      SemanticCheck.error(SemanticError.bothOrReplaceAndIfNotExists("database", name, position))
     case _ =>
       super.semanticCheck chain
         SemanticState.recordCurrentScope(this)
@@ -1529,10 +1521,7 @@ final case class CreateCompositeDatabase(
   override def semanticCheck: SemanticCheck = ifExistsDo match {
     case IfExistsInvalidSyntax =>
       val name = Prettifier.escapeName(databaseName)
-      error(
-        s"Failed to create the specified composite database '$name': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        position
-      )
+      SemanticCheck.error(SemanticError.bothOrReplaceAndIfNotExists("composite database", name, position))
     case _ =>
       databaseName match {
         case nsn @ NamespacedName(_, Some(_)) =>
@@ -1727,10 +1716,12 @@ final case class CreateLocalDatabaseAlias(
   }
 
   override def semanticCheck: SemanticCheck = ifExistsDo match {
-    case IfExistsInvalidSyntax => error(
-        s"Failed to create the specified alias '${Prettifier.escapeName(aliasName)}': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+    case IfExistsInvalidSyntax =>
+      SemanticCheck.error(SemanticError.bothOrReplaceAndIfNotExists(
+        "alias",
+        Prettifier.escapeName(aliasName),
         position
-      )
+      ))
     case _ => super.semanticCheck chain
         namespacedNameHasNoDots chain
         SemanticState.recordCurrentScope(this)
@@ -1765,10 +1756,12 @@ final case class CreateRemoteDatabaseAlias(
   }
 
   override def semanticCheck: SemanticCheck = ifExistsDo match {
-    case IfExistsInvalidSyntax => error(
-        s"Failed to create the specified alias '${Prettifier.escapeName(aliasName)}': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+    case IfExistsInvalidSyntax =>
+      SemanticCheck.error(SemanticError.bothOrReplaceAndIfNotExists(
+        "alias",
+        Prettifier.escapeName(aliasName),
         position
-      )
+      ))
     case _ => AliasDriverSettingsCheck.findInvalidDriverSettings(driverSettings) match {
         case Some(expr: ExistsExpression) =>
           SemanticCheck.error(SemanticError.existsInDriverSettings(expr.position))

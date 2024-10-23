@@ -59,7 +59,7 @@ object NameValidator {
     if (name == null || name.isEmpty)
       throw new InvalidArgumentException("The provided alias is empty.")
     if (name.length > 65534)
-      throw new InvalidArgumentException("The provided alias is to long, maximum characters are 65534.")
+      throw InvalidArgumentException.aliasTooLong(name)
     if (name.startsWith("system")) {
       throw new InvalidArgumentException("Alias name '" + name + "' is invalid, due to the prefix 'system'.")
     }
@@ -70,7 +70,7 @@ object NameValidator {
     if (name == null || name.isEmpty)
       throw new InvalidArgumentException("The provided target database name is empty.")
     if (name.length > 65534)
-      throw new InvalidArgumentException("The provided target database name is to long, maximum characters are 65534.")
+      throw InvalidArgumentException.dbNameTooLong(name)
     if (name.startsWith("system")) {
       throw new InvalidArgumentException("Target database name '" + name + "' is invalid, due to the prefix 'system'.")
     }

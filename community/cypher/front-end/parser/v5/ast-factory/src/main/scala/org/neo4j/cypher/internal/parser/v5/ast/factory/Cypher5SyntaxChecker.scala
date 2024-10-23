@@ -47,6 +47,7 @@ import org.neo4j.cypher.internal.parser.v5.ast.factory.Cypher5SyntaxChecker.MAX_
 import org.neo4j.cypher.internal.util.CypherExceptionFactory
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.ClosedDynamicUnionType
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.internal.helpers.NameUtil
 
 import scala.collection.mutable
@@ -691,9 +692,11 @@ final class Cypher5SyntaxChecker(exceptionFactory: CypherExceptionFactory) exten
       val oldIndex = createIndex.oldCreateIndex()
 
       if (replace != null && oldIndex != null) {
+        val position = inputPosition(replace.getSymbol)
         _errors :+= exceptionFactory.syntaxException(
+          GqlHelper.getGql42001_42N14("OR REPLACE", "CREATE INDEX", position.line, position.column, position.offset),
           "'REPLACE' is not allowed for this index syntax",
-          inputPosition(replace.getSymbol)
+          position
         )
       }
       if (oldIndex != null) {

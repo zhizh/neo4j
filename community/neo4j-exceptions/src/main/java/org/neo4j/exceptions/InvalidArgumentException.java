@@ -21,7 +21,6 @@ package org.neo4j.exceptions;
 
 import java.util.List;
 import java.util.Locale;
-import org.neo4j.gqlstatus.ErrorClassification;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlHelper;
@@ -133,7 +132,6 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException bothAllowedAndDeniedDbs() {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N85)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .build();
         return new InvalidArgumentException(gql, "Can't specify both allowed and denied databases");
     }
@@ -163,7 +161,6 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException alterRemoteAliasToLocal(String alias) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N91)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.alias, alias)
                 .build();
         return new InvalidArgumentException(
@@ -175,7 +172,6 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException alterLocalAliasToRemote(String alias) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N91)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.alias, alias)
                 .build();
         return new InvalidArgumentException(
@@ -204,11 +200,9 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException oldPasswordEqualsNew(String user, Boolean onSelf) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N05)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.input, "***")
                 .withParam(GqlParams.StringParam.context, user + " password")
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N89)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .build())
                 .build();
         var msg = onSelf
@@ -223,11 +217,9 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException shortPassword(int minLength) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N05)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.input, "***")
                 .withParam(GqlParams.StringParam.context, "password")
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N85)
-                        .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.NumberParam.lower, minLength)
                         .build())
                 .build();
@@ -237,7 +229,6 @@ public class InvalidArgumentException extends Neo4jException {
 
     public static InvalidArgumentException parameterizedDbWildcards(String syntax, String messageStart) {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N86)
-                .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withParam(GqlParams.StringParam.syntax, syntax)
                 .build();
         return new InvalidArgumentException(
@@ -264,5 +255,38 @@ public class InvalidArgumentException extends Neo4jException {
         var msg = "Could not validate remote database alias url.";
         var gql = GqlHelper.get50N00(InvalidArgumentException.class.getSimpleName(), msg);
         return new InvalidArgumentException(gql, msg);
+    }
+
+    public static InvalidArgumentException alterMissingUser(String username) {
+        var gql = GqlHelper.getGql42002_42N09(username);
+        return new InvalidArgumentException(
+                gql, String.format("Failed to alter the specified user '%s': User does not exist.", username));
+    }
+
+    public static InvalidArgumentException roleMissingUser(String role, String username, Throwable cause) {
+        var gql = GqlHelper.getGql42002_42N09(username);
+        return new InvalidArgumentException(
+                gql,
+                String.format("Failed to grant role '%s' to user '%s': User does not exist.", role, username),
+                cause);
+    }
+
+    public static InvalidArgumentException compositeAlias(String operationType, String alias, String dbName) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42NA6)
+                .build();
+        var msg = String.format("Failed to %s the specified database alias '%s': ", operationType, alias)
+                + String.format("Database '%s' is composite.", dbName);
+        return new InvalidArgumentException(gql, msg);
+    }
+
+    public static InvalidArgumentException dbNameTooLong(String dbName) {
+        var gql = GqlHelper.getGql22N05_22N84(dbName, "database name", 65534);
+        return new InvalidArgumentException(
+                gql, "The provided target database name is to long, maximum characters are 65534.");
+    }
+
+    public static InvalidArgumentException aliasTooLong(String alias) {
+        var gql = GqlHelper.getGql22N05_22N84(alias, "alias", 65534);
+        return new InvalidArgumentException(gql, "The provided alias is to long, maximum characters are 65534.");
     }
 }

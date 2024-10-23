@@ -520,6 +520,43 @@ object SemanticError {
     val gql = GqlHelper.get50N00(SemanticError.getClass.getSimpleName, msg, pos.line, pos.column, pos.offset)
     SemanticError(gql, msg, pos)
   }
+
+  def bothOrReplaceAndIfNotExists(entity: String, userAsString: String, position: InputPosition) = {
+    val gql = GqlHelper.getGql42001_42N14(
+      "OR REPLACE",
+      "IF NOT EXISTS",
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(
+      gql,
+      s"Failed to create the specified $entity '$userAsString': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+      position
+    )
+  }
+
+  def badCommandWithOrReplace(cmd: String, cypherCmd: String, position: InputPosition) = {
+    val gql = GqlHelper.getGql42001_42N14("OR REPLACE", cypherCmd, position.line, position.column, position.offset)
+    SemanticError(gql, s"Failed to $cmd: `OR REPLACE` cannot be used together with this command.", position)
+  }
+
+  def denyMergeUnsupported(position: InputPosition) = {
+    val gql = GqlHelper.getGql42001_42N14("DENY", "MERGE", position.line, position.column, position.offset)
+    SemanticError(gql, "`DENY MERGE` is not supported. Use `DENY SET PROPERTY` and `DENY CREATE` instead.", position)
+  }
+
+  def grantDenyRevokeUnsupported(cmd: String, position: InputPosition) = {
+    val gql = GqlHelper.getGql42001_42N14(
+      "GRANT, DENY and REVOKE",
+      cmd,
+      position.line,
+      position.column,
+      position.offset
+    )
+    SemanticError(gql, s"`GRANT`, `DENY` and `REVOKE` are not supported for `$cmd`", position)
+  }
+
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

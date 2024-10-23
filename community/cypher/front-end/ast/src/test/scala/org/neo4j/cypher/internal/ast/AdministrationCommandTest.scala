@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
 import org.neo4j.cypher.internal.ast.semantics.SemanticCheckContext
 import org.neo4j.cypher.internal.ast.semantics.SemanticCheckResult
+import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
 import org.neo4j.cypher.internal.expressions.Add
@@ -188,7 +189,20 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
       forAll(privilegeCommands) { privilegeCommand =>
         val privilege = privilegeCommand(pma)
         privilege.semanticCheck.run(initialState, SemanticCheckContext.default) shouldBe SemanticCheckResult
-          .error(initialState, s"`GRANT`, `DENY` and `REVOKE` are not supported for `${pma.name}`", p)
+          .error(
+            initialState,
+            SemanticError(
+              GqlHelper.getGql42001_42N14(
+                "GRANT, DENY and REVOKE",
+                pma.name,
+                p.line,
+                p.column,
+                p.offset
+              ),
+              s"`GRANT`, `DENY` and `REVOKE` are not supported for `${pma.name}`",
+              p
+            )
+          )
       }
     }
   }
@@ -1419,8 +1433,11 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
         initialState,
-        "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        p
+        SemanticError(
+          GqlHelper.getGql42001_42N14("OR REPLACE", "IF NOT EXISTS", p.line, p.column, p.offset),
+          "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+          p
+        )
       ).errors
   }
 
@@ -1436,8 +1453,11 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
         initialState,
-        "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        p
+        SemanticError(
+          GqlHelper.getGql42001_42N14("OR REPLACE", "IF NOT EXISTS", p.line, p.column, p.offset),
+          "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+          p
+        )
       ).errors
   }
 
@@ -1453,8 +1473,11 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
         initialState,
-        "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        p
+        SemanticError(
+          GqlHelper.getGql42001_42N14("OR REPLACE", "IF NOT EXISTS", p.line, p.column, p.offset),
+          "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+          p
+        )
       ).errors
   }
 
@@ -1470,8 +1493,11 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
         initialState,
-        "Failed to create the specified user '$foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        p
+        SemanticError(
+          GqlHelper.getGql42001_42N14("OR REPLACE", "IF NOT EXISTS", p.line, p.column, p.offset),
+          "Failed to create the specified user '$foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+          p
+        )
       ).errors
   }
 
@@ -1487,8 +1513,11 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
         initialState,
-        "Failed to create the specified user '$foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        p
+        SemanticError(
+          GqlHelper.getGql42001_42N14("OR REPLACE", "IF NOT EXISTS", p.line, p.column, p.offset),
+          "Failed to create the specified user '$foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+          p
+        )
       ).errors
   }
 
@@ -1504,8 +1533,11 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
     createUser.semanticCheck.run(initialState, SemanticCheckContext.default).errors shouldBe SemanticCheckResult
       .error(
         initialState,
-        "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
-        p
+        SemanticError(
+          GqlHelper.getGql42001_42N14("OR REPLACE", "IF NOT EXISTS", p.line, p.column, p.offset),
+          "Failed to create the specified user 'foo': cannot have both `OR REPLACE` and `IF NOT EXISTS`.",
+          p
+        )
       ).errors
   }
 

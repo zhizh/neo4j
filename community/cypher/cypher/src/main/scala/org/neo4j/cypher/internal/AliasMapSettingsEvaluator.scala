@@ -200,9 +200,7 @@ object AliasMapSettingsEvaluator {
     def getConnectionPoolMaxSize: (String, Value) =
       settings.getOption(connection_pool_max_size).map {
         case poolMaxSize: IntegralValue if poolMaxSize.equals(0) =>
-          throw new InvalidArgumentsException(
-            s"Failed to $operation: Invalid driver settings value for '$connection_pool_max_size'. Zero is not allowed."
-          )
+          throw InvalidArgumentsException.connectionPoolSizeZeroNotAllowed(operation, connection_pool_max_size)
         case poolMaxSize: IntegralValue => connection_pool_max_size -> poolMaxSize
         case other => throwExceptionWhenInvalidValue(connection_pool_max_size, "an integer", "INTEGER", other)
       }.getOrElse(connection_pool_max_size -> Values.NO_VALUE)

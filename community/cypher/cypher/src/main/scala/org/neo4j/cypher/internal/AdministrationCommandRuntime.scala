@@ -566,9 +566,7 @@ object AdministrationCommandRuntime {
       VirtualValues.map(parameterKeys, parameterValues),
       QueryHandler
         .handleNoResult(p =>
-          Some(ThrowException(new InvalidArgumentException(
-            s"Failed to alter the specified user '${runtimeStringValue(userName, p)}': User does not exist."
-          )))
+          Some(ThrowException(InvalidArgumentException.alterMissingUser(runtimeStringValue(userName, p))))
         )
         .handleError((error, p) =>
           (error, error.getCause) match {

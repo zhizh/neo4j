@@ -315,4 +315,18 @@ public class InvalidArgumentsException extends GqlException implements Status.Ha
                         "Could not create %s property %s constraint: property %s constraints have no valid options values.",
                         entity, constraintType, constraintType));
     }
+
+    public static InvalidArgumentsException connectionPoolSizeZeroNotAllowed(String operation, String pool_max_size) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N05)
+                .withParam(GqlParams.StringParam.input, "0")
+                .withParam(GqlParams.StringParam.context, operation)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N86)
+                        .build())
+                .build();
+        return new InvalidArgumentsException(
+                gql,
+                String.format(
+                        "Failed to %s: Invalid driver settings value for '%s'. Zero is not allowed.",
+                        operation, pool_max_size));
+    }
 }

@@ -99,6 +99,16 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject getGql22N05_22N84(String input, String context, int upper) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N05)
+                .withParam(GqlParams.StringParam.input, input)
+                .withParam(GqlParams.StringParam.context, context)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N84)
+                        .withParam(GqlParams.NumberParam.upper, upper)
+                        .build())
+                .build();
+    }
+
     public static ErrorGqlStatusObject getGql22N27(String input, String variable, List<String> validTypes) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N27)
                 .withParam(GqlParams.StringParam.input, input)
@@ -245,6 +255,17 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject getGql42001_42N14(String clause, String cmd, int line, int column, int offset) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
+                .atPosition(line, column, offset)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N14)
+                        .atPosition(line, column, offset)
+                        .withParam(GqlParams.StringParam.clause, clause)
+                        .withParam(GqlParams.StringParam.cmd, cmd)
+                        .build())
+                .build();
+    }
+
     public static ErrorGqlStatusObject getGql42001_42N22(int line, int column, int offset) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42001)
                 .atPosition(line, column, offset)
@@ -312,6 +333,14 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject getGql42002_42N09(String user) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42002)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N09)
+                        .withParam(GqlParams.StringParam.user, user)
+                        .build())
+                .build();
+    }
+
     public static ErrorGqlStatusObject get50N00(String msgTitle, String msg) {
         return get50N00(msgTitle, msg, -1, -1, -1);
     }
@@ -340,21 +369,21 @@ public class GqlHelper {
                 .build();
     }
 
-    public static ErrorGqlStatusObject get51N00_52N35(String procClass, String msg) {
-        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
-                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N35)
-                        .withParam(GqlParams.StringParam.procClass, procClass)
-                        .withParam(GqlParams.StringParam.msg, msg)
-                        .build())
-                .build();
-    }
-
     public static ErrorGqlStatusObject getGql51N00_51N18(String procMethod) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
                 .withClassification(ErrorClassification.CLIENT_ERROR)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N18)
                         .withClassification(ErrorClassification.CLIENT_ERROR)
                         .withParam(GqlParams.StringParam.procMethod, procMethod)
+                        .build())
+                .build();
+    }
+
+    public static ErrorGqlStatusObject get51N00_52N35(String procClass, String msg) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N35)
+                        .withParam(GqlParams.StringParam.procClass, procClass)
+                        .withParam(GqlParams.StringParam.msg, msg)
                         .build())
                 .build();
     }
