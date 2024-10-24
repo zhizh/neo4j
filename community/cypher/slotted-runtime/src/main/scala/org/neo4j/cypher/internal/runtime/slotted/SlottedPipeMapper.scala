@@ -1343,10 +1343,10 @@ class SlottedPipeMapper(
             case Some(slot) =>
               SlotOrName.Slotted(slot.offset, isGroup = true)
             case None =>
-              val rowVar = singletonMap.getOrElse(variable.name, variable.name)
-              slots.get(rowVar).map { slot =>
-                SlotOrName.Slotted(slot.offset, isGroup = false)
-              }.getOrElse(SlotOrName.None)
+              singletonMap.get(variable.name)
+                .flatMap(slots.get).map { slot =>
+                  SlotOrName.Slotted(slot.offset, isGroup = false)
+                }.getOrElse(SlotOrName.None)
           }
         }
 
