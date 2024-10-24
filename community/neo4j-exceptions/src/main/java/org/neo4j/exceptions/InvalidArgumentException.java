@@ -347,4 +347,15 @@ public class InvalidArgumentException extends Neo4jException {
                         "The number of%s seeding servers '%s', is larger than the desired number of%s allocations '%s'.",
                         formattedServerType, constrainedServers, formattedAllocationType, desiredAllocations));
     }
+
+    public static InvalidArgumentException notAValidCidrIp(String wrongIp, String legacyMessage, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N05)
+                .withParam(GqlParams.StringParam.input, wrongIp)
+                .withParam(GqlParams.StringParam.context, "CIDR IP")
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N88)
+                        .withParam(GqlParams.StringParam.input, wrongIp)
+                        .build())
+                .build();
+        return new InvalidArgumentException(gql, legacyMessage, cause);
+    }
 }
