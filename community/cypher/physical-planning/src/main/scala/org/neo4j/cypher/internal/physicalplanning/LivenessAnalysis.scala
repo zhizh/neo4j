@@ -105,7 +105,7 @@ object LivenessAnalysis {
         acc => SkipChildren(acc ++ findAllVariables(np))
       // MultiEntityLogicalLeafPlans are special and we must also examine the inner plans
       case m: MultiEntityLogicalLeafPlan =>
-        acc => SkipChildren(acc ++ m.innerLogicalPlans.flatMap(s => findVariablesInPlan(s, s.id)))
+        acc => TraverseChildren(acc ++ m.innerLogicalPlans.flatMap(s => findVariablesInPlan(s, s.id)))
     }
   }
 
