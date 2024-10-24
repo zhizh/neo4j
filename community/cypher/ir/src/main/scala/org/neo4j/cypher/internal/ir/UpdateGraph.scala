@@ -189,8 +189,8 @@ trait UpdateGraph {
    * Relationship types being created with, CREATE/MERGE ()-[:T]->()
    */
   private lazy val createRelTypes: Set[RelTypeName] =
-    (createPatterns.flatMap(_.relationships.map(_.relType)) ++
-      mergeRelationshipPatterns.flatMap(_.createRelationships.map(_.relType))).toSet
+    (createPatterns.flatMap(_.relationships.map(_.relType.asStatic)) ++
+      mergeRelationshipPatterns.flatMap(_.createRelationships.map(_.relType.asStatic))).toSet
 
   /*
    * Does this UpdateGraph update nodes?

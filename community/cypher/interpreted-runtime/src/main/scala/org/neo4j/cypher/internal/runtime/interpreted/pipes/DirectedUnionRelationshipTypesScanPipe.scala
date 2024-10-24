@@ -72,7 +72,7 @@ object DirectedUnionRelationshipTypesScanPipe {
     tokenReadSession: TokenReadSession
   ): ClosingLongIterator with RelationshipIterator = {
     val query = state.query
-    val ids = types.map(l => l.getId(query)).filter(_ != LazyType.UNKNOWN).toArray
+    val ids = types.map(_.asStatic.getId(query)).filter(_ != LazyType.UNKNOWN).toArray
     if (ids.isEmpty) ClosingLongIterator.emptyClosingRelationshipIterator
     else {
       val cursors = ids.map(_ => {

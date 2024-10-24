@@ -2024,7 +2024,7 @@ trait WriteOperatorsDbHitsTestBase[CONTEXT <: RuntimeContext] {
     val foreachProfile = queryProfile.operatorProfile(1)
 
     foreachProfile.rows() shouldBe sizeHint
-    foreachProfile.dbHits() shouldBe 3 * (2 /*nodes*/ + 1 /*relationship*/ + costOfRelationshipTypeLookup) * sizeHint
+    foreachProfile.dbHits() shouldBe costOfRelationshipTypeLookup + (3 * (2 /*nodes*/ + 1 /*relationship*/ )) * sizeHint
   }
 
   test("should profile rows and dbhits of foreach + set label correctly") {

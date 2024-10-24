@@ -855,7 +855,7 @@ object ClauseConverters {
                 r.variable,
                 (r.leftNode, r.rightNode),
                 r.direction,
-                Seq(r.relType),
+                Seq(r.relType.asStatic),
                 SimplePatternLength
               )
           }.toSet,

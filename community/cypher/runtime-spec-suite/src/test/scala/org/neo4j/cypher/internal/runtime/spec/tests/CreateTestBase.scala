@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.crea
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithDynamicLabels
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithProperties
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationship
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationshipWithDynamicType
 import org.neo4j.cypher.internal.logical.plans.IndexOrderNone
 import org.neo4j.cypher.internal.runtime.spec.Edition
 import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
@@ -364,6 +365,30 @@ abstract class CreateTestBase[CONTEXT <: RuntimeContext](
     )
     relationship.getType.name() should equal("R")
     relationship.getAllProperties.asScala should equal(Map("p1" -> 1, "p2" -> 2, "p3" -> 3))
+  }
+
+  test("should create relationship with dynamic type") {
+    // given an empty data base
+    givenGraph {
+      val n = tx.createNode(label("A"))
+      n.setProperty("prop", "R")
+    }
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("r")
+      .create(createRelationshipWithDynamicType("r", "n", "n.prop", "n", OUTGOING))
+      .nodeByLabelScan("n", "A")
+      .build(readOnly = false)
+
+    // then
+    val runtimeResult = execute(logicalQuery, runtime)
+    consume(runtimeResult)
+    val relationship = Iterables.single(tx.getAllRelationships)
+    runtimeResult should beColumns("r").withSingleRow(relationship).withStatistics(
+      relationshipsCreated = 1
+    )
+    relationship.getType.name() should equal("R")
   }
 
   test("should create relationship with null property") {

@@ -105,7 +105,7 @@ case class CreateRelationship(command: CreateRelationshipCommand, allowNullOrNaN
       row.set(command.idName, Values.NO_VALUE)
     } // lenient create relationship NOOPs on missing node
     else {
-      val typeId = state.query.getOrCreateRelTypeId(command.relType.name)
+      val typeId = command.relType.getOrCreateType(row, state)
       val relationship = state.query.createRelationshipId(start.id(), end.id(), typeId)
       command.properties.foreach(p =>
         p.apply(row, state) match {

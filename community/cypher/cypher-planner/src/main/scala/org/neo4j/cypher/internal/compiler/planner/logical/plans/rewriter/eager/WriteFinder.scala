@@ -429,13 +429,13 @@ object WriteFinder {
     relationships.foldLeft(acc) {
       case (acc, CreateRelationship(_, _, relType, _, _, maybeProperties)) =>
         maybeProperties match {
-          case None => acc.withCreatedRelationship(CreatedRelationship(relType, CreatesNoPropertyKeys))
+          case None => acc.withCreatedRelationship(CreatedRelationship(relType.asStatic, CreatesNoPropertyKeys))
           case Some(MapExpression(properties)) =>
             acc.withCreatedRelationship(CreatedRelationship(
-              relType,
+              relType.asStatic,
               CreatesKnownPropertyKeys(properties.map(_._1).toSet)
             ))
-          case Some(_) => acc.withCreatedRelationship(CreatedRelationship(relType, CreatesUnknownPropertyKeys))
+          case Some(_) => acc.withCreatedRelationship(CreatedRelationship(relType.asStatic, CreatesUnknownPropertyKeys))
         }
     }
   }

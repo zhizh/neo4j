@@ -41,7 +41,7 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands
 import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.ExpressionConverter
 import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.ExpressionConverters
 import org.neo4j.cypher.internal.runtime.interpreted.commands.predicates.Predicate
-import org.neo4j.cypher.internal.runtime.interpreted.pipes.LazyType
+import org.neo4j.cypher.internal.runtime.interpreted.pipes.LazyTypeStatic
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.NestedPipeCollectExpression
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.NestedPipeExistsExpression
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.NestedPipeGetByNameExpression
@@ -296,7 +296,7 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
           case None               => Some(slotted.expressions.GetDegreePrimitive(offset, direction))
           case Some(Left(typeId)) => Some(slotted.expressions.GetDegreeWithTypePrimitive(offset, typeId, direction))
           case Some(Right(typeName)) =>
-            Some(slotted.expressions.GetDegreeWithTypePrimitiveLate(offset, LazyType(typeName), direction))
+            Some(slotted.expressions.GetDegreeWithTypePrimitiveLate(offset, LazyTypeStatic(typeName), direction))
         }
       case physicalplanning.ast.HasDegreeGreaterThanPrimitive(offset, typ, direction, degree) =>
         typ match {
@@ -313,7 +313,7 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
             ))
           case Some(Right(typeName)) => Some(slotted.expressions.HasDegreeGreaterThanWithTypePrimitiveLate(
               offset,
-              LazyType(typeName),
+              LazyTypeStatic(typeName),
               direction,
               self.toCommandExpression(id, degree)
             ))
@@ -333,7 +333,7 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
             ))
           case Some(Right(typeName)) => Some(slotted.expressions.HasDegreeGreaterThanOrEqualWithTypePrimitiveLate(
               offset,
-              LazyType(typeName),
+              LazyTypeStatic(typeName),
               direction,
               self.toCommandExpression(id, degree)
             ))
@@ -350,7 +350,7 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
             ))
           case Some(Right(typeName)) => Some(slotted.expressions.HasDegreeWithTypePrimitiveLate(
               offset,
-              LazyType(typeName),
+              LazyTypeStatic(typeName),
               direction,
               self.toCommandExpression(id, degree)
             ))
@@ -370,7 +370,7 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
             ))
           case Some(Right(typeName)) => Some(slotted.expressions.HasDegreeLessThanWithTypePrimitiveLate(
               offset,
-              LazyType(typeName),
+              LazyTypeStatic(typeName),
               direction,
               self.toCommandExpression(id, degree)
             ))
@@ -391,7 +391,7 @@ case class SlottedExpressionConverters(physicalPlan: PhysicalPlan, maybeOwningPi
             ))
           case Some(Right(typeName)) => Some(slotted.expressions.HasDegreeLessThanOrEqualWithTypePrimitiveLate(
               offset,
-              LazyType(typeName),
+              LazyTypeStatic(typeName),
               direction,
               self.toCommandExpression(id, degree)
             ))

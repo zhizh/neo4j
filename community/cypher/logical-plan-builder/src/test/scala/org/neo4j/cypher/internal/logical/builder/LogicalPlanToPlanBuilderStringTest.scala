@@ -23,6 +23,7 @@ import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorBreak
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorContinue
 import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour.OnErrorFail
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.RelTypeName
@@ -42,6 +43,8 @@ import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.crea
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createPattern
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationship
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationshipExpression
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationshipFull
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationshipWithDynamicType
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.delete
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.removeDynamicLabel
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.removeLabel
@@ -1039,7 +1042,16 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
         createNode("a", "A"),
         createNodeWithProperties("b", Seq("B"), "{node: true}"),
         createRelationship("r", "a", "R", "b", INCOMING, Some("{rel: true}")),
-        createRelationshipExpression("r2", "a", "R", "b", INCOMING, Some(mapOfInt("baz" -> 42)))
+        createRelationshipExpression("r2", "a", "R", "b", INCOMING, Some(mapOfInt("baz" -> 42))),
+        createRelationshipWithDynamicType("r2", "a", "label", "b", INCOMING, Some("{node: true}")),
+        createRelationshipFull(
+          "r2",
+          "a",
+          DynamicRelTypeExpression(varFor("label"))(pos),
+          "b",
+          INCOMING,
+          Some(mapOfInt("baz" -> 42))
+        )
       )
       .argument()
       .build()
@@ -3001,6 +3013,7 @@ class LogicalPlanToPlanBuilderStringTest extends CypherFunSuite with TestName wi
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeFull
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithProperties
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationship
+            |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationshipWithDynamicType
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.delete
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.setLabel
             |import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.setDynamicProperty

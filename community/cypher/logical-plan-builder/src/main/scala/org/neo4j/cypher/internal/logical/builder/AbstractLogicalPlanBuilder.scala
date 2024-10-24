@@ -27,6 +27,7 @@ import org.neo4j.cypher.internal.expressions.ASTCachedProperty
 import org.neo4j.cypher.internal.expressions.Ands
 import org.neo4j.cypher.internal.expressions.AndsReorderable
 import org.neo4j.cypher.internal.expressions.DecimalDoubleLiteral
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
 import org.neo4j.cypher.internal.expressions.Expression
@@ -49,6 +50,7 @@ import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.PropertyKeyToken
 import org.neo4j.cypher.internal.expressions.RELATIONSHIP_TYPE
 import org.neo4j.cypher.internal.expressions.Range
+import org.neo4j.cypher.internal.expressions.RelTypeExpression
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.RelationshipChain
 import org.neo4j.cypher.internal.expressions.RelationshipPattern
@@ -3407,11 +3409,33 @@ object AbstractLogicalPlanBuilder {
     val props = properties.map(Parser.parseExpression)
     if (props.exists(!_.isInstanceOf[MapExpression]))
       throw new IllegalArgumentException("Property must be a Map Expression")
-    CreateRelationship(
-      varFor(relationship),
-      varFor(left),
+    createRelationshipFull(
+      relationship,
+      left,
       RelTypeName(typ)(pos),
-      varFor(right),
+      right,
+      direction,
+      props
+    )
+  }
+
+  def createRelationshipWithDynamicType(
+    relationship: String,
+    left: String,
+    typeExpr: String,
+    right: String,
+    direction: SemanticDirection = OUTGOING,
+    properties: Option[String] = None
+  ): CreateRelationship = {
+    val dynamicType = Parser.parseExpression(typeExpr)
+    val props = properties.map(Parser.parseExpression)
+    if (props.exists(!_.isInstanceOf[MapExpression]))
+      throw new IllegalArgumentException("Property must be a Map Expression")
+    createRelationshipFull(
+      relationship,
+      left,
+      DynamicRelTypeExpression(dynamicType)(pos),
+      right,
       direction,
       props
     )
@@ -3425,10 +3449,28 @@ object AbstractLogicalPlanBuilder {
     direction: SemanticDirection = OUTGOING,
     properties: Option[MapExpression] = None
   ): CreateRelationship = {
+    createRelationshipFull(
+      relationship,
+      left,
+      RelTypeName(typ)(pos),
+      right,
+      direction,
+      properties
+    )
+  }
+
+  def createRelationshipFull(
+    relationship: String,
+    left: String,
+    typ: RelTypeExpression,
+    right: String,
+    direction: SemanticDirection = OUTGOING,
+    properties: Option[Expression] = None
+  ): CreateRelationship = {
     CreateRelationship(
       varFor(relationship),
       varFor(left),
-      RelTypeName(typ)(pos),
+      typ,
       varFor(right),
       direction,
       properties

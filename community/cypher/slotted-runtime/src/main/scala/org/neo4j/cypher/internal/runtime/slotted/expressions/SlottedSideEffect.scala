@@ -93,7 +93,7 @@ case class CreateSlottedRelationship(command: CreateRelationshipSlottedCommand, 
       if (start == StatementConstants.NO_SUCH_NODE) handleMissingNode(command.startName)
       else if (end == StatementConstants.NO_SUCH_NODE) handleMissingNode(command.endName)
       else {
-        val typeId = state.query.getOrCreateRelTypeId(command.relType.name)
+        val typeId = command.relType.getOrCreateType(row, state)
         val relationship = state.query.createRelationshipId(start, end, typeId)
         command.properties.foreach(p =>
           p.apply(row, state) match {

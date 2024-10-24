@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsOnErrorBehaviour
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
 import org.neo4j.cypher.internal.expressions.CachedHasProperty
 import org.neo4j.cypher.internal.expressions.CachedProperty
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
@@ -1856,9 +1857,17 @@ object LogicalPlanToPlanBuilderString {
 
   private def createRelationshipToString(rel: CreateRelationship) = {
     val propString = rel.properties.map(p => s", Some(${wrapInQuotations(expressionStringifier(p))})").getOrElse("")
-    s"createRelationship(${wrapInQuotationsAndMkString(
-        Seq(rel.variable.name, rel.leftNode.name, rel.relType.name, rel.rightNode.name)
-      )}, ${rel.direction}$propString)"
+    rel.relType match {
+      case staticName: RelTypeName =>
+        s"createRelationship(${wrapInQuotationsAndMkString(
+            Seq(rel.variable.name, rel.leftNode.name, staticName.name, rel.rightNode.name)
+          )}, ${rel.direction}$propString)"
+
+      case dynamicExpr: DynamicRelTypeExpression =>
+        s"createRelationshipWithDynamicType(${wrapInQuotationsAndMkString(
+            Seq(rel.variable.name, rel.leftNode.name, expressionStringifier(dynamicExpr.expression), rel.rightNode.name)
+          )}, ${rel.direction}$propString)"
+    }
   }
 
   private def mutationToString(op: SimpleMutatingPattern): String = op match {

@@ -95,7 +95,7 @@ abstract class CheckDegreeWithTypePrimitiveLate(
       case e => booleanValue(computePredicate(
           state,
           row.getLongAt(offset),
-          typeName.getId(state.query),
+          typeName.asStatic.getId(state.query),
           direction,
           asIntExact(e)
         ))

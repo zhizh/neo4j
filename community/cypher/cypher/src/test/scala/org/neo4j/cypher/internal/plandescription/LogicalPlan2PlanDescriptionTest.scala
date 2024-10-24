@@ -116,8 +116,10 @@ import org.neo4j.cypher.internal.expressions.And
 import org.neo4j.cypher.internal.expressions.AndedPropertyInequalities
 import org.neo4j.cypher.internal.expressions.AutoExtractedParameter
 import org.neo4j.cypher.internal.expressions.CachedProperty
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
+import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.FunctionInvocation.ArgumentAsc
 import org.neo4j.cypher.internal.expressions.FunctionName
@@ -5233,6 +5235,32 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         Set("a", "x")
       )
     )
+
+    assertGood(
+      attach(
+        Create(
+          lhsLP,
+          Seq(
+            CreateRelationship(
+              varFor("r"),
+              varFor("x"),
+              relType(prop(varFor("n"), "prop")),
+              varFor("y"),
+              SemanticDirection.INCOMING,
+              Some(properties)
+            )
+          )
+        ),
+        32.2
+      ),
+      planDescription(
+        id,
+        "Create",
+        SingleChild(lhsPD),
+        Seq(details(Seq("(x)<-[r:$all(n.prop) {y: 1, crs: \"cartesian\"}]-(y)"))),
+        Set("a", "r")
+      )
+    )
   }
 
   test("Merge") {
@@ -8440,6 +8468,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
   private def label(name: String): LabelName = LabelName(name)(pos)
 
   private def relType(name: String): RelTypeName = RelTypeName(name)(pos)
+  private def relType(expr: Expression): DynamicRelTypeExpression = DynamicRelTypeExpression(expr)(pos)
 
   private def key(name: String): PropertyKeyName = PropertyKeyName(name)(pos)
 

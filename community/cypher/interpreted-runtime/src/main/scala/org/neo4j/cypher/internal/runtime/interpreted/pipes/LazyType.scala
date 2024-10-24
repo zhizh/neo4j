@@ -20,14 +20,60 @@
 package org.neo4j.cypher.internal.runtime.interpreted.pipes
 
 import org.neo4j.cypher.internal.ast.semantics.TokenTable
+import org.neo4j.cypher.internal.expressions.DynamicRelTypeExpression
+import org.neo4j.cypher.internal.expressions.RelTypeExpression
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.planner.spi.ReadTokenContext
+import org.neo4j.cypher.internal.runtime.ReadableRow
 import org.neo4j.cypher.internal.runtime.WriteQueryContext
+import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.Expression
+import org.neo4j.cypher.operations.CypherFunctions
 import org.neo4j.internal.kernel.api.TokenWrite
 
-case class LazyType(name: String) {
+sealed abstract class LazyType {
+  protected var id = LazyType.UNKNOWN
 
-  private var id = LazyType.UNKNOWN
+  def getOrCreateType(row: ReadableRow, state: QueryState): Int
+
+  def getOrCreateType(row: ReadableRow, state: QueryState, token: TokenWrite): Int
+
+  def name: String
+
+  /**
+   * This method throws an exception for dynamic types and should be used with caution/removed entirely once the feature is complete
+   */
+  def asStatic: LazyTypeStatic
+}
+
+case class LazyTypeDynamic(expr: Expression, rendered: String) extends LazyType {
+
+  def getOrCreateType(row: ReadableRow, state: QueryState): Int = {
+    if (id == LazyType.UNKNOWN) {
+      id = CypherFunctions.getOrCreateDynamicRelType(expr(row, state), state.query)
+    }
+    id
+  }
+
+  def getOrCreateType(row: ReadableRow, state: QueryState, token: TokenWrite): Int = {
+    if (id == LazyType.UNKNOWN) {
+      id = CypherFunctions.getOrCreateDynamicRelType(expr(row, state), token)
+    }
+    id
+  }
+
+  override def name: String = s"$$($rendered)"
+
+  def asStatic: LazyTypeStatic = throw new NotImplementedError("DynamicRelTypeExpression not yet supported here")
+}
+
+case class LazyTypeStatic(name: String) extends LazyType {
+  def asStatic: LazyTypeStatic = this
+
+  def getOrCreateType(row: ReadableRow, state: QueryState): Int =
+    getOrCreateType(state.query)
+
+  def getOrCreateType(row: ReadableRow, state: QueryState, token: TokenWrite): Int =
+    getOrCreateType(token)
 
   def getOrCreateType(context: WriteQueryContext): Int = {
     if (id == LazyType.UNKNOWN) {
@@ -54,9 +100,25 @@ case class LazyType(name: String) {
 object LazyType {
   val UNKNOWN: Int = -1
 
+  def apply(
+    relTypeExpression: RelTypeExpression,
+    table: TokenTable,
+    commandExpressionConverter: org.neo4j.cypher.internal.expressions.Expression => Expression
+  ): LazyType = {
+    relTypeExpression match {
+      case name: RelTypeName => LazyType(name)(table)
+      case DynamicRelTypeExpression(expression, _) =>
+        LazyType(commandExpressionConverter(expression), expression.asCanonicalStringVal)
+    }
+  }
+
   def apply(relTypeName: RelTypeName)(implicit table: TokenTable): LazyType = {
-    val typ = LazyType(relTypeName.name)
+    val typ = LazyTypeStatic(relTypeName.name)
     typ.id = table.id(relTypeName)
     typ
+  }
+
+  def apply(relTypeExpr: Expression, rendered: String): LazyType = {
+    LazyTypeDynamic(relTypeExpr, rendered)
   }
 }

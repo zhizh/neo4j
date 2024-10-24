@@ -23,7 +23,7 @@ import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.HasMappableExpressions
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.LogicalVariable
-import org.neo4j.cypher.internal.expressions.RelTypeName
+import org.neo4j.cypher.internal.expressions.RelTypeExpression
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 
 sealed trait CreateCommand extends HasMappableExpressions[CreateCommand] {
@@ -55,7 +55,7 @@ case class CreateNode(
 case class CreateRelationship(
   variable: LogicalVariable,
   leftNode: LogicalVariable,
-  relType: RelTypeName,
+  relType: RelTypeExpression,
   rightNode: LogicalVariable,
   direction: SemanticDirection,
   properties: Option[Expression]

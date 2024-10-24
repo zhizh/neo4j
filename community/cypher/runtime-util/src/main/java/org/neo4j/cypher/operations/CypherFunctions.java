@@ -81,6 +81,7 @@ import org.neo4j.cypher.internal.util.symbols.ZonedDateTimeType;
 import org.neo4j.cypher.internal.util.symbols.ZonedTimeType;
 import org.neo4j.exceptions.CypherTypeException;
 import org.neo4j.exceptions.InvalidArgumentException;
+import org.neo4j.exceptions.KernelException;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.kernel.api.NodeCursor;
@@ -1173,6 +1174,48 @@ public final class CypherFunctions {
         }
 
         return queryContext.isLabelSetOnNode(tokenId, node.id(), nodeCursor);
+    }
+
+    public static String evaluateSingleDynamicRelType(AnyValue value) throws IllegalTokenNameException {
+        TextValue singleValue = null;
+
+        if (value instanceof TextValue textValue) {
+            singleValue = textValue;
+        } else if (value instanceof SequenceValue sequenceValue) {
+            for (var t : sequenceValue) {
+                if (t instanceof TextValue textValue) {
+                    if (singleValue == null) {
+                        singleValue = textValue;
+                    } else if (!singleValue.equals(textValue)) {
+                        throw new IllegalArgumentException(
+                                "Error - Exactly one relationship type must be specified for CREATE.");
+                    }
+                } else {
+                    throw new CypherTypeException(format(
+                            "Invalid input for function 'evaluateDynamicRelType()': Expected %s to be a string, but it was a `%s`",
+                            t, t.getTypeName()));
+                }
+            }
+        } else {
+            throw new CypherTypeException(format(
+                    "Invalid input for function 'evaluateDynamicRelType()': Expected %s to be a string or list of strings, but it was a `%s`",
+                    value, value.getTypeName()));
+        }
+        if (singleValue == null) {
+            // can only reach here if value was an empty sequence
+            throw new IllegalArgumentException("Error - Exactly one relationship type must be specified for CREATE.");
+        }
+
+        return singleValue.stringValue();
+    }
+
+    public static int getOrCreateDynamicRelType(AnyValue value, QueryContext queryContext)
+            throws IllegalTokenNameException {
+        return queryContext.getOrCreateRelTypeId(evaluateSingleDynamicRelType(value));
+    }
+
+    public static int getOrCreateDynamicRelType(AnyValue value, TokenWrite token) throws KernelException {
+        return token.relationshipTypeGetOrCreateForName(evaluateSingleDynamicRelType(value));
     }
 
     @CalledFromGeneratedCode

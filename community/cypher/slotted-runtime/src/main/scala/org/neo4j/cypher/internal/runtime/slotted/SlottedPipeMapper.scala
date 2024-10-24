@@ -977,7 +977,7 @@ class SlottedPipeMapper(
               CreateRelationshipSlottedCommand(
                 slots.getLongOffsetFor(r.variable),
                 SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode)),
-                LazyType(r.relType.name),
+                LazyType(r.relType, semanticTable, convertExpressions),
                 SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode)),
                 r.properties.map(convertExpressions),
                 r.variable.name,
@@ -1404,7 +1404,7 @@ class SlottedPipeMapper(
               CreateRelationshipSlottedCommand(
                 slots.getLongOffsetFor(r.variable),
                 SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode)),
-                LazyType(r.relType.name),
+                LazyType(r.relType, semanticTable, convertExpressions),
                 SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode)),
                 r.properties.map(convertExpressions),
                 r.variable.name,
@@ -1432,7 +1432,7 @@ class SlottedPipeMapper(
               CreateRelationshipSlottedCommand(
                 slots.getLongOffsetFor(r.variable),
                 SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.startNode)),
-                LazyType(r.relType.name),
+                LazyType(r.relType, semanticTable, convertExpressions),
                 SlotConfigurationUtils.makeGetPrimitiveNodeFromSlotFunctionFor(slots(r.endNode)),
                 r.properties.map(convertExpressions),
                 r.variable.name,

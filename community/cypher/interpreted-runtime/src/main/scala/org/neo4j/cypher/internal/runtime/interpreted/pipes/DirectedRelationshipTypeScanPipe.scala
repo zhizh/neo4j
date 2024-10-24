@@ -36,7 +36,7 @@ case class DirectedRelationshipTypeScanPipe(
   protected def internalCreateResults(state: QueryState): ClosingIterator[CypherRow] = {
     val ctx = state.newRowWithArgument(rowFactory)
     val query = state.query
-    val typeId = typ.getId(query)
+    val typeId = typ.asStatic.getId(query)
     if (typeId == LazyType.UNKNOWN) ClosingIterator.empty
     else {
       val relIterator = query.getRelationshipsByType(state.relTypeTokenReadSession.get, typeId, indexOrder)

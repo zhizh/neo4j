@@ -38,7 +38,7 @@ case class UndirectedRelationshipTypeScanPipe(
 )(val id: Id = Id.INVALID_ID) extends Pipe {
 
   protected def internalCreateResults(state: QueryState): ClosingIterator[CypherRow] = {
-    val typeId = typ.getId(state.query)
+    val typeId = typ.asStatic.getId(state.query)
     if (typeId == LazyType.UNKNOWN) {
       ClosingIterator.empty
     } else {

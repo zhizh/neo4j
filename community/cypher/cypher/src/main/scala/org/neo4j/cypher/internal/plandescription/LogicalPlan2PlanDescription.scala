@@ -53,6 +53,7 @@ import org.neo4j.cypher.internal.expressions.Parameter
 import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.PropertyKeyToken
+import org.neo4j.cypher.internal.expressions.RelTypeExpression
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.RelationshipTypeToken
 import org.neo4j.cypher.internal.expressions.SemanticDirection
@@ -1693,7 +1694,7 @@ case class LogicalPlan2PlanDescription(
             expandExpressionDescription(
               leftNode,
               Some(idName),
-              Seq(relType.name),
+              Seq(relType),
               rightNode,
               direction,
               1,
@@ -1827,7 +1828,7 @@ case class LogicalPlan2PlanDescription(
         val expression = Details(expandExpressionDescription(
           fromName,
           Some(relName),
-          typeNames.map(_.name),
+          typeNames,
           toName,
           dir,
           1,
@@ -1917,7 +1918,7 @@ case class LogicalPlan2PlanDescription(
       case OptionalExpand(_, fromName, dir, typeNames, toName, relName, mode, predicates) =>
         val predicate = predicates.map(p => pretty" WHERE ${asPrettyString(p)}").getOrElse(pretty"")
         val expandExpressionDesc =
-          expandExpressionDescription(fromName, Some(relName), typeNames.map(_.name), toName, dir, 1, Some(1), None)
+          expandExpressionDescription(fromName, Some(relName), typeNames, toName, dir, 1, Some(1), None)
         val details = Details(pretty"$expandExpressionDesc$predicate")
         val modeText = mode match {
           case ExpandAll  => "OptionalExpand(All)"
@@ -2053,7 +2054,7 @@ case class LogicalPlan2PlanDescription(
           _
         ) =>
         val patternRelationshipInfo =
-          expandExpressionDescription(fromName, Some(relName), relTypes.map(_.name), toName, dir, patternLength)
+          expandExpressionDescription(fromName, Some(relName), relTypes, toName, dir, patternLength)
 
         val pathName = asPrettyString(maybePathName.map(_.name).getOrElse("p"))
 
@@ -2105,7 +2106,7 @@ case class LogicalPlan2PlanDescription(
             expandExpressionDescription(
               startNode,
               Some(relationship),
-              Seq(typ.name),
+              Seq(typ),
               endNode,
               direction,
               1,
@@ -2159,9 +2160,8 @@ case class LogicalPlan2PlanDescription(
 
       case ProjectEndpoints(_, relName, start, _, end, _, relTypes, direction, patternLength) =>
         val name = s"ProjectEndpoints"
-        val relTypeNames = relTypes.map(_.name)
 
-        val details = expandExpressionDescription(start, Some(relName), relTypeNames, end, direction, patternLength)
+        val details = expandExpressionDescription(start, Some(relName), relTypes, end, direction, patternLength)
         PlanDescriptionImpl(
           id,
           name,
@@ -2186,7 +2186,7 @@ case class LogicalPlan2PlanDescription(
         val expandInfo = expandExpressionDescription(
           fromName,
           None,
-          types.map(_.name),
+          types,
           toName,
           dir,
           minLength = min,
@@ -2221,7 +2221,7 @@ case class LogicalPlan2PlanDescription(
         val expandInfo = expandExpressionDescription(
           fromName,
           None,
-          types.map(_.name),
+          types,
           toName,
           dir,
           minLength = if (includeStartNode) 0 else 1,
@@ -2259,7 +2259,7 @@ case class LogicalPlan2PlanDescription(
         val expandDescription = expandExpressionDescription(
           from,
           Some(relName),
-          types.map(_.name),
+          types,
           to,
           dir,
           minLength = length.min,
@@ -2536,7 +2536,7 @@ case class LogicalPlan2PlanDescription(
         val expandDescription = expandExpressionDescription(
           fromName,
           Some(relName),
-          types.map(_.name),
+          types,
           toName,
           dir,
           minLength = length.min,
@@ -3460,7 +3460,7 @@ case class LogicalPlan2PlanDescription(
   private def expandExpressionDescription(
     from: LogicalVariable,
     maybeRelName: Option[LogicalVariable],
-    relTypes: Seq[String],
+    relTypes: Seq[RelTypeExpression],
     to: LogicalVariable,
     direction: SemanticDirection,
     patternLength: PatternLength
@@ -3488,7 +3488,7 @@ case class LogicalPlan2PlanDescription(
   private def expandExpressionDescription(
     from: LogicalVariable,
     maybeRelName: Option[LogicalVariable],
-    relTypes: Seq[String],
+    relTypes: Seq[RelTypeExpression],
     to: LogicalVariable,
     direction: SemanticDirection,
     minLength: Int,
@@ -3497,7 +3497,14 @@ case class LogicalPlan2PlanDescription(
   ): PrettyString = {
     val left = if (direction == SemanticDirection.INCOMING) pretty"<-" else pretty"-"
     val right = if (direction == SemanticDirection.OUTGOING) pretty"->" else pretty"-"
-    val types = if (relTypes.isEmpty) pretty"" else relTypes.map(asPrettyString(_)).mkPrettyString(":", "|", "")
+    val types = if (relTypes.isEmpty) pretty""
+    else relTypes.map {
+      case e: RelTypeName => asPrettyString(e)
+      case DynamicRelTypeExpression(expr, all) =>
+        val inner = asPrettyString(expr)
+        val selector = if (all) pretty"all" else pretty"any"
+        pretty"$$$selector($inner)"
+    }.mkPrettyString(":", "|", "")
     val separator = if (relTypes.isEmpty) pretty": " else pretty" "
     val propsString = maybeProperties.map(p => pretty"$separator${asPrettyString(p)}").getOrElse(pretty"")
     val lengthDescr: PrettyString = (minLength, maxLength) match {
@@ -3708,7 +3715,7 @@ case class LogicalPlan2PlanDescription(
           expandExpressionDescription(
             startNode,
             Some(relationship),
-            Seq(typ.name),
+            Seq(typ),
             endNode,
             direction,
             1,
