@@ -76,6 +76,24 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
     readOnly: Boolean
   ): Rewriter = {
     val isShardedDatabase = context.planContext.databaseMode == DatabaseMode.SHARDED
+    val trailToVarExpandRewriter = TrailToVarExpandRewriter(
+      labelAndRelTypeInfos,
+      otherAttributes.withAlso(solveds, cardinalities, effectiveCardinalities, providedOrders),
+      anonymousVariableNameGenerator,
+      rewritableTrailExtractor = TrailToVarExpandRewriter.RewritableTrailExtractor.FilterAfterExpand,
+      isBlockFormat = context.planContext.storageHasPropertyColocation,
+      executionModelSupportsCursorReuseInBlockFormat = context.executionModel.supportsCursorReuseInBlockFormat,
+      isShardedDatabase = isShardedDatabase
+    )
+    val pruningVarExpanderRewriter = pruningVarExpander(anonymousVariableNameGenerator, VarExpandRewritePolicy.default)
+
+    val trailToPruningVarExpandRewriter = trailToPruningVarExpand(
+      trailRewriter = trailToVarExpandRewriter.copy(
+        rewritableTrailExtractor = TrailToVarExpandRewriter.RewritableTrailExtractor.FilterBeforeAndAfterExpand
+      ),
+      pruningRewriter = pruningVarExpanderRewriter
+    )
+
     // not fusing these allows UnnestApply to do more work
     val dontFuseRewriters: Seq[Rewriter] = Seq(
       Some(ForAllRepetitionsPredicateRewriter(
@@ -93,14 +111,7 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
           isShardedDatabase
         )
       ),
-      Some(TrailToVarExpandRewriter(
-        labelAndRelTypeInfos,
-        otherAttributes.withAlso(solveds, cardinalities, effectiveCardinalities, providedOrders),
-        anonymousVariableNameGenerator,
-        isBlockFormat = context.planContext.storageHasPropertyColocation,
-        executionModelSupportsCursorReuseInBlockFormat = context.executionModel.supportsCursorReuseInBlockFormat,
-        isShardedDatabase = isShardedDatabase
-      )),
+      Some(trailToVarExpandRewriter),
       Some(fuseSelections),
       Some(UnnestApply(
         solveds,
@@ -131,7 +142,10 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
         solveds,
         providedOrders
       ))),
-      Some(pruningVarExpander(anonymousVariableNameGenerator, VarExpandRewritePolicy.default)),
+      Some(inSequence(
+        pruningVarExpanderRewriter,
+        trailToPruningVarExpandRewriter
+      )),
       // Only used on read-only queries, until rewriter is tested to work with cleanUpEager
       Option.when(readOnly)(bfsAggregationRemover),
       // Only used on read-only queries, until rewriter is tested to work with cleanUpEager
@@ -205,6 +219,35 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
     pushdownPropertyReads: Boolean,
     semanticFeatures: Seq[SemanticFeature]
   ): LogicalPlanRewriter = this
+
+  /**
+   * Special case for rewriting Trails with two Filters:
+   *
+   * .trail(...)
+   * .|.filter(..., isRepeatTrailUnique(r))
+   * .|.expandAll(...)
+   * .|.filter(...)
+   * .|.argument(...)
+   * .lhs
+   *
+   * But _only_ if the resulting VarExpand is in turn rewritable by [[pruningVarExpander]].
+   */
+  private def trailToPruningVarExpand(trailRewriter: TrailToVarExpandRewriter, pruningRewriter: Rewriter): Rewriter = {
+    new Rewriter {
+      override def apply(start: AnyRef): AnyRef = {
+        val intermediate = trailRewriter(start)
+        val result = pruningRewriter(intermediate)
+
+        if (intermediate != result) {
+          // pruningRewriter did some work, accept rewrite
+          result
+        } else {
+          // undo trailRewriter work otherwise
+          start
+        }
+      }
+    }
+  }
 }
 
 trait LogicalPlanRewriter extends Phase[PlannerContext, LogicalPlanState, LogicalPlanState] {

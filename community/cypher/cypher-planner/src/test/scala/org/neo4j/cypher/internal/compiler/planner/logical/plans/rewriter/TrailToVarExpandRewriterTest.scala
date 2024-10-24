@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.compiler.ExecutionModel
 import org.neo4j.cypher.internal.compiler.helpers.LogicalPlanBuilder
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanTestOps
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningTestSupport
+import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriter.RewritableTrailExtractor
 import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.DbFormat
 import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.TrailParametersOps
 import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriterTest.`(a) ((n)-[r]-(m))+ (b)`
@@ -123,17 +124,28 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
   }
 
   // node variable n has a predicate
-  test("Preserves MATCH (a) ((n:N)-[r]->(m))+ (b) RETURN 1 AS s") {
+  test("Rewrites MATCH (a) ((n WHERE n.prop > 123)-[r]->(m))+ (b) RETURN 1 AS s, depending on extractor") {
     val trail = subPlanBuilder
       .projection("1 AS s")
       .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`.empty)
       .|.filterExpression(isRepeatTrailUnique("r_i"))
       .|.expand("(n_i)-[r_i]->(m_i)")
-      .|.filter("n_i:N")
+      .|.filter("n_i.prop > 123")
       .|.argument("n_i")
       .nodeByLabelScan("a", "N")
       .build()
-    preserves(trail)
+
+    val expand = subPlanBuilder
+      .projection("1 AS s")
+      .expand(
+        "(a)-[r_i*1..]->(b)",
+        relationshipPredicates = Seq(Predicate("  UNNAMED1", "startNode(`  UNNAMED1`).prop > 123"))
+      )
+      .nodeByLabelScan("a", "N")
+      .build()
+
+    rewrites(trail, expand, extractor = RewritableTrailExtractor.FilterBeforeAndAfterExpand)
+    preserves(trail, extractor = RewritableTrailExtractor.FilterAfterExpand)
   }
 
   // the qpp relationship chain contains multiple relationships
@@ -1115,43 +1127,121 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
     rewrites(selectionAndTrail, expand)
   }
 
+  test(
+    "Rewrites MATCH (a) ((n WHERE n.prop > 123)-[r]->(m WHERE m.prop < 321))+ (b) RETURN 1 AS s (directed relationship)"
+  ) {
+    val trail = subPlanBuilder
+      .projection("1 AS s")
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`.empty)
+      .|.filterExpressionOrString("m_i.prop < 321", isRepeatTrailUnique("r_i"))
+      .|.expand("(n_i)-[r_i]->(m_i)")
+      .|.filter("n_i.prop > 123")
+      .|.argument("n_i")
+      .allNodeScan("a")
+      .build()
+    val expand = subPlanBuilder
+      .projection("1 AS s")
+      .expand(
+        "(a)-[r_i*1..]->(b)",
+        relationshipPredicates = Seq(
+          Predicate("  UNNAMED1", "endNode(`  UNNAMED1`).prop < 321"),
+          Predicate("  UNNAMED1", "startNode(`  UNNAMED1`).prop > 123")
+        )
+      )
+      .allNodeScan("a")
+      .build()
+
+    rewrites(trail, expand, extractor = RewritableTrailExtractor.FilterBeforeAndAfterExpand)
+    preserves(trail, extractor = RewritableTrailExtractor.FilterAfterExpand)
+  }
+
+  test(
+    "Rewrites MATCH (a) ((n WHERE n.prop > 123)-[r]-(m WHERE m.prop < 321))+ (b) RETURN 1 AS s (undirected relationship)"
+  ) {
+    val trail = subPlanBuilder
+      .projection("1 AS s")
+      .repeatTrail(`(a) ((n)-[r]-(m))+ (b)`.empty)
+      .|.filterExpressionOrString("m_i.prop < 321", isRepeatTrailUnique("r_i"))
+      .|.expand("(n_i)-[r_i]-(m_i)")
+      .|.filter("n_i.prop > 123")
+      .|.argument("n_i")
+      .allNodeScan("a")
+      .build()
+
+    val TO = TraversalEndpoint(tempVar = v"  UNNAMED2", endpoint = To)
+    val FROM = TraversalEndpoint(tempVar = v"  UNNAMED3", endpoint = From)
+
+    val expand = subPlanBuilder
+      .projection("1 AS s")
+      .expandExpr(
+        "(a)-[r_i*1..]-(b)",
+        relationshipPredicates = Seq(
+          VariablePredicate(v"  UNNAMED1", lessThan(prop(TO, "prop"), literalInt(321))),
+          VariablePredicate(v"  UNNAMED1", greaterThan(prop(FROM, "prop"), literalInt(123)))
+        )
+      )
+      .allNodeScan("a")
+      .build()
+
+    rewrites(trail, expand, extractor = RewritableTrailExtractor.FilterBeforeAndAfterExpand)
+    preserves(trail, extractor = RewritableTrailExtractor.FilterAfterExpand)
+  }
+
   private def rewrites(
     trail: LogicalPlan,
     expand: LogicalPlan,
     dbFormat: DbFormat = DbFormat.All,
-    executionModels: Seq[ExecutionModel] = Seq(ExecutionModel.Volcano, ExecutionModel.Batched.default)
+    executionModels: Seq[ExecutionModel] = Seq(ExecutionModel.Volcano, ExecutionModel.Batched.default),
+    extractor: RewritableTrailExtractor = RewritableTrailExtractor.FilterAfterExpand
   ): Unit =
     for {
       isBlockFormat <- dbFormat.isBlockFormat
       em <- executionModels
       supportsCursorReuse = em.supportsCursorReuseInBlockFormat
-    } withClue(s"isBlockFormat = $isBlockFormat, supportsCursorReuse = $supportsCursorReuse\n") {
-      rewrite(trail, isBlockFormat, supportsCursorReuse).stripProduceResults should equal(expand.stripProduceResults)
+    } withClue(
+      s"isBlockFormat = $isBlockFormat, supportsCursorReuse = $supportsCursorReuse, extractor = $extractor\n"
+    ) {
+      rewrite(
+        trail,
+        isBlockFormat,
+        supportsCursorReuse,
+        extractor
+      ).stripProduceResults shouldEqual expand.stripProduceResults
     }
 
   private def preserves(
     trail: LogicalPlan,
     dbFormat: DbFormat = DbFormat.All,
-    executionModels: Seq[ExecutionModel] = Seq(ExecutionModel.Volcano, ExecutionModel.Batched.default)
+    executionModels: Seq[ExecutionModel] = Seq(ExecutionModel.Volcano, ExecutionModel.Batched.default),
+    extractor: RewritableTrailExtractor = RewritableTrailExtractor.FilterAfterExpand
   ): Unit = {
     for {
       isBlockFormat <- dbFormat.isBlockFormat
       em <- executionModels
       supportsCursorReuse = em.supportsCursorReuseInBlockFormat
-    } withClue(s"isBlockFormat = $isBlockFormat, supportsCursorReuse = $supportsCursorReuse\n") {
-      rewrite(trail, isBlockFormat, supportsCursorReuse).stripProduceResults should equal(trail.stripProduceResults)
+    } withClue(
+      s"isBlockFormat = $isBlockFormat, supportsCursorReuse = $supportsCursorReuse, extractor = $extractor\n"
+    ) {
+      rewrite(
+        trail,
+        isBlockFormat,
+        supportsCursorReuse,
+        extractor
+      ).stripProduceResults shouldEqual trail.stripProduceResults
     }
   }
 
   private def rewrite(
     p: LogicalPlan,
     isBlockFormat: Boolean,
-    executionModelSupportsCursorReuseInBlockFormat: Boolean
+    executionModelSupportsCursorReuseInBlockFormat: Boolean,
+    extractor: TrailToVarExpandRewriter.RewritableTrailExtractor
   ): LogicalPlan =
     p.endoRewrite(TrailToVarExpandRewriter(
       new StubLabelAndRelTypeInfos,
       Attributes(idGen, new StubSolveds),
       new AnonymousVariableNameGenerator,
+      rewritableTrailExtractor = extractor,
       isBlockFormat = isBlockFormat,
       executionModelSupportsCursorReuseInBlockFormat = executionModelSupportsCursorReuseInBlockFormat,
       isShardedDatabase = false

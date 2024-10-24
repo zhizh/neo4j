@@ -21,7 +21,6 @@ package org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter
 
 import org.neo4j.cypher.internal.compiler.planner.logical.InlinedPredicates
 import org.neo4j.cypher.internal.compiler.planner.logical.convertToInlinedPredicates
-import org.neo4j.cypher.internal.compiler.planner.logical.plans.rewriter.TrailToVarExpandRewriter.RewritableTrailToVarLengthExpand
 import org.neo4j.cypher.internal.expressions.Ands
 import org.neo4j.cypher.internal.expressions.Disjoint
 import org.neo4j.cypher.internal.expressions.Equals
@@ -52,6 +51,7 @@ import org.neo4j.cypher.internal.util.Rewriter
 import org.neo4j.cypher.internal.util.Rewriter.TopDownMergeableRewriter
 import org.neo4j.cypher.internal.util.attribution.Attributes
 import org.neo4j.cypher.internal.util.attribution.SameId
+import org.neo4j.cypher.internal.util.collection.immutable.ListSet
 import org.neo4j.cypher.internal.util.collection.immutable.ListSet.Singleton
 import org.neo4j.cypher.internal.util.topDown
 
@@ -93,6 +93,7 @@ case class TrailToVarExpandRewriter(
   labelAndRelTypeInfos: LabelAndRelTypeInfos,
   otherAttributes: Attributes[LogicalPlan],
   anonymousVariableNameGenerator: AnonymousVariableNameGenerator,
+  rewritableTrailExtractor: TrailToVarExpandRewriter.RewritableTrailExtractor,
   isBlockFormat: Boolean,
   executionModelSupportsCursorReuseInBlockFormat: Boolean,
   isShardedDatabase: Boolean
@@ -129,14 +130,14 @@ case class TrailToVarExpandRewriter(
 
   override val innerRewriter: Rewriter = Rewriter.lift {
     // Rewrite special cases of Trail into VarLengthExpand(All)
-    case RewritableTrailToVarLengthExpand(trail, expand, inlinablePredicates, quantifier, relationship)
+    case rewritableTrailExtractor(trail, expand, inlinablePredicates, quantifier, relationship)
       if !requiresPropertyAccessFromShards(inlinablePredicates) =>
       // Create the VarLengthExpandAll
       createVarLengthExpand(trail, expand, inlinablePredicates, quantifier, relationship, ExpandAll).getOrElse(trail)
     // Rewrite special cases of Filter+Trail into VarLengthExpand(Into)
     case selection @ Selection(
         Ands(Singleton(predicate)),
-        RewritableTrailToVarLengthExpand(trail, expand, relationshipPredicates, quantifier, relationship)
+        rewritableTrailExtractor(trail, expand, relationshipPredicates, quantifier, relationship)
       )
       if AnonymousVariableNameGenerator.notNamed(trail.end.name) && !requiresPropertyAccessFromShards(Seq(predicate)) =>
       // The trail is going to an unnamed variable, let's call it variableX
@@ -307,7 +308,42 @@ object TrailToVarExpandRewriter {
     }
   }
 
-  object RewritableTrailToVarLengthExpand {
+  object RewritableTrailExtractor {
+
+    /**
+     * .trail(...)
+     * .|.filter(..., isRepeatTrailUnique(r))
+     * .|.expandAll(...)
+     * .|.argument(...)
+     * .lhs
+     */
+    case object FilterAfterExpand extends RewritableTrailExtractor {
+
+      override protected def rhsBeforeExpandExtractor: PartialFunction[LogicalPlan, ListSet[Expression]] = {
+        case _: Argument => ListSet.empty
+      }
+    }
+
+    /**
+     * .trail(...)
+     * .|.filter(..., isRepeatTrailUnique(r))
+     * .|.expandAll(...)
+     * .|.filter(...)
+     * .|.argument(...)
+     * .lhs
+     */
+    case object FilterBeforeAndAfterExpand extends RewritableTrailExtractor {
+
+      override protected def rhsBeforeExpandExtractor: PartialFunction[LogicalPlan, ListSet[Expression]] = {
+        case Selection(Ands(predicates), _: Argument) => predicates
+      }
+    }
+  }
+
+  sealed trait RewritableTrailExtractor {
+    self =>
+
+    protected def rhsBeforeExpandExtractor: PartialFunction[LogicalPlan, ListSet[Expression]]
 
     def unapply(plan: LogicalPlan)
       : Option[(RepeatTrail, Expand, Seq[Expression], VarPatternLength, Option[VariableGrouping])] = {
@@ -333,54 +369,60 @@ object TrailToVarExpandRewriter {
         case _ => None
       }
     }
-  }
 
-  object RewritableTrailRhs {
+    private object RewritableTrailRhs {
 
-    /**
-     * This extractor ensures it will never allow a non-rewritable case to be rewritten. The opposite is not
-     * true. This extractor will sometimes consider rewritable cases non-rewritable. We tolerate false
-     * negatives. This is a tradeoff between code complexity and performance, where we tolerate missing out on a few
-     * rare cases if it makes the code significantly more maintainable.
-     *
-     * This extractor relies on several properties of our compilation pipeline, which are not obvious at first.
-     *
-     * The first property we rely on has to do with the shape of the RHS of Trail. We assume that very few rewritable
-     * cases that survive planning will deviate from the following shape. As a reminder, we require all rewritable
-     * QPPs to have a single relationship chain with a single relationship.
-     *
-     * .trail(...)
-     * .|.filter(..., isRepeatTrailUnique(r))
-     * .|.expandAll(...)
-     * .|.argument(...)
-     * .lhs
-     *
-     * The second property we rely on has to do with the binding order of variables. QPP pre-filter predicates can
-     * contain references to variables of the same MATCH clause, as can VarExpand. During LogicalPlanning we are careful
-     * to order plans based on their dependencies on unbound variables. The variables that the Trail receives are
-     * therefor guaranteed to be solved. Because this rewriter just swaps a Trail for a VarExpand without changing its
-     * position in the overarching LogicalPlan, we do not need to worry about binding orders in our rewriter.
-     */
-    def unapply(trailRhs: LogicalPlan): Option[(Expand, Seq[Expression])] = {
-      trailRhs match {
-        case Selection(Ands(predicates), expand @ Expand(_: Argument, _, _, _, _, _, ExpandAll)) =>
-          Some((
-            expand,
-            predicates
-              .filterNot(_.isInstanceOf[IsRepeatTrailUnique]).toSeq
-          ))
-        case _ => None
+      /**
+       * This extractor ensures it will never allow a non-rewritable case to be rewritten. The opposite is not
+       * true. This extractor will sometimes consider rewritable cases non-rewritable. We tolerate false
+       * negatives. This is a tradeoff between code complexity and performance, where we tolerate missing out on a few
+       * rare cases if it makes the code significantly more maintainable.
+       *
+       * This extractor relies on several properties of our compilation pipeline, which are not obvious at first.
+       *
+       * The first property we rely on has to do with the shape of the RHS of Trail. We assume that very few rewritable
+       * cases that survive planning will deviate from the following shape. As a reminder, we require all rewritable
+       * QPPs to have a single relationship chain with a single relationship.
+       *
+       * .trail(...)
+       * .|.filter(..., isRepeatTrailUnique(r))
+       * .|.expandAll(...)
+       * .|.argument(...)
+       * .lhs
+       *
+       * The second property we rely on has to do with the binding order of variables. QPP pre-filter predicates can
+       * contain references to variables of the same MATCH clause, as can VarExpand. During LogicalPlanning we are careful
+       * to order plans based on their dependencies on unbound variables. The variables that the Trail receives are
+       * therefor guaranteed to be solved. Because this rewriter just swaps a Trail for a VarExpand without changing its
+       * position in the overarching LogicalPlan, we do not need to worry about binding orders in our rewriter.
+       */
+      def unapply(trailRhs: LogicalPlan): Option[(Expand, Seq[Expression])] = {
+        val rhsBeforeExpandExtractor: PartialFunction[LogicalPlan, ListSet[Expression]] = self.rhsBeforeExpandExtractor
+
+        trailRhs match {
+          case Selection(
+              Ands(predicatesAfterExpand),
+              expand @ Expand(rhsBeforeExpandExtractor(predicatesBeforeExpand), _, _, _, _, _, ExpandAll)
+            ) =>
+            Some((
+              expand,
+              (predicatesAfterExpand ++ predicatesBeforeExpand)
+                .filterNot(_.isInstanceOf[IsRepeatTrailUnique]).toSeq
+            ))
+          case _ => None
+        }
       }
     }
-  }
 
-  object RewritableTrailQuantifier {
+    private object RewritableTrailQuantifier {
 
-    def unapply(repetition: Repetition): Option[VarPatternLength] = {
-      for {
-        min <- Option.when(repetition.min <= Int.MaxValue.toLong)(repetition.min.toInt)
-        max <- Option.when(repetition.max.limit.getOrElse(0L) <= Int.MaxValue.toLong)(repetition.max.limit.map(_.toInt))
-      } yield VarPatternLength(min, max)
+      def unapply(repetition: Repetition): Option[VarPatternLength] = {
+        for {
+          min <- Option.when(repetition.min <= Int.MaxValue.toLong)(repetition.min.toInt)
+          max <-
+            Option.when(repetition.max.limit.getOrElse(0L) <= Int.MaxValue.toLong)(repetition.max.limit.map(_.toInt))
+        } yield VarPatternLength(min, max)
+      }
     }
   }
 }
