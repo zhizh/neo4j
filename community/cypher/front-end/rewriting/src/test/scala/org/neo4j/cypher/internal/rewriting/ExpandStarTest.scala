@@ -141,6 +141,16 @@ class ExpandStarTest extends CypherFunSuite with AstRewritingTestSupport {
       "with 1 as a, 2 as b, 3 as c match(n) with n as m, a, c call(*){with 7 as b call(*){return 'hello' as res} return 1 as d} return a, c, d, m",
       "with 1 as a, 2 as b, 3 as c match(n) with n as m, a, c call(a, m, c){with 7 as b call(b, c, m, a){return 'hello' as res} return 1 as d} return a, c, d, m"
     )
+
+    assertRewrite(
+      "call (*) { with 1 as x return * } return *",
+      "call () { with 1 as x return x } return x"
+    )
+
+    assertRewrite(
+      "call (*) { call (*) { call (*) { with 1 as x return * } return * } return * } return *",
+      "call () { call () { call () { with 1 as x return x } return x } return x } return x"
+    )
   }
 
   test("rewrites * in with") {

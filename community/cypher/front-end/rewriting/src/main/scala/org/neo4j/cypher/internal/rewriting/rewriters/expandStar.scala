@@ -18,6 +18,7 @@ package org.neo4j.cypher.internal.rewriting.rewriters
 
 import org.neo4j.cypher.internal.ast.AliasedReturnItem
 import org.neo4j.cypher.internal.ast.Clause
+import org.neo4j.cypher.internal.ast.Query
 import org.neo4j.cypher.internal.ast.Return
 import org.neo4j.cypher.internal.ast.ReturnItem
 import org.neo4j.cypher.internal.ast.ReturnItems
@@ -63,9 +64,10 @@ case class expandStar(state: SemanticState) extends Rewriter {
         if (values.includeExisting) returnItems(clause, values.items, values.defaultOrderOnColumns) else values
       clause.copy(returnItems = newReturnItems)(clause.position)
 
-    case clause @ ScopeClauseSubqueryCall(_, true, _, _, _) =>
-      val expandedItems = importVariables(clause)
-      clause.copy(isImportingAll = false, importedVariables = expandedItems)(clause.position)
+    case clause @ ScopeClauseSubqueryCall(iq, true, _, _, _) =>
+      val innerQuery = iq.endoRewrite(this)
+      val expandedItems = importVariables(clause, innerQuery)
+      clause.copy(innerQuery = innerQuery, isImportingAll = false, importedVariables = expandedItems)(clause.position)
 
     case expandedAstNode =>
       expandedAstNode
@@ -103,7 +105,8 @@ case class expandStar(state: SemanticState) extends Rewriter {
   }
 
   private def importVariables(
-    call: SubqueryCall
+    call: SubqueryCall,
+    innerQuery: Query
   ): Seq[Variable] = {
     val scope = state.scope(call).getOrElse {
       throw new IllegalStateException(s"${call.name} should note its Scope in the SemanticState")
@@ -116,7 +119,7 @@ case class expandStar(state: SemanticState) extends Rewriter {
     ).parent.get.scope.symbolNames
 
     val clausePos = call.position
-    val returnVariables = call.innerQuery.returnVariables.explicitVariables.map(_.name)
+    val returnVariables = innerQuery.returnVariables.explicitVariables.map(_.name)
     val reportVariable = for {
       tps <- call.inTransactionsParameters
       report <- tps.reportParams
