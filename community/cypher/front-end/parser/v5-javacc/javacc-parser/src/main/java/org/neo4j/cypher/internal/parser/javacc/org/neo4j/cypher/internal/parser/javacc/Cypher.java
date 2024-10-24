@@ -24103,7 +24103,7 @@ SCHEMA_COMMAND CreateIndex(Token start, boolean replace) throws ParseException, 
     properties = SymbolicNamePositions();
     jj_consume_token(RPAREN);
 if (replace) {
-            throw exceptionFactory.syntaxException( new ParseException("'REPLACE' is not allowed for this index syntax"), start.beginOffset, start.beginLine, start.beginColumn );
+            throw exceptionFactory.syntaxException(GqlHelper.getGql42001_42N14("OR REPLACE", "CREATE INDEX", start.beginLine, start.beginColumn, start.beginOffset), new ParseException("'REPLACE' is not allowed for this index syntax"), start.beginOffset, start.beginLine, start.beginColumn );
         }
         throw exceptionFactory.syntaxException( new ParseException("Invalid create index syntax, use `CREATE INDEX FOR ...` instead."), start.beginOffset, start.beginLine, start.beginColumn );
 }
