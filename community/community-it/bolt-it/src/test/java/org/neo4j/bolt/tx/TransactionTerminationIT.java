@@ -26,10 +26,15 @@ import org.junit.jupiter.api.Timeout;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.Authenticated;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
+import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
+import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
+import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
+import org.neo4j.internal.helpers.collection.Pair;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.test.extension.Inject;
 import org.neo4j.test.extension.testdirectory.TestDirectoryExtension;
@@ -59,6 +64,23 @@ public class TransactionTerminationIT {
 
     @Timeout(15)
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void killTxViaResetV40(BoltWire wire, @Authenticated BoltTestConnection connection) throws Exception {
+        connection.send(wire.begin()).send(wire.run("UNWIND range(1, 2000000) AS i CREATE (n)"));
+
+        awaitTransactionStart();
+
+        connection.send(wire.reset());
+
+        assertThat(connection)
+                .receivesSuccess()
+                .receivesFailureV40(Status.Transaction.Terminated, Status.Transaction.LockClientStopped)
+                .receivesSuccess();
+    }
+
+    @Timeout(15)
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void killTxViaReset(BoltWire wire, @Authenticated BoltTestConnection connection) throws Exception {
         connection.send(wire.begin()).send(wire.run("UNWIND range(1, 2000000) AS i CREATE (n)"));
 
@@ -68,12 +90,54 @@ public class TransactionTerminationIT {
 
         assertThat(connection)
                 .receivesSuccess()
-                .receivesFailure(Status.Transaction.Terminated, Status.Transaction.LockClientStopped)
+                .receivesFailure(
+                        Pair.of(Status.Transaction.Terminated, GqlStatusInfoCodes.STATUS_50N42.getGqlStatus()),
+                        Pair.of(Status.Transaction.LockClientStopped, GqlStatusInfoCodes.STATUS_50N42.getGqlStatus()))
                 .receivesSuccess();
     }
 
     @Timeout(15)
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void killTxThenTryToUseItTestV40(BoltWire wire, @Authenticated BoltTestConnection connection) throws Exception {
+        connection
+                .send(wire.begin())
+                .send(wire.run("UNWIND range(1, 200) AS i RETURN i"))
+                .send(wire.pull());
+
+        assertThat(connection).receivesSuccess(2);
+
+        assertThat(connection).receivesRecords();
+
+        awaitTransactionStart(); // Start but should go to sleep
+
+        // Find and cancel the transaction we started above.
+        try (var tx = server.graphDatabaseService().beginTx()) {
+            var result = tx.execute("SHOW TRANSACTIONS");
+            var unwindTransaction = result.stream().toList().stream()
+                    .filter(x -> !x.get("connectionId").equals("")
+                            && !x.get("clientAddress").equals(""));
+
+            var transactionId = (String) unwindTransaction.toList().get(0).get("transactionId");
+
+            var terminationResult = tx.execute(String.format("TERMINATE TRANSACTION \"%s\"", transactionId));
+
+            var termination = terminationResult.stream().toList().get(0); // should only ever be one.
+
+            assertEquals(termination.get("message"), "Transaction terminated.");
+        }
+
+        connection.send(wire.run("UNWIND range(1, 200) AS i RETURN i")); // send a run to a canceled transaction
+
+        assertThat(connection)
+                .receivesFailureV40(
+                        Status.Transaction.Terminated,
+                        "The transaction has been terminated. Retry your operation in a new transaction, and you should see a successful result. Explicitly terminated by the user. ");
+    }
+
+    @Timeout(15)
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void killTxThenTryToUseItTest(BoltWire wire, @Authenticated BoltTestConnection connection) throws Exception {
         connection
                 .send(wire.begin())
@@ -107,11 +171,64 @@ public class TransactionTerminationIT {
         assertThat(connection)
                 .receivesFailure(
                         Status.Transaction.Terminated,
-                        "The transaction has been terminated. Retry your operation in a new transaction, and you should see a successful result. Explicitly terminated by the user. ");
+                        "The transaction has been terminated. Retry your operation in a new transaction, and you should see a successful result. Explicitly terminated by the user. ",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 
     @Timeout(20)
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void killedTxShouldNotDestroyConnectionV40(BoltWire wire, @Authenticated BoltTestConnection connection)
+            throws Exception {
+        connection
+                .send(wire.begin())
+                .send(wire.run("UNWIND range(1, 200) AS i RETURN i"))
+                .send(wire.pull());
+
+        assertThat(connection).receivesSuccess(2);
+        assertThat(connection).receivesRecords();
+
+        awaitTransactionStart(); // Start but should go to sleep
+
+        // Find and cancel the transaction we started above.
+        try (var tx = server.graphDatabaseService().beginTx()) {
+            var result = tx.execute("SHOW TRANSACTIONS");
+            var unwindTransaction = result.stream().toList().stream()
+                    .filter(x -> !x.get("connectionId").equals("")
+                            && !x.get("clientAddress").equals(""));
+
+            var transactionId = (String) unwindTransaction.toList().get(0).get("transactionId");
+
+            var terminationResult = tx.execute(String.format("TERMINATE TRANSACTION \"%s\"", transactionId));
+
+            var termination = terminationResult.stream().toList().get(0); // should only ever be one.
+
+            assertEquals(termination.get("message"), "Transaction terminated.");
+        }
+        // Due to there being an explicit 10s timeout before validation the calling code should pause.
+        Thread.sleep(11000);
+
+        connection.send(wire.run("UNWIND range(1, 200) AS i RETURN i")); // send a run to a canceled transaction
+
+        assertThat(connection)
+                .receivesFailureV40(
+                        Status.Transaction.Terminated,
+                        "The transaction has been terminated. Retry your operation in a new transaction, and you should see a successful result. Explicitly terminated by the user. ");
+
+        connection
+                .send(wire.reset())
+                .send(wire.begin())
+                .send(wire.run("RETURN 1 as n"))
+                .send(wire.pull(1))
+                .send(wire.commit());
+
+        assertThat(connection).receivesSuccess(3).receivesRecord().receivesSuccess(2);
+    }
+
+    @Timeout(20)
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void killedTxShouldNotDestroyConnection(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws Exception {
         connection
@@ -147,7 +264,9 @@ public class TransactionTerminationIT {
         assertThat(connection)
                 .receivesFailure(
                         Status.Transaction.Terminated,
-                        "The transaction has been terminated. Retry your operation in a new transaction, and you should see a successful result. Explicitly terminated by the user. ");
+                        "The transaction has been terminated. Retry your operation in a new transaction, and you should see a successful result. Explicitly terminated by the user. ",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
 
         connection
                 .send(wire.reset())

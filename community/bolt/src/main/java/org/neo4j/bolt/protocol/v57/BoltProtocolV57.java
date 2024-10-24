@@ -17,28 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.bolt.protocol.common.message.response;
+package org.neo4j.bolt.protocol.v57;
 
-import org.neo4j.kernel.api.exceptions.Status;
+import org.neo4j.bolt.negotiation.ProtocolVersion;
+import org.neo4j.bolt.protocol.AbstractBoltProtocol;
 
-public record FailureMessage(FailureMetadata metadata, boolean fatal) implements ResponseMessage {
-    public static final byte SIGNATURE = 0x7F;
+public final class BoltProtocolV57 extends AbstractBoltProtocol {
+    public static final ProtocolVersion VERSION = new ProtocolVersion(5, 7);
 
-    public String message() {
-        return metadata.message();
-    }
+    private static final BoltProtocolV57 INSTANCE = new BoltProtocolV57();
 
-    public Status status() {
-        return metadata.status();
-    }
+    private BoltProtocolV57() {}
 
-    @Override
-    public byte signature() {
-        return SIGNATURE;
+    public static BoltProtocolV57 getInstance() {
+        return INSTANCE;
     }
 
     @Override
-    public String toString() {
-        return "FAILURE " + metadata;
+    public ProtocolVersion version() {
+        return VERSION;
     }
 }

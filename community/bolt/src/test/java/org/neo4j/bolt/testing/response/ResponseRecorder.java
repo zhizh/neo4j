@@ -30,7 +30,6 @@ import org.neo4j.bolt.protocol.common.fsm.response.AbstractMetadataAwareResponse
 import org.neo4j.bolt.protocol.common.fsm.response.RecordHandler;
 import org.neo4j.bolt.protocol.common.fsm.response.metadata.MetadataHandler;
 import org.neo4j.bolt.protocol.common.message.Error;
-import org.neo4j.bolt.protocol.common.message.response.FailureMessage;
 import org.neo4j.bolt.protocol.common.message.response.IgnoredMessage;
 import org.neo4j.bolt.protocol.common.message.response.SuccessMessage;
 import org.neo4j.bolt.protocol.v44.fsm.response.metadata.MetadataHandlerV44;
@@ -84,8 +83,7 @@ public class ResponseRecorder extends AbstractMetadataAwareResponseHandler {
 
     @Override
     public void onFailure(Error error) {
-        messages.add(new RecordedResponseMessage(
-                new FailureMessage(error.status(), error.message(), error.isFatal()), new IllegalStateException()));
+        messages.add(new RecordedResponseMessage(error.asBoltMessage(), new IllegalStateException()));
 
         this.resetState();
     }

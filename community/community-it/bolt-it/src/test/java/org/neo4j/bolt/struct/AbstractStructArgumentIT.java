@@ -23,20 +23,53 @@ import static org.neo4j.bolt.testing.assertions.BoltConnectionAssertions.assertT
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
+import java.util.Map;
 import java.util.function.Consumer;
+import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
 import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltV40Wire;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.packstream.io.PackstreamBuf;
 import org.neo4j.packstream.struct.StructHeader;
 
 public abstract class AbstractStructArgumentIT {
 
+    protected void testFailureWithUnpackableValueV40(
+            BoltTestConnection connection, Consumer<PackstreamBuf> packer, String expectedMessage) throws IOException {
+        connection.send(createRunWith(packer));
+
+        assertThat(connection).receivesFailureV40(Status.Request.Invalid, expectedMessage);
+    }
+
     protected void testFailureWithUnpackableValue(
             BoltTestConnection connection, Consumer<PackstreamBuf> packer, String expectedMessage) throws IOException {
         connection.send(createRunWith(packer));
 
-        assertThat(connection).receivesFailure(Status.Request.Invalid, expectedMessage);
+        assertThat(connection)
+                .receivesFailure(
+                        Status.Request.Invalid,
+                        expectedMessage,
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.");
+    }
+
+    protected void testFailureWithUnpackableValue(
+            BoltTestConnection connection,
+            Consumer<PackstreamBuf> packer,
+            String expectedMessage,
+            Consumer<Map<String, Object>> causeAssertion)
+            throws IOException {
+        connection.send(createRunWith(packer));
+
+        assertThat(connection)
+                .receivesFailureWithCause(
+                        Status.Request.Invalid,
+                        expectedMessage,
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"),
+                        causeAssertion);
     }
 
     protected ByteBuf createRunWith(Consumer<PackstreamBuf> packer) {

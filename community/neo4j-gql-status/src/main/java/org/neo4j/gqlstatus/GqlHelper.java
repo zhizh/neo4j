@@ -437,10 +437,8 @@ public class GqlHelper {
             if (gqlStatusObject.cause().isPresent()) {
                 var currentCause = gqlStatusObject.cause().get();
                 if (currentCause.equals(exceptionCause)) {
-                    // The gql status object already has the exception cause as a GQL cause => abort
                     return gqlStatusObject;
                 }
-                // The gql status object already has another GQL cause => keep recursing down the cause chain
                 newCause = getErrorObjectWithRewrittenCause(currentCause, exceptionCause);
             } else {
                 // Bottom of the current cause chain => add the Java cause as a GQL cause here

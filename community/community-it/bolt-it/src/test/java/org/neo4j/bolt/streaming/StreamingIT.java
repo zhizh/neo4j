@@ -35,12 +35,14 @@ import org.neo4j.bolt.test.annotation.connection.initializer.VersionSelected;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.initializer.EnableFeature;
 import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
+import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
 import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.BoltV44Wire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.packstream.error.reader.UnexpectedTypeException;
 import org.neo4j.packstream.io.PackstreamBuf;
@@ -485,7 +487,8 @@ public class StreamingIT {
 
     @ProtocolTest
     @EnableFeature(Feature.UTC_DATETIME)
-    void shouldRejectLegacyOffsetDatesWhenUTCIsAvailable(BoltWire wire, @Authenticated BoltTestConnection connection)
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldRejectLegacyOffsetDatesWhenUTCIsAvailableV40(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         // switch back to a legacy wire revision in order to easily transmit an invalid struct to the server
         if (wire.getProtocolVersion().major() >= 5) {
@@ -502,7 +505,43 @@ public class StreamingIT {
 
         connection.send(wire.run("RETURN $input", params.build()));
 
-        BoltConnectionAssertions.assertThat(connection).receivesFailure(Status.Request.Invalid);
+        BoltConnectionAssertions.assertThat(connection).receivesFailureV40(Status.Request.Invalid);
+    }
+
+    @ProtocolTest
+    @EnableFeature(Feature.UTC_DATETIME)
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldRejectLegacyOffsetDatesWhenUTCIsAvailable(@Authenticated BoltTestConnection connection)
+            throws IOException {
+        // switch back to a legacy wire revision in order to easily transmit an invalid struct to the server
+        var wire = new BoltV44Wire();
+
+        var input =
+                DateTimeValue.datetime(OffsetDateTime.of(1995, 6, 14, 12, 50, 35, 556000000, ZoneOffset.ofHours(1)));
+
+        var params = new MapValueBuilder();
+        params.add("input", input);
+
+        connection.send(wire.run("RETURN $input", params.build()));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureWithCause(
+                        Status.Request.Invalid,
+                        "Illegal value for field \"params\": Unexpected struct tag: 0x46",
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"),
+                        BoltConnectionAssertions.assertErrorCauseWithInnerCause(
+                                "22N00: The provided value is unsupported and cannot be processed.",
+                                GqlStatusInfoCodes.STATUS_22N00.getGqlStatus(),
+                                "error: data exception - unsupported value. The provided value is unsupported and cannot be processed.",
+                                BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"),
+                                BoltConnectionAssertions.assertErrorCause(
+                                        "22N97: Unexpected struct tag: 0x46.",
+                                        GqlStatusInfoCodes.STATUS_22N97.getGqlStatus(),
+                                        "error: data exception - unexpected struct tag. Unexpected struct tag: 0x46.",
+                                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord(
+                                                "CLIENT_ERROR"))));
     }
 
     private static void assertUniqueNodeIdsReturned(PackstreamBuf buf) {

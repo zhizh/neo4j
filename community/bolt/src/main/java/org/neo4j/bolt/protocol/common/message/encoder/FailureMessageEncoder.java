@@ -19,13 +19,30 @@
  */
 package org.neo4j.bolt.protocol.common.message.encoder;
 
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.message.response.FailureMessage;
+import org.neo4j.bolt.protocol.common.message.response.FailureMetadata;
 import org.neo4j.packstream.io.PackstreamBuf;
 import org.neo4j.packstream.struct.StructWriter;
 
 public final class FailureMessageEncoder implements StructWriter<Connection, FailureMessage> {
     private static final FailureMessageEncoder INSTANCE = new FailureMessageEncoder();
+
+    public static final Map<String, Object> DEFAULT_DIAGNOSTIC_RECORD = Map.of(
+            "OPERATION",
+            "",
+            "OPERATION_CODE",
+            "0",
+            "CURRENT_SCHEMA",
+            "/",
+            "_position",
+            Map.of(
+                    "offset", -1,
+                    "line", -1,
+                    "column", -1));
 
     private FailureMessageEncoder() {}
 
@@ -50,12 +67,52 @@ public final class FailureMessageEncoder implements StructWriter<Connection, Fai
 
     @Override
     public void write(Connection ctx, PackstreamBuf buffer, FailureMessage payload) {
-        buffer.writeMapHeader(2);
+        writeMetadata(ctx, buffer, payload.metadata(), false);
+    }
 
-        buffer.writeString("code");
-        buffer.writeString(payload.status().code().serialize());
+    private void writeMetadata(Connection ctx, PackstreamBuf buffer, FailureMetadata payload, boolean isCause) {
+        var diagnosticRecord = payload.diagnosticRecord().entrySet().stream()
+                .filter(Predicate.not(FailureMessageEncoder::isDefaultDiagnosticRecordEntry))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        var size = payload.cause() != null ? 6 : 5;
+        if (diagnosticRecord.isEmpty()) {
+            size--;
+        }
+
+        if (isCause) {
+            size--;
+        }
+
+        buffer.writeMapHeader(size);
+
+        if (!isCause) {
+            buffer.writeString("neo4j_code");
+            buffer.writeString(payload.status().code().serialize());
+        }
 
         buffer.writeString("message");
         buffer.writeString(payload.message());
+
+        buffer.writeString("gql_status");
+        buffer.writeString(payload.gqlStatus());
+
+        buffer.writeString("description");
+        buffer.writeString(payload.description());
+
+        if (!diagnosticRecord.isEmpty()) {
+            buffer.writeString("diagnostic_record");
+            buffer.writeMap(diagnosticRecord);
+        }
+
+        if (payload.cause() != null) {
+            buffer.writeString("cause");
+            this.writeMetadata(ctx, buffer, payload.cause(), true);
+        }
+    }
+
+    private static boolean isDefaultDiagnosticRecordEntry(Map.Entry<String, Object> entry) {
+        return DEFAULT_DIAGNOSTIC_RECORD.containsKey(entry.getKey())
+                && DEFAULT_DIAGNOSTIC_RECORD.get(entry.getKey()).equals(entry.getValue());
     }
 }

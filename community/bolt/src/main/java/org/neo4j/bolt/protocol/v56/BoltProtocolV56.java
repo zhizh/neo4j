@@ -21,6 +21,11 @@ package org.neo4j.bolt.protocol.v56;
 
 import org.neo4j.bolt.negotiation.ProtocolVersion;
 import org.neo4j.bolt.protocol.AbstractBoltProtocol;
+import org.neo4j.bolt.protocol.common.connector.connection.Connection;
+import org.neo4j.bolt.protocol.common.message.encoder.FailureMessageEncoder;
+import org.neo4j.bolt.protocol.common.message.response.ResponseMessage;
+import org.neo4j.bolt.protocol.v40.message.encoder.FailureMessageEncoderV40;
+import org.neo4j.packstream.struct.StructRegistry;
 
 public final class BoltProtocolV56 extends AbstractBoltProtocol {
     public static final ProtocolVersion VERSION = new ProtocolVersion(5, 6);
@@ -36,5 +41,12 @@ public final class BoltProtocolV56 extends AbstractBoltProtocol {
     @Override
     public ProtocolVersion version() {
         return VERSION;
+    }
+
+    @Override
+    protected StructRegistry.Builder<Connection, ResponseMessage> createResponseMessageRegistry() {
+        return super.createResponseMessageRegistry()
+                .unregister(FailureMessageEncoder.getInstance())
+                .register(FailureMessageEncoderV40.getInstance());
     }
 }

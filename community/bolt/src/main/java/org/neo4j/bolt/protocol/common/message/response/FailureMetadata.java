@@ -19,26 +19,13 @@
  */
 package org.neo4j.bolt.protocol.common.message.response;
 
+import java.util.Map;
 import org.neo4j.kernel.api.exceptions.Status;
 
-public record FailureMessage(FailureMetadata metadata, boolean fatal) implements ResponseMessage {
-    public static final byte SIGNATURE = 0x7F;
-
-    public String message() {
-        return metadata.message();
-    }
-
-    public Status status() {
-        return metadata.status();
-    }
-
-    @Override
-    public byte signature() {
-        return SIGNATURE;
-    }
-
-    @Override
-    public String toString() {
-        return "FAILURE " + metadata;
-    }
-}
+public record FailureMetadata(
+        Status status,
+        String message,
+        String description,
+        String gqlStatus,
+        Map<String, Object> diagnosticRecord,
+        FailureMetadata cause) {}

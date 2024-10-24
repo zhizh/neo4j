@@ -19,39 +19,54 @@
  */
 package org.neo4j.bolt.protocol.common.message;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.neo4j.bolt.fsm.error.ConnectionTerminating;
+import org.neo4j.bolt.protocol.common.message.response.FailureMessage;
+import org.neo4j.bolt.protocol.common.message.response.FailureMetadata;
+import org.neo4j.gqlstatus.DiagnosticRecord;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.graphdb.DatabaseShutdownException;
 import org.neo4j.kernel.api.exceptions.HasQuery;
 import org.neo4j.kernel.api.exceptions.Status;
 
 /**
  * An error object, represents something having gone wrong that is to be signaled to the user. This is, by design, not using the java exception system.
+ *
+ * This object is responsible for centralise the order related to errors like default values from fields expected fields
+ * on the {@link org.neo4j.bolt.protocol.common.message.response.FailureMessage}, detecting fatal errors, and so on.
+ *
  */
 public class Error {
+    private static final Map<String, Object> DEFAULT_DIAGNOSTIC_RECORD =
+            DiagnosticRecord.from().build().asMap();
+
     private final Status status;
     private final String message;
     private final Throwable cause;
+    private final Throwable wrappedThrowable;
     private final UUID reference;
     private final boolean fatal;
     private final Long queryId;
 
-    private Error(Status status, String message, Throwable cause, boolean fatal, Long queryId) {
+    private Error(
+            Status status, String message, Throwable cause, boolean fatal, Long queryId, Throwable wrappedThrowable) {
         this.status = status;
         this.message = message;
         this.cause = cause;
         this.fatal = fatal;
         this.reference = UUID.randomUUID();
         this.queryId = queryId;
+        this.wrappedThrowable = wrappedThrowable;
     }
 
     private Error(Status status, String message, boolean fatal) {
-        this(status, message, null, fatal, null);
+        this(status, message, null, fatal, null, null);
     }
 
     private Error(Status status, Throwable cause, boolean fatal, Long queryId) {
-        this(status, status.code().description(), cause, fatal, queryId);
+        this(status, status.code().description(), cause, fatal, queryId, cause);
     }
 
     public Status status() {
@@ -74,25 +89,69 @@ public class Error {
         return queryId;
     }
 
+    /**
+     * Generates the Protocol with all fields expected.
+     *
+     * The serializer is responsible for selecting the data of
+     * interest.
+     *
+     * @return
+     */
+    public FailureMessage asBoltMessage() {
+        if (wrappedThrowable != null) {
+            if (wrappedThrowable instanceof ErrorGqlStatusObject wrapped) {
+                return new FailureMessage(
+                        new FailureMetadata(
+                                this.status(),
+                                this.message(),
+                                wrapped.statusDescription(),
+                                wrapped.gqlStatus(),
+                                wrapped.diagnosticRecord(),
+                                wrapped.cause()
+                                        .map(Error::causeAsFailureMetadata)
+                                        .orElse(null)),
+                        this.isFatal());
+            }
+        }
+        return new FailureMessage(
+                new FailureMetadata(
+                        this.status(),
+                        this.message(),
+                        ErrorGqlStatusObject.DEFAULT_STATUS_DESCRIPTION,
+                        ErrorGqlStatusObject.DEFAULT_STATUS_CODE,
+                        DEFAULT_DIAGNOSTIC_RECORD,
+                        null),
+                this.isFatal());
+    }
+
+    private static <E extends ErrorGqlStatusObject> FailureMetadata causeAsFailureMetadata(ErrorGqlStatusObject error) {
+        Status status = Status.General.UnknownError;
+        if (error instanceof Status.HasStatus errorWithStatus) {
+            status = errorWithStatus.status();
+        }
+        return new FailureMetadata(
+                status,
+                error.getMessage(),
+                error.statusDescription(),
+                error.gqlStatus(),
+                error.diagnosticRecord(),
+                error.cause().map(Error::causeAsFailureMetadata).orElse(null));
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Error that = (Error) o;
-
-        return Objects.equals(status, that.status) && Objects.equals(message, that.message);
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Error error = (Error) o;
+        return Objects.equals(status, error.status)
+                && Objects.equals(message, error.message)
+                && Objects.equals(cause, error.cause)
+                && Objects.equals(wrappedThrowable, error.wrappedThrowable);
     }
 
     @Override
     public int hashCode() {
-        int result = status != null ? status.hashCode() : 0;
-        result = 31 * result + (message != null ? message.hashCode() : 0);
-        return result;
+        return Objects.hash(status, message, cause, wrappedThrowable);
     }
 
     @Override
@@ -100,8 +159,8 @@ public class Error {
         return "Neo4jError{" + "status="
                 + status + ", message='"
                 + message + '\'' + ", cause="
-                + cause + ", reference="
-                + reference + '}';
+                + cause + ", wrappedThrowable="
+                + wrappedThrowable + '}';
     }
 
     public static Error from(Status status, String message) {
@@ -123,7 +182,7 @@ public class Error {
                 return new Error(Status.General.DatabaseUnavailable, cause, fatal, queryId);
             }
             if (cause instanceof Status.HasStatus) {
-                return new Error(((Status.HasStatus) cause).status(), cause.getMessage(), any, false, queryId);
+                return new Error(((Status.HasStatus) cause).status(), cause.getMessage(), any, false, queryId, cause);
             }
             if (cause instanceof OutOfMemoryError) {
                 return new Error(Status.General.OutOfMemoryError, cause, fatal, queryId);
@@ -135,7 +194,7 @@ public class Error {
 
         // In this case, an error has "slipped out", and we don't have a good way to handle it. This indicates
         // a buggy code path, and we need to try to convince whoever ends up here to tell us about it.
-        return new Error(Status.General.UnknownError, any != null ? any.getMessage() : null, any, fatal, null);
+        return new Error(Status.General.UnknownError, any != null ? any.getMessage() : null, any, fatal, null, any);
     }
 
     public static Error fatalFrom(Status status, String message) {

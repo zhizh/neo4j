@@ -143,7 +143,7 @@ public class SchedulerBusyIT {
                         connection3.send(wire.hello());
 
                         BoltConnectionAssertions.assertThat(connection3)
-                                .receivesFailureFuzzy(
+                                .receivesFailureFuzzyV40(
                                         Status.Request.NoThreadsAvailable,
                                         "There are no available threads to serve this request at the moment");
 
@@ -168,7 +168,7 @@ public class SchedulerBusyIT {
                             connection3.send(wire.hello());
 
                             BoltConnectionAssertions.assertThat(connection3)
-                                    .receivesFailureFuzzy(
+                                    .receivesFailureFuzzyV40(
                                             Status.Request.NoThreadsAvailable,
                                             "There are no available threads to serve this request at the moment");
                         }

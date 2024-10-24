@@ -27,7 +27,6 @@ import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.connector.connection.listener.ConnectionListener;
 import org.neo4j.bolt.protocol.common.fsm.response.metadata.MetadataHandler;
 import org.neo4j.bolt.protocol.common.message.Error;
-import org.neo4j.bolt.protocol.common.message.response.FailureMessage;
 import org.neo4j.bolt.protocol.common.message.response.IgnoredMessage;
 import org.neo4j.bolt.protocol.common.message.response.SuccessMessage;
 import org.neo4j.bolt.protocol.error.streaming.BoltStreamingWriteException;
@@ -95,37 +94,35 @@ public class NetworkResponseHandler extends AbstractMetadataAwareResponseHandler
         }
 
         var remoteAddress = this.connection.clientAddress();
-        connection
-                .writeAndFlush(new FailureMessage(error.status(), error.message(), error.isFatal()))
-                .addListener(f -> {
-                    if (f.isSuccess()) {
-                        return;
-                    }
+        connection.writeAndFlush(error.asBoltMessage()).addListener(f -> {
+            if (f.isSuccess()) {
+                return;
+            }
 
-                    // TODO: Re-Evaluate after StateMachine refactor (Should be handled upstream)
+            // TODO: Re-Evaluate after StateMachine refactor (Should be handled upstream)
 
-                    // Can't write error to the client, because the connection is closed.
-                    // Very likely our error is related to the connection being closed.
+            // Can't write error to the client, because the connection is closed.
+            // Very likely our error is related to the connection being closed.
 
-                    // If the error is that the transaction was terminated, then the error is a side-effect of
-                    // us cleaning up stuff that was running when the client disconnected. Log a warning without
-                    // stack trace to highlight clients are disconnecting while stuff is running:
-                    if (CLIENT_MID_OP_DISCONNECT_ERRORS.contains(error.status())) {
-                        this.log.warn(
-                                "Client %s disconnected while query was running. Session has been cleaned up. "
-                                        + "This can be caused by temporary network problems, but if you see this often, "
-                                        + "ensure your applications are properly waiting for operations to complete before exiting.",
-                                remoteAddress);
-                        return;
-                    }
+            // If the error is that the transaction was terminated, then the error is a side-effect of
+            // us cleaning up stuff that was running when the client disconnected. Log a warning without
+            // stack trace to highlight clients are disconnecting while stuff is running:
+            if (CLIENT_MID_OP_DISCONNECT_ERRORS.contains(error.status())) {
+                this.log.warn(
+                        "Client %s disconnected while query was running. Session has been cleaned up. "
+                                + "This can be caused by temporary network problems, but if you see this often, "
+                                + "ensure your applications are properly waiting for operations to complete before exiting.",
+                        remoteAddress);
+                return;
+            }
 
-                    // If the error isn't that the tx was terminated, log it to the console for debugging. It's likely
-                    // there are other "ok" errors that we can whitelist into the conditional above over time.
-                    var ex = f.cause();
-                    ex.addSuppressed(error.cause());
+            // If the error isn't that the tx was terminated, log it to the console for debugging. It's likely
+            // there are other "ok" errors that we can whitelist into the conditional above over time.
+            var ex = f.cause();
+            ex.addSuppressed(error.cause());
 
-                    this.log.warn("Unable to send error back to the client. " + ex.getMessage(), ex);
-                });
+            this.log.warn("Unable to send error back to the client. " + ex.getMessage(), ex);
+        });
 
         this.connection.notifyListenersSafely("requestResultFailure", listener -> listener.onResponseFailed(error));
     }

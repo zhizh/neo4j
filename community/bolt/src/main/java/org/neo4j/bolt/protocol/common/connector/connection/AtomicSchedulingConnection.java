@@ -48,7 +48,6 @@ import org.neo4j.bolt.protocol.common.message.AccessMode;
 import org.neo4j.bolt.protocol.common.message.Error;
 import org.neo4j.bolt.protocol.common.message.notifications.NotificationsConfig;
 import org.neo4j.bolt.protocol.common.message.request.RequestMessage;
-import org.neo4j.bolt.protocol.common.message.response.FailureMessage;
 import org.neo4j.bolt.protocol.common.signal.StateSignal;
 import org.neo4j.bolt.protocol.error.BoltNetworkException;
 import org.neo4j.bolt.tx.Transaction;
@@ -172,7 +171,7 @@ public class AtomicSchedulingConnection extends AbstractConnection {
                 this.connector().errorAccountant().notifyThreadStarvation(this, ex);
                 this.notifyListenersSafely("requestResultFailure", listener -> listener.onResponseFailed(error));
 
-                this.channel.writeAndFlush(new FailureMessage(error.status(), error.message(), false));
+                this.channel.writeAndFlush(error.asBoltMessage());
                 this.close();
             }
         }

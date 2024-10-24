@@ -26,7 +26,10 @@ import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.connector.connection.Feature;
 import org.neo4j.bolt.protocol.common.fsm.response.metadata.MetadataHandler;
 import org.neo4j.bolt.protocol.common.message.decoder.connection.DefaultRouteMessageDecoder;
+import org.neo4j.bolt.protocol.common.message.encoder.FailureMessageEncoder;
 import org.neo4j.bolt.protocol.common.message.request.RequestMessage;
+import org.neo4j.bolt.protocol.common.message.response.ResponseMessage;
+import org.neo4j.bolt.protocol.v40.message.encoder.FailureMessageEncoderV40;
 import org.neo4j.bolt.protocol.v43.BoltProtocolV43;
 import org.neo4j.bolt.protocol.v44.fsm.response.metadata.MetadataHandlerV44;
 import org.neo4j.bolt.protocol.v44.message.decoder.transaction.BeginMessageDecoderV44;
@@ -62,6 +65,13 @@ public final class BoltProtocolV44 extends BoltProtocolV43 {
                 .register(BeginMessageDecoderV44.getInstance())
                 .register(DefaultRouteMessageDecoder.getInstance())
                 .register(RunMessageDecoderV44.getInstance());
+    }
+
+    @Override
+    protected StructRegistry.Builder<Connection, ResponseMessage> createResponseMessageRegistry() {
+        return super.createResponseMessageRegistry()
+                .unregister(FailureMessageEncoder.getInstance())
+                .register(FailureMessageEncoderV40.getInstance());
     }
 
     @Override

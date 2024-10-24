@@ -57,7 +57,7 @@ public class FabricException extends GqlRuntimeException implements Status.HasSt
         this.queryId = null;
     }
 
-    private FabricException(
+    public FabricException(
             ErrorGqlStatusObject gqlStatusObject, Status statusCode, String message, Object... parameters) {
         super(gqlStatusObject, String.format(message, parameters));
         this.statusCode = statusCode;

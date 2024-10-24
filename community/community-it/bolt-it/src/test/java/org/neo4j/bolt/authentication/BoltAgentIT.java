@@ -26,12 +26,14 @@ import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.VersionSelected;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
+import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
 import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.AbstractBoltWire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.packstream.io.PackstreamBuf;
 import org.neo4j.packstream.struct.StructHeader;
@@ -52,6 +54,21 @@ public class BoltAgentIT {
     }
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailWhenBoltAgentIsOmittedV40(@VersionSelected BoltTestConnection connection) throws IOException {
+        connection.send(PackstreamBuf.allocUnpooled()
+                .writeStructHeader(new StructHeader(1, AbstractBoltWire.MESSAGE_TAG_HELLO))
+                .writeMap(Map.of("scheme", "none", "user_agent", "ignore"))
+                .getTarget());
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
+                        Status.Request.Invalid,
+                        "Illegal value for field \"bolt_agent\": Must be a map with string keys and string values.");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenBoltAgentIsOmitted(@VersionSelected BoltTestConnection connection) throws IOException {
         connection.send(PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(1, AbstractBoltWire.MESSAGE_TAG_HELLO))
@@ -59,34 +76,97 @@ public class BoltAgentIT {
                 .getTarget());
 
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailure(
+                .receivesFailureWithCause(
+                        Status.Request.Invalid,
+                        "Illegal value for field \"bolt_agent\": Must be a map with string keys and string values.",
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"),
+                        BoltConnectionAssertions.assertErrorCause(
+                                "",
+                                GqlStatusInfoCodes.STATUS_22N01.getGqlStatus(),
+                                "error: data exception - invalid type. Expected the value null to be of type MAP<STRING, STRING>, but was of type null.",
+                                BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR")));
+    }
+
+    @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailWhenInvalidBoltAgentIsGivenV40(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws IOException {
+        connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent("42L")));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
                         Status.Request.Invalid,
                         "Illegal value for field \"bolt_agent\": Must be a map with string keys and string values.");
     }
 
     @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenInvalidBoltAgentIsGiven(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent("42L")));
 
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailure(
+                .receivesFailureWithCause(
+                        Status.Request.Invalid,
+                        "Illegal value for field \"bolt_agent\": Must be a map with string keys and string values.",
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"),
+                        BoltConnectionAssertions.assertErrorCause(
+                                "",
+                                GqlStatusInfoCodes.STATUS_22N01.getGqlStatus(),
+                                "error: data exception - invalid type. Expected the value 42L to be of type MAP<STRING, STRING>, but was of type String.",
+                                BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR")));
+    }
+
+    @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailWhenBoltAgentInvalidValuesV40(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws IOException {
+        connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent(Map.of("product", 1))));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
                         Status.Request.Invalid,
                         "Illegal value for field \"bolt_agent\": Must be a map with string keys and string values.");
     }
 
     @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenBoltAgentInvalidValues(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent(Map.of("product", 1))));
 
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailure(
+                .receivesFailureWithCause(
                         Status.Request.Invalid,
-                        "Illegal value for field \"bolt_agent\": Must be a map with string keys and string values.");
+                        "Illegal value for field \"bolt_agent\": Must be a map with string keys and string values.",
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"),
+                        BoltConnectionAssertions.assertErrorCause(
+                                "",
+                                GqlStatusInfoCodes.STATUS_22N01.getGqlStatus(),
+                                "error: data exception - invalid type. Expected the value product=1 to be of type MAP<STRING, STRING>, but was of type class java.util.HashMap$Node.",
+                                BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR")));
     }
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailWhenBoltAgentMissingProductV40(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws IOException {
+        connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent(Map.of("invalid", "value"))));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
+                        Status.Request.Invalid,
+                        "Illegal value for field \"bolt_agent\": Expected map to contain key: 'product'.");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenBoltAgentMissingProduct(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withBadBoltAgent(Map.of("invalid", "value"))));
@@ -94,6 +174,8 @@ public class BoltAgentIT {
         BoltConnectionAssertions.assertThat(connection)
                 .receivesFailure(
                         Status.Request.Invalid,
-                        "Illegal value for field \"bolt_agent\": Expected map to contain key: 'product'.");
+                        "Illegal value for field \"bolt_agent\": Expected map to contain key: 'product'.",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 }

@@ -103,13 +103,40 @@ public class BasicOperationIT {
     }
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldBeAbleToRunQueryAfterAckFailureV40(BoltWire wire, @Authenticated BoltTestConnection connection)
+            throws IOException {
+        // Given
+        connection.send(wire.run("QINVALID")).send(wire.pull());
+
+        assertThat(connection)
+                .receivesFailureFuzzyV40(Status.Statement.SyntaxError, "line 1, column 1")
+                .receivesIgnored();
+
+        // When
+        connection.send(wire.reset()).send(wire.run("RETURN 1")).send(wire.pull());
+
+        // Then
+        assertThat(connection)
+                .receivesSuccess()
+                .receivesSuccess()
+                .receivesRecord(longValue(1))
+                .receivesSuccess();
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldBeAbleToRunQueryAfterAckFailure(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         // Given
         connection.send(wire.run("QINVALID")).send(wire.pull());
 
         assertThat(connection)
-                .receivesFailureFuzzy(Status.Statement.SyntaxError, "line 1, column 1")
+                .receivesFailureFuzzy(
+                        Status.Statement.SyntaxError,
+                        "line 1, column 1",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.")
                 .receivesIgnored();
 
         // When
@@ -323,6 +350,22 @@ public class BasicOperationIT {
     }
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailNicelyWhenDroppingUnknownIndexV40(BoltWire wire, @Authenticated BoltTestConnection connection)
+            throws IOException {
+        // When
+        connection.send(wire.run("DROP INDEX my_index")).send(wire.pull());
+
+        // Then
+        assertThat(connection)
+                .receivesFailureV40(
+                        Status.Schema.IndexDropFailed,
+                        "Unable to drop index called `my_index`. There is no such index.")
+                .receivesIgnored();
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailNicelyWhenDroppingUnknownIndex(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         // When
@@ -332,15 +375,32 @@ public class BasicOperationIT {
         assertThat(connection)
                 .receivesFailure(
                         Status.Schema.IndexDropFailed,
-                        "Unable to drop index called `my_index`. There is no such index.")
+                        "Unable to drop index called `my_index`. There is no such index.",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.")
                 .receivesIgnored();
     }
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailNicelyWhenSubmittingInvalidStatementV40(BoltWire wire, @Authenticated BoltTestConnection connection)
+            throws IOException {
+        connection.send(wire.run("MATCH (:Movie{title:'"));
+
+        assertThat(connection).receivesFailureFuzzyV40(Status.Statement.SyntaxError, "Failed to parse string literal");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailNicelyWhenSubmittingInvalidStatement(BoltWire wire, @Authenticated BoltTestConnection connection)
             throws IOException {
         connection.send(wire.run("MATCH (:Movie{title:'"));
 
-        assertThat(connection).receivesFailureFuzzy(Status.Statement.SyntaxError, "Failed to parse string literal");
+        assertThat(connection)
+                .receivesFailureFuzzy(
+                        Status.Statement.SyntaxError,
+                        "Failed to parse string literal",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 }

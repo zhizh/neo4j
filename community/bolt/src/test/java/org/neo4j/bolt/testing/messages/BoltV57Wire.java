@@ -17,27 +17,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package org.neo4j.bolt.testing.messages;
 
 import io.netty.buffer.ByteBuf;
 import java.util.function.UnaryOperator;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
-import org.neo4j.bolt.protocol.v56.BoltProtocolV56;
+import org.neo4j.bolt.protocol.v57.BoltProtocolV57;
 import org.neo4j.bolt.testing.messages.factory.TelemetryMessageBuilder;
 
-public class BoltV56Wire extends BoltV54Wire {
-    public BoltV56Wire(ProtocolVersion version) {
+public class BoltV57Wire extends BoltV56Wire {
+
+    protected BoltV57Wire(ProtocolVersion version) {
         super(version);
     }
 
-    public BoltV56Wire() {
-        super(BoltProtocolV56.VERSION);
+    public BoltV57Wire() {
+        super(BoltProtocolV57.VERSION);
     }
 
     @Override
     public String getUserAgent() {
-        return "BoltWire/5.6";
+        return "BoltWire/5.7";
     }
 
     @Override

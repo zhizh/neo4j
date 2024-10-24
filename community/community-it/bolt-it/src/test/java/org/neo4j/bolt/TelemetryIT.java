@@ -37,6 +37,7 @@ import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.testing.messages.factory.TelemetryMessageBuilder;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.configuration.connectors.BoltConnector;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.config.Setting;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
@@ -88,7 +89,19 @@ public class TelemetryIT {
     }
 
     @ProtocolTest
-    @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
+    @IncludeWire({@Version(major = 5, minor = 6, range = 2)})
+    void shouldFailWhenTelemetryIsReceivedPriorToNegotiationV40(
+            @VersionSelected BoltTestConnection connection, BoltWire wire) throws IOException {
+        connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
+                        Status.Request.Invalid,
+                        "Message of type TelemetryMessage cannot be handled by a session in the NEGOTIATION state.");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenTelemetryIsReceivedPriorToNegotiation(
             @VersionSelected BoltTestConnection connection, BoltWire wire) throws IOException {
         connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
@@ -96,11 +109,25 @@ public class TelemetryIT {
         BoltConnectionAssertions.assertThat(connection)
                 .receivesFailure(
                         Status.Request.Invalid,
-                        "Message of type TelemetryMessage cannot be handled by a session in the NEGOTIATION state.");
+                        "Message of type TelemetryMessage cannot be handled by a session in the NEGOTIATION state.",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 
     @ProtocolTest
-    @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
+    @IncludeWire({@Version(major = 5, minor = 6, range = 2)})
+    void shouldFailWhenTelemetryIsReceivedPriorToAuthenticationV40(
+            @Negotiated BoltTestConnection connection, BoltWire wire) throws IOException {
+        connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
+                        Status.Request.Invalid,
+                        "Message of type TelemetryMessage cannot be handled by a session in the AUTHENTICATION state.");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenTelemetryIsReceivedPriorToAuthentication(
             @Negotiated BoltTestConnection connection, BoltWire wire) throws IOException {
         connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
@@ -108,11 +135,28 @@ public class TelemetryIT {
         BoltConnectionAssertions.assertThat(connection)
                 .receivesFailure(
                         Status.Request.Invalid,
-                        "Message of type TelemetryMessage cannot be handled by a session in the AUTHENTICATION state.");
+                        "Message of type TelemetryMessage cannot be handled by a session in the AUTHENTICATION state.",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 
     @ProtocolTest
-    @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
+    @IncludeWire({@Version(major = 5, minor = 6, range = 2)})
+    void shouldFailWhenTelemetryIsInTxReadyV40(@Authenticated BoltTestConnection connection, BoltWire wire)
+            throws IOException {
+        connection.send(wire.begin());
+        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+
+        connection.send(wire.telemetry(TelemetryMessageBuilder::withExecute));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
+                        Status.Request.Invalid,
+                        "Message of type TelemetryMessage cannot be handled by a session in the IN_TRANSACTION state.");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenTelemetryIsInTxReady(@Authenticated BoltTestConnection connection, BoltWire wire)
             throws IOException {
         connection.send(wire.begin());
@@ -123,11 +167,29 @@ public class TelemetryIT {
         BoltConnectionAssertions.assertThat(connection)
                 .receivesFailure(
                         Status.Request.Invalid,
-                        "Message of type TelemetryMessage cannot be handled by a session in the IN_TRANSACTION state.");
+                        "Message of type TelemetryMessage cannot be handled by a session in the IN_TRANSACTION state.",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 
     @ProtocolTest
-    @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 3, range = 3)})
+    @IncludeWire({@Version(major = 5, minor = 6, range = 2)})
+    void shouldFailWhenTelemetryIsReceivedAfterLogoffV40(@Authenticated BoltTestConnection connection, BoltWire wire)
+            throws IOException {
+        connection
+                .send(wire.telemetry(TelemetryMessageBuilder::withExecute))
+                .send(wire.logoff())
+                .send(wire.telemetry(TelemetryMessageBuilder::withExecute));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesSuccess(2)
+                .receivesFailureV40(
+                        Status.Request.Invalid,
+                        "Message of type TelemetryMessage cannot be handled by a session in the AUTHENTICATION state.");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenTelemetryIsReceivedAfterLogoff(@Authenticated BoltTestConnection connection, BoltWire wire)
             throws IOException {
         connection
@@ -139,7 +201,9 @@ public class TelemetryIT {
                 .receivesSuccess(2)
                 .receivesFailure(
                         Status.Request.Invalid,
-                        "Message of type TelemetryMessage cannot be handled by a session in the AUTHENTICATION state.");
+                        "Message of type TelemetryMessage cannot be handled by a session in the AUTHENTICATION state.",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 
     @ProtocolTest

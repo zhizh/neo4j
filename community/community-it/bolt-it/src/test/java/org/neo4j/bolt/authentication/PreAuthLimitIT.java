@@ -33,6 +33,7 @@ import org.neo4j.bolt.test.annotation.setup.FactoryFunction;
 import org.neo4j.bolt.test.annotation.setup.SettingsFunction;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
 import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
+import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
 import org.neo4j.bolt.test.util.ServerUtil;
 import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
@@ -42,6 +43,7 @@ import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocket;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
 import org.neo4j.configuration.connectors.BoltConnectorInternalSettings;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.graphdb.config.Setting;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -89,17 +91,47 @@ public class PreAuthLimitIT {
     }
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailDueToMessageBeingTooLargeInUnauthenticatedStateV40(
+            BoltWire wire, @VersionSelected BoltTestConnection connection) throws IOException {
+        connection.send(createValidBufferOf1023bytes(BoltV51Wire.MESSAGE_TAG_HELLO));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureFuzzyV40(Status.Request.Invalid, EXCEEDED_LIMIT_MESSAGE)
+                .isEventuallyTerminated();
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailDueToMessageBeingTooLargeInUnauthenticatedState(
             BoltWire wire, @VersionSelected BoltTestConnection connection) throws IOException {
         connection.send(createValidBufferOf1023bytes(BoltV51Wire.MESSAGE_TAG_HELLO));
 
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailureFuzzy(Status.Request.Invalid, EXCEEDED_LIMIT_MESSAGE)
+                .receivesFailureFuzzy(
+                        Status.Request.Invalid,
+                        EXCEEDED_LIMIT_MESSAGE,
+                        GqlStatusInfoCodes.STATUS_22N56.getGqlStatus(),
+                        "error: data exception - protocol message length limit overflow. Protocol message length limit exceeded (limit: 1000).",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"))
                 .isEventuallyTerminated();
     }
 
     @ProtocolTest
-    @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 0)})
+    @IncludeWire({@Version(major = 5, minor = 6, range = 5)})
+    void shouldFailDueToMessageBeingTooLargeInAuthenticationStateV40(
+            BoltWire wire, @VersionSelected BoltTestConnection connection) throws IOException {
+        connection.send(wire.hello());
+        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+
+        connection.send(createValidBufferOf1023bytes(BoltV51Wire.MESSAGE_TAG_HELLO));
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureFuzzyV40(Status.Request.Invalid, EXCEEDED_LIMIT_MESSAGE)
+                .isEventuallyTerminated();
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailDueToMessageBeingTooLargeInAuthenticationState(
             BoltWire wire, @VersionSelected BoltTestConnection connection) throws IOException {
         connection.send(wire.hello());
@@ -107,12 +139,31 @@ public class PreAuthLimitIT {
 
         connection.send(createValidBufferOf1023bytes(BoltV51Wire.MESSAGE_TAG_HELLO));
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailureFuzzy(Status.Request.Invalid, EXCEEDED_LIMIT_MESSAGE)
+                .receivesFailureFuzzy(
+                        Status.Request.Invalid,
+                        EXCEEDED_LIMIT_MESSAGE,
+                        GqlStatusInfoCodes.STATUS_22N56.getGqlStatus(),
+                        "error: data exception - protocol message length limit overflow. Protocol message length limit exceeded (limit: 1000).",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"))
                 .isEventuallyTerminated();
     }
 
     @ProtocolTest
-    @ExcludeWire({@Version(major = 4), @Version(major = 5, minor = 0)})
+    @IncludeWire({@Version(major = 5, minor = 6, range = 5)})
+    void shouldFailDueToMessageBeingTooLargeInAuthenticationStateAfterLoggingOutV40(
+            BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
+        connection.send(wire.logoff());
+        BoltConnectionAssertions.assertThat(connection).receivesSuccess();
+
+        connection.send(createValidBufferOf1023bytes(BoltV51Wire.MESSAGE_TAG_HELLO));
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureFuzzyV40(Status.Request.Invalid, EXCEEDED_LIMIT_MESSAGE)
+                .isEventuallyTerminated();
+        ;
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailDueToMessageBeingTooLargeInAuthenticationStateAfterLoggingOut(
             BoltWire wire, @Authenticated BoltTestConnection connection) throws IOException {
         connection.send(wire.logoff());
@@ -120,7 +171,12 @@ public class PreAuthLimitIT {
 
         connection.send(createValidBufferOf1023bytes(BoltV51Wire.MESSAGE_TAG_HELLO));
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailureFuzzy(Status.Request.Invalid, EXCEEDED_LIMIT_MESSAGE)
+                .receivesFailureFuzzy(
+                        Status.Request.Invalid,
+                        EXCEEDED_LIMIT_MESSAGE,
+                        GqlStatusInfoCodes.STATUS_22N56.getGqlStatus(),
+                        "error: data exception - protocol message length limit overflow. Protocol message length limit exceeded (limit: 1000).",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"))
                 .isEventuallyTerminated();
         ;
     }

@@ -25,7 +25,10 @@ import org.neo4j.bolt.negotiation.ProtocolVersion;
 import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.connector.connection.Feature;
 import org.neo4j.bolt.protocol.common.message.decoder.connection.LegacyRouteMessageDecoder;
+import org.neo4j.bolt.protocol.common.message.encoder.FailureMessageEncoder;
 import org.neo4j.bolt.protocol.common.message.request.RequestMessage;
+import org.neo4j.bolt.protocol.common.message.response.ResponseMessage;
+import org.neo4j.bolt.protocol.v40.message.encoder.FailureMessageEncoderV40;
 import org.neo4j.bolt.protocol.v42.BoltProtocolV42;
 import org.neo4j.packstream.struct.StructRegistry;
 
@@ -55,5 +58,12 @@ public class BoltProtocolV43 extends BoltProtocolV42 {
     @Override
     protected StructRegistry.Builder<Connection, RequestMessage> createRequestMessageRegistry() {
         return super.createRequestMessageRegistry().register(LegacyRouteMessageDecoder.getInstance());
+    }
+
+    @Override
+    protected StructRegistry.Builder<Connection, ResponseMessage> createResponseMessageRegistry() {
+        return super.createResponseMessageRegistry()
+                .unregister(FailureMessageEncoder.getInstance())
+                .register(FailureMessageEncoderV40.getInstance());
     }
 }

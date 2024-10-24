@@ -79,7 +79,7 @@ public class ResetLockedNodeIT {
 
         // Then that connection receives an error
         assertThat(connectionB)
-                .receivesFailure(Status.Transaction.LockClientStopped)
+                .receivesFailureV40(Status.Transaction.LockClientStopped)
                 .receivesIgnored()
                 .receivesSuccess();
 

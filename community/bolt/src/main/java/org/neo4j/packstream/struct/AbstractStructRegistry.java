@@ -92,6 +92,12 @@ public abstract class AbstractStructRegistry<CTX, S> implements StructRegistry<C
         }
 
         @Override
+        public <T extends S> StructRegistry.Builder<CTX, S> unregisterWriter(Class<T> type) {
+            this.typeToWriterMap.remove(type);
+            return this;
+        }
+
+        @Override
         @SuppressWarnings("unchecked")
         public <T extends S> StructRegistry.Builder<CTX, S> register(
                 Class<T> type, StructWriter<? super CTX, ? super T> writer) {

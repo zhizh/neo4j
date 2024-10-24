@@ -25,11 +25,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
 import org.neo4j.bolt.test.annotation.connection.initializer.VersionSelected;
 import org.neo4j.bolt.test.annotation.test.ProtocolTest;
+import org.neo4j.bolt.test.annotation.wire.selector.ExcludeWire;
+import org.neo4j.bolt.test.annotation.wire.selector.IncludeWire;
+import org.neo4j.bolt.testing.annotation.Version;
 import org.neo4j.bolt.testing.assertions.BoltConnectionAssertions;
 import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.messages.AbstractBoltWire;
 import org.neo4j.bolt.testing.messages.BoltWire;
 import org.neo4j.bolt.transport.Neo4jWithSocketExtension;
+import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.packstream.io.PackstreamBuf;
 import org.neo4j.packstream.struct.StructHeader;
@@ -43,6 +47,21 @@ import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 public class UserAgentIT {
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailWhenUserAgentIsOmittedV40(@VersionSelected BoltTestConnection connection) throws IOException {
+        connection.send(PackstreamBuf.allocUnpooled()
+                .writeStructHeader(new StructHeader(1, AbstractBoltWire.MESSAGE_TAG_HELLO))
+                .writeMap(Map.of("scheme", "none"))
+                .getTarget());
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(
+                        Status.Request.Invalid,
+                        "Illegal value for field \"user_agent\": Expected value to be non-null");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenUserAgentIsOmitted(@VersionSelected BoltTestConnection connection) throws IOException {
         connection.send(PackstreamBuf.allocUnpooled()
                 .writeStructHeader(new StructHeader(1, AbstractBoltWire.MESSAGE_TAG_HELLO))
@@ -52,15 +71,38 @@ public class UserAgentIT {
         BoltConnectionAssertions.assertThat(connection)
                 .receivesFailure(
                         Status.Request.Invalid,
-                        "Illegal value for field \"user_agent\": Expected value to be non-null");
+                        "Illegal value for field \"user_agent\": Expected value to be non-null",
+                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
+                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
     }
 
     @ProtocolTest
+    @IncludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
+    void shouldFailWhenInvalidUserAgentIsGivenV40(BoltWire wire, @VersionSelected BoltTestConnection connection)
+            throws IOException {
+        connection.send(wire.hello(x -> x.withScheme("none").withUserAgent(42L)));
+
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesFailureV40(Status.Request.Invalid, "Illegal value for field \"user_agent\": Expected string");
+    }
+
+    @ProtocolTest
+    @ExcludeWire({@Version(major = 5, minor = 6, range = 6), @Version(major = 4)})
     void shouldFailWhenInvalidUserAgentIsGiven(BoltWire wire, @VersionSelected BoltTestConnection connection)
             throws IOException {
         connection.send(wire.hello(x -> x.withScheme("none").withUserAgent(42L)));
 
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailure(Status.Request.Invalid, "Illegal value for field \"user_agent\": Expected string");
+                .receivesFailureWithCause(
+                        Status.Request.Invalid,
+                        "Illegal value for field \"user_agent\": Expected string",
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.",
+                        BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR"),
+                        BoltConnectionAssertions.assertErrorCause(
+                                "",
+                                GqlStatusInfoCodes.STATUS_22N01.getGqlStatus(),
+                                "error: data exception - invalid type. Expected the value 42 to be of type STRING, but was of type Long.",
+                                BoltConnectionAssertions.assertErrorClassificationOnDiagnosticRecord("CLIENT_ERROR")));
     }
 }

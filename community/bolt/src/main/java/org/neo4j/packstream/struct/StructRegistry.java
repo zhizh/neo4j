@@ -106,6 +106,15 @@ public interface StructRegistry<CTX, S> {
         }
 
         /**
+         * Removes a previously registered writer.
+         * @param writer a writer.
+         * @return a reference to this builder.
+         */
+        default Builder<CTX, S> unregister(StructWriter<? super CTX, ? extends S> writer) {
+            return this.unregisterWriter(writer.getType());
+        }
+
+        /**
          * Registers a new reader for a given specific tag.
          *
          * @param tag    a structure tag.
@@ -123,6 +132,17 @@ public interface StructRegistry<CTX, S> {
          * @return a reference to this builder.
          */
         StructRegistry.Builder<CTX, S> unregisterReader(short tag);
+
+        /**
+         * Removes a previously registered writer for a given specific type.
+         * <p />
+         * When no writer with the given tag has previously been registered, this method acts as a noop.
+         *
+         * @param type   a specific value type.
+         * @param <T>    a value type.
+         * @return a reference to this builder.
+         */
+        <T extends S> StructRegistry.Builder<CTX, S> unregisterWriter(Class<T> type);
 
         /**
          * Registers a set of readers.

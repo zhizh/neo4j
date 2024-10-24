@@ -39,7 +39,9 @@ import org.neo4j.bolt.protocol.common.message.decoder.connection.DefaultRouteMes
 import org.neo4j.bolt.protocol.common.message.decoder.generic.TelemetryMessageDecoder;
 import org.neo4j.bolt.protocol.common.message.decoder.streaming.DefaultDiscardMessageDecoder;
 import org.neo4j.bolt.protocol.common.message.decoder.streaming.DefaultPullMessageDecoder;
+import org.neo4j.bolt.protocol.common.message.encoder.FailureMessageEncoder;
 import org.neo4j.bolt.protocol.common.message.request.RequestMessage;
+import org.neo4j.bolt.protocol.common.message.response.ResponseMessage;
 import org.neo4j.bolt.protocol.io.pipeline.WriterPipeline;
 import org.neo4j.bolt.protocol.io.reader.DateReader;
 import org.neo4j.bolt.protocol.io.reader.DurationReader;
@@ -55,6 +57,7 @@ import org.neo4j.bolt.protocol.v40.fsm.response.metadata.MetadataHandlerV40;
 import org.neo4j.bolt.protocol.v40.message.decoder.authentication.HelloMessageDecoderV40;
 import org.neo4j.bolt.protocol.v40.message.decoder.transaction.BeginMessageDecoderV40;
 import org.neo4j.bolt.protocol.v40.message.decoder.transaction.RunMessageDecoderV40;
+import org.neo4j.bolt.protocol.v40.message.encoder.FailureMessageEncoderV40;
 import org.neo4j.packstream.signal.FrameSignal;
 import org.neo4j.packstream.struct.StructRegistry;
 import org.neo4j.values.storable.Value;
@@ -132,6 +135,13 @@ public class BoltProtocolV40 extends AbstractBoltProtocol {
                 .register(TimeReader.getInstance())
                 .register(LegacyDateTimeReader.getInstance())
                 .register(LegacyDateTimeZoneIdReader.getInstance());
+    }
+
+    @Override
+    protected StructRegistry.Builder<Connection, ResponseMessage> createResponseMessageRegistry() {
+        return super.createResponseMessageRegistry()
+                .unregister(FailureMessageEncoder.getInstance())
+                .register(FailureMessageEncoderV40.getInstance());
     }
 
     @Override

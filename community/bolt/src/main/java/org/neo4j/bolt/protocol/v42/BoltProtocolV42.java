@@ -22,8 +22,13 @@ package org.neo4j.bolt.protocol.v42;
 import java.util.Collections;
 import java.util.Set;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
+import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.connector.connection.Feature;
+import org.neo4j.bolt.protocol.common.message.encoder.FailureMessageEncoder;
+import org.neo4j.bolt.protocol.common.message.response.ResponseMessage;
+import org.neo4j.bolt.protocol.v40.message.encoder.FailureMessageEncoderV40;
 import org.neo4j.bolt.protocol.v41.BoltProtocolV41;
+import org.neo4j.packstream.struct.StructRegistry;
 
 /**
  * Bolt protocol V4.2 It hosts all the components that are specific to BoltV4.2
@@ -46,5 +51,12 @@ public class BoltProtocolV42 extends BoltProtocolV41 {
     @Override
     public Set<Feature> features() {
         return Collections.emptySet();
+    }
+
+    @Override
+    protected StructRegistry.Builder<Connection, ResponseMessage> createResponseMessageRegistry() {
+        return super.createResponseMessageRegistry()
+                .unregister(FailureMessageEncoder.getInstance())
+                .register(FailureMessageEncoderV40.getInstance());
     }
 }

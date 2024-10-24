@@ -93,7 +93,7 @@ public class UnauthenticatedIT {
                 .writeString("bar"));
 
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailureFuzzy(
+                .receivesFailureFuzzyV40(
                         Status.Request.Invalid,
                         "Illegal value for field \"extra\": Value of size 2147483647 exceeded limit of")
                 .isEventuallyTerminated();
@@ -112,7 +112,7 @@ public class UnauthenticatedIT {
 
         // Then
         BoltConnectionAssertions.assertThat(connection)
-                .receivesFailureFuzzy(
+                .receivesFailureFuzzyV40(
                         Status.Request.Invalid,
                         "Illegal value for field \"extra\": Value of size 2147483647 exceeded limit of")
                 .isEventuallyTerminated();
