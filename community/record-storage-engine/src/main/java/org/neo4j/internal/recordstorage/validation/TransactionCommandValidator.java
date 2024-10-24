@@ -22,6 +22,7 @@ package org.neo4j.internal.recordstorage.validation;
 import static java.util.Collections.emptyMap;
 import static org.neo4j.configuration.GraphDatabaseInternalSettings.multi_version_dump_transaction_validation_page_locks;
 import static org.neo4j.configuration.GraphDatabaseInternalSettings.multi_version_transaction_validation_fail_fast;
+import static org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_25N11;
 import static org.neo4j.internal.recordstorage.MultiversionResourceLocker.PAGE_ID_BITS;
 import static org.neo4j.kernel.impl.store.RecordPageLocationCalculator.pageIdForRecord;
 import static org.neo4j.kernel.impl.store.StoreType.STORE_TYPES;
@@ -36,8 +37,8 @@ import java.util.Map;
 import org.eclipse.collections.api.set.primitive.MutableLongSet;
 import org.eclipse.collections.impl.factory.primitive.LongSets;
 import org.neo4j.configuration.Config;
+import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
-import org.neo4j.gqlstatus.GqlStatusInfoCodes;
 import org.neo4j.internal.recordstorage.Command;
 import org.neo4j.internal.recordstorage.CommandVisitor;
 import org.neo4j.internal.recordstorage.indexcommand.IndexUpdateCommand;
@@ -61,6 +62,8 @@ import org.neo4j.storageengine.api.txstate.validation.ValidationLockDumper;
 
 public class TransactionCommandValidator implements CommandVisitor, TransactionValidator {
 
+    private static final ErrorGqlStatusObject GQL_CODE =
+            ErrorGqlStatusObjectImplementation.from(STATUS_25N11).build();
     private final NeoStores neoStores;
     private final Config config;
     private final TransactionMonitor transactionMonitor;
@@ -102,9 +105,7 @@ public class TransactionCommandValidator implements CommandVisitor, TransactionV
         } catch (TransactionConflictException tce) {
             throw tce;
         } catch (Exception e) {
-            var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                    .build();
-            throw new TransactionConflictException(gql, e);
+            throw new TransactionConflictException(GQL_CODE, e);
         } finally {
             closeCursors();
         }
@@ -260,9 +261,7 @@ public class TransactionCommandValidator implements CommandVisitor, TransactionV
         long resourceId = pageId | ((long) position << PAGE_ID_BITS);
         if (failFast) {
             if (!validationLockClient.tryExclusiveLock(PAGE, resourceId)) {
-                var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .build();
-                throw new TransactionConflictException(gql, storeType.getDatabaseFile(), pageId);
+                throw new TransactionConflictException(GQL_CODE, storeType.getDatabaseFile(), pageId);
             }
         } else {
             validationLockClient.acquireExclusive(lockTracer, PAGE, resourceId);
@@ -270,9 +269,7 @@ public class TransactionCommandValidator implements CommandVisitor, TransactionV
         if (pageCursor.next(pageId)) {
             if (versionContext.invisibleHeadObserved()) {
                 transactionMonitor.transactionValidationFailure(storeType.getDatabaseFile());
-                var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N11)
-                        .build();
-                throw new TransactionConflictException(gql, storeType.getDatabaseFile(), versionContext, pageId);
+                throw new TransactionConflictException(GQL_CODE, storeType.getDatabaseFile(), versionContext, pageId);
             }
         }
         checkedStorePages.add(pageId);
