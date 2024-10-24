@@ -705,6 +705,43 @@ object SemanticError {
       position
     )
   }
+
+  def invalidYieldStar(
+    commandName: String,
+    position: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N94)
+      .build()
+    SemanticError(
+      gql,
+      s"When combining `${commandName}` with other show and/or terminate commands, `YIELD *` isn't permitted.",
+      position
+    )
+  }
+
+  def missingYield(
+    commandName: String,
+    position: InputPosition
+  ): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N93)
+      .build()
+    SemanticError(
+      gql,
+      s"When combining `${commandName}` with other show and/or terminate commands, `YIELD` is mandatory.",
+      position
+    )
+  }
+
+  def missingReturn(position: InputPosition): SemanticError = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N92)
+      .build()
+    SemanticError(
+      gql,
+      "When combining show and/or terminate commands, `RETURN` isn't optional.",
+      position
+    )
+  }
+
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

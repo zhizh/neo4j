@@ -368,14 +368,14 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
             case (semanticErrors, pair) =>
               val optError = pair match {
                 case Seq(command: CommandClause, clause: With) if command.yieldAll =>
-                  Some(SemanticError(
-                    s"When combining `${command.name}` with other show and/or terminate commands, `YIELD *` isn't permitted.",
+                  Some(SemanticError.invalidYieldStar(
+                    command.name,
                     clause.position
                   ))
                 case Seq(_: CommandClause, clause: With) if clause.withType != AddedInRewrite => None
                 case Seq(command: CommandClause, _) =>
-                  Some(SemanticError(
-                    s"When combining `${command.name}` with other show and/or terminate commands, `YIELD` is mandatory.",
+                  Some(SemanticError.missingYield(
+                    command.name,
                     command.position
                   ))
                 case _ => None
@@ -386,8 +386,7 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
           val missingReturn = clauses.last match {
             case clause: Return if !clause.addedInRewrite => None
             case clause =>
-              Some(SemanticError(
-                "When combining show and/or terminate commands, `RETURN` isn't optional.",
+              Some(SemanticError.missingReturn(
                 clause.position
               ))
           }
