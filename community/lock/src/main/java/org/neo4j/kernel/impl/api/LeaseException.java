@@ -77,6 +77,12 @@ public class LeaseException extends GqlRuntimeException implements Status.HasSta
         return new LeaseException(gql, NOT_ON_LEADER_ERROR_MESSAGE, NotALeader);
     }
 
+    public static LeaseException unexpectedException(Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N09)
+                .build();
+        return new LeaseException(gql, "Unexpected exception", cause, Status.General.UnknownError);
+    }
+
     @Override
     public Status status() {
         return status;

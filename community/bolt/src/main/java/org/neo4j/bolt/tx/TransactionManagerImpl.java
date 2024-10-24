@@ -93,7 +93,7 @@ public class TransactionManagerImpl implements TransactionManager {
         try {
             databaseService = this.graphDatabaseManagementService.database(db, owner.memoryTracker());
         } catch (DatabaseNotFoundException ex) {
-            throw new NoSuchDatabaseTransactionCreationException(db, ex);
+            throw NoSuchDatabaseTransactionCreationException.databaseDoesNotExist(db, ex);
         } catch (UnavailableException ex) {
             throw new DatabaseUnavailableTransactionCreationException(databaseName, ex);
         }

@@ -21,7 +21,6 @@ package org.neo4j.dbms.api;
 
 import org.neo4j.annotations.api.PublicApi;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
-import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.kernel.api.exceptions.Status;
 
 /**
@@ -59,45 +58,6 @@ public class DatabaseNotFoundException extends DatabaseManagementException {
 
     public DatabaseNotFoundException(ErrorGqlStatusObject gqlStatusObject, Throwable cause) {
         super(gqlStatusObject, cause);
-    }
-
-    public static DatabaseNotFoundException failedCreateCompositeAlias(String name, String nonPrettyName) {
-        var gql = GqlHelper.getGql42002_42N00(name);
-        return new DatabaseNotFoundException(
-                gql,
-                String.format(
-                        "Failed to create the specified database alias '%s': "
-                                + "Composite database '%s' does not exist.",
-                        name, nonPrettyName));
-    }
-
-    public static DatabaseNotFoundException failedDeleteComposite(String name) {
-        var gql = GqlHelper.getGql42002_42N00(name);
-        return new DatabaseNotFoundException(
-                gql,
-                String.format(
-                        "Failed to delete the specified composite database '%s': Database does not exist.", name));
-    }
-
-    public static DatabaseNotFoundException failedAction(String action, String name) {
-        var gql = GqlHelper.getGql42002_42N00(name);
-        return new DatabaseNotFoundException(
-                gql, String.format("Failed to %s the specified database '%s': Database does not exist.", action, name));
-    }
-
-    public static DatabaseNotFoundException failedActionAlias(String action, String alias, String name) {
-        var gql = GqlHelper.getGql42002_42N00(name);
-        return new DatabaseNotFoundException(
-                gql,
-                String.format(
-                        "Failed to %s the specified database alias '%s': Database '%s' does not exist.",
-                        action, alias, name));
-    }
-
-    public static DatabaseNotFoundException noNameOrAlias(String name) {
-        var gql = GqlHelper.getGql42002_42N00(name);
-        return new DatabaseNotFoundException(
-                gql, String.format("Database '%s' does not exist': No database exists with that name or alias.", name));
     }
 
     @Override

@@ -19,6 +19,8 @@
  */
 package org.neo4j.exceptions;
 
+import static java.lang.String.format;
+
 import java.util.List;
 import java.util.Locale;
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
@@ -288,5 +290,61 @@ public class InvalidArgumentException extends Neo4jException {
     public static InvalidArgumentException aliasTooLong(String alias) {
         var gql = GqlHelper.getGql22N05_22N84(alias, "alias", 65534);
         return new InvalidArgumentException(gql, "The provided alias is to long, maximum characters are 65534.");
+    }
+
+    public static InvalidArgumentException tooManySeeders(int numberOfSeedingServers, int numberOfAllocations) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N16)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N18)
+                        .withParam(GqlParams.NumberParam.countSeeders, numberOfSeedingServers)
+                        .withParam(GqlParams.NumberParam.countAllocs, numberOfAllocations)
+                        .build())
+                .build();
+        return new InvalidArgumentException(
+                gql,
+                format(
+                        "The number of seeding servers '%s' is larger than the defined number of allocations '%s'.",
+                        numberOfSeedingServers, numberOfAllocations));
+    }
+
+    public static InvalidArgumentException noSuchSeeder(String serverId) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N16)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_52N19)
+                        .withParam(GqlParams.StringParam.server, serverId)
+                        .build())
+                .build();
+        return new InvalidArgumentException(
+                gql, format("The specified seeding server with id '%s' could not be found.", serverId));
+    }
+
+    public static InvalidArgumentException topologyOutOfRange(
+            String serverType, int constrainedServers, String allocationType, int desiredAllocations) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N56)
+                        .withParam(GqlParams.StringParam.serverType, serverType)
+                        .withParam(GqlParams.NumberParam.count1, constrainedServers)
+                        .withParam(GqlParams.StringParam.allocType, allocationType)
+                        .withParam(GqlParams.NumberParam.count2, desiredAllocations)
+                        .build())
+                .build();
+
+        String formattedServerType;
+        if (serverType.isEmpty()) {
+            formattedServerType = "";
+        } else {
+            formattedServerType = " " + serverType;
+        }
+
+        String formattedAllocationType;
+        if (allocationType.isEmpty()) {
+            formattedAllocationType = "";
+        } else {
+            formattedAllocationType = " " + allocationType;
+        }
+
+        return new InvalidArgumentException(
+                gql,
+                String.format(
+                        "The number of%s seeding servers '%s', is larger than the desired number of%s allocations '%s'.",
+                        formattedServerType, constrainedServers, formattedAllocationType, desiredAllocations));
     }
 }

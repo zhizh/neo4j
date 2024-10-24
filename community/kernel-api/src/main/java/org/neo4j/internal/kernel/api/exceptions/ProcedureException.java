@@ -19,7 +19,9 @@
  */
 package org.neo4j.internal.kernel.api.exceptions;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
+import static org.neo4j.kernel.api.exceptions.Status.Database.DatabaseNotFound;
 
 import java.util.List;
 import org.neo4j.exceptions.KernelException;
@@ -626,5 +628,21 @@ public class ProcedureException extends KernelException {
                         + "And then define your procedure as returning `Stream<Output>`.",
                 userClass.getSimpleName(),
                 userClass.getSimpleName());
+    }
+
+    public static ProcedureException databaseNotFound(String databaseName) {
+        var gql = GqlHelper.getGql22000_22N51(databaseName);
+        return new ProcedureException(gql, DatabaseNotFound, "Unable to find database with name " + databaseName);
+    }
+
+    public static ProcedureException unableToRetrieveStatusForDatabaseNotFound(String databaseName) {
+        var gql = GqlHelper.getGql22000_22N51(databaseName);
+        return new ProcedureException(
+                gql,
+                DatabaseNotFound,
+                format(
+                        "Unable to retrieve the status " + "for database with name %s because no database "
+                                + "with this name exists!",
+                        databaseName));
     }
 }

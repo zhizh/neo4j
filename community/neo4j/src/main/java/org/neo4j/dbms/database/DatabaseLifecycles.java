@@ -26,7 +26,7 @@ import static org.neo4j.kernel.database.NamedDatabaseId.SYSTEM_DATABASE_NAME;
 
 import java.util.Optional;
 import org.neo4j.dbms.api.DatabaseManagementException;
-import org.neo4j.dbms.api.DatabaseNotFoundException;
+import org.neo4j.dbms.api.DatabaseNotFoundHelper;
 import org.neo4j.kernel.database.Database;
 import org.neo4j.kernel.database.NamedDatabaseId;
 import org.neo4j.kernel.lifecycle.Lifecycle;
@@ -69,7 +69,7 @@ public final class DatabaseLifecycles {
     private StandaloneDatabaseContext systemContext() {
         return databaseRepository
                 .getDatabaseContext(NAMED_SYSTEM_DATABASE_ID)
-                .orElseThrow(() -> new DatabaseNotFoundException("database not found: " + SYSTEM_DATABASE_NAME));
+                .orElseThrow(() -> DatabaseNotFoundHelper.databaseNotFound(SYSTEM_DATABASE_NAME));
     }
 
     private Optional<StandaloneDatabaseContext> defaultContext() {
@@ -80,7 +80,7 @@ public final class DatabaseLifecycles {
         var defaultDatabaseId = databaseRepository
                 .databaseIdRepository()
                 .getByName(defaultDatabaseName)
-                .orElseThrow(() -> new DatabaseNotFoundException("Default database not found: " + defaultDatabaseName));
+                .orElseThrow(() -> DatabaseNotFoundHelper.defaultDatabaseNotFound(defaultDatabaseName));
         if (databaseRepository.getDatabaseContext(defaultDatabaseId).isPresent()) {
             throw new DatabaseManagementException(
                     "Cannot initialize " + defaultDatabaseId + " because it already exists");

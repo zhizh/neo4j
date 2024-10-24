@@ -19,6 +19,8 @@
  */
 package org.neo4j.internal.kernel.api.exceptions;
 
+import static org.neo4j.kernel.api.exceptions.Status.Cluster.ReplicationFailure;
+import static org.neo4j.kernel.api.exceptions.Status.General.UnknownError;
 import static org.neo4j.kernel.api.exceptions.Status.Transaction.LeaseExpired;
 
 import org.neo4j.exceptions.KernelException;
@@ -86,5 +88,17 @@ public class TransactionFailureException extends KernelException {
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N08)
                 .build();
         return new TransactionFailureException(gql, LeaseExpired, "The lease has been invalidated");
+    }
+
+    public static TransactionFailureException unexpectedOutcome(String outcome) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_25N09)
+                .build();
+        return new TransactionFailureException(gql, UnknownError, "Unexpected outcome: " + outcome);
+    }
+
+    public static TransactionFailureException replicationError(Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N33)
+                .build();
+        return new TransactionFailureException(gql, ReplicationFailure, cause);
     }
 }

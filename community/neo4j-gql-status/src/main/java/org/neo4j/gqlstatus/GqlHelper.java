@@ -67,6 +67,14 @@ public class GqlHelper {
                 .build();
     }
 
+    public static ErrorGqlStatusObject getGql22000_22N51(String dbName) {
+        return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22000)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N51)
+                        .withParam(GqlParams.StringParam.db, dbName)
+                        .build())
+                .build();
+    }
+
     public static ErrorGqlStatusObject getGql22NA0_22NA4(String predicate) {
         return ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA0)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22NA4)

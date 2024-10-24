@@ -21,6 +21,7 @@ package org.neo4j.bolt.tx.error;
 
 import org.neo4j.gqlstatus.ErrorGqlStatusObject;
 import org.neo4j.gqlstatus.ErrorMessageHolder;
+import org.neo4j.gqlstatus.GqlHelper;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.exceptions.Status.Database;
 import org.neo4j.kernel.api.exceptions.Status.HasStatus;
@@ -31,14 +32,7 @@ public class NoSuchDatabaseTransactionCreationException extends TransactionCreat
     private final ErrorGqlStatusObject gqlStatusObject;
     private final String oldMessage;
 
-    public NoSuchDatabaseTransactionCreationException(String databaseName, Throwable cause) {
-        super(String.format("Database does not exist. Database name: '%s'.", databaseName), cause);
-
-        this.gqlStatusObject = null;
-        this.oldMessage = String.format("Database does not exist. Database name: '%s'.", databaseName);
-    }
-
-    public NoSuchDatabaseTransactionCreationException(
+    private NoSuchDatabaseTransactionCreationException(
             ErrorGqlStatusObject gqlStatusObject, String databaseName, Throwable cause) {
         super(
                 ErrorMessageHolder.getMessage(
@@ -46,6 +40,12 @@ public class NoSuchDatabaseTransactionCreationException extends TransactionCreat
                 cause);
         this.gqlStatusObject = gqlStatusObject;
         this.oldMessage = String.format("Database does not exist. Database name: '%s'.", databaseName);
+    }
+
+    public static NoSuchDatabaseTransactionCreationException databaseDoesNotExist(
+            String databaseName, Throwable cause) {
+        var gql = GqlHelper.getGql22000_22N51(databaseName);
+        return new NoSuchDatabaseTransactionCreationException(gql, databaseName, cause);
     }
 
     @Override
