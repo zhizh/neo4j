@@ -484,6 +484,8 @@ public abstract class AbstractCypher25AstBuilder implements Cypher25ParserListen
                     (Cypher25Parser.StringOrParameterExpressionContext) ctx);
             case Cypher25Parser.RULE_stringOrParameter -> exitStringOrParameter(
                     (Cypher25Parser.StringOrParameterContext) ctx);
+            case Cypher25Parser.RULE_uIntOrIntParameter -> exitUIntOrIntParameter(
+                    (Cypher25Parser.UIntOrIntParameterContext) ctx);
             case Cypher25Parser.RULE_mapOrParameter -> exitMapOrParameter((Cypher25Parser.MapOrParameterContext) ctx);
             case Cypher25Parser.RULE_map -> exitMap((Cypher25Parser.MapContext) ctx);
             case Cypher25Parser.RULE_symbolicNameString -> exitSymbolicNameString(

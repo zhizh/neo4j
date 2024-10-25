@@ -465,8 +465,8 @@ trait DdlCreateBuilder extends Cypher25ParserListener {
     val parent = ctx.getParent.asInstanceOf[CreateCommandContext]
     val topology =
       if (ctx.TOPOLOGY() != null) {
-        val pT = astOptFromList[Int](ctx.primaryTopology(), None)
-        val sT = astOptFromList[Int](ctx.secondaryTopology(), None)
+        val pT = astOptFromList[Either[Int, Parameter]](ctx.primaryTopology(), None)
+        val sT = astOptFromList[Either[Int, Parameter]](ctx.secondaryTopology(), None)
         Some(Topology(pT, sT))
       } else None
     ctx.ast = CreateDatabase(

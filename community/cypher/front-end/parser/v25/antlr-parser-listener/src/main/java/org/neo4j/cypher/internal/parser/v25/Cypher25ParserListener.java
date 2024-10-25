@@ -661,6 +661,8 @@ public interface Cypher25ParserListener extends ParseTreeListener {
 
     void exitStringOrParameter(Cypher25Parser.StringOrParameterContext ctx);
 
+    void exitUIntOrIntParameter(Cypher25Parser.UIntOrIntParameterContext ctx);
+
     void exitMapOrParameter(Cypher25Parser.MapOrParameterContext ctx);
 
     void exitMap(Cypher25Parser.MapContext ctx);

@@ -6945,9 +6945,9 @@ ADMINISTRATION_COMMAND CreateDatabase( Token start, boolean replace ) throws Exc
     boolean ifNotExists = false;
     WAIT_CLAUSE wait = astFactory.wait( false, -1 );
     SimpleEither<Map<String, EXPRESSION>, PARAMETER> options = null;
-    Token primaries = null;
-    Token secondaries = null;
-    Token count = null;
+    SimpleEither<Integer, PARAMETER> primaries = null;
+    SimpleEither<Integer, PARAMETER> secondaries = null;
+    SimpleEither<Integer, PARAMETER> count = null;
     Token errorStart = null;
     String topologyMultiplePrimaryError = "Duplicate PRIMARY clause";
     String topologyMultipleSecondaryError = "Duplicate SECONDARY clause";
@@ -6956,7 +6956,7 @@ ADMINISTRATION_COMMAND CreateDatabase( Token start, boolean replace ) throws Exc
     <DATABASE> databaseName=SymbolicAliasNameOrParameter()
     ( <IF> <NOT> <EXISTS> { ifNotExists = true; } )?
     ( <TOPOLOGY>
-            ( count=<UNSIGNED_DECIMAL_INTEGER>
+            ( count=UIntOrParameter()
                 (
                     (errorStart=<PRIMARY> | errorStart=<PRIMARIES>){ assertNotAlreadySet(primaries, errorStart, topologyMultiplePrimaryError); }  {primaries = count;}
                     | (errorStart=<SECONDARY> | errorStart=<SECONDARIES>){ assertNotAlreadySet(secondaries, errorStart, topologyMultipleSecondaryError); } {secondaries = count;}
@@ -6972,8 +6972,8 @@ ADMINISTRATION_COMMAND CreateDatabase( Token start, boolean replace ) throws Exc
             ifNotExists,
             wait,
             options,
-            (primaries != null) ? Integer.parseInt(primaries.image) : null,
-            (secondaries != null) ? Integer.parseInt(secondaries.image) : null);
+            primaries,
+            secondaries);
     }
 }
 
@@ -7032,9 +7032,9 @@ ADMINISTRATION_COMMAND AlterDatabase( Token start ) throws Exception:
     AliasName<DATABASE_NAME, PARAMETER> databaseName = null;
     boolean ifExists = false;
     AccessType accessType = null;
-    Token primaries = null;
-    Token secondaries = null;
-    Token count = null;
+    SimpleEither<Integer, PARAMETER> primaries = null;
+    SimpleEither<Integer, PARAMETER> secondaries = null;
+    SimpleEither<Integer, PARAMETER> count = null;
     Token set = null;
     Map<String, EXPRESSION> options = null;
     Set<String> optionsToRemove = new LinkedHashSet<>();
@@ -7058,7 +7058,7 @@ ADMINISTRATION_COMMAND AlterDatabase( Token start ) throws Exception:
             <READ> ( <ONLY> { accessType = AccessType.READ_ONLY; } | <WRITE> { accessType = AccessType.READ_WRITE; })
         | <TOPOLOGY>
             { assertNotAlreadySet(count, set, topologySetError ); }
-            ( count=<UNSIGNED_DECIMAL_INTEGER>
+            ( count=UIntOrParameter()
                 (
                     (errorStart=<PRIMARY> | errorStart=<PRIMARIES>){ assertNotAlreadySet(primaries, errorStart, topologyMultiplePrimaryError); }  {primaries = count;}
                     | (errorStart=<SECONDARY> | errorStart=<SECONDARIES>){ assertNotAlreadySet(secondaries, errorStart, topologyMultipleSecondaryError); } {secondaries = count;}
@@ -7087,8 +7087,8 @@ ADMINISTRATION_COMMAND AlterDatabase( Token start ) throws Exception:
             databaseName.getLocalAliasName(astFactory),
             ifExists,
             accessType,
-            (primaries != null) ? Integer.parseInt(primaries.image) : null,
-            (secondaries != null) ? Integer.parseInt(secondaries.image) : null,
+            primaries,
+            secondaries,
             options,
             optionsToRemove,
             wait);
@@ -7493,6 +7493,16 @@ SimpleEither<String, PARAMETER> StringOrParameter():
 {
     token=StringToken() { return SimpleEither.<String, PARAMETER>left( token.image ); }
     | parameter=Parameter( ParameterType.STRING ) { return SimpleEither.<String, PARAMETER>right( parameter ); }
+}
+
+SimpleEither<Integer, PARAMETER> UIntOrParameter():
+{
+    Token token = null;
+    PARAMETER parameter = null;
+}
+{
+    token=<UNSIGNED_DECIMAL_INTEGER> {return SimpleEither.<Integer, PARAMETER>left( Integer.parseInt(token.image));}
+    | parameter=Parameter(ParameterType.INTEGER) {return SimpleEither.<Integer, PARAMETER>right(parameter);}
 }
 
 SimpleEither<Map<String, EXPRESSION>, PARAMETER> MapOrParameter() throws Exception:

@@ -292,7 +292,7 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
         IfExistsThrowError,
         NoOptions,
         NoWait,
-        Some(Topology(Some(1), None))
+        Some(Topology(Some(Left(1)), None))
       )(pos)
     )
   }
@@ -304,7 +304,7 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
         IfExistsThrowError,
         NoOptions,
         NoWait,
-        Some(Topology(Some(1), None))
+        Some(Topology(Some(Left(1)), None))
       )(pos)
     )
   }
@@ -316,7 +316,7 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
         IfExistsThrowError,
         NoOptions,
         NoWait,
-        Some(Topology(Some(1), Some(1)))
+        Some(Topology(Some(Left(1)), Some(Left(1))))
       )(pos)
     )
   }
@@ -328,7 +328,7 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
         IfExistsThrowError,
         NoOptions,
         NoWait,
-        Some(Topology(Some(1), Some(2)))
+        Some(Topology(Some(Left(1)), Some(Left(2))))
       )(pos)
     )
   }
@@ -340,7 +340,7 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
         IfExistsThrowError,
         NoOptions,
         NoWait,
-        Some(Topology(Some(1), Some(1)))
+        Some(Topology(Some(Left(1)), Some(Left(1))))
       )(pos)
     )
   }
@@ -352,7 +352,79 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
         IfExistsThrowError,
         NoOptions,
         NoWait,
-        Some(Topology(None, Some(1)))
+        Some(Topology(None, Some(Left(1))))
+      )(pos)
+    )
+  }
+
+  test("CREATE DATABASE foo TOPOLOGY $param PRIMARY") {
+    assertAst(
+      CreateDatabase(
+        literalFoo,
+        IfExistsThrowError,
+        NoOptions,
+        NoWait,
+        Some(Topology(Some(Right(intParam("param"))), None))
+      )(pos)
+    )
+  }
+
+  test("CREATE DATABASE foo TOPOLOGY $param PRIMARIES") {
+    assertAst(
+      CreateDatabase(
+        literalFoo,
+        IfExistsThrowError,
+        NoOptions,
+        NoWait,
+        Some(Topology(Some(Right(intParam("param"))), None))
+      )(pos)
+    )
+  }
+
+  test("CREATE DATABASE foo TOPOLOGY $param PRIMARY $param2 SECONDARY") {
+    assertAst(
+      CreateDatabase(
+        literalFoo,
+        IfExistsThrowError,
+        NoOptions,
+        NoWait,
+        Some(Topology(Some(Right(intParam("param"))), Some(Right(intParam("param2")))))
+      )(pos)
+    )
+  }
+
+  test("CREATE DATABASE foo TOPOLOGY 1 PRIMARY $param SECONDARIES") {
+    assertAst(
+      CreateDatabase(
+        literalFoo,
+        IfExistsThrowError,
+        NoOptions,
+        NoWait,
+        Some(Topology(Some(Left(1)), Some(Right(intParam("param")))))
+      )(pos)
+    )
+  }
+
+  test("CREATE DATABASE foo TOPOLOGY $param SECONDARY $param2 PRIMARY") {
+    assertAst(
+      CreateDatabase(
+        literalFoo,
+        IfExistsThrowError,
+        NoOptions,
+        NoWait,
+        Some(Topology(Some(Right(intParam("param2"))), Some(Right(intParam("param")))))
+      )(pos)
+    )
+  }
+
+  test("CREATE DATABASE foo TOPOLOGY $param SECONDARY") {
+    assertAst(
+      CreateDatabase(
+        literalFoo,
+        IfExistsThrowError,
+        NoOptions,
+        NoWait,
+        Some(Topology(None, Some(Right(intParam("param")))))
       )(pos)
     )
   }
@@ -560,10 +632,11 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
             |  "OPTIONS"
             |  "WAIT"
             |  <EOF>
-            |  <UNSIGNED_DECIMAL_INTEGER> (line 1, column 40 (offset: 39))""".stripMargin
+            |  <UNSIGNED_DECIMAL_INTEGER>
+            |  a parameter (line 1, column 40 (offset: 39))""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """Invalid input 'TOPOLOGY': expected 'NOWAIT', 'OPTIONS', 'WAIT', <EOF> or an integer value (line 1, column 40 (offset: 39))
+          """Invalid input 'TOPOLOGY': expected a parameter, 'NOWAIT', 'OPTIONS', 'WAIT', <EOF> or an integer value (line 1, column 40 (offset: 39))
             |"CREATE DATABASE foo TOPOLOGY 1 PRIMARY TOPOLOGY 1 SECONDARY"
             |                                        ^""".stripMargin
         )
@@ -613,10 +686,10 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
   test("CREATE DATABASE foo TOPOLOGY -1 PRIMARY") {
     failsParsing[Statements].in {
       case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 30 (offset: 29))""".stripMargin
+          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> or a parameter (line 1, column 30 (offset: 29))""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """Invalid input '-': expected an integer value (line 1, column 30 (offset: 29))
+          """Invalid input '-': expected a parameter or an integer value (line 1, column 30 (offset: 29))
             |"CREATE DATABASE foo TOPOLOGY -1 PRIMARY"
             |                              ^""".stripMargin
         )
@@ -631,10 +704,11 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
             |  "OPTIONS"
             |  "WAIT"
             |  <EOF>
-            |  <UNSIGNED_DECIMAL_INTEGER> (line 1, column 40 (offset: 39))""".stripMargin
+            |  <UNSIGNED_DECIMAL_INTEGER>
+            |  a parameter (line 1, column 40 (offset: 39))""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """Invalid input '-': expected 'NOWAIT', 'OPTIONS', 'WAIT', <EOF> or an integer value (line 1, column 40 (offset: 39))
+          """Invalid input '-': expected a parameter, 'NOWAIT', 'OPTIONS', 'WAIT', <EOF> or an integer value (line 1, column 40 (offset: 39))
             |"CREATE DATABASE foo TOPOLOGY 1 PRIMARY -1 SECONDARY"
             |                                        ^""".stripMargin
         )
@@ -644,11 +718,11 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
   test("CREATE DATABASE foo TOPOLOGY -1 SECONDARY 1 PRIMARY") {
     failsParsing[Statements].in {
       case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 30 (offset: 29))"""
+          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> or a parameter (line 1, column 30 (offset: 29))"""
         )
       // Modify update error message. -1 is an integer...
       case _ => _.withSyntaxError(
-          """Invalid input '-': expected an integer value (line 1, column 30 (offset: 29))
+          """Invalid input '-': expected a parameter or an integer value (line 1, column 30 (offset: 29))
             |"CREATE DATABASE foo TOPOLOGY -1 SECONDARY 1 PRIMARY"
             |                              ^""".stripMargin
         )
@@ -662,44 +736,13 @@ class CreateDatabaseAdministrationCommandParserTest extends AdministrationAndSch
     }
   }
 
-  test("CREATE DATABASE foo TOPOLOGY $param PRIMARY") {
-    failsParsing[Statements].in {
-      case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '$': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 30 (offset: 29))"""
-        )
-      case _ => _.withSyntaxError(
-          """Invalid input '$': expected an integer value (line 1, column 30 (offset: 29))
-            |"CREATE DATABASE foo TOPOLOGY $param PRIMARY"
-            |                              ^""".stripMargin
-        )
-    }
-  }
-
-  test("CREATE DATABASE foo TOPOLOGY 1 PRIMARY $param SECONDARY") {
-    failsParsing[Statements].in {
-      case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '$': expected
-            |  "NOWAIT"
-            |  "OPTIONS"
-            |  "WAIT"
-            |  <EOF>
-            |  <UNSIGNED_DECIMAL_INTEGER> (line 1, column 40 (offset: 39))""".stripMargin
-        )
-      case _ => _.withSyntaxError(
-          """Invalid input '$': expected 'NOWAIT', 'OPTIONS', 'WAIT', <EOF> or an integer value (line 1, column 40 (offset: 39))
-            |"CREATE DATABASE foo TOPOLOGY 1 PRIMARY $param SECONDARY"
-            |                                        ^""".stripMargin
-        )
-    }
-  }
-
   test("CREATE DATABASE foo TOPOLOGY") {
     failsParsing[Statements].in {
       case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 29 (offset: 28))"""
+          """Invalid input '': expected <UNSIGNED_DECIMAL_INTEGER> or a parameter (line 1, column 29 (offset: 28))"""
         )
       case _ => _.withSyntaxError(
-          """Invalid input '': expected an integer value (line 1, column 29 (offset: 28))
+          """Invalid input '': expected a parameter or an integer value (line 1, column 29 (offset: 28))
             |"CREATE DATABASE foo TOPOLOGY"
             |                             ^""".stripMargin
         )

@@ -2256,6 +2256,12 @@ class PrettifierIT extends CypherFunSuite {
       "CREATE DATABASE foo TOPOLOGY 1 PRIMARY 2 SECONDARIES",
     "CREATE DATABASE foo topology 1 primaries 2 secondaries" ->
       "CREATE DATABASE foo TOPOLOGY 1 PRIMARY 2 SECONDARIES",
+    "CREATE DATABASE foo topology $pp PRIMARY" ->
+      "CREATE DATABASE foo TOPOLOGY $pp PRIMARIES",
+    "CREATE DATABASE foo topology 1 primary $ps secondary" ->
+      "CREATE DATABASE foo TOPOLOGY 1 PRIMARY $ps SECONDARIES",
+    "CREATE DATABASE foo topology $ps secondary $pp primary" ->
+      "CREATE DATABASE foo TOPOLOGY $pp PRIMARIES $ps SECONDARIES",
     "CREATE DATABASE foo topology 0 secondary" ->
       "CREATE DATABASE foo TOPOLOGY 0 SECONDARIES",
     "CREATE DATABASE foo if not exists topology 1 primaries 2 secondaries  options {existingData: 'use', existingDataSeedInstance: '84c3ee6f-260e-47db-a4b6-589c807f2c2e'} wait" ->

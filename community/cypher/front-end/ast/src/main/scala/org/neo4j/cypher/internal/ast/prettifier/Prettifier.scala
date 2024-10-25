@@ -1557,12 +1557,14 @@ object Prettifier {
 
   def extractTopology(topology: Topology): String = {
     val primariesString = topology.primaries.flatMap {
-      case 1 => Some(s" 1 PRIMARY")
-      case n => Some(s" $n PRIMARIES")
+      case Left(1)  => Some(s" 1 PRIMARY")
+      case Left(n)  => Some(s" $n PRIMARIES")
+      case Right(p) => Some(s" $$${ExpressionStringifier.backtick(p.name)} PRIMARIES")
     }.getOrElse("")
     val maybeSecondariesString = topology.secondaries.flatMap {
-      case 1 => Some(s" 1 SECONDARY")
-      case n => Some(s" $n SECONDARIES")
+      case Left(1)  => Some(s" 1 SECONDARY")
+      case Left(n)  => Some(s" $n SECONDARIES")
+      case Right(p) => Some(s" $$${ExpressionStringifier.backtick(p.name)} SECONDARIES")
     }.getOrElse("")
     s" TOPOLOGY$primariesString$maybeSecondariesString"
   }

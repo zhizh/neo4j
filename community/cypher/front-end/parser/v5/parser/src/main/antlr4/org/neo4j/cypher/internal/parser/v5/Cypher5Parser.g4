@@ -1582,7 +1582,7 @@ createDatabase
    ;
 
 primaryTopology
-   : UNSIGNED_DECIMAL_INTEGER primaryToken
+   : uIntOrIntParameter primaryToken
    ;
 
 primaryToken
@@ -1590,7 +1590,7 @@ primaryToken
    ;
 
 secondaryTopology
-   : UNSIGNED_DECIMAL_INTEGER secondaryToken
+   : uIntOrIntParameter secondaryToken
    ;
 
 secondaryToken
@@ -1753,6 +1753,13 @@ stringOrParameter
    : stringLiteral
    | parameter["STRING"]
    ;
+
+// Should return an Either[Integer, Parameter]
+// There is no unsigned integer Cypher Type so the parameter permits signed values.
+uIntOrIntParameter
+    :UNSIGNED_DECIMAL_INTEGER
+    | parameter["INTEGER"]
+    ;
 
 mapOrParameter
    : map

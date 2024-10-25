@@ -3277,6 +3277,15 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
             "no such procedure",
             ErrorClassification.CLIENT_ERROR),
+    STATUS_42N51(
+            new GqlStatus("42N51"),
+            """
+                    Invalid parameter { %s }.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.param},
+            emptyMap(),
+            Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
+            "invalid parameter",
+            ErrorClassification.CLIENT_ERROR),
     STATUS_42N52(
             new GqlStatus("42N52"),
             """

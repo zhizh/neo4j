@@ -19,5 +19,6 @@ package org.neo4j.cypher.internal.parser.common.ast.factory;
 public enum ParameterType {
     ANY,
     STRING,
+    INTEGER,
     MAP
 }

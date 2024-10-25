@@ -145,6 +145,7 @@ import org.neo4j.cypher.internal.util.InternalNotificationLogger
 import org.neo4j.cypher.internal.util.symbols.AnyType
 import org.neo4j.cypher.internal.util.symbols.BooleanType
 import org.neo4j.cypher.internal.util.symbols.CTAny
+import org.neo4j.cypher.internal.util.symbols.CTInteger
 import org.neo4j.cypher.internal.util.symbols.CTMap
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.symbols.ClosedDynamicUnionType
@@ -796,9 +797,10 @@ trait ExpressionBuilder extends Cypher5ParserListener {
 
   final override def exitParameterName(ctx: Cypher5Parser.ParameterNameContext): Unit = {
     val parameterType = ctx.paramType match {
-      case "STRING" => CTString
-      case "MAP"    => CTMap
-      case _        => CTAny
+      case "STRING"  => CTString
+      case "INTEGER" => CTInteger
+      case "MAP"     => CTMap
+      case _         => CTAny
     }
     val name: String = child[ParseTree](ctx, 0) match {
       case strCtx: Cypher5Parser.SymbolicNameStringContext => strCtx.ast()

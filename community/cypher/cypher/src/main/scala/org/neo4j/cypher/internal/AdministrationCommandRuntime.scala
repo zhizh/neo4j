@@ -51,6 +51,7 @@ import org.neo4j.cypher.internal.procs.UpdatingSystemCommandExecutionPlan
 import org.neo4j.cypher.internal.util.DeprecatedDatabaseNameNotification
 import org.neo4j.cypher.internal.util.HomeDatabaseNotPresent
 import org.neo4j.cypher.internal.util.InternalNotification
+import org.neo4j.cypher.internal.util.symbols.CTInteger
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.symbols.StringType
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.COMPOSITE_DATABASE_LABEL
@@ -66,8 +67,10 @@ import org.neo4j.exceptions.DatabaseAdministrationOnFollowerException
 import org.neo4j.exceptions.InvalidArgumentException
 import org.neo4j.exceptions.ParameterNotFoundException
 import org.neo4j.exceptions.ParameterWrongTypeException
+import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper.getGql22N27
 import org.neo4j.gqlstatus.GqlParams
+import org.neo4j.gqlstatus.GqlStatusInfoCodes
 import org.neo4j.graphdb.Direction
 import org.neo4j.graphdb.Transaction
 import org.neo4j.internal.helpers.collection.Iterators
@@ -96,6 +99,7 @@ import org.neo4j.string.UTF8
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.BooleanValue
 import org.neo4j.values.storable.ByteArray
+import org.neo4j.values.storable.IntValue
 import org.neo4j.values.storable.StringValue
 import org.neo4j.values.storable.TextValue
 import org.neo4j.values.storable.Value
@@ -216,6 +220,7 @@ object AdministrationCommandRuntime {
       case other =>
         val pp = new PrettyPrinter
         other.writeTo(pp)
+        // TODO should this be wrapped in GqlStatusInfoCodes.STATUS_42N51 (Invalid parameter, see parameterWrongTypeException)?
         val gql =
           getGql22N27(pp.value, GqlParams.StringParam.param.process(passwordParameter), java.util.List.of("STRING"))
         throw new ParameterWrongTypeException(
@@ -238,7 +243,8 @@ object AdministrationCommandRuntime {
   private[internal] def validateStringParameterType(param: Parameter): Unit = {
     param.parameterType match {
       case _: StringType =>
-      case _ =>
+      case _             =>
+        // TODO should this be wrapped in GqlStatusInfoCodes.STATUS_42N51 (Invalid parameter, see parameterWrongTypeException)?
         val gql = getGql22N27(
           "type " + String.valueOf(param.parameterType),
           "password",
@@ -422,6 +428,7 @@ object AdministrationCommandRuntime {
           Seq((param._2, passwordExpression.key, passwordExpression.value))
         case Some(nameFields: NameFields) => Seq((param._2, nameFields.nameKey, nameFields.nameValue))
         case Some(p)                      =>
+          // TODO should this be wrapped in GqlStatusInfoCodes.STATUS_42N51 (Invalid parameter, see parameterWrongTypeException)?
           // The $input (...getSimpleName) is a bit strange, but it's fine as this error should not happen as we only give the expected values in the loop
           val gql = getGql22N27(
             String.valueOf(p.getClass.getSimpleName),
@@ -794,9 +801,91 @@ object AdministrationCommandRuntime {
     }
   }
 
+  private[internal] def runtimeIntInRange(
+    params: MapValue,
+    lower: Int,
+    upper: Int,
+    component: String
+  )(literalOrParam: Either[Int, Parameter]): Int = {
+    val value = runtimeIntValue(literalOrParam, params, component)
+    if (value < lower || value > upper) {
+      literalOrParam match {
+        case Right(param) =>
+          throw parameterOutOfNumericRangeException(
+            param,
+            component,
+            Values.intValue(value),
+            lower = lower,
+            upper = upper
+          )
+        case Left(_) =>
+          // This should have been caught in semantic checking
+          throw CypherExecutionException.internalError(
+            "Cypher Execution",
+            s"Numeric value for $component out of range of valid values",
+            null
+          )
+      }
+    }
+    value
+  }
+
   private[internal] def runtimeStringValue(field: DatabaseName, params: MapValue): String = field match {
     case n: NamespacedName => n.toString
     case ParameterName(p)  => runtimeStringValue(p.name, params, prettyPrint = false)
+  }
+
+  private[internal] def runtimeIntValue(either: Either[Int, Parameter], params: MapValue, component: String): Int = {
+    either match {
+      case Left(literal) => literal
+      case Right(param) => params.get(param.name) match {
+          case i: IntValue => i.value()
+          case invalidType =>
+            throw parameterWrongTypeException(
+              param,
+              invalidType,
+              java.util.List.of(CTInteger.toCypherTypeString),
+              component
+            )
+        }
+    }
+  }
+
+  private def parameterWrongTypeException(
+    parameter: Parameter,
+    value: AnyValue,
+    expected: java.util.List[String],
+    component: String
+  ): ParameterWrongTypeException = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N51)
+      .withParam(GqlParams.StringParam.param, parameter.name)
+      .withCause(
+        getGql22N27(value.toString, component, expected)
+      )
+      .build()
+    new ParameterWrongTypeException(gql, gql.getMessage)
+  }
+
+  private def parameterOutOfNumericRangeException(
+    parameter: Parameter,
+    component: String,
+    value: IntValue,
+    lower: Int,
+    upper: Int
+  ): InvalidArgumentException = {
+    val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_42N51)
+      .withParam(GqlParams.StringParam.param, parameter.name)
+      .withCause(
+        ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22N03)
+          .withParam(GqlParams.StringParam.component, component)
+          .withParam(GqlParams.StringParam.valueType, value.getTypeName)
+          .withParam(GqlParams.NumberParam.lower, lower)
+          .withParam(GqlParams.NumberParam.upper, upper)
+          .withParam(GqlParams.NumberParam.value, value.value())
+          .build()
+      )
+      .build()
+    new InvalidArgumentException(gql, gql.getMessage)
   }
 
   private[internal] def runtimeStringValue(field: Either[String, Parameter], params: MapValue): String = field match {
@@ -825,6 +914,7 @@ object AdministrationCommandRuntime {
         } else (s"$$$parameter", value.toString)
         val prettyParam = new PrettyPrinter()
         value.writeTo(prettyParam)
+        // TODO should this be wrapped in GqlStatusInfoCodes.STATUS_42N51 (Invalid parameter, see parameterWrongTypeException)?
         val gql =
           getGql22N27(prettyParam.value, GqlParams.StringParam.param.process(parameter), java.util.List.of("STRING"))
         throw new ParameterWrongTypeException(gql, s"Expected parameter $p to have type String but was $v")

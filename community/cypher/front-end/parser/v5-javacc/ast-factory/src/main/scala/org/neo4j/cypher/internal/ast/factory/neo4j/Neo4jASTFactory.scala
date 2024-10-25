@@ -487,6 +487,7 @@ import org.neo4j.cypher.internal.util.InternalNotificationLogger
 import org.neo4j.cypher.internal.util.symbols.AnyType
 import org.neo4j.cypher.internal.util.symbols.BooleanType
 import org.neo4j.cypher.internal.util.symbols.CTAny
+import org.neo4j.cypher.internal.util.symbols.CTInteger
 import org.neo4j.cypher.internal.util.symbols.CTMap
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.symbols.ClosedDynamicUnionType
@@ -1278,10 +1279,11 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
 
   private def transformParameterType(t: ParameterType) = {
     t match {
-      case ParameterType.ANY    => CTAny
-      case ParameterType.STRING => CTString
-      case ParameterType.MAP    => CTMap
-      case _                    => throw new IllegalArgumentException("unknown parameter type: " + t.toString)
+      case ParameterType.ANY     => CTAny
+      case ParameterType.STRING  => CTString
+      case ParameterType.INTEGER => CTInteger
+      case ParameterType.MAP     => CTMap
+      case _                     => throw new IllegalArgumentException("unknown parameter type: " + t.toString)
     }
   }
 
@@ -2876,11 +2878,11 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     ifNotExists: Boolean,
     wait: WaitUntilComplete,
     options: SimpleEither[util.Map[String, Expression], Parameter],
-    topologyPrimaries: Integer,
-    topologySecondaries: Integer
+    topologyPrimaries: SimpleEither[Integer, Parameter],
+    topologySecondaries: SimpleEither[Integer, Parameter]
   ): CreateDatabase = {
-    val primaryOpt = Option(topologyPrimaries).map(_.intValue())
-    val secondaryOpt = Option(topologySecondaries).map(_.intValue())
+    val primaryOpt: Option[Either[Int, Parameter]] = Option(topologyPrimaries).map(_.asScala.left.map(_.intValue()))
+    val secondaryOpt: Option[Either[Int, Parameter]] = Option(topologySecondaries).map(_.asScala.left.map(_.intValue()))
     CreateDatabase(
       databaseName,
       ifExistsDo(replace, ifNotExists),
@@ -2920,8 +2922,8 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     databaseName: DatabaseName,
     ifExists: Boolean,
     accessType: AccessType,
-    topologyPrimaries: Integer,
-    topologySecondaries: Integer,
+    topologyPrimaries: SimpleEither[Integer, Parameter],
+    topologySecondaries: SimpleEither[Integer, Parameter],
     options: util.Map[String, Expression],
     optionsToRemove: util.Set[String],
     waitClause: WaitUntilComplete
@@ -2930,8 +2932,8 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
       case READ_ONLY  => ReadOnlyAccess
       case READ_WRITE => ReadWriteAccess
     }
-    val primaryOpt = Option(topologyPrimaries).map(_.intValue())
-    val secondaryOpt = Option(topologySecondaries).map(_.intValue())
+    val primaryOpt = Option(topologyPrimaries).map(_.asScala.left.map(_.intValue()))
+    val secondaryOpt = Option(topologySecondaries).map(_.asScala.left.map(_.intValue()))
     val opts = if (options != null) OptionsMap(options.asScala.toMap) else NoOptions
     val optsToRemove: Set[String] = optionsToRemove.asScala.toSet
 

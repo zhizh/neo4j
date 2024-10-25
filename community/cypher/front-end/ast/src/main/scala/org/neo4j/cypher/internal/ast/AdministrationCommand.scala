@@ -219,12 +219,12 @@ sealed trait WriteAdministrationCommand extends AdministrationCommand {
   protected def topologyCheck(topology: Option[Topology], command: String): SemanticCheck = {
 
     def numPrimaryGreaterThanZero(topology: Topology): SemanticCheck =
-      if (topology.primaries.exists(_ < 1)) {
+      if (topology.primaries.flatMap(_.left.toOption).exists(_ < 1)) {
         val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
           .atPosition(position.line, position.column, position.offset)
           .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N52)
             .atPosition(position.line, position.column, position.offset)
-            .withParam(GqlParams.NumberParam.count, topology.primaries.get)
+            .withParam(GqlParams.NumberParam.count, topology.primaries.flatMap(_.left.toOption).get)
             .withParam(GqlParams.NumberParam.upper, 11)
             .build())
           .build()
@@ -238,12 +238,12 @@ sealed trait WriteAdministrationCommand extends AdministrationCommand {
       }
 
     def numSecondaryPositive(topology: Topology): SemanticCheck =
-      if (topology.secondaries.exists(_ < 0)) {
+      if (topology.secondaries.flatMap(_.left.toOption).exists(_ < 0)) {
         val gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_22003)
           .atPosition(position.line, position.column, position.offset)
           .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N53)
             .atPosition(position.line, position.column, position.offset)
-            .withParam(GqlParams.NumberParam.count, topology.primaries.get)
+            .withParam(GqlParams.NumberParam.count, topology.primaries.flatMap(_.left.toOption).get)
             .withParam(GqlParams.NumberParam.upper, 20)
             .build())
           .build()
@@ -1502,7 +1502,7 @@ final case class CreateDatabase(
     .chain(topologyCheck(topology, name))
 }
 
-case class Topology(primaries: Option[Int], secondaries: Option[Int])
+case class Topology(primaries: Option[Either[Int, Parameter]], secondaries: Option[Either[Int, Parameter]])
 
 final case class CreateCompositeDatabase(
   databaseName: DatabaseName,

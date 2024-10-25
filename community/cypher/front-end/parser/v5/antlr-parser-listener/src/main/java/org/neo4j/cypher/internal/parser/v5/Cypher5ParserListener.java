@@ -673,6 +673,8 @@ public interface Cypher5ParserListener extends ParseTreeListener {
 
     void exitStringOrParameter(Cypher5Parser.StringOrParameterContext ctx);
 
+    void exitUIntOrIntParameter(Cypher5Parser.UIntOrIntParameterContext ctx);
+
     void exitMapOrParameter(Cypher5Parser.MapOrParameterContext ctx);
 
     void exitMap(Cypher5Parser.MapContext ctx);

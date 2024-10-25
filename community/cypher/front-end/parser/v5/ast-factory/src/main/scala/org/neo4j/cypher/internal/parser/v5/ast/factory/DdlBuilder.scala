@@ -465,18 +465,18 @@ trait DdlBuilder extends Cypher5ParserListener {
   final override def exitAlterDatabaseTopology(ctx: Cypher5Parser.AlterDatabaseTopologyContext): Unit = {
     ctx.ast =
       if (ctx.TOPOLOGY() != null) {
-        val pT = astOptFromList[Int](ctx.primaryTopology(), None)
-        val sT = astOptFromList[Int](ctx.secondaryTopology(), None)
+        val pT = astOptFromList[Either[Int, Parameter]](ctx.primaryTopology(), None)
+        val sT = astOptFromList[Either[Int, Parameter]](ctx.secondaryTopology(), None)
         Topology(pT, sT)
       } else None
   }
 
   final override def exitPrimaryTopology(ctx: Cypher5Parser.PrimaryTopologyContext): Unit = {
-    ctx.ast = nodeChild(ctx, 0).getText.toInt
+    ctx.ast = ctx.uIntOrIntParameter().ast()
   }
 
   final override def exitSecondaryTopology(ctx: Cypher5Parser.SecondaryTopologyContext): Unit = {
-    ctx.ast = nodeChild(ctx, 0).getText.toInt
+    ctx.ast = ctx.uIntOrIntParameter().ast()
   }
 
   final override def exitAlterDatabaseOption(ctx: Cypher5Parser.AlterDatabaseOptionContext): Unit = {
@@ -653,4 +653,11 @@ trait DdlBuilder extends Cypher5ParserListener {
     }
   }
 
+  override def exitUIntOrIntParameter(ctx: Cypher5Parser.UIntOrIntParameterContext): Unit = {
+    ctx.ast = if (ctx.UNSIGNED_DECIMAL_INTEGER() != null) {
+      Left(ctx.UNSIGNED_DECIMAL_INTEGER().getText.toInt)
+    } else {
+      Right(ctx.parameter().ast[Parameter]())
+    }
+  }
 }

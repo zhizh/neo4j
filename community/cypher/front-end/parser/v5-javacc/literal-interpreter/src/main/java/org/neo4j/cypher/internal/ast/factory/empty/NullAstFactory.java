@@ -1419,8 +1419,8 @@ public class NullAstFactory
             boolean ifNotExists,
             NULL aNull,
             SimpleEither<Map<String, NULL>, NULL> options,
-            Integer topologyPrimaries,
-            Integer topologySecondaries) {
+            SimpleEither<Integer, NULL> topologyPrimaries,
+            SimpleEither<Integer, NULL> topologySecondaries) {
         return null;
     }
 
@@ -1453,8 +1453,8 @@ public class NullAstFactory
             NULL databaseName,
             boolean ifExists,
             AccessType accessType,
-            Integer topologyPrimaries,
-            Integer topologySecondaries,
+            SimpleEither<Integer, NULL> topologyPrimaries,
+            SimpleEither<Integer, NULL> topologySecondaries,
             Map<String, NULL> options,
             Set<String> optionsToRemove,
             NULL waitClause) {

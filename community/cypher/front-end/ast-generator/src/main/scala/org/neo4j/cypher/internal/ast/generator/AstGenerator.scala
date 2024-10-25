@@ -491,6 +491,7 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.AnyType
+import org.neo4j.cypher.internal.util.symbols.CTInteger
 import org.neo4j.cypher.internal.util.symbols.CTMap
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.symbols.ClosedDynamicUnionType
@@ -697,6 +698,8 @@ class AstGenerator(
   def _stringParameter: Gen[Parameter] = _identifier.map(ExplicitParameter(_, CTString)(pos))
 
   def _mapParameter: Gen[Parameter] = _identifier.map(ExplicitParameter(_, CTMap)(pos))
+
+  def _intParameter: Gen[Parameter] = _identifier.map(ExplicitParameter(_, CTInteger)(pos))
 
   def _sensitiveStringParameter: Gen[Parameter with SensitiveParameter] =
     _identifier.map(new ExplicitParameter(_, CTString)(pos) with SensitiveParameter)
@@ -2408,13 +2411,25 @@ class AstGenerator(
   } yield NamespacedName(name, maybeNamespace)(pos)
 
   def _topology: Gen[Topology] = for {
-    primaries <- option(chooseNum[Int](1, Integer.MAX_VALUE))
+    primaries <- option(_primaries)
     secondaries <-
-      if (primaries.nonEmpty)
-        option[Int](chooseNum[Int](0, Integer.MAX_VALUE))
-      else
-        some[Int](chooseNum[Int](0, Integer.MAX_VALUE))
+      if (primaries.nonEmpty) {
+        option(_secondaries)
+      } else
+        some(_secondaries)
   } yield Topology(primaries, secondaries)
+
+  def _primaries: Gen[Either[Int, Parameter]] = for {
+    intPrimaries <- chooseNum[Int](1, Integer.MAX_VALUE)
+    paramPrimaries <- _intParameter
+    primaries <- oneOf(Left(intPrimaries), Right(paramPrimaries))
+  } yield primaries
+
+  def _secondaries: Gen[Either[Int, Parameter]] = for {
+    intSecondaries <- chooseNum[Int](0, Integer.MAX_VALUE)
+    paramSecondaries <- _parameter
+    secondaries <- oneOf(Left(intSecondaries), Right(paramSecondaries))
+  } yield secondaries
 
   // User commands
 

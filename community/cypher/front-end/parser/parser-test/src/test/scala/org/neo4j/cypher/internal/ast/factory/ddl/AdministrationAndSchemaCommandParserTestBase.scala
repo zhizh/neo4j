@@ -26,6 +26,7 @@ import org.neo4j.cypher.internal.expressions.SensitiveStringLiteral
 import org.neo4j.cypher.internal.expressions.StringLiteral
 import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.InputPosition
+import org.neo4j.cypher.internal.util.symbols.CTInteger
 import org.neo4j.cypher.internal.util.symbols.CTString
 
 import java.nio.charset.StandardCharsets
@@ -89,6 +90,7 @@ class AdministrationAndSchemaCommandParserTestBase extends AstParsingTestBase {
 
   def stringParam(name: String): Parameter = parameter(name, CTString)
   def stringParamName(name: String): ast.ParameterName = ast.ParameterName(parameter(name, CTString))(pos)
+  def intParam(name: String): Parameter = parameter(name, CTInteger)
 
   def namespacedName(nameParts: String*): ast.NamespacedName =
     if (nameParts.size == 1) ast.NamespacedName(nameParts.head)(_)

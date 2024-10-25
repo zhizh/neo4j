@@ -676,8 +676,8 @@ public interface ASTFactory<
             boolean ifNotExists,
             WAIT_CLAUSE waitClause,
             SimpleEither<Map<String, EXPRESSION>, PARAMETER> options,
-            Integer topologyPrimaries,
-            Integer topologySecondaries);
+            SimpleEither<Integer, PARAMETER> topologyPrimaries,
+            SimpleEither<Integer, PARAMETER> topologySecondaries);
 
     ADMINISTRATION_COMMAND createCompositeDatabase(
             POS p,
@@ -701,8 +701,8 @@ public interface ASTFactory<
             DATABASE_NAME databaseName,
             boolean ifExists,
             AccessType accessType,
-            Integer topologyPrimaries,
-            Integer topologySecondaries,
+            SimpleEither<Integer, PARAMETER> topologyPrimaries,
+            SimpleEither<Integer, PARAMETER> topologySecondaries,
             Map<String, EXPRESSION> options,
             Set<String> optionsToRemove,
             WAIT_CLAUSE waitClause);

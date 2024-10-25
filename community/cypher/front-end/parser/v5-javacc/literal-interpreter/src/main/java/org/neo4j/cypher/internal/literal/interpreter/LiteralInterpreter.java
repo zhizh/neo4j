@@ -1039,8 +1039,8 @@ public class LiteralInterpreter
             boolean ifNotExists,
             NULL aNull,
             SimpleEither<Map<String, Object>, Object> options,
-            Integer topologyPrimaries,
-            Integer topologySecondaries) {
+            SimpleEither<Integer, Object> topologyPrimaries,
+            SimpleEither<Integer, Object> topologySecondaries) {
         throw new UnsupportedOperationException("createDatabase is not a literal");
     }
 
@@ -1062,8 +1062,8 @@ public class LiteralInterpreter
             NULL databaseName,
             boolean ifExists,
             AccessType accessType,
-            Integer topologyPrimaries,
-            Integer topologySecondaries,
+            SimpleEither<Integer, Object> topologyPrimaries,
+            SimpleEither<Integer, Object> topologySecondaries,
             Map<String, Object> options,
             Set<String> optionsToRemove,
             NULL waitClause) {

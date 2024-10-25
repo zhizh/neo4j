@@ -313,7 +313,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadOnlyAccess),
-        Some(Topology(Some(1), None)),
+        Some(Topology(Some(Left(1)), None)),
         OptionsMap(Map("txLogEnrichment" -> StringLiteral("FULL")(pos.withInputLength(0)))),
         Set.empty,
         NoWait
@@ -341,7 +341,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         None,
-        Some(Topology(Some(1), None)),
+        Some(Topology(Some(Left(1)), None)),
         NoOptions,
         Set.empty,
         NoWait
@@ -355,7 +355,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         None,
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         NoWait
@@ -369,7 +369,49 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         None,
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
+        NoOptions,
+        Set.empty,
+        NoWait
+      )(pos)
+    )
+  }
+
+  test("ALTER DATABASE foo SET TOPOLOGY $param PRIMARY") {
+    assertAst(
+      AlterDatabase(
+        literalFoo,
+        ifExists = false,
+        None,
+        Some(Topology(Some(Right(intParam("param"))), None)),
+        NoOptions,
+        Set.empty,
+        NoWait
+      )(pos)
+    )
+  }
+
+  test("ALTER DATABASE foo SET TOPOLOGY 1 PRIMARY $param SECONDARY") {
+    assertAst(
+      AlterDatabase(
+        literalFoo,
+        ifExists = false,
+        None,
+        Some(Topology(Some(Left(1)), Some(Right(intParam("param"))))),
+        NoOptions,
+        Set.empty,
+        NoWait
+      )(pos)
+    )
+  }
+
+  test("ALTER DATABASE foo SET TOPOLOGY $param SECONDARY $param2 PRIMARY") {
+    assertAst(
+      AlterDatabase(
+        literalFoo,
+        ifExists = false,
+        None,
+        Some(Topology(Some(Right(intParam("param2"))), Some(Right(intParam("param"))))),
         NoOptions,
         Set.empty,
         NoWait
@@ -383,7 +425,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         NoWait
@@ -397,7 +439,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         NoWait
@@ -411,7 +453,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         IndefiniteWait
@@ -425,7 +467,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         TimeoutAfter(5)
@@ -439,7 +481,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         TimeoutAfter(5)
@@ -453,7 +495,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         TimeoutAfter(5)
@@ -467,7 +509,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         TimeoutAfter(5)
@@ -481,7 +523,7 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         Some(ReadWriteAccess),
-        Some(Topology(Some(1), Some(1))),
+        Some(Topology(Some(Left(1)), Some(Left(1)))),
         NoOptions,
         Set.empty,
         NoWait
@@ -495,7 +537,21 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
         literalFoo,
         ifExists = false,
         None,
-        Some(Topology(None, Some(1))),
+        Some(Topology(None, Some(Left(1)))),
+        NoOptions,
+        Set.empty,
+        NoWait
+      )(pos)
+    )
+  }
+
+  test("ALTER DATABASE foo SET TOPOLOGY $param SECONDARY") {
+    assertAst(
+      AlterDatabase(
+        literalFoo,
+        ifExists = false,
+        None,
+        Some(Topology(None, Some(Right(intParam("param"))))),
         NoOptions,
         Set.empty,
         NoWait
@@ -780,37 +836,6 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
     }
   }
 
-  test("ALTER DATABASE foo SET TOPOLOGY $param PRIMARY") {
-    failsParsing[Statements].in {
-      case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '$': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 33 (offset: 32))"""
-        )
-      case _ => _.withSyntaxError(
-          """Invalid input '$': expected an integer value (line 1, column 33 (offset: 32))
-            |"ALTER DATABASE foo SET TOPOLOGY $param PRIMARY"
-            |                                 ^""".stripMargin
-        )
-    }
-  }
-
-  test("ALTER DATABASE foo SET TOPOLOGY 1 PRIMARY $param SECONDARY") {
-    failsParsing[Statements].in {
-      case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '$': expected
-            |  "NOWAIT"
-            |  "SET"
-            |  "WAIT"
-            |  <EOF>
-            |  <UNSIGNED_DECIMAL_INTEGER> (line 1, column 43 (offset: 42))""".stripMargin
-        )
-      case _ => _.withSyntaxError(
-          """Invalid input '$': expected 'NOWAIT', 'SET', 'WAIT', <EOF> or an integer value (line 1, column 43 (offset: 42))
-            |"ALTER DATABASE foo SET TOPOLOGY 1 PRIMARY $param SECONDARY"
-            |                                           ^""".stripMargin
-        )
-    }
-  }
-
   test("ALTER DATABASE foo SET TOPOLOGY 2 PRIMARIES 1 PRIMARY") {
     failsParsing[Statements].in {
       case Cypher5JavaCc =>
@@ -883,10 +908,10 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
   test("ALTER DATABASE foo SET TOPOLOGY -1 PRIMARY") {
     failsParsing[Statements].in {
       case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 33 (offset: 32))""".stripMargin
+          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> or a parameter (line 1, column 33 (offset: 32))""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """Invalid input '-': expected an integer value (line 1, column 33 (offset: 32))
+          """Invalid input '-': expected a parameter or an integer value (line 1, column 33 (offset: 32))
             |"ALTER DATABASE foo SET TOPOLOGY -1 PRIMARY"
             |                                 ^""".stripMargin
         )
@@ -901,10 +926,11 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
             |  "SET"
             |  "WAIT"
             |  <EOF>
-            |  <UNSIGNED_DECIMAL_INTEGER> (line 1, column 43 (offset: 42))""".stripMargin
+            |  <UNSIGNED_DECIMAL_INTEGER>
+            |  a parameter (line 1, column 43 (offset: 42))""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """Invalid input '-': expected 'NOWAIT', 'SET', 'WAIT', <EOF> or an integer value (line 1, column 43 (offset: 42))
+          """Invalid input '-': expected a parameter, 'NOWAIT', 'SET', 'WAIT', <EOF> or an integer value (line 1, column 43 (offset: 42))
             |"ALTER DATABASE foo SET TOPOLOGY 1 PRIMARY -1 SECONDARY"
             |                                           ^""".stripMargin
         )
@@ -914,10 +940,10 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
   test("ALTER DATABASE foo SET TOPOLOGY -1 SECONDARY 1 PRIMARY") {
     failsParsing[Statements].in {
       case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 33 (offset: 32))""".stripMargin
+          """Invalid input '-': expected <UNSIGNED_DECIMAL_INTEGER> or a parameter (line 1, column 33 (offset: 32))""".stripMargin
         )
       case _ => _.withSyntaxError(
-          """Invalid input '-': expected an integer value (line 1, column 33 (offset: 32))
+          """Invalid input '-': expected a parameter or an integer value (line 1, column 33 (offset: 32))
             |"ALTER DATABASE foo SET TOPOLOGY -1 SECONDARY 1 PRIMARY"
             |                                 ^""".stripMargin
         )
@@ -937,10 +963,10 @@ class AlterDatabaseAdministrationCommandParserTest extends AdministrationAndSche
   test("ALTER DATABASE foo SET TOPOLOGY") {
     failsParsing[Statements].in {
       case Cypher5JavaCc => _.withMessageStart(
-          """Invalid input '': expected <UNSIGNED_DECIMAL_INTEGER> (line 1, column 32 (offset: 31))"""
+          """Invalid input '': expected <UNSIGNED_DECIMAL_INTEGER> or a parameter (line 1, column 32 (offset: 31))"""
         )
       case _ => _.withSyntaxError(
-          """Invalid input '': expected an integer value (line 1, column 32 (offset: 31))
+          """Invalid input '': expected a parameter or an integer value (line 1, column 32 (offset: 31))
             |"ALTER DATABASE foo SET TOPOLOGY"
             |                                ^""".stripMargin
         )
