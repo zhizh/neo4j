@@ -87,10 +87,8 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
     )
     val pruningVarExpanderRewriter = pruningVarExpander(anonymousVariableNameGenerator, VarExpandRewritePolicy.default)
 
-    val trailToPruningVarExpandRewriter = trailToPruningVarExpand(
-      trailRewriter = trailToVarExpandRewriter.copy(
-        rewritableTrailExtractor = TrailToVarExpandRewriter.RewritableTrailExtractor.FilterBeforeAndAfterExpand
-      ),
+    val trailWithTwoFiltersToPruningVarExpandRewriter = trailWithTwoFiltersToPruningVarExpand(
+      originalTrailRewriter = trailToVarExpandRewriter,
       pruningRewriter = pruningVarExpanderRewriter
     )
 
@@ -144,7 +142,7 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
       ))),
       Some(inSequence(
         pruningVarExpanderRewriter,
-        trailToPruningVarExpandRewriter
+        trailWithTwoFiltersToPruningVarExpandRewriter
       )),
       // Only used on read-only queries, until rewriter is tested to work with cleanUpEager
       Option.when(readOnly)(bfsAggregationRemover),
@@ -232,7 +230,13 @@ case object PlanRewriter extends LogicalPlanRewriter with StepSequencer.Step wit
    *
    * But _only_ if the resulting VarExpand is in turn rewritable by [[pruningVarExpander]].
    */
-  private def trailToPruningVarExpand(trailRewriter: TrailToVarExpandRewriter, pruningRewriter: Rewriter): Rewriter = {
+  private def trailWithTwoFiltersToPruningVarExpand(
+    originalTrailRewriter: TrailToVarExpandRewriter,
+    pruningRewriter: Rewriter
+  ): Rewriter = {
+    val trailRewriter = originalTrailRewriter.copy(
+      rewritableTrailExtractor = TrailToVarExpandRewriter.RewritableTrailExtractor.FilterBeforeAndAfterExpand
+    )
     new Rewriter {
       override def apply(start: AnyRef): AnyRef = {
         val intermediate = trailRewriter(start)
