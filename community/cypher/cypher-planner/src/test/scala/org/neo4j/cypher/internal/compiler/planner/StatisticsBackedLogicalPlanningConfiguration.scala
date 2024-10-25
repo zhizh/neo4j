@@ -968,7 +968,7 @@ case class StatisticsBackedLogicalPlanningConfigurationBuilder private (
             builder,
             i @ Index(Some(Seq(label)), None, indexType, properties, totalSize, estimatedUniqueSize, _, indexProvider)
           ) =>
-          val existsSelectivity = totalSize / builder.cardinalities.labels(label)
+          val existsSelectivity = math.min(1.0, totalSize / builder.cardinalities.labels(label))
           val uniqueSelectivity = 1.0 / estimatedUniqueSize
           val isUnique = graphCountData.matchingUniquenessConstraintExists(i)
           val maybeIndexCapability = indexProvider.name() match {
