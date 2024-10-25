@@ -94,7 +94,8 @@ class ParquetDataReader implements Closeable {
                     .map(ParquetColumn::groupName)
                     .orElse(null);
             this.dataStream = ParquetReader.stream(ParquetReader.spliterator(
-                    ParquetReader.makeInputFile(path.toFile()), columns -> new Hydrator<List<Object>, List<Object>>() {
+                    ParquetInput.ParquetImportInputFile.of(path),
+                    columns -> new Hydrator<List<Object>, List<Object>>() {
                         @Override
                         public List<Object> start() {
                             return new ArrayList<>();

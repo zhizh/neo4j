@@ -22,8 +22,11 @@ package org.neo4j.internal.batchimport.input.parquet;
 import static org.neo4j.util.Preconditions.checkState;
 
 import blue.strategic.parquet.ParquetReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,12 +41,16 @@ import java.util.stream.Collectors;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.io.DelegatingSeekableInputStream;
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.SeekableInputStream;
 import org.neo4j.batchimport.api.InputIterable;
 import org.neo4j.batchimport.api.input.Collector;
 import org.neo4j.batchimport.api.input.IdType;
 import org.neo4j.batchimport.api.input.Input;
 import org.neo4j.batchimport.api.input.PropertySizeCalculator;
 import org.neo4j.batchimport.api.input.ReadableGroups;
+import org.neo4j.cloud.storage.io.ReadableChannel;
 import org.neo4j.internal.batchimport.input.Groups;
 import org.neo4j.internal.batchimport.input.HeaderException;
 import org.neo4j.internal.batchimport.input.InputException;
@@ -130,7 +137,7 @@ public class ParquetInput implements Input {
                         var currentColumnInfo = new ArrayList<ParquetColumn>();
                         var propertyNames = new HashSet<String>();
                         String previousGroupName = null;
-                        var metadata = ParquetReader.readMetadata(nodeFile.toFile());
+                        var metadata = ParquetReader.readMetadata(ParquetImportInputFile.of(nodeFile));
                         var columns = metadata.getFileMetaData().getSchema().getColumns();
                         // check for possible group / ID space definitions and register them
                         String fileName = nodeFile.getFileName().toString();
@@ -207,7 +214,7 @@ public class ParquetInput implements Input {
                     try {
                         var currentColumnInfo = new ArrayList<ParquetColumn>();
                         var propertyNames = new HashSet<String>();
-                        var metadata = ParquetReader.readMetadata(relationshipFile.toFile());
+                        var metadata = ParquetReader.readMetadata(ParquetImportInputFile.of(relationshipFile));
                         var columns = metadata.getFileMetaData().getSchema().getColumns();
                         var hasTypeColumn = typeAndRelationshipFilesEntry.getKey() != null
                                 && !typeAndRelationshipFilesEntry.getKey().isBlank();
@@ -320,7 +327,7 @@ public class ParquetInput implements Input {
             mergedLabels.addAll(Collections.unmodifiableSet(nodePathEntries.getKey()));
             for (Path[] nodePaths : nodePathEntries.getValue()) {
                 for (Path nodePath : nodePaths) {
-                    var metadata = ParquetReader.readMetadata(nodePath.toFile());
+                    var metadata = ParquetReader.readMetadata(ParquetImportInputFile.of(nodePath));
                     List<BlockMetaData> blocks = metadata.getBlocks();
                     for (BlockMetaData block : blocks) {
                         numberOfNodes += block.getRowCount();
@@ -345,7 +352,7 @@ public class ParquetInput implements Input {
         for (Map.Entry<String, List<Path[]>> relationshipFileEntries : relationshipFiles.entrySet()) {
             for (Path[] relationshipPaths : relationshipFileEntries.getValue()) {
                 for (Path relationshipPath : relationshipPaths) {
-                    var metadata = ParquetReader.readMetadata(relationshipPath.toFile());
+                    var metadata = ParquetReader.readMetadata(ParquetImportInputFile.of(relationshipPath));
                     for (BlockMetaData block : metadata.getBlocks()) {
                         numberOfNodes += block.getRowCount();
                         var currentColumnCount = block.getColumns().size();
@@ -368,5 +375,64 @@ public class ParquetInput implements Input {
                 totalNodePropertiesSize,
                 totalRelationshipPropertiesSize,
                 numberOfNodeLabels);
+    }
+
+    static class ParquetImportInputFile implements InputFile {
+
+        static Map<Path, ParquetImportInputFile> importFileCache = new HashMap<>();
+
+        static ParquetImportInputFile of(Path importFilePath) {
+            return importFileCache.computeIfAbsent(importFilePath, (any) -> new ParquetImportInputFile(importFilePath));
+        }
+
+        private final Path lePath;
+
+        private ParquetImportInputFile(Path lePath) {
+            this.lePath = lePath;
+        }
+
+        @Override
+        public long getLength() throws IOException {
+            return Files.size(lePath);
+        }
+
+        @Override
+        public SeekableInputStream newStream() throws IOException {
+
+            InputStream inputStream = Files.newInputStream(lePath);
+            if (inputStream instanceof ReadableChannel cloudFileChannel) {
+                return new DelegatingSeekableInputStream(inputStream) {
+                    private long position = 0;
+
+                    @Override
+                    public long getPos() {
+                        return position;
+                    }
+
+                    @Override
+                    public void seek(long newPos) throws IOException {
+                        cloudFileChannel.position(newPos);
+                        position = newPos;
+                    }
+                };
+            } else { // assume we have a local file
+                inputStream = new FileInputStream(lePath.toFile());
+                FileInputStream fis = (FileInputStream) inputStream;
+                return new DelegatingSeekableInputStream(fis) {
+                    private long position = 0;
+
+                    @Override
+                    public long getPos() {
+                        return position;
+                    }
+
+                    @Override
+                    public void seek(long newPos) throws IOException {
+                        fis.getChannel().position(newPos);
+                        position = newPos;
+                    }
+                };
+            }
+        }
     }
 }
