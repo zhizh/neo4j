@@ -154,7 +154,7 @@ public class LocalDatabaseTransaction implements DatabaseTransaction {
         try {
             throwingAction.apply();
         } catch (KernelException kernelException) {
-            throw translateLocalError(kernelException);
+            throw FabricException.translateLocalError(kernelException);
         }
     }
 
@@ -162,12 +162,8 @@ public class LocalDatabaseTransaction implements DatabaseTransaction {
         try {
             return throwingSupplier.get();
         } catch (KernelException kernelException) {
-            throw translateLocalError(kernelException);
+            throw FabricException.translateLocalError(kernelException);
         }
-    }
-
-    private FabricException translateLocalError(KernelException kernelException) {
-        return new FabricException(kernelException.status(), kernelException.getMessage(), kernelException);
     }
 
     private void closeContexts() {

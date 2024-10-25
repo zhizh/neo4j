@@ -20,11 +20,14 @@
 package org.neo4j.fabric.executor;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.neo4j.kernel.api.exceptions.Status.General.InvalidArguments;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.neo4j.kernel.api.exceptions.InvalidArgumentsException;
 import org.neo4j.kernel.api.exceptions.Status;
 
 class ExceptionsTest {
@@ -60,6 +63,24 @@ class ExceptionsTest {
         var reactorException = reactor.core.Exceptions.multiple(secondary1, secondary2, secondary3);
         var transformedException = Exceptions.transform(Status.General.UnknownError, reactorException);
         assertThat(unpackExceptionMessages(transformedException)).contains("msg-1", "msg-6");
+    }
+
+    @Test
+    void testCompositeGqlExceptionTranslation() {
+        var gqlException = InvalidArgumentsException.internalAlterServer("server");
+        var translatedGqlException = FabricException.translateLocalError(gqlException);
+        assertEquals("50N00", translatedGqlException.gqlStatus());
+        assertEquals(InvalidArguments, translatedGqlException.status());
+        assertEquals("Server 'server' can't be altered: must specify options", translatedGqlException.getMessage());
+    }
+
+    @Test
+    void testCompositeNonGqlExceptionTranslation() {
+        var notGqlException = new InvalidArgumentsException("message");
+        var translatedGqlException = FabricException.translateLocalError(notGqlException);
+        assertEquals("50N42", translatedGqlException.gqlStatus());
+        assertEquals(InvalidArguments, translatedGqlException.status());
+        assertEquals("message", translatedGqlException.getMessage());
     }
 
     private static List<String> unpackExceptionMessages(Exception exception) {

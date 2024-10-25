@@ -223,10 +223,10 @@ public class FabricLocalExecutor {
             // The main purpose of this is mapping of checked exceptions
             // while preserving status codes
             if (e instanceof Status.HasStatus) {
-                if (e instanceof RuntimeException) {
-                    return (RuntimeException) e;
+                if (e instanceof RuntimeException runtimeException) {
+                    return runtimeException;
                 }
-                return new FabricException(((Status.HasStatus) e).status(), e.getMessage(), e);
+                return FabricException.translateLocalError((Exception & Status.HasStatus) e);
             }
 
             // We don't know what operation is being executed,
