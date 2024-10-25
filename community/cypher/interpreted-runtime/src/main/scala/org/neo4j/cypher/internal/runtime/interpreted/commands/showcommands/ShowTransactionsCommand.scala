@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.runtime.interpreted.commands.showcommands
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.StringUtils.EMPTY
+import org.neo4j.configuration.GraphDatabaseSettings
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.ShowColumn
@@ -125,6 +126,10 @@ case class ShowTransactionsCommand(
     val ids = Command.extractNames(givenIds, state, baseRow, "SHOW TRANSACTIONS")
     val ctx = state.query
     val securityContext = ctx.transactionalContext.securityContext
+    val trackQueryCpuTime =
+      if (requestedColumnsNames.contains(currentQueryCpuTimeColumn))
+        ctx.getConfig.get[java.lang.Boolean](GraphDatabaseSettings.track_query_cpu_time).booleanValue()
+      else false
 
     val allowedTransactions = ctx.getDatabaseContextProvider.registeredDatabases.values.asScala.toList
       .filter(_.database.isStarted)
@@ -184,7 +189,7 @@ case class ShowTransactionsCommand(
           queryAllocatedBytes,
           queryPageHits,
           queryPageFaults
-        ) = getQueryColumns(querySnapshot, txId, dbName, zoneId)
+        ) = getQueryColumns(querySnapshot, txId, dbName, zoneId, trackQueryCpuTime)
 
         val (status, statusDetails) =
           if (requestedColumnsNames.contains(statusColumn) || requestedColumnsNames.contains(statusDetailsColumn)) {
@@ -299,7 +304,13 @@ case class ShowTransactionsCommand(
     ClosingIterator.apply(updatedRows.iterator)
   }
 
-  private def getQueryColumns(querySnapshot: Optional[QuerySnapshot], txId: String, dbName: String, zoneId: ZoneId) =
+  private def getQueryColumns(
+    querySnapshot: Optional[QuerySnapshot],
+    txId: String,
+    dbName: String,
+    zoneId: ZoneId,
+    trackQueryCpuTime: Boolean
+  ) =
     if (needQueryColumns && querySnapshot.isPresent) {
       val query = querySnapshot.get
 
@@ -357,7 +368,7 @@ case class ShowTransactionsCommand(
       val queryCpuTime = if (requestedColumnsNames.contains(currentQueryCpuTimeColumn)) {
         val optionalCpuTime = query.cpuTimeMicros
         if (optionalCpuTime.isPresent) getDurationFromMicro(optionalCpuTime.getAsLong)
-        else if (returnCypher5Values) Values.NO_VALUE
+        else if (returnCypher5Values || !trackQueryCpuTime) Values.NO_VALUE
         else DurationValue.ZERO
       } else Values.NO_VALUE
       val queryWaitTime = if (requestedColumnsNames.contains(currentQueryWaitTimeColumn))

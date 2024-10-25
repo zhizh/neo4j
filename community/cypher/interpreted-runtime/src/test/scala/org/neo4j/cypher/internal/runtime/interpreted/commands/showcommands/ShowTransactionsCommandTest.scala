@@ -740,7 +740,7 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
       waitTime = DurationValue.ZERO,
       idleTime = DurationValue.ZERO,
       queryElapsedTime = Values.durationValue(Duration.ofMillis(2L)),
-      queryCpuTime = DurationValue.ZERO,
+      queryCpuTime = Values.NO_VALUE,
       queryWaitTime = DurationValue.ZERO,
       queryIdleTime = DurationValue.ZERO,
       queryAllocatedBytes = Values.longValue(0L),

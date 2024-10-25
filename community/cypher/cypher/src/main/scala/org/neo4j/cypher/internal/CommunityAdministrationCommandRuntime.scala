@@ -443,12 +443,18 @@ case class CommunityAdministrationCommandRuntime(
         )
 
     // Non-administration commands that are allowed on system database, e.g. SHOW PROCEDURES
-    case AllowedNonAdministrationCommands(statement) => _ =>
+    case AllowedNonAdministrationCommands(statement) => context =>
+        // While running against system will override most pre-parser options.
+        // However, we shouldn't override the Cypher version,
+        // so let's prepend the inner query with the relevant Cypher version.
+        val versionName = context.runtimeContext.cypherVersion.versionName
+        val versionString = s"CYPHER $versionName "
+
         SystemCommandExecutionPlan(
           "AllowedNonAdministrationCommand",
           normalExecutionEngine,
           securityAuthorizationHandler,
-          QueryRenderer.render(statement),
+          versionString + QueryRenderer.render(statement),
           MapValue.EMPTY,
           // If we have a non admin command executing in the system database, forbid it to make reads / writes
           // from the system graph. This is to prevent queries such as SHOW PROCEDURES YIELD * RETURN ()--()
