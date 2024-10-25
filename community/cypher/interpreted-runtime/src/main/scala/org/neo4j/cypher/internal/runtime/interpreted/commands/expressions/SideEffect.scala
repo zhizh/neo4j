@@ -52,8 +52,11 @@ case class CreateNode(command: CreateNodeCommand, allowNullOrNaNProperty: Boolea
 
   override def execute(row: CypherRow, state: QueryState): Unit = {
     val query = state.query
-    val labelIds = command.labels.map(_.getOrCreateId(query)).toArray
-    val node = query.createNodeId(labelIds)
+    val labelIds = command.labels.map(_.getOrCreateId(query))
+    val dynamicLabelIds = command.labelExpressions.flatMap(expr =>
+      CypherFunctions.asStringList(expr(row, state)).asScala.map(query.getOrCreateLabelId)
+    )
+    val node = query.createNodeId((labelIds ++ dynamicLabelIds).toArray)
     command.properties.foreach(p =>
       p.apply(row, state) match {
         case IsMap(map) =>
@@ -113,11 +116,11 @@ case class CreateRelationship(command: CreateRelationshipCommand, allowNullOrNaN
             map(state).foreach {
               case (k, v) if v eq Values.NO_VALUE =>
                 if (!allowNullOrNaNProperty) {
-                  CreateRelationship.handleNoValue(command.startNode, command.relType.name, command.endNode, k)
+                  CreateRelationship.handleNoValue(command.startNode, command.relType.rendered, command.endNode, k)
                 }
               case (k, v: FloatingPointValue) if v.isNaN =>
                 if (!allowNullOrNaNProperty) {
-                  CreateRelationship.handleNaNValue(command.startNode, command.relType.name, command.endNode, k)
+                  CreateRelationship.handleNaNValue(command.startNode, command.relType.rendered, command.endNode, k)
                 }
               case (k, v) =>
                 val propId = state.query.getOrCreatePropertyKeyId(k)
@@ -148,7 +151,7 @@ object CreateRelationship {
 
   private def fail(
     startVariableName: String,
-    relTypeName: String,
+    stringifiedRelType: String,
     endVariableName: String,
     key: String,
     value: String
@@ -165,17 +168,22 @@ object CreateRelationship {
       } else {
         endVariableName
       }
-    s"($startVarPart)-[:$relTypeName {$key: $value}]->($endVarPart)"
+    s"($startVarPart)-[:$stringifiedRelType {$key: $value}]->($endVarPart)"
     throw new InvalidSemanticsException(
-      s"Cannot merge the following relationship because of $value property value for '$key': ($startVarPart)-[:$relTypeName {$key: $value}]->($endVarPart)"
+      s"Cannot merge the following relationship because of $value property value for '$key': ($startVarPart)-[:$stringifiedRelType {$key: $value}]->($endVarPart)"
     )
   }
 
-  def handleNoValue(startVariableName: String, relTypeName: String, endVariableName: String, key: String): Unit =
-    fail(startVariableName, relTypeName, endVariableName, key, "null")
+  def handleNoValue(startVariableName: String, stringifiedRelType: String, endVariableName: String, key: String): Unit =
+    fail(startVariableName, stringifiedRelType, endVariableName, key, "null")
 
-  def handleNaNValue(startVariableName: String, relTypeName: String, endVariableName: String, key: String): Unit =
-    fail(startVariableName, relTypeName, endVariableName, key, "NaN")
+  def handleNaNValue(
+    startVariableName: String,
+    stringifiedRelType: String,
+    endVariableName: String,
+    key: String
+  ): Unit =
+    fail(startVariableName, stringifiedRelType, endVariableName, key, "NaN")
 }
 
 case class RemoveLabelsOperation(nodeName: String, labels: Seq[LazyLabel], dynamicLabels: Seq[Expression])

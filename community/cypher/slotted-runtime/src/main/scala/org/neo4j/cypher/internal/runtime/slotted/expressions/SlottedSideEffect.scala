@@ -52,8 +52,11 @@ case class CreateSlottedNode(command: CreateNodeSlottedCommand, allowNullOrNaNPr
 
   override def execute(row: CypherRow, state: QueryState): Unit = {
     val query = state.query
-    val labelIds = command.labels.map(_.getOrCreateId(query)).toArray
-    val node = query.createNodeId(labelIds)
+    val labelIds = command.labels.map(_.getOrCreateId(query))
+    val dynamicLabelIds = command.labelExpressions.flatMap(expr =>
+      CypherFunctions.asStringList(expr(row, state)).asScala.map(query.getOrCreateLabelId)
+    )
+    val node = query.createNodeId((labelIds ++ dynamicLabelIds).toArray)
     row.setLongAt(command.idOffset, node)
     command.properties.foreach(p =>
       p.apply(row, state) match {
@@ -101,10 +104,10 @@ case class CreateSlottedRelationship(command: CreateRelationshipSlottedCommand, 
               map(state).foreach {
                 case (k: String, v: AnyValue) if v eq Values.NO_VALUE =>
                   if (!allowNullOrNaNProperty) {
-                    CreateRelationship.handleNoValue(command.startName, command.relType.name, command.endName, k)
+                    CreateRelationship.handleNoValue(command.startName, command.relType.rendered, command.endName, k)
                   }
                 case (k: String, v: FloatingPointValue) if !allowNullOrNaNProperty && v.isNaN =>
-                  CreateRelationship.handleNaNValue(command.startName, command.relType.name, command.endName, k)
+                  CreateRelationship.handleNaNValue(command.startName, command.relType.rendered, command.endName, k)
                 case (k: String, v: AnyValue) =>
                   val propId = state.query.getOrCreatePropertyKeyId(k)
                   state.query.relationshipWriteOps.setProperty(relationship, propId, makeValueNeoSafe(v))

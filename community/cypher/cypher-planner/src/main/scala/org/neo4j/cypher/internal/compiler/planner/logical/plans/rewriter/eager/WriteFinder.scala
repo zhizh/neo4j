@@ -415,6 +415,8 @@ object WriteFinder {
 
   private def processCreateNodes(acc: PlanCreates, nodes: Iterable[CreateNode]): PlanCreates = {
     nodes.foldLeft(acc) {
+      case (_, CreateNode(_, _, dynamicLabels, _)) if dynamicLabels.nonEmpty =>
+        throw new NotImplementedError("Dynamic Labels not supported here yet")
       case (acc, CreateNode(_, labels, _, maybeProperties)) =>
         maybeProperties match {
           case None => acc.withCreatedNode(CreatedNode(labels, CreatesNoPropertyKeys))

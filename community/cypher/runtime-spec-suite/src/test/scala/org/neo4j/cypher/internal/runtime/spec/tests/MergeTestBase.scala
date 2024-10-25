@@ -22,8 +22,10 @@ package org.neo4j.cypher.internal.runtime.spec.tests
 import org.neo4j.cypher.internal.CypherRuntime
 import org.neo4j.cypher.internal.RuntimeContext
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithDynamicLabels
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNodeWithProperties
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationship
+import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createRelationshipWithDynamicType
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.setDynamicLabel
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.setDynamicProperty
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.setLabel
@@ -924,6 +926,33 @@ abstract class MergeTestBase[CONTEXT <: RuntimeContext](
       .merge(
         nodes = Seq(createNode("n", "L"), createNode("m", "M")),
         relationships = Seq(createRelationship("r", "n", "R", "m"))
+      )
+      .filter("m:M")
+      .expand("(n)-[r:R]->(m)")
+      .filter("n:L")
+      .nodeByLabelScan("n", "L")
+      .build(readOnly = false)
+
+    // then
+    val runtimeResult: RecordingRuntimeResult = execute(logicalQuery, runtime)
+    consume(runtimeResult)
+    val rel = Iterables.single(tx.getAllRelationships)
+    runtimeResult should beColumns("n", "r", "m").withSingleRow(rel.getStartNode, rel, rel.getEndNode).withStatistics(
+      nodesCreated = 2,
+      labelsAdded = 2,
+      relationshipsCreated = 1
+    )
+  }
+
+  test("merge scan + filter + expand + filter with dynamic types") {
+    // given no nodes
+
+    // when
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("n", "r", "m")
+      .merge(
+        nodes = Seq(createNodeWithDynamicLabels("n", literal("L")), createNodeWithDynamicLabels("m", literal("M"))),
+        relationships = Seq(createRelationshipWithDynamicType("r", "n", "\"R\"", "m"))
       )
       .filter("m:M")
       .expand("(n)-[r:R]->(m)")

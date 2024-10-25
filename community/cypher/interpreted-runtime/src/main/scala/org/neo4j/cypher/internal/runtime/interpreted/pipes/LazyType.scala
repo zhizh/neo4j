@@ -37,12 +37,12 @@ sealed abstract class LazyType {
 
   def getOrCreateType(row: ReadableRow, state: QueryState, token: TokenWrite): Int
 
-  def name: String
-
   /**
    * This method throws an exception for dynamic types and should be used with caution/removed entirely once the feature is complete
    */
   def asStatic: LazyTypeStatic
+
+  def rendered: String
 }
 
 case class LazyTypeDynamic(expr: Expression, rendered: String) extends LazyType {
@@ -61,13 +61,12 @@ case class LazyTypeDynamic(expr: Expression, rendered: String) extends LazyType 
     id
   }
 
-  override def name: String = s"$$($rendered)"
-
   def asStatic: LazyTypeStatic = throw new NotImplementedError("DynamicRelTypeExpression not yet supported here")
 }
 
 case class LazyTypeStatic(name: String) extends LazyType {
   def asStatic: LazyTypeStatic = this
+  def rendered: String = name
 
   def getOrCreateType(row: ReadableRow, state: QueryState): Int =
     getOrCreateType(state.query)
