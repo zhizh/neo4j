@@ -1993,7 +1993,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlStatus("22NB0"),
             """
                     The property value access rule pattern { %s } always evaluates to 'NULL'. Use `WHERE` syntax in combination with `IS NULL` instead.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.value},
+            new GqlParams.GqlParam[] {GqlParams.StringParam.pred},
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "invalid property based access control rule involving WHERE and IS NULL",
