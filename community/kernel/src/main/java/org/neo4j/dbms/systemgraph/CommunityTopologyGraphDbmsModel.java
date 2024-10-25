@@ -228,7 +228,8 @@ public class CommunityTopologyGraphDbmsModel implements TopologyGraphDbmsModel {
     private static Optional<DatabaseReferenceImpl.SPDShard> createSPDPropertyShardReference(Node alias, Node db) {
         return CommunityTopologyGraphDbmsModelUtil.createInternalReference(
                         alias, CommunityTopologyGraphDbmsModelUtil.getDatabaseId(db))
-                .map(internal -> internal.asShard(CommunityTopologyGraphDbmsModelUtil.readOwningDatabase(db)));
+                .flatMap(internal -> CommunityTopologyGraphDbmsModelUtil.readOwningDatabase(db)
+                        .map(internal::asShard));
     }
 
     private Stream<Node> getAliasNodesInNamespace(Label label, String namespace) {

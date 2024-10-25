@@ -362,14 +362,18 @@ public final class CommunityTopologyGraphDbmsModelUtil {
         }
     }
 
-    public static String readOwningDatabase(Node aliasNode) {
-        var relationships = aliasNode.getRelationships(Direction.INCOMING, TopologyGraphDbmsModel.HAS_SHARD).stream()
-                .map(Relationship::getStartNode)
-                .toList(); // exhaust cursor
-        if (relationships.isEmpty()) {
-            return aliasNode.getProperty(DATABASE_NAME_PROPERTY).toString();
-        } else {
-            return relationships.get(0).getProperty(DATABASE_NAME_PROPERTY).toString();
-        }
+    public static Optional<String> readOwningDatabase(Node aliasNode) {
+        return ignoreConcurrentDeletes(() -> {
+            var relationships =
+                    aliasNode.getRelationships(Direction.INCOMING, TopologyGraphDbmsModel.HAS_SHARD).stream()
+                            .map(Relationship::getStartNode)
+                            .toList(); // exhaust cursor
+            if (relationships.isEmpty()) {
+                return Optional.of(aliasNode.getProperty(DATABASE_NAME_PROPERTY).toString());
+            } else {
+                return Optional.of(
+                        relationships.get(0).getProperty(DATABASE_NAME_PROPERTY).toString());
+            }
+        });
     }
 }
