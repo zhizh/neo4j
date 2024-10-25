@@ -241,7 +241,7 @@ class Neo4jTransactionalContextIT {
         assertThat(executingQuery).isSameAs(innerCtx.executingQuery());
         assertThat(executingQuery.rawQueryText()).isEqualTo(queryText);
         var snapshot = executingQuery.snapshot();
-        assertThat(snapshot.transactionId())
+        assertThat(snapshot.transactionSequenceNumber())
                 .isEqualTo(outerTx.kernelTransaction().getTransactionSequenceNumber());
     }
 
@@ -684,7 +684,7 @@ class Neo4jTransactionalContextIT {
         long transactionCountOnCurrentQuery = kernelTransactions.executingTransactions().stream()
                 .flatMap(handle -> handle.executingQuery().stream()
                         .map(ExecutingQuery::snapshot)
-                        .map(QuerySnapshot::transactionId)
+                        .map(QuerySnapshot::transactionSequenceNumber)
                         .filter(txnId -> txnId == kernelTransaction.getTransactionSequenceNumber()))
                 .count();
         return transactionCountOnCurrentQuery > 1;
@@ -946,7 +946,7 @@ class Neo4jTransactionalContextIT {
         // Then
         var snapshot = executingQuery.snapshot();
         // Actual assertion
-        assertThat(snapshot.transactionId())
+        assertThat(snapshot.transactionSequenceNumber())
                 .isEqualTo(lastTx.kernelTransaction().getTransactionSequenceNumber());
         assertThat(snapshot.pageHits()).isEqualTo(closedTxHits + lastHits);
         assertThat(snapshot.pageFaults()).isEqualTo(closedTxFaults + lastFaults);

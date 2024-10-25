@@ -48,6 +48,6 @@ class ExecutingQueryFactoryTest {
         var snapshot = executingQuery.snapshot();
 
         // THEN
-        assertEquals(-1L, snapshot.transactionId());
+        assertEquals(-1L, snapshot.transactionSequenceNumber());
     }
 }

@@ -79,7 +79,8 @@ public class Neo4jTransactionalContextFactory implements TransactionalContextFac
         KernelStatement initialStatement =
                 (KernelStatement) tx.kernelTransaction().acquireStatement();
         var executingQuery = initialStatement.queryRegistry().startAndBindExecutingQuery(queryText, queryParameters);
-        executingQuery.setParentTransaction(parentQuery.databaseId().get().name(), parentQuery.getOuterTransactionId());
+        executingQuery.setParentTransaction(
+                parentQuery.databaseId().get().name(), parentQuery.getOuterTransactionSequenceNumber());
         return contextCreator.create(tx, initialStatement, executingQuery, queryExecutionConfiguration);
     }
 

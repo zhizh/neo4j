@@ -21,6 +21,7 @@ package org.neo4j.kernel.api.query;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
+import static org.neo4j.storageengine.api.TransactionIdStore.UNKNOWN_TX_SEQUENCE_NUMBER;
 
 import java.util.Collections;
 import java.util.List;
@@ -109,9 +110,9 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
     private NamedDatabaseId namedDatabaseId;
 
     /**
-     * Transaction id of the outer (first) transaction.
+     * Transaction sequence number of the outer (first) transaction.
      */
-    private long outerTransactionId = -1L;
+    private long outerTransactionSequenceNumber = UNKNOWN_TX_SEQUENCE_NUMBER;
 
     /**
      *  The database name of the parent transactions (for composite databases)
@@ -119,9 +120,9 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
     private String parentDbName;
 
     /**
-     *  The transaction id of the parent transactions (for composite databases)
+     *  The transaction sequence number of the parent transactions (for composite databases)
      */
-    private long parentTransactionId = -1L;
+    private long parentTransactionSequenceNumber = UNKNOWN_TX_SEQUENCE_NUMBER;
 
     private QueryCacheUsage executableQueryCacheUsage;
     private QueryCacheUsage logicalPlanCacheUsage;
@@ -159,7 +160,7 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
         this.memoryTracker = HeapHighWaterMarkTracker.ZERO;
     }
 
-    // NOTE: test/benchmarking constructor
+    @VisibleForTesting
     public ExecutingQuery(
             long queryId,
             ClientConnectionInfo clientConnection,
@@ -193,13 +194,13 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
         onTransactionBound(new TransactionBinding(namedDatabaseId, hitsSupplier, faultsSupplier, activeLockCount, 1));
     }
 
-    public void setParentTransaction(String parentDbName, long parentTransactionId) {
-        this.parentTransactionId = parentTransactionId;
+    public void setParentTransaction(String parentDbName, long parentTransactionSequenceNumber) {
+        this.parentTransactionSequenceNumber = parentTransactionSequenceNumber;
         this.parentDbName = parentDbName;
     }
 
-    public long getOuterTransactionId() {
-        return outerTransactionId;
+    public long getOuterTransactionSequenceNumber() {
+        return outerTransactionSequenceNumber;
     }
 
     public static class TransactionBinding {
@@ -208,20 +209,20 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
         private final LongSupplier faultsSupplier;
         private final LongSupplier activeLockCount;
         private final long initialActiveLocks;
-        private final long transactionId;
+        private final long transactionSequenceNumber;
 
         public TransactionBinding(
                 NamedDatabaseId namedDatabaseId,
                 LongSupplier hitsSupplier,
                 LongSupplier faultsSupplier,
                 LongSupplier activeLockCount,
-                long transactionId) {
+                long transactionSequenceNumber) {
             this.namedDatabaseId = namedDatabaseId;
             this.hitsSupplier = hitsSupplier;
             this.faultsSupplier = faultsSupplier;
             this.activeLockCount = activeLockCount;
             this.initialActiveLocks = activeLockCount.getAsLong();
-            this.transactionId = transactionId;
+            this.transactionSequenceNumber = transactionSequenceNumber;
         }
 
         /**
@@ -241,9 +242,9 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
     public void onTransactionBound(TransactionBinding transactionBinding) {
         if (this.openTransactionBindings.isEmpty()) {
             namedDatabaseId = transactionBinding.namedDatabaseId;
-            outerTransactionId = transactionBinding.transactionId;
+            outerTransactionSequenceNumber = transactionBinding.transactionSequenceNumber;
         }
-        this.openTransactionBindings.put(transactionBinding.transactionId, transactionBinding);
+        this.openTransactionBindings.put(transactionBinding.transactionSequenceNumber, transactionBinding);
     }
 
     /**
@@ -268,7 +269,9 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
             throw new IllegalStateException("Unbound a transaction that was never bound. ID: " + userTransactionId);
         }
         recordStatisticsOfTransactionAboutToClose(
-                binding.hitsSupplier.getAsLong(), binding.faultsSupplier.getAsLong(), binding.transactionId);
+                binding.hitsSupplier.getAsLong(),
+                binding.faultsSupplier.getAsLong(),
+                binding.transactionSequenceNumber);
     }
 
     @VisibleForTesting
@@ -414,9 +417,9 @@ public class ExecutingQuery implements QueryTransactionStatisticsAggregator {
                 Optional.ofNullable(queryText),
                 Optional.ofNullable(queryPostions),
                 Optional.ofNullable(queryParameters),
-                outerTransactionId,
+                outerTransactionSequenceNumber,
                 parentDbName,
-                parentTransactionId,
+                parentTransactionSequenceNumber,
                 executableQueryCacheUsage,
                 logicalPlanCacheUsage);
     }

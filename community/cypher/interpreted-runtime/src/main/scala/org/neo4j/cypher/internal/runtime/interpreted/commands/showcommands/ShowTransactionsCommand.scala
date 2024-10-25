@@ -76,6 +76,7 @@ import org.neo4j.kernel.api.KernelTransactionHandle
 import org.neo4j.kernel.api.query.QuerySnapshot
 import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.memory.HeapHighWaterMarkTracker
+import org.neo4j.storageengine.api.TransactionIdStore.UNKNOWN_TX_SEQUENCE_NUMBER
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.DurationValue
 import org.neo4j.values.storable.Value
@@ -325,10 +326,11 @@ case class ShowTransactionsCommand(
       val outerTransactionId =
         if (requestedColumnsNames.contains(outerTransactionIdColumn)) {
           val parentDbName = query.parentDbName()
-          val parentTransactionId = query.parentTransactionId()
+          val parentTransactionSequenceNumber = query.parentTransactionSequenceNumber()
           val querySessionDbName = if (parentDbName != null) parentDbName else dbName
           val querySessionTransactionId =
-            if (parentTransactionId > -1L) parentTransactionId else query.transactionId()
+            if (parentTransactionSequenceNumber > UNKNOWN_TX_SEQUENCE_NUMBER) parentTransactionSequenceNumber
+            else query.transactionSequenceNumber()
           val querySessionTransaction = TransactionId(querySessionDbName, querySessionTransactionId).toString
           if (querySessionTransaction == txId) Values.stringValue(EMPTY)
           else Values.stringValue(querySessionTransaction)

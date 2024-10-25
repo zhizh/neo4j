@@ -51,8 +51,8 @@ public class QuerySnapshot {
     private final Optional<String> obfuscatedQueryText;
     private final Optional<Function<InputPosition, InputPosition>> obfuscatePosition;
     private final Optional<MapValue> obfuscatedQueryParameters;
-    private final long transactionId;
-    private final long parentTransactionId;
+    private final long transactionSequenceNumber;
+    private final long parentTransactionSequenceNumber;
     private final String parentDbName;
     private final QueryCacheUsage executableQueryCacheUsage;
     private final QueryCacheUsage logicalPlanCacheUsage;
@@ -74,9 +74,9 @@ public class QuerySnapshot {
             Optional<String> obfuscatedQueryText,
             Optional<Function<InputPosition, InputPosition>> obfuscatePosition,
             Optional<MapValue> obfuscatedQueryParameters,
-            long outerTransactionId,
+            long outerTransactionSequenceNumber,
             String parentDbName,
-            long parentTransactionId,
+            long parentTransactionSequenceNumber,
             QueryCacheUsage executableQueryCacheUsage,
             QueryCacheUsage logicalPlanCacheUsage) {
         this.query = query;
@@ -95,9 +95,9 @@ public class QuerySnapshot {
         this.obfuscatedQueryText = obfuscatedQueryText;
         this.obfuscatePosition = obfuscatePosition;
         this.obfuscatedQueryParameters = obfuscatedQueryParameters;
-        this.transactionId = outerTransactionId;
+        this.transactionSequenceNumber = outerTransactionSequenceNumber;
         this.parentDbName = parentDbName;
-        this.parentTransactionId = parentTransactionId;
+        this.parentTransactionSequenceNumber = parentTransactionSequenceNumber;
         this.executableQueryCacheUsage = executableQueryCacheUsage;
         this.logicalPlanCacheUsage = logicalPlanCacheUsage;
     }
@@ -194,10 +194,10 @@ public class QuerySnapshot {
     }
 
     /**
-     * User transaction ID of the outer transaction that is executing this query.
+     * User transaction sequence number of the outer transaction that is executing this query.
      */
-    public long transactionId() {
-        return transactionId;
+    public long transactionSequenceNumber() {
+        return transactionSequenceNumber;
     }
 
     /**
@@ -281,8 +281,8 @@ public class QuerySnapshot {
         return parentDbName;
     }
 
-    public long parentTransactionId() {
-        return parentTransactionId;
+    public long parentTransactionSequenceNumber() {
+        return parentTransactionSequenceNumber;
     }
 
     public Optional<QueryCacheUsage> executableQueryCacheUsage() {
