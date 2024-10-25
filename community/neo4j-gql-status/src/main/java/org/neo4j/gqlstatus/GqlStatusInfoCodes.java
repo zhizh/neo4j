@@ -1984,7 +1984,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlStatus("22NA8"),
             """
                     Underlying error: { %s }""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.value},
+            new GqlParams.GqlParam[] {GqlParams.StringParam.cause},
             emptyMap(),
             Condition.DATA_EXCEPTION,
             "parsing JSON failure",
