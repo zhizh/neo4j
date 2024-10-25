@@ -24,6 +24,7 @@ import org.neo4j.codegen.api.IntermediateRepresentation.and
 import org.neo4j.codegen.api.IntermediateRepresentation.assign
 import org.neo4j.codegen.api.IntermediateRepresentation.block
 import org.neo4j.codegen.api.IntermediateRepresentation.booleanValue
+import org.neo4j.codegen.api.IntermediateRepresentation.comment
 import org.neo4j.codegen.api.IntermediateRepresentation.condition
 import org.neo4j.codegen.api.IntermediateRepresentation.constant
 import org.neo4j.codegen.api.IntermediateRepresentation.getStatic
@@ -37,6 +38,7 @@ import org.neo4j.codegen.api.IntermediateRepresentation.method
 import org.neo4j.codegen.api.IntermediateRepresentation.noop
 import org.neo4j.codegen.api.IntermediateRepresentation.notEqual
 import org.neo4j.codegen.api.IntermediateRepresentation.or
+import org.neo4j.codegen.api.IntermediateRepresentation.placeHolder
 import org.neo4j.codegen.api.IntermediateRepresentation.print
 import org.neo4j.codegen.api.IntermediateRepresentation.scalaObjectInstance
 import org.neo4j.codegen.api.IntermediateRepresentation.ternary
@@ -196,6 +198,36 @@ class IntermediateRepresentationTest extends CypherFunSuite {
       print(constant("NO!")),
       typeRefOf[RuntimeException],
       "e"
+    )
+  }
+
+  test("placeHolder") {
+    val ph = placeHolder()
+    val ir = block(
+      comment("Before"),
+      ph,
+      comment("After")
+    )
+    ph.append(Seq(comment("Middle2")))
+    ph.prepend(Seq(comment("Middle1")))
+    ph.ops shouldBe Seq(comment("Middle1"), comment("Middle2"))
+
+    an[IllegalStateException] shouldBe thrownBy {
+      ph.prepend(Seq(comment("Middle0")))
+    }
+    an[IllegalStateException] shouldBe thrownBy {
+      ph.append(Seq(comment("Middle3")))
+    }
+
+    PrettyIR.pretty(ir, 0) shouldBe (
+      """{
+        |  // Before
+        |  { /* PLACEHOLDER */
+        |    // Middle1
+        |    // Middle2
+        |  }
+        |  // After
+        |}""".stripMargin
     )
   }
 

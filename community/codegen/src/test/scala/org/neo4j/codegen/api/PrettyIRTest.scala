@@ -65,7 +65,7 @@ class PrettyIRTest extends CypherFunSuite {
       assign("a", add(constant(0), constant(7)))
     ): _*)
 
-    PrettyIR.pretty(blockIr) shouldBe s"a = 0 + 7"
+    PrettyIR.pretty(blockIr) shouldBe s"a = (0 + 7)"
   }
 
   test("prettify block") {
@@ -76,8 +76,8 @@ class PrettyIRTest extends CypherFunSuite {
 
     PrettyIR.pretty(blockIr) shouldBe
       s"""{
-         |${indent}a = 0 + 7
-         |${indent}a = a + 7
+         |${indent}a = (0 + 7)
+         |${indent}a = (a + 7)
          |}""".stripMargin
   }
 
@@ -90,8 +90,8 @@ class PrettyIRTest extends CypherFunSuite {
 
     PrettyIR.pretty(blockIR) shouldBe
       s"""{
-         |${indent}AnyValue a = 0 + 7
-         |${indent}a = a + 7
+         |${indent}AnyValue a = (0 + 7)
+         |${indent}a = (a + 7)
          |}""".stripMargin
   }
 
@@ -109,7 +109,7 @@ class PrettyIRTest extends CypherFunSuite {
 
     PrettyIR.pretty(blockIR) shouldBe
       s"""{
-         |${indent}AnyValue a = 0 + 7
+         |${indent}AnyValue a = (0 + 7)
          |${indent}if (b) {
          |${indent * 2}b = false
          |${indent * 2}a = 13
@@ -141,27 +141,27 @@ class PrettyIRTest extends CypherFunSuite {
   }
 
   test("prettify equal expression") {
-    PrettyIR.pretty(IntermediateRepresentation.equal(constant("a"), constant("b"))) shouldBe "a == b"
+    PrettyIR.pretty(IntermediateRepresentation.equal(constant("a"), constant("b"))) shouldBe "(a == b)"
   }
 
   test("prettify not equal expression") {
-    PrettyIR.pretty(notEqual(constant("a"), constant("b"))) shouldBe "a != b"
+    PrettyIR.pretty(notEqual(constant("a"), constant("b"))) shouldBe "(a != b)"
   }
 
   test("prettify add expression") {
-    PrettyIR.pretty(add(constant(52), constant(3))) shouldBe "52 + 3"
+    PrettyIR.pretty(add(constant(52), constant(3))) shouldBe "(52 + 3)"
   }
 
   test("prettify sub expression") {
-    PrettyIR.pretty(subtract(constant(52), constant(3))) shouldBe "52 - 3"
+    PrettyIR.pretty(subtract(constant(52), constant(3))) shouldBe "(52 - 3)"
   }
 
   test("boolean or") {
-    PrettyIR.pretty(or(load[Boolean]("a"), load[Boolean]("b"))) shouldBe "a || b"
+    PrettyIR.pretty(or(load[Boolean]("a"), load[Boolean]("b"))) shouldBe "(a || b)"
   }
 
   test("boolean and") {
-    PrettyIR.pretty(and(load[Boolean]("a"), load[Boolean]("b"))) shouldBe "a && b"
+    PrettyIR.pretty(and(load[Boolean]("a"), load[Boolean]("b"))) shouldBe "(a && b)"
   }
 
   test("if-condition") {
@@ -185,20 +185,20 @@ class PrettyIRTest extends CypherFunSuite {
     )
     PrettyIR.pretty(condition) shouldBe
       s"""if (condition) 0 else {
-         |${indent}a = 0 + 7
-         |${indent}a = a + 7
+         |${indent}a = (0 + 7)
+         |${indent}a = (a + 7)
          |}""".stripMargin
   }
 
   test("ternary") {
     PrettyIR.pretty(
       ternary(load[Boolean]("condition"), constant(false), constant(true))
-    ) shouldBe "condition ? false : true"
+    ) shouldBe "( (condition) ? false : true )"
   }
 
   test("Loop without label") {
     val loopIR = loop(notEqual(load[Int]("a"), constant(100)))(assign("a", add(load[Int]("a"), constant(1))))
-    PrettyIR.pretty(loopIR) shouldBe "while (a != 100) a = a + 1"
+    PrettyIR.pretty(loopIR) shouldBe "while ((a != 100)) a = (a + 1)"
   }
 
   test("Loop with label") {
@@ -206,7 +206,7 @@ class PrettyIRTest extends CypherFunSuite {
       labeledLoop("loop1", notEqual(load[Int]("a"), constant(100)))(assign("a", add(load[Int]("a"), constant(1))))
     PrettyIR.pretty(loopIR) shouldBe
       """loop1:
-        |while (a != 100) a = a + 1""".stripMargin
+        |while ((a != 100)) a = (a + 1)""".stripMargin
   }
 
   test("array load") {
@@ -229,7 +229,7 @@ class PrettyIRTest extends CypherFunSuite {
     )
     PrettyIR.pretty(tryCatchIR) shouldBe
       s"""try {
-         |${indent}(double)a
+         |${indent}((double) a)
          |} catch(e: ClassCastException) {
          |${indent}throw e
          |}""".stripMargin
@@ -242,12 +242,12 @@ class PrettyIRTest extends CypherFunSuite {
   test("Not(...)") {
     PrettyIR.pretty(
       IntermediateRepresentation.not(IntermediateRepresentation.equal(constant(true), constant(false)))
-    ) shouldBe "true != false"
+    ) shouldBe "(true != false)"
 
     PrettyIR.pretty(IntermediateRepresentation.not(IntermediateRepresentation.or(
       load[Boolean]("a"),
       load[Boolean]("b")
-    ))) shouldBe "!(a || b)"
+    ))) shouldBe "!((a || b))"
   }
 
 }

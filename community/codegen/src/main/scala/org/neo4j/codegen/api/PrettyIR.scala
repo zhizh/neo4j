@@ -100,6 +100,18 @@ object PrettyIR {
           decrIndent()
           append("}")
 
+        case ph: PlaceHolder =>
+          val ops = ph.ops
+          if (ops.isEmpty) {
+            append("{ /* EMPTY PLACEHOLDER */ }")
+          } else {
+            append("{ /* PLACEHOLDER */").newLine()
+            incrIndent()
+            ops.map(pretty(_).newLine())
+            decrIndent()
+            append("}")
+          }
+
         case DeclareLocalVariable(typ, name) =>
           prettyType(typ).append(s" $name")
 
