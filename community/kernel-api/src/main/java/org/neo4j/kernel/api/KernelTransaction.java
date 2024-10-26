@@ -254,7 +254,6 @@ public interface KernelTransaction extends AssertOpen, AutoCloseable {
      */
     Optional<TerminationMark> getTerminationMark();
 
-    void releaseStorageEngineResources();
     /**
      * @return true if transaction was terminated, otherwise false
      */
@@ -291,6 +290,11 @@ public interface KernelTransaction extends AssertOpen, AutoCloseable {
      * @return additional status details or empty string.
      */
     String statusDetails();
+
+    /**
+     * Query retry performed in scope of this transaction
+     */
+    void retryQuery();
 
     enum Type {
         /**

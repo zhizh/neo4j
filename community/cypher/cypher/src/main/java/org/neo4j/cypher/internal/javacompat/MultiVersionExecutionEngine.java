@@ -101,9 +101,8 @@ public class MultiVersionExecutionEngine extends ExecutionEngine {
         VersionContext versionContext = getCursorContext(context);
         do {
             if (attempts > 0) {
-                kernelTransaction.releaseStorageEngineResources();
-                ((TxStateHolder) kernelTransaction).txState().reset();
                 context.executingQuery().onRetryAttempted();
+                kernelTransaction.retryQuery();
                 versionContext.initRead();
                 versionContext.resetObsoleteHeadState();
             }

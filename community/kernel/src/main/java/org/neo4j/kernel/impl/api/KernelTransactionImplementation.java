@@ -236,7 +236,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private final DatabaseReadOnlyChecker readOnlyDatabaseChecker;
     private final TransactionIdGenerator transactionIdGenerator;
     private final ApplyEnrichmentStrategy enrichmentStrategy;
-    private TransactionStateBehaviour transactionStateBehaviour;
+    private final TransactionStateBehaviour transactionStateBehaviour;
     private final DatabaseHealth databaseHealth;
     private final SecurityAuthorizationHandler securityAuthorizationHandler;
 
@@ -275,6 +275,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private final MemoryTracker memoryTracker;
     private final LocalConfig config;
     private volatile long transactionHeapBytesLimit;
+    private volatile long transactionLocalRetries;
     private final ExecutionContextFactory executionContextFactory;
     private ProcedureView procedureView;
     private boolean needsHighIdTracking;
@@ -1379,6 +1380,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
             timeout = TransactionTimeout.NO_TIMEOUT;
             startTimeMillis = Long.MAX_VALUE;
             startTimeNanos = Long.MAX_VALUE;
+            transactionLocalRetries = 0;
             serialExecutionGuard.release();
             transactionEventListeners.reset();
             terminationMark = null;
@@ -1459,8 +1461,20 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         }
     }
 
-    @Override
-    public void releaseStorageEngineResources() {
+    public void retryQuery() {
+        transactionMonitor.transactionRetry();
+        transactionLocalRetries++;
+        releaseStorageEngineResources();
+        if (txState != null) {
+            txState.reset();
+        }
+    }
+
+    public long transactionQueryRetries() {
+        return transactionLocalRetries;
+    }
+
+    private void releaseStorageEngineResources() {
         if (txState != null) {
             storageEngine.release(txState, cursorContext, commandCreationContext, !commit);
         }

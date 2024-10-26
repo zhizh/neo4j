@@ -387,6 +387,9 @@ class KernelTransactionTerminationTest {
         public void transactionValidationFailure(DatabaseFile databaseFile) {}
 
         @Override
+        public void transactionRetry() {}
+
+        @Override
         public void addHeapTransactionSize(long transactionSizeHeap) {}
 
         @Override

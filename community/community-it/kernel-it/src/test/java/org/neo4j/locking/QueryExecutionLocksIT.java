@@ -917,11 +917,6 @@ class QueryExecutionLocksIT {
         }
 
         @Override
-        public void releaseStorageEngineResources() {
-            internal.releaseStorageEngineResources();
-        }
-
-        @Override
         public boolean isTerminated() {
             return internal.isTerminated();
         }
@@ -1019,6 +1014,11 @@ class QueryExecutionLocksIT {
         @Override
         public String statusDetails() {
             return internal.statusDetails();
+        }
+
+        @Override
+        public void retryQuery() {
+            internal.retryQuery();
         }
 
         @Override

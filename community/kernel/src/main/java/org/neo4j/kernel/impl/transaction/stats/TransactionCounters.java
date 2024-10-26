@@ -52,5 +52,7 @@ public interface TransactionCounters {
 
     long totalTransactionsValidationFailures();
 
+    long totalTransactionsRetries();
+
     void setTransactionSizeCallback(TransactionSizeMonitor transactionSizeMonitor);
 }

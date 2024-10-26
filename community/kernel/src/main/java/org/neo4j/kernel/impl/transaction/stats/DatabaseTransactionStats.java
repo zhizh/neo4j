@@ -41,6 +41,7 @@ public class DatabaseTransactionStats implements TransactionMonitor, Transaction
     private final LongAdder terminatedReadTransactionCount = new LongAdder();
     private final LongAdder terminatedWriteTransactionCount = new LongAdder();
     private final LongAdder totalTransactionsValidationFailures = new LongAdder();
+    private final LongAdder totalTransactionsRetries = new LongAdder();
     private final AtomicLong peakTransactionCount = new AtomicLong();
     private volatile TransactionSizeMonitor transactionSizeCallback = NullTransactionSizeCallback.INSTANCE;
 
@@ -79,6 +80,11 @@ public class DatabaseTransactionStats implements TransactionMonitor, Transaction
     @Override
     public void transactionValidationFailure(DatabaseFile databaseFile) {
         totalTransactionsValidationFailures.increment();
+    }
+
+    @Override
+    public void transactionRetry() {
+        totalTransactionsRetries.increment();
     }
 
     @Override
@@ -154,6 +160,11 @@ public class DatabaseTransactionStats implements TransactionMonitor, Transaction
     @Override
     public long totalTransactionsValidationFailures() {
         return totalTransactionsValidationFailures.longValue();
+    }
+
+    @Override
+    public long totalTransactionsRetries() {
+        return totalTransactionsRetries.longValue();
     }
 
     @Override

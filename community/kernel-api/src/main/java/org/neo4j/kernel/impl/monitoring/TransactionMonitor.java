@@ -34,4 +34,6 @@ public interface TransactionMonitor extends TransactionSizeMonitor {
     void upgradeToWriteTransaction();
 
     void transactionValidationFailure(DatabaseFile databaseFile);
+
+    void transactionRetry();
 }

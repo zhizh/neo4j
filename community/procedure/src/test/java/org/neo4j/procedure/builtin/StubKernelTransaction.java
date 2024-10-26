@@ -218,7 +218,9 @@ public class StubKernelTransaction implements KernelTransaction {
     }
 
     @Override
-    public void releaseStorageEngineResources() {}
+    public void retryQuery() {
+        throw new UnsupportedOperationException("not implemented");
+    }
 
     @Override
     public boolean isTerminated() {

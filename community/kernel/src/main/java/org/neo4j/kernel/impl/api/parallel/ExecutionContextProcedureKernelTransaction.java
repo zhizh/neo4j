@@ -196,11 +196,6 @@ public class ExecutionContextProcedureKernelTransaction implements KernelTransac
     }
 
     @Override
-    public void releaseStorageEngineResources() {
-        throw failure("releaseStorageEngineResources");
-    }
-
-    @Override
     public boolean isTerminated() {
         return ktx.isTerminated() && isOriginalTx();
     }
@@ -237,6 +232,11 @@ public class ExecutionContextProcedureKernelTransaction implements KernelTransac
         String details = ktx.statusDetails();
         assertIsOriginalTx();
         return details;
+    }
+
+    @Override
+    public void retryQuery() {
+        throw failure("retryQuery");
     }
 
     @Override
