@@ -625,6 +625,24 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
     runSemanticAnalysis().errors shouldBe empty
   }
 
+  test("MATCH (n)-[r1:$([\"Z\"])]->(m:!Z) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("MATCH (n)-[r1 IS $([\"Z\"])]->(m IS !Z) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("MATCH (n)-[r1 IS $([\"Z\"])]->(m:!Z) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+  }
+
+  test("MATCH (n:A:$([\"B\"]))-[r IS $([\"A\"])|B]->(m) RETURN *") {
+    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages shouldEqual Seq(
+      "Mixing the IS keyword with colon (':') between labels is not allowed. These expressions could be expressed as :A&$all([\"B\"]), IS $all([\"A\"])|B."
+    )
+  }
+
   test(
     """
       |MATCH (n)-[r]->()

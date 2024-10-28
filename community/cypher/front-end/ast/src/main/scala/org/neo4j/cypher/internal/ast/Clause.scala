@@ -264,6 +264,10 @@ sealed trait Clause extends ASTNode with SemanticCheckable with SemanticAnalysis
             // A leaf is both GPM and legacy syntax.
             // Thus not adding to any partition.
             this
+          case _: DynamicLeaf =>
+            // A dynamic leaf is neither GPM or legacy syntax.
+            // Thus not adding to any partition.
+            this
           case Disjunctions(children, _) if !isNode && children.forall(_.isInstanceOf[Leaf]) =>
             // The disjunction for relationships is both GPM and legacy syntax.
             // Thus not adding to any partition.
