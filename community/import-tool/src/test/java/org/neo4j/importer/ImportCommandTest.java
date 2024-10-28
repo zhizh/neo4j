@@ -75,6 +75,7 @@ class ImportCommandTest {
         "--input-encoding",
         "--ignore-extra-columns",
         "--multiline-fields",
+        "--multiline-fields-format",
         "--ignore-empty-strings",
         "--trim-strings",
         "--legacy-style-quoting",

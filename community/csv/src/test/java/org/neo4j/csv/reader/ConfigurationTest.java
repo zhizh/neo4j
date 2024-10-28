@@ -43,11 +43,10 @@ class ConfigurationTest {
                 .withBufferSize(100500)
                 .withLegacyStyleQuoting(true)
                 .withEmptyQuotedStringsAsNull(true)
-                .withMultilineFields(true)
+                .withLegacyMultilineBehaviour()
                 .withTrimStrings(true)
                 .build();
         final var after = before.toBuilder().build();
-
         assertEquals(reflectionToString(before, SHORT_PREFIX_STYLE), reflectionToString(after, SHORT_PREFIX_STYLE));
     }
 }

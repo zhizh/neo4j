@@ -86,10 +86,15 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.neo4j.cli.CommandFailedException;
 import org.neo4j.cli.CommandTestUtils;
 import org.neo4j.common.Validator;
@@ -1300,6 +1305,43 @@ class ImportCommandTest {
         assertExceptionContains(e, "Multi-line", IllegalMultilineFieldException.class);
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldDisallowMultilineDocumentsWithV1Format(boolean useFormatOption) throws Exception {
+        // GIVEN
+        final var path = data(":ID,name", "1,\"This is a line with\nnewlines in\"")
+                .toAbsolutePath()
+                .toString();
+
+        // WHEN
+        final String[] args;
+        if (useFormatOption) {
+            args = new String[] {"--nodes", path, "--multiline-fields", path, "--multiline-fields-format", "v1"};
+        } else {
+            args = new String[] {"--nodes", path, "--multiline-fields", path};
+        }
+
+        assertThatThrownBy(() -> runImport(args))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(
+                        "Illegal format for --multiline-fields when using the v1 format - must be either true or false");
+    }
+
+    @Test
+    void shouldDisallowMultilineDocumentsWhenNotMatching() throws Exception {
+        // GIVEN
+        final var path = data(":ID,name", "1,\"This is a line with\nnewlines in\"")
+                .toAbsolutePath()
+                .toString();
+
+        // WHEN
+        final var badMultiPath = "not going to match";
+        assertThatThrownBy(() -> runImport(
+                        "--nodes", path, "--multiline-fields", badMultiPath, "--multiline-fields-format", "v2"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContainingAll("File", badMultiPath, "doesn't exist");
+    }
+
     @Test
     void shouldNotTrimStringsByDefault() throws Exception {
         // GIVEN
@@ -1378,6 +1420,34 @@ class ImportCommandTest {
                 "--nodes", data.toAbsolutePath().toString(),
                 "--additional-config", dbConfig.toAbsolutePath().toString(),
                 "--multiline-fields", "true");
+
+        // THEN
+        GraphDatabaseService db = getDatabaseApi();
+        try (Transaction tx = db.beginTx()) {
+            Node node = Iterables.single(tx.getAllNodes());
+            assertEquals("This is a line with\nnewlines in", node.getProperty("name"));
+            tx.commit();
+        }
+    }
+
+    @Test
+    void shouldAllowMultilineDocumentsWhenMatching() throws Exception {
+        // GIVEN
+        final var nodePath = data(":ID,name", "1,\"This is a line with\nnewlines in\"")
+                .toAbsolutePath()
+                .toString();
+        Path dbConfig = prepareDefaultConfigFile();
+
+        // WHEN
+        runImport(
+                "--nodes",
+                nodePath,
+                "--multiline-fields",
+                nodePath,
+                "--multiline-fields-format",
+                "v2",
+                "--additional-config",
+                dbConfig.toAbsolutePath().toString());
 
         // THEN
         GraphDatabaseService db = getDatabaseApi();
@@ -2341,6 +2411,89 @@ class ImportCommandTest {
             var actualNodes = new HashSet<String>();
             nodes.forEachRemaining(node -> actualNodes.add((String) node.getProperty("node_id")));
             assertThat(actualNodes).isEqualTo(Set.of("1", "2", "3", "4", "5"));
+        }
+    }
+
+    private static Stream<Arguments> v1multilineFieldsFormatValidation() {
+        return Stream.of(
+                Arguments.of("true", List.of()),
+                Arguments.of("false", List.of()),
+                Arguments.of(null, List.of("Missing required argument", "--multiline-fields")),
+                Arguments.of(
+                        "nodes.csv",
+                        List.of("Illegal format", "--multiline-fields", "v1", "must be either true or false")));
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void v1multilineFieldsFormatValidation(String fields, List<String> errors) throws Exception {
+        // GIVEN
+        var nodes = createAndWriteFile("nodes.csv", Charset.defaultCharset(), writer -> {
+                    writer.println(":LABEL,node_id:ID,prop");
+                    writer.println("A,1,stuff");
+                })
+                .toAbsolutePath()
+                .toString();
+
+        final var args = Lists.mutable.<String>empty();
+        args.add("--nodes=" + nodes);
+        args.add("--multiline-fields-format=v1");
+
+        if (fields != null) {
+            args.add("--multiline-fields=" + (fields.endsWith("nodes.csv") ? nodes : fields));
+        }
+
+        if (errors.isEmpty()) {
+            // WHEN
+            runImport(args.toArray(String[]::new));
+
+            // THEN
+            try (var tx = getDatabaseApi().beginTx()) {
+                assertThat(Iterators.count(tx.findNodes(label("A")))).isOne();
+            }
+        } else {
+            assertThatThrownBy(() -> runImport(args.toArray(String[]::new)))
+                    .hasMessageContainingAll(errors.toArray(String[]::new));
+        }
+    }
+
+    private static Stream<Arguments> v2multilineFieldsFormatValidation() {
+        return Stream.of(
+                Arguments.of("nodes.csv", List.of()),
+                Arguments.of(null, List.of("Missing required argument", "--multiline-fields")),
+                Arguments.of("/duff", List.of("File '/duff' doesn't exist")));
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void v2multilineFieldsFormatValidation(String fields, List<String> errors) throws Exception {
+        // GIVEN
+        var nodes = createAndWriteFile("nodes.csv", Charset.defaultCharset(), writer -> {
+                    writer.println(":LABEL,node_id:ID,prop");
+                    writer.println("A,1,\"stuff\"");
+                })
+                .toAbsolutePath()
+                .toString();
+
+        final var args = Lists.mutable.<String>empty();
+        args.add("--nodes=" + nodes);
+        args.add("--multiline-fields-format=v2");
+
+        if (fields != null) {
+            args.add("--multiline-fields=" + (fields.endsWith("nodes.csv") ? nodes : fields));
+        }
+
+        if (errors.isEmpty()) {
+            // WHEN
+            runImport(args.toArray(String[]::new));
+
+            // THEN
+            try (var tx = getDatabaseApi().beginTx()) {
+                assertThat(Iterators.count(tx.findNodes(label("A")))).isOne();
+            }
+        } else {
+            assertThatThrownBy(() -> runImport(args.toArray(String[]::new)))
+                    .hasMessageContainingAll(errors.toArray(String[]::new));
         }
     }
 

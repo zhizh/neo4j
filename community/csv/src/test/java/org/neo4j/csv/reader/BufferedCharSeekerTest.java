@@ -114,7 +114,10 @@ class BufferedCharSeekerTest {
     @ValueSource(booleans = {false, true})
     void shouldReadMultipleLines(boolean threadAhead) throws Exception {
         // GIVEN
-        seeker = seeker("1\t2\t3\n" + "4\t5\t6\n", threadAhead);
+        seeker = seeker("""
+                1\t2\t3
+                4\t5\t6
+                """, threadAhead);
 
         // WHEN/THEN
         assertTrue(seeker.seek(mark, TAB));
@@ -372,7 +375,7 @@ class BufferedCharSeekerTest {
     @ValueSource(booleans = {false, true})
     void shouldReadQuotedValuesWithNewLinesInside(boolean threadAhead) throws Exception {
         // GIVEN
-        seeker = seeker("value one\t\"value\ntwo\"\tvalue three", withMultilineFields(config(), true), threadAhead);
+        seeker = seeker("value one\t\"value\ntwo\"\tvalue three", withMultilineFields(config()), threadAhead);
 
         // WHEN/THEN
         assertTrue(seeker.seek(mark, TAB));
@@ -503,9 +506,12 @@ class BufferedCharSeekerTest {
     @ValueSource(booleans = {false, true})
     void shouldListenToMusic(boolean threadAhead) throws Exception {
         // GIVEN
-        String data = "\"1\",\"ABBA\",\"1992\"\n" + "\"2\",\"Roxette\",\"1986\"\n"
-                + "\"3\",\"Europe\",\"1979\"\n"
-                + "\"4\",\"The Cardigans\",\"1992\"";
+        String data =
+                """
+                "1","ABBA","1992"
+                "2","Roxette","1986"
+                "3","Europe","1979"
+                "4","The Cardigans","1992\"""";
         seeker = seeker(data, threadAhead);
 
         // WHEN
@@ -558,7 +564,7 @@ class BufferedCharSeekerTest {
     void shouldFailOnReadingFieldLargerThanBufferSize(boolean threadAhead) throws Exception {
         // GIVEN
         String data = lines("\n", "a,b,c", "d,e,f", "\"g,h,i", "abcdefghijlkmopqrstuvwxyz,l,m");
-        seeker = seeker(data, withMultilineFields(config(20), true), threadAhead);
+        seeker = seeker(data, withMultilineFields(config(20)), threadAhead);
 
         // WHEN
         assertNextValue(seeker, mark, COMMA, "a");
@@ -595,7 +601,7 @@ class BufferedCharSeekerTest {
             throws Exception {
         // GIVEN
         String data = lines(newline, "1,\"Bar\"", "2,\"Bar", "", "Quux", "\"", "3,\"Bar", "", "Quux\"", "");
-        seeker = seeker(data, withMultilineFields(config(), true), threadAhead);
+        seeker = seeker(data, withMultilineFields(config()), threadAhead);
 
         // THEN
         assertNextValue(seeker, mark, COMMA, "1");
@@ -613,7 +619,7 @@ class BufferedCharSeekerTest {
         String data = lines("\n", "Foo, Bar,  Twobar , \"Baz\" , \" Quux \",\"Wiii \" , Waaaa  ");
 
         // when
-        seeker = seeker(data, withTrimStrings(config(), true), threadAhead);
+        seeker = seeker(data, withTrimStrings(config()), threadAhead);
 
         // then
         assertNextValue(seeker, mark, COMMA, "Foo");
@@ -630,7 +636,7 @@ class BufferedCharSeekerTest {
     void shouldTrimStringsWithFirstLineCharacterSpace(boolean threadAhead) throws IOException {
         // given
         String line = " ,a, ,b, ";
-        seeker = seeker(line, withTrimStrings(config(), true), threadAhead);
+        seeker = seeker(line, withTrimStrings(config()), threadAhead);
 
         // when/then
         assertNextValueNotExtracted(seeker, mark, COMMA);
@@ -690,7 +696,7 @@ class BufferedCharSeekerTest {
             builder.append(format("%n"));
         }
         String data = builder.toString();
-        seeker = seeker(data, withTrimStrings(config(), true), threadAhead);
+        seeker = seeker(data, withTrimStrings(config()), threadAhead);
 
         // when
         Iterator<String> next = expected.iterator();
@@ -754,7 +760,7 @@ class BufferedCharSeekerTest {
     private static String lines(String newline, String... lines) {
         StringBuilder builder = new StringBuilder();
         for (String line : lines) {
-            if (builder.length() > 0) {
+            if (!builder.isEmpty()) {
                 builder.append(newline);
             }
             builder.append(line);
@@ -851,14 +857,14 @@ class BufferedCharSeekerTest {
     }
 
     private static CharSeeker seeker(String data, Configuration config, boolean threadAhead) {
-        return seeker(wrap(stringReaderWithName(data, TEST_SOURCE), data.length() * 2), config, threadAhead);
+        return seeker(wrap(stringReaderWithName(data), data.length() * 2L), config, threadAhead);
     }
 
-    private static Reader stringReaderWithName(String data, final String name) {
+    private static Reader stringReaderWithName(String data) {
         return new StringReader(data) {
             @Override
             public String toString() {
-                return name;
+                return TEST_SOURCE;
             }
         };
     }
@@ -871,8 +877,8 @@ class BufferedCharSeekerTest {
         return Configuration.newBuilder().withBufferSize(bufferSize).build();
     }
 
-    private static Configuration withMultilineFields(Configuration config, boolean multiline) {
-        return config.toBuilder().withMultilineFields(multiline).build();
+    private static Configuration withMultilineFields(Configuration config) {
+        return config.toBuilder().withLegacyMultilineBehaviour().build();
     }
 
     private static Configuration withLegacyStyleQuoting(Configuration config, boolean legacyStyleQuoting) {
@@ -883,8 +889,8 @@ class BufferedCharSeekerTest {
         return config.toBuilder().withQuotationCharacter(quoteCharacter).build();
     }
 
-    private static Configuration withTrimStrings(Configuration config, boolean trimStrings) {
-        return config.toBuilder().withTrimStrings(trimStrings).build();
+    private static Configuration withTrimStrings(Configuration config) {
+        return config.toBuilder().withTrimStrings(true).build();
     }
 
     private static class ControlledCharReadable extends CharReadable.Adapter {
@@ -911,18 +917,13 @@ class BufferedCharSeekerTest {
         }
 
         @Override
-        public long position() {
-            return 0;
-        }
-
-        @Override
         public String sourceDescription() {
             return getClass().getSimpleName();
         }
 
         @Override
         public long length() {
-            return data.length() * 2;
+            return data.length() * 2L;
         }
     }
 }

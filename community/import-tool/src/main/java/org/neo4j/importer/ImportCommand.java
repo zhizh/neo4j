@@ -43,6 +43,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -65,6 +66,7 @@ import org.neo4j.cli.Converters.MaxOffHeapMemoryConverter;
 import org.neo4j.cli.ExecutionContext;
 import org.neo4j.cli.ExitCode;
 import org.neo4j.cloud.storage.SchemeFileSystemAbstraction;
+import org.neo4j.cloud.storage.StorageUtils;
 import org.neo4j.commandline.dbms.CannotWriteException;
 import org.neo4j.commandline.dbms.LockChecker;
 import org.neo4j.configuration.Config;
@@ -101,6 +103,7 @@ import org.neo4j.storageengine.api.DeprecatedFormatWarning;
 import org.neo4j.storageengine.api.StorageEngineFactory;
 import org.neo4j.util.VisibleForTesting;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -134,6 +137,25 @@ public class ImportCommand {
             @Override
             public OnOffAuto convert(String value) throws Exception {
                 return OnOffAuto.valueOf(value.toUpperCase(Locale.ROOT));
+            }
+        }
+
+        enum MultilineFormat {
+            /**
+             * Format for the legacy multiline parsing in single threaded mode
+             */
+            V1,
+            /**
+             * Format for the new, reverse scan of multiline CSV documents. This has the restriction that at least one
+             * text field MUST be quoted per row.
+             */
+            V2
+        }
+
+        static class MultilineFormatConverter implements ITypeConverter<MultilineFormat> {
+            @Override
+            public MultilineFormat convert(String value) throws Exception {
+                return MultilineFormat.valueOf(value.toUpperCase(Locale.ROOT));
             }
         }
 
@@ -193,18 +215,38 @@ public class ImportCommand {
         private boolean ignoreExtraColumns;
 
         private static final String MULTILINE_FIELDS = "--multiline-fields";
+        private static final String MULTILINE_FIELDS_FORMAT = MULTILINE_FIELDS + "-format";
 
-        @Option(
-                names = MULTILINE_FIELDS,
-                arity = "0..1",
-                showDefaultValue = ALWAYS,
-                paramLabel = "true|false",
-                fallbackValue = "true",
-                description =
-                        "Whether or not fields from an input source can span multiple lines, i.e. contain newline characters. "
-                                + "Setting " + MULTILINE_FIELDS + "=true can severely degrade the performance of "
-                                + "the importer. Therefore, use it with care, especially with large imports.")
-        private boolean multilineFields = DEFAULT_CSV_CONFIG.multilineFields();
+        @ArgGroup(exclusive = false)
+        private MultilineFieldOptions multilineFieldOptions;
+
+        static class MultilineFieldOptions {
+            @Option(
+                    names = MULTILINE_FIELDS,
+                    required = true,
+                    showDefaultValue = ALWAYS,
+                    paramLabel = "true|false|<path>[,<path>]",
+                    fallbackValue = "true",
+                    description =
+                            "In v1, whether or not fields from an input source can span multiple lines, i.e. contain "
+                                    + "newline characters. Setting " + MULTILINE_FIELDS
+                                    + "=true can severely degrade the "
+                                    + "performance of the importer. Therefore, use it with care, especially with large imports. "
+                                    + "In v2, this option will specify the list of files that contain multiline fields. Files can "
+                                    + "also be specified using regular expressions.")
+            private String multilineFields;
+
+            @Option(
+                    names = MULTILINE_FIELDS_FORMAT,
+                    converter = MultilineFormatConverter.class,
+                    showDefaultValue = ALWAYS,
+                    paramLabel = "v1|v2",
+                    description = "Controls the parsing of input source that can span multiple lines, i.e. contain "
+                            + "newline characters. When set to v1, the value for " + MULTILINE_FIELDS + " can only be "
+                            + "true or false. When set to v2, the value for " + MULTILINE_FIELDS
+                            + " should be the list of files that contain multiline fields.")
+            private MultilineFormat multilineFormat = MultilineFormat.V1;
+        }
 
         @Option(
                 names = "--ignore-empty-strings",
@@ -454,22 +496,19 @@ public class ImportCommand {
                     ctx.out().println("WARNING: " + DeprecatedFormatWarning.getTargetFormatWarning(format));
                 }
                 final var databaseConfig = loadNeo4jConfig(format);
-                DatabaseLayout databaseLayout = Neo4jLayout.of(databaseConfig).databaseLayout(database.name());
+                final var databaseLayout = Neo4jLayout.of(databaseConfig).databaseLayout(database.name());
 
                 try (var ignore = maybeLockChecker.maybeCheckLock(databaseLayout);
                         var logProvider = FileImporter.createLogProvider(ctx.fs(), databaseConfig);
                         var fileSystem = new SchemeFileSystemAbstraction(ctx.fs(), databaseConfig, logProvider)) {
-                    final var csvConfig = csvConfiguration();
-                    final var importConfig = importConfiguration();
-
                     final var importerBuilder = FileImporter.builder()
+                            .withCsvConfig(csvConfiguration(fileSystem))
+                            .withImportConfig(importConfiguration())
                             .withDatabaseLayout(databaseLayout)
                             .withDatabaseConfig(databaseConfig)
                             .withFileSystem(fileSystem)
                             .withStdOut(ctx.out())
                             .withStdErr(ctx.err())
-                            .withCsvConfig(csvConfig)
-                            .withImportConfig(importConfig)
                             .withIdType(idType)
                             .withInputEncoding(inputEncoding)
                             .withReportFile(reportFile.toAbsolutePath())
@@ -605,17 +644,38 @@ public class ImportCommand {
                     .getTailMetadata();
         }
 
-        private org.neo4j.csv.reader.Configuration csvConfiguration() {
-            return DEFAULT_CSV_CONFIG.toBuilder()
+        private org.neo4j.csv.reader.Configuration csvConfiguration(SchemeFileSystemAbstraction fs) {
+            final var builder = DEFAULT_CSV_CONFIG.toBuilder()
                     .withDelimiter(delimiter)
                     .withArrayDelimiter(arrayDelimiter)
                     .withQuotationCharacter(quote)
-                    .withMultilineFields(multilineFields)
                     .withEmptyQuotedStringsAsNull(ignoreEmptyStrings)
                     .withTrimStrings(trimStrings)
                     .withLegacyStyleQuoting(legacyStyleQuoting)
-                    .withBufferSize(toIntExact(bufferSize))
-                    .build();
+                    .withBufferSize(toIntExact(bufferSize));
+
+            if (multilineFieldOptions != null) {
+                final var multilineFields = multilineFieldOptions.multilineFields;
+                switch (multilineFieldOptions.multilineFormat) {
+                    case V1 -> {
+                        if (Boolean.TRUE.toString().equalsIgnoreCase(multilineFields)) {
+                            builder.withLegacyMultilineBehaviour();
+                        } else if (!Boolean.FALSE.toString().equalsIgnoreCase(multilineFields)) {
+                            throw new IllegalArgumentException(
+                                    "Illegal format for %s when using the v1 format - must be either true or false"
+                                            .formatted(MULTILINE_FIELDS));
+                        }
+                    }
+                    case V2 -> {
+                        final var paths = Arrays.stream(parseFilesList(fs, multilineFields))
+                                .map(StorageUtils::toString)
+                                .collect(toSet());
+                        builder.withMultilineDocuments(paths::contains);
+                    }
+                }
+            }
+
+            return builder.build();
         }
 
         private org.neo4j.batchimport.api.Configuration importConfiguration() {

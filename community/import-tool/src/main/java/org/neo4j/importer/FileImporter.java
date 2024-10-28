@@ -59,6 +59,7 @@ import org.neo4j.batchimport.api.UnsupportedFormatException;
 import org.neo4j.batchimport.api.input.Collector;
 import org.neo4j.batchimport.api.input.IdType;
 import org.neo4j.batchimport.api.input.Input;
+import org.neo4j.cloud.storage.StorageUtils;
 import org.neo4j.configuration.Config;
 import org.neo4j.csv.reader.IllegalMultilineFieldException;
 import org.neo4j.internal.batchimport.cache.idmapping.string.DuplicateInputIdException;
@@ -343,7 +344,7 @@ class FileImporter {
 
             for (Path[] arr : files) {
                 for (final Path file : arr) {
-                    printIndented(file, out);
+                    printIndented(StorageUtils.toString(file), out);
                 }
             }
             out.println();

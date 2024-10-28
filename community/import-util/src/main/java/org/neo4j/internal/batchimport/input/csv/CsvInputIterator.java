@@ -42,6 +42,7 @@ import org.neo4j.csv.reader.ClosestNewLineChunker;
 import org.neo4j.csv.reader.Configuration;
 import org.neo4j.csv.reader.Extractors;
 import org.neo4j.csv.reader.HeaderSkipper;
+import org.neo4j.csv.reader.MultiLineChunker;
 import org.neo4j.csv.reader.Source;
 import org.neo4j.csv.reader.Source.Chunk;
 import org.neo4j.csv.reader.SourceTraceability;
@@ -76,7 +77,7 @@ class CsvInputIterator implements SourceTraceability, Closeable {
         this.stream = stream;
         this.decorator = decorator;
         this.groupId = groupId;
-        if (config.multilineFields()) {
+        if (config.legacyMultilineFields()) {
             // If we're expecting multi-line fields then there's no way to arbitrarily chunk the underlying data source
             // and find record delimiters with certainty. This is why we opt for a chunker that does parsing inside
             // the call that normally just hands out an arbitrary amount of characters to parse outside and in parallel.
@@ -86,8 +87,7 @@ class CsvInputIterator implements SourceTraceability, Closeable {
                     stream, idType, header, badCollector, extractors, 1_000, config, decorator, autoSkipHeaders);
             this.realInputChunkSupplier = EagerCsvInputChunk::new;
         } else {
-            this.chunker =
-                    new ClosestNewLineChunker(stream, config.bufferSize(), headerSkip(autoSkipHeaders, config, idType));
+            this.chunker = createChunker(stream, config, headerSkip(autoSkipHeaders, config, idType));
             this.realInputChunkSupplier = () -> new LazyCsvInputChunk(
                     idType,
                     config.delimiter(),
@@ -201,6 +201,15 @@ class CsvInputIterator implements SourceTraceability, Closeable {
         }
 
         return type;
+    }
+
+    private static Chunker createChunker(CharReadable stream, Configuration config, HeaderSkipper headerSkip) {
+        if (config.multilineDocuments().test(stream.sourceDescription())) {
+            return new MultiLineChunker(stream, config, headerSkip);
+
+        } else {
+            return new ClosestNewLineChunker(stream, config.bufferSize(), headerSkip);
+        }
     }
 
     public boolean next(CsvInputChunkProxy proxy) throws IOException {

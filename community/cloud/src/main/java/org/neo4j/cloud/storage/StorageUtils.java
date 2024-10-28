@@ -34,6 +34,7 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.OpenOption;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -46,6 +47,19 @@ public interface StorageUtils {
     Set<OpenOption> WRITE_OPTIONS = Set.of(WRITE, CREATE);
     Set<OpenOption> READ_OPTIONS = Set.of(READ);
     Set<OpenOption> APPEND_OPTIONS = Set.of(WRITE, APPEND, CREATE);
+
+    /**
+     * @param path the path
+     * @return the full string form of the path, For {@link StoragePath} this would be the full {@link java.net.URI}
+     * form of the path
+     */
+    static String toString(Path path) {
+        if (path instanceof StoragePath storagePath) {
+            return storagePath.toUri().toString();
+        } else {
+            return path.toString();
+        }
+    }
 
     /**
      *

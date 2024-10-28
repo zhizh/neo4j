@@ -21,6 +21,9 @@ package org.neo4j.csv.reader;
 
 import static org.neo4j.io.ByteUnit.mebiBytes;
 
+import java.util.function.Predicate;
+import org.neo4j.function.Predicates;
+
 /**
  * Configuration options around reading CSV data, or similar.
  */
@@ -39,7 +42,8 @@ public class Configuration {
     private final char delimiter;
     private final char arrayDelimiter;
     private final int bufferSize;
-    private final boolean multilineFields;
+    private final Predicate<String> multilineDocuments;
+    private final boolean legacyMultilineFields;
     private final boolean trimStrings;
     private final boolean emptyQuotedStringsAsNull;
     private final boolean legacyStyleQuoting;
@@ -50,7 +54,8 @@ public class Configuration {
         this.delimiter = b.delimiter;
         this.arrayDelimiter = b.arrayDelimiter;
         this.bufferSize = b.bufferSize;
-        this.multilineFields = b.multilineFields;
+        this.multilineDocuments = b.multilineDocuments;
+        this.legacyMultilineFields = b.legacyMultilineFields;
         this.trimStrings = b.trimStrings;
         this.emptyQuotedStringsAsNull = b.emptyQuotedStringsAsNull;
         this.legacyStyleQuoting = b.legacyStyleQuoting;
@@ -77,10 +82,10 @@ public class Configuration {
     }
 
     /**
-     * Whether or not fields are allowed to have newline characters in them, i.e. span multiple lines.
+     * Whether or not fields for a specific source are allowed to have newline characters in them, i.e. span multiple lines.
      */
-    public boolean multilineFields() {
-        return multilineFields;
+    public Predicate<String> multilineDocuments() {
+        return multilineDocuments;
     }
 
     /**
@@ -111,6 +116,14 @@ public class Configuration {
     }
 
     /**
+     * Whether or not fields are allowed to have newline characters in them, i.e. span multiple lines. This is applied to
+     * all source documents, irrespective of whether the source in question has any multiline fields ot not.
+     */
+    public boolean legacyMultilineFields() {
+        return legacyMultilineFields;
+    }
+
+    /**
      * @return {@code true} when the expected read behaviour is to only sample some initial fraction of the data
      */
     public boolean readIsForSampling() {
@@ -118,16 +131,20 @@ public class Configuration {
     }
 
     public Builder toBuilder() {
-        return new Builder()
+        final var builder = new Builder()
                 .withQuotationCharacter(quotationCharacter)
                 .withDelimiter(delimiter)
                 .withArrayDelimiter(arrayDelimiter)
                 .withBufferSize(bufferSize)
-                .withMultilineFields(multilineFields)
                 .withTrimStrings(trimStrings)
                 .withEmptyQuotedStringsAsNull(emptyQuotedStringsAsNull)
                 .withLegacyStyleQuoting(legacyStyleQuoting)
                 .withReadIsForSampling(readIsForSampling);
+        if (legacyMultilineFields) {
+            return builder.withLegacyMultilineBehaviour();
+        } else {
+            return builder.withMultilineDocuments(multilineDocuments);
+        }
     }
 
     public static Builder newBuilder() {
@@ -139,7 +156,8 @@ public class Configuration {
         private char delimiter = ',';
         private char arrayDelimiter = ';';
         private int bufferSize = (int) mebiBytes(4);
-        private boolean multilineFields;
+        private boolean legacyMultilineFields;
+        private Predicate<String> multilineDocuments = Predicates.alwaysFalse();
         private boolean trimStrings;
         private boolean emptyQuotedStringsAsNull;
         private boolean legacyStyleQuoting = DEFAULT_LEGACY_STYLE_QUOTING;
@@ -165,8 +183,15 @@ public class Configuration {
             return this;
         }
 
-        public Builder withMultilineFields(boolean multilineFields) {
-            this.multilineFields = multilineFields;
+        public Builder withLegacyMultilineBehaviour() {
+            this.legacyMultilineFields = true;
+            this.multilineDocuments = Predicates.alwaysFalse();
+            return this;
+        }
+
+        public Builder withMultilineDocuments(Predicate<String> multilineDocuments) {
+            this.legacyMultilineFields = false;
+            this.multilineDocuments = multilineDocuments;
             return this;
         }
 

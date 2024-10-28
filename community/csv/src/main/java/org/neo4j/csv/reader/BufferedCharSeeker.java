@@ -26,6 +26,7 @@ import static org.neo4j.csv.reader.Mark.END_OF_LINE_CHARACTER;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.function.Predicate;
 import org.neo4j.csv.reader.Source.Chunk;
 import org.neo4j.values.storable.CSVHeaderInformation;
 
@@ -60,7 +61,8 @@ public class BufferedCharSeeker implements CharSeeker {
     // this absolute position + bufferPos is the current position in the source we're reading
     private long absoluteBufferStartPosition;
     private String sourceDescription;
-    private final boolean multilineFields;
+    private final boolean legacyMultilineFields;
+    private final Predicate<String> multilineDocuments;
     private final boolean legacyStyleQuoting;
     private final Source source;
     private Chunk currentChunk;
@@ -69,7 +71,8 @@ public class BufferedCharSeeker implements CharSeeker {
     public BufferedCharSeeker(Source source, Configuration config) {
         this.source = source;
         this.quoteChar = config.quotationCharacter();
-        this.multilineFields = config.multilineFields();
+        this.legacyMultilineFields = config.legacyMultilineFields();
+        this.multilineDocuments = config.multilineDocuments();
         this.legacyStyleQuoting = config.legacyStyleQuoting();
         this.trim = getTrimStringIgnoreErrors(config);
     }
@@ -138,7 +141,8 @@ public class BufferedCharSeeker implements CharSeeker {
                         quoteDepth--;
                     }
                 } else if (isNewLine(ch)) { // Found a new line inside a quotation...
-                    if (!multilineFields) { // ...but we are configured to disallow it
+                    if (!(legacyMultilineFields
+                            || multilineDocuments.test(sourceDescription))) { // ...but we are configured to disallow it
                         throw new IllegalMultilineFieldException(this);
                     }
                     // ... it's OK, just keep going

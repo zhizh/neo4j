@@ -58,7 +58,7 @@ object CSVResources {
   private def config(legacyCsvQuoteEscaping: Boolean, csvBufferSize: Int) = Configuration.newBuilder()
     .withQuotationCharacter(DEFAULT_QUOTE_CHAR)
     .withBufferSize(csvBufferSize)
-    .withMultilineFields(true)
+    .withLegacyMultilineBehaviour()
     .withTrimStrings(false)
     .withEmptyQuotedStringsAsNull(true)
     .withLegacyStyleQuoting(legacyCsvQuoteEscaping)

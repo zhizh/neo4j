@@ -45,6 +45,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import org.neo4j.cloud.storage.StoragePath;
+import org.neo4j.cloud.storage.StorageUtils;
 import org.neo4j.collection.RawIterator;
 import org.neo4j.function.IOFunction;
 import org.neo4j.function.ThrowingFunction;
@@ -145,7 +146,7 @@ public class Readables {
         @Override
         public CharReadable apply(final Path path) throws IOException {
             final var input = MagicInputStream.create(adaptPath(path));
-            final var sourceName = pathString(path.toAbsolutePath());
+            final var sourceName = StorageUtils.toString(path.toAbsolutePath());
             if (input.magic() == Magic.ZIP) {
                 return input.isDefaultFileSystemBased()
                         ? zipReadableFromFile(input.path(), charset, sourceName)
@@ -159,10 +160,6 @@ public class Readables {
 
         private Path adaptPath(Path path) {
             return (readIsForSampling && path instanceof StoragePath sp) ? adaptPathForSampling(sp) : path;
-        }
-
-        private static String pathString(Path path) {
-            return path instanceof StoragePath ? path.toUri().toString() : path.toString();
         }
     }
 
