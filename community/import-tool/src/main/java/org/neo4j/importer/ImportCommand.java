@@ -49,6 +49,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.tuple.Pair;
 import org.neo4j.batchimport.api.BatchImporter;
@@ -469,7 +470,7 @@ public class ImportCommand {
                 defaultValue = "csv",
                 description = "File type to import from. Can be csv or parquet. Defaults to csv.",
                 converter = FileInputTypeConverter.class)
-        private FileImporter.FileInputType fileInputType;
+        FileImporter.FileInputType fileInputType;
 
         protected Base(ExecutionContext ctx) {
             super(ctx);
@@ -763,7 +764,13 @@ public class ImportCommand {
                 try {
                     return FileImporter.FileInputType.valueOf(in.toUpperCase(Locale.ROOT));
                 } catch (Exception e) {
-                    throw new CommandLine.TypeConversionException(format("Invalid file import type: %s (%s)", in, e));
+                    throw new CommandLine.TypeConversionException(format(
+                            "Invalid file import type: %s. Only %s are supported as values",
+                            in,
+                            Arrays.stream(FileImporter.FileInputType.values())
+                                    .map(value ->
+                                            String.format("'%s'", value.name().toLowerCase(Locale.ROOT)))
+                                    .collect(Collectors.joining(", "))));
                 }
             }
         }

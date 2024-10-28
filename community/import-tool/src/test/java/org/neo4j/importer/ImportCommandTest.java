@@ -148,6 +148,24 @@ class ImportCommandTest {
     }
 
     @Test
+    void shouldAllowDifferentCasingForInputType() {
+        var tempFileName = testDir.createFile("dummy").toString();
+        var requiredArgs = List.of("--nodes", tempFileName, "--relationships", tempFileName);
+        assertInputTypeAliases(requiredArgs, List.of("CSV", "csv"), FileImporter.FileInputType.CSV);
+        assertInputTypeAliases(requiredArgs, List.of("PARQUET", "parquet"), FileImporter.FileInputType.PARQUET);
+    }
+
+    private void assertInputTypeAliases(
+            List<String> requiredArgs, List<String> aliases, FileImporter.FileInputType inputType) {
+        for (var alias : aliases) {
+            var command = new ImportCommand.Full(getExecutionContext());
+            var args = Stream.concat(Stream.of("--input-type", alias), requiredArgs.stream());
+            new CommandLine(command).parseArgs(args.toArray(String[]::new));
+            assertThat(command.fileInputType).isEqualTo(inputType);
+        }
+    }
+
+    @Test
     void shouldAllowAliasesForIncrementalStage() {
         var tempFileName = testDir.createFile("dummy").toString();
         var requiredArgs = List.of("--force", "--nodes", tempFileName, "--relationships", tempFileName);
