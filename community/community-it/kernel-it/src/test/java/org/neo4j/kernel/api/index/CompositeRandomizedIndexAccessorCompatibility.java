@@ -129,6 +129,9 @@ abstract class CompositeRandomizedIndexAccessorCompatibility extends IndexAccess
                         int type = random.intBetween(0, 2);
                         if (type == 0) { // add
                             ValueTuple value = generateUniqueRandomValue(types, uniqueValues);
+                            if (value == null) {
+                                continue;
+                            }
                             long id = nextId.getAndIncrement();
                             sortedValues.add(new ValueAndId(value, id));
                             updates.add(add(id, descriptor, value.getValues()));
@@ -136,6 +139,9 @@ abstract class CompositeRandomizedIndexAccessorCompatibility extends IndexAccess
                             ValueAndId existing = random.among(sortedValues.toArray(new ValueAndId[0]));
                             sortedValues.remove(existing);
                             ValueTuple newValue = generateUniqueRandomValue(types, uniqueValues);
+                            if (newValue == null) {
+                                continue;
+                            }
                             uniqueValues.remove(existing.value);
                             sortedValues.add(new ValueAndId(newValue, existing.id));
                             updates.add(ValueIndexEntryUpdate.change(
@@ -210,18 +216,24 @@ abstract class CompositeRandomizedIndexAccessorCompatibility extends IndexAccess
             List<ValueTuple> values = new ArrayList<>();
             for (long i = 0; i < count; i++) {
                 ValueTuple value = generateUniqueRandomValue(types, duplicateChecker);
-                values.add(value);
+                if (value != null) {
+                    values.add(value);
+                }
             }
             return values;
         }
 
         private ValueTuple generateUniqueRandomValue(ValueType[] types, Set<ValueTuple> duplicateChecker) {
             ValueTuple value;
+            var maxTries = 0;
             do {
                 value = ValueTuple.of(
                         // Use boolean for first slot in composite because we will use exact match on this part.x
                         random.randomValues().nextBooleanValue(),
                         random.randomValues().nextValueOfTypes(types));
+                if (maxTries++ == 1000) {
+                    return null;
+                }
             } while (!duplicateChecker.add(value));
             return value;
         }
