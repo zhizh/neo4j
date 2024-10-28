@@ -714,10 +714,9 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
 
   test("MATCH (n:$(1)) RETURN *") {
     runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
-      SemanticError.invalidEntityType(
-        "Integer",
-        "1",
+      SemanticError.typeMismatch(
         List("String", "List<String>"),
+        "Integer",
         "Type mismatch: expected String or List<String> but was Integer",
         InputPosition(11, 1, 12)
       )
@@ -744,10 +743,9 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
 
   test("MATCH (n)-[:$(point({x:22, y:44}))]-() RETURN *") {
     runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
-      SemanticError.invalidEntityType(
-        "Point",
-        "point({x: 22, y: 44})",
+      SemanticError.typeMismatch(
         List("String", "List<String>"),
+        "Point",
         "Type mismatch: expected String or List<String> but was Point",
         InputPosition(14, 1, 15)
       )
@@ -756,10 +754,9 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
 
   test("MATCH (n:$([1])) RETURN *") {
     runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
-      SemanticError.invalidEntityType(
-        "List<Integer>",
-        "[1]",
+      SemanticError.typeMismatch(
         List("String", "List<String>"),
+        "List<Integer>",
         "Type mismatch: expected String or List<String> but was List<Integer>",
         InputPosition(11, 1, 12)
       )

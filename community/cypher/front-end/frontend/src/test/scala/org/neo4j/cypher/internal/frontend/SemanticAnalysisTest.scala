@@ -1699,10 +1699,9 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       case (query, pos) =>
         expectErrorsFrom(
           query,
-          Set(SemanticError.invalidEntityType(
-            "Integer",
-            "42",
+          Set(SemanticError.typeMismatch(
             List("Boolean"),
+            "Integer",
             "Type mismatch: expected Boolean but was Integer",
             pos
           ))
@@ -1983,10 +1982,24 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(SemanticError.invalidEntityType(
         "Integer",
-        "CountExpression(SingleQuery...",
+        "argument at index 0 of function size()",
         List("String", "List<T>"),
         "Type mismatch: expected String or List<T> but was Integer",
         InputPosition(12, 1, 13)
+      ))
+    )
+  }
+
+  test("should fail for percentileCont(0.5, n) where n is a node variable") {
+    val query = "MATCH (n) RETURN percentileCont(0.5, n) AS foo"
+    expectErrorsFrom(
+      query,
+      Set(SemanticError.invalidEntityType(
+        "Node",
+        "argument at index 1 of function percentileCont()",
+        List("Float"),
+        "Type mismatch: expected Float but was Node",
+        InputPosition(37, 1, 38)
       ))
     )
   }
@@ -2043,7 +2056,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(SemanticError.invalidEntityType(
         "Integer",
-        "1",
+        "argument at index 0 of function normalize()",
         List("String"),
         "Type mismatch: expected String but was Integer",
         InputPosition(17, 1, 18)
