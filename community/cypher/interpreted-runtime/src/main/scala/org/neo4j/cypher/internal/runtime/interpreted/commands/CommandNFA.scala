@@ -27,9 +27,12 @@ import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
 import org.neo4j.cypher.internal.logical.plans.NFA
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.ast.ExpressionVariable
+import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint
+import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.AllocatedTraversalEndpoint
+import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint
 import org.neo4j.cypher.internal.runtime.interpreted.commands
-import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.CommandPredicateFunction
 import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.CompoundPredicate
+import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.NodePredicate
 import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.RelationshipQualifiers
 import org.neo4j.cypher.internal.runtime.interpreted.commands.CommandNFA.State
 import org.neo4j.cypher.internal.runtime.interpreted.commands.convert.DirectionConverter.toGraphDb
@@ -69,31 +72,25 @@ case class CommandNFA(
    */
   def compile(row: CypherRow, queryState: QueryState): (productgraph.State, productgraph.State) = {
 
-    def statePredicate(predicate: Option[CommandPredicateFunction]): LongPredicate =
+    def bindStatePredicate(predicate: Option[NodePredicate]): LongPredicate =
       predicate.fold(Predicates.ALWAYS_TRUE_LONG) { predicate => l =>
         predicate(row, queryState, VirtualValues.node(l))
       }
 
-    def relPredicate(qualifiers: RelationshipQualifiers): Predicate[RelationshipTraversalEntities] =
+    def bindRowPredicate(qualifiers: RelationshipQualifiers): Predicate[RelationshipTraversalEntities] =
       qualifiers.innerRelPred.fold(RelationshipPredicate.ALWAYS_TRUE) { predicate => rel =>
-        predicate(
-          row,
-          queryState,
-          ValueUtils.fromRelationshipCursor(rel)
-        )
+        predicate(row, queryState, rel)
       }
 
-    def convertCompoundPredicate(commandPred: CompoundPredicate): MultiRelationshipExpansion.CompoundPredicate =
+    def bindCompoundPredicate(commandPred: CompoundPredicate): MultiRelationshipExpansion.CompoundPredicate =
       (startNode: Long, rels: Array[VirtualRelationshipValue], interiorNodes: Array[Long], endNode: Long) =>
         commandPred.test(row, queryState, startNode, rels, interiorNodes, endNode)
 
-    // This is then used to retrieve each state given the id, completing the transition -> targetState.id -> targetState
-    // mapping
     val stateLookup = states.map(state =>
       state -> new productgraph.State(
         state.id,
         state.slotOrName,
-        statePredicate(state.predicate),
+        bindStatePredicate(state.predicate),
         startState == state,
         finalState == state
       )
@@ -116,7 +113,7 @@ case class CommandNFA(
         state.relTransitions.map { transition =>
           val re = new RelationshipExpansion(
             stateLookup(state),
-            relPredicate(transition.relationship),
+            bindRowPredicate(transition.relationship),
             if (transition.relationship.types == null) null else transition.relationship.types.types(queryState.query),
             toGraphDb(transition.relationship.dir),
             transition.relationship.slotOrName,
@@ -132,16 +129,16 @@ case class CommandNFA(
           stateLookup(state),
           transition.relationships.map(r =>
             new MultiRelationshipExpansion.Rel(
-              relPredicate(r),
+              bindRowPredicate(r),
               if (r.types == null) null else r.types.types(queryState.query),
               toGraphDb(r.dir),
               r.slotOrName
             )
           ).toArray,
           transition.nodes.map(n =>
-            new MultiRelationshipExpansion.Node(statePredicate(n.innerNodePred), n.slotOrName)
+            new MultiRelationshipExpansion.Node(bindStatePredicate(n.innerNodePred), n.slotOrName)
           ).toArray,
-          convertCompoundPredicate(transition.compoundPredicate),
+          bindCompoundPredicate(transition.compoundPredicate),
           stateLookup(transition.targetState)
         )
         reverseMREs += (mre.targetState() -> mre)
@@ -167,12 +164,13 @@ case class CommandNFA(
 
 object CommandNFA {
 
-  private type CommandPredicateFunction = (CypherRow, QueryState, AnyValue) => Boolean
+  private type NodePredicate = (CypherRow, QueryState, AnyValue) => Boolean
+  private type RelPredicate = (CypherRow, QueryState, RelationshipTraversalEntities) => Boolean
 
   class State(
     val id: Int,
     val slotOrName: SlotOrName,
-    val predicate: Option[CommandPredicateFunction],
+    val predicate: Option[NodePredicate],
     var nodeTransitions: Seq[NodeJuxtapositionTransition],
     var relTransitions: Seq[RelationshipExpansionTransition],
     var multiRelTransitions: Seq[MultiRelationshipExpansionTransition]
@@ -183,12 +181,12 @@ object CommandNFA {
   )
 
   case class NodeQualifiers(
-    innerNodePred: Option[CommandPredicateFunction],
+    innerNodePred: Option[NodePredicate],
     slotOrName: SlotOrName
   )
 
   case class RelationshipQualifiers(
-    innerRelPred: Option[CommandPredicateFunction],
+    innerRelPred: Option[RelPredicate],
     slotOrName: SlotOrName,
     types: RelationshipTypes,
     dir: SemanticDirection
@@ -202,7 +200,7 @@ object CommandNFA {
   object RelationshipExpansionTransition {
 
     def apply(
-      innerRelPred: Option[CommandPredicateFunction],
+      innerRelPred: Option[RelPredicate],
       slotOrName: SlotOrName,
       types: RelationshipTypes,
       dir: SemanticDirection,
@@ -242,7 +240,7 @@ object CommandNFA {
     getSlotOrName: LogicalVariable => SlotOrName = x => SlotOrName.None
   )(implicit st: TokenTable): CommandNFA = {
 
-    def convertPredicate(varPredicate: VariablePredicate): CommandPredicateFunction = {
+    def convertNodePredicate(varPredicate: VariablePredicate): NodePredicate = {
       val predicate = predicateToCommand(varPredicate.predicate)
       val offset = ExpressionVariable.cast(varPredicate.variable).offset
       (row: CypherRow, state: QueryState, entity: AnyValue) => {
@@ -251,11 +249,31 @@ object CommandNFA {
       }
     }
 
+    def convertRelPredicate(varPredicate: VariablePredicate): RelPredicate = {
+      val predicate = predicateToCommand(varPredicate.predicate)
+      val offset = ExpressionVariable.cast(varPredicate.variable).offset
+
+      val traversalEndpoints = TraversalEndpoint.extract(varPredicate.predicate)
+
+      (row: CypherRow, state: QueryState, rel: RelationshipTraversalEntities) => {
+        state.expressionVariables(offset) = ValueUtils.fromRelationshipCursor(rel)
+
+        traversalEndpoints.foreach { case AllocatedTraversalEndpoint(offset, end) =>
+          state.expressionVariables(offset) = VirtualValues.node(end match {
+            case Endpoint.From => rel.originNodeReference()
+            case Endpoint.To   => rel.otherNodeReference()
+          })
+        }
+
+        predicate.isTrue(row, state)
+      }
+    }
+
     def compileStubbedRelationshipExpansion(
       logicalPredicate: NFA.RelationshipExpansionPredicate,
       end: State
     )(implicit st: TokenTable): RelationshipExpansionTransition = {
-      val commandRelPred = logicalPredicate.relPred.map(convertPredicate)
+      val commandRelPred = logicalPredicate.relPred.map(convertRelPredicate)
 
       // In planner land, empty type seq means all types. We use null in runtime land to represent all types
       val types = logicalPredicate.types
@@ -280,7 +298,7 @@ object CommandNFA {
       val commandState = new State(
         logicalState.id,
         getSlotOrName(logicalState.variable),
-        logicalState.variablePredicate.map(convertPredicate),
+        logicalState.variablePredicate.map(convertNodePredicate),
         null,
         null,
         null
@@ -319,7 +337,7 @@ object CommandNFA {
 
           val commandRelPreds = relPredicates.map(rp =>
             RelationshipQualifiers(
-              rp.relPred.map(convertPredicate),
+              rp.relPred.map(convertRelPredicate),
               getSlotOrName(rp.relationshipVariable),
               // In planner land, empty type seq means all types. We use null in runtime land to represent all types
               if (rp.types.isEmpty) null else RelationshipTypes(rp.types.toArray),
@@ -328,7 +346,7 @@ object CommandNFA {
           )
           val commandNodePreds = nodePredicates.map(np =>
             NodeQualifiers(
-              np.nodePred.map(convertPredicate),
+              np.nodePred.map(convertNodePredicate),
               getSlotOrName(np.nodeVariable)
             )
           )

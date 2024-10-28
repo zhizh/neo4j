@@ -284,7 +284,7 @@ trait PGPathPropagatingBFSTestBase { self: CypherFunSuite =>
               case _                              => fail("inexhaustive match")
             }
             if dir.matches(re.direction) &&
-              re.testRelationship(TraversedRel(rel, node)) &&
+              re.testRelationship(TraversedRel(rel, node), TraversalDirection.FORWARD) &&
               re.targetState().test(nextNode) &&
               (matchMode == TraversalMatchMode.Walk || !stack.exists(e => e.id == rel.id))
 

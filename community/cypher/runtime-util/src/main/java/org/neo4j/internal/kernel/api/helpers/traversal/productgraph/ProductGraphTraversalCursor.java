@@ -116,7 +116,7 @@ public class ProductGraphTraversalCursor implements AutoCloseable {
                 };
         return graphCursor.direction().matches(expansionDir)
                 && (expansion.types() == null || ArrayUtils.contains(expansion.types(), graphCursor.type()))
-                && expansion.testRelationship(graphCursor)
+                && expansion.testRelationship(graphCursor, direction)
                 && expansion.endState(direction).test(graphCursor.otherNodeReference());
     }
 

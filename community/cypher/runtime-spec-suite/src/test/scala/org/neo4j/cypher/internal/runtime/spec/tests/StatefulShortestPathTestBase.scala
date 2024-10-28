@@ -30,13 +30,14 @@ import org.neo4j.cypher.internal.logical.plans.IndexOrderNone
 import org.neo4j.cypher.internal.logical.plans.NestedPlanExistsExpression
 import org.neo4j.cypher.internal.logical.plans.StatefulShortestPath.Selector
 import org.neo4j.cypher.internal.logical.plans.TraversalMatchMode
+import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint
+import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint
 import org.neo4j.cypher.internal.runtime.spec.Edition
 import org.neo4j.cypher.internal.runtime.spec.LogicalQueryBuilder
 import org.neo4j.cypher.internal.runtime.spec.RowCount
 import org.neo4j.cypher.internal.runtime.spec.RuntimeTestSuite
 import org.neo4j.graphdb.Label
 import org.neo4j.graphdb.Node
-import org.neo4j.graphdb.Path
 import org.neo4j.graphdb.Relationship
 import org.neo4j.graphdb.RelationshipType
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.LoggingPPBFSHooks
@@ -44,11 +45,8 @@ import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks
 import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.values.SequenceValue
 import org.neo4j.values.virtual.ListValue
-import org.neo4j.values.virtual.PathReference
 import org.neo4j.values.virtual.VirtualPathValue
 import org.neo4j.values.virtual.VirtualValues.pathReference
-
-import scala.jdk.CollectionConverters.IterableHasAsScala
 
 abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
   edition: Edition[CONTEXT],
@@ -9363,6 +9361,55 @@ abstract class StatefulShortestPathTestBase[CONTEXT <: RuntimeContext](
         )
     }
     runtimeResult should beColumns(retVars: _*).withRows(expected)
+  }
+
+  test(
+    "TraversalEndpoint(To) should resolve as the next node of a relationship traversal during predicate evaluation"
+  ) {
+    val (a, b, c) = givenGraph {
+      val graph = fromTemplate("""
+        (c:TO)-->(a)-->(b:TO)
+                  |
+                  v
+              (ignored)
+       """)
+      (graph node "a", graph node "b", graph node "c")
+    }
+
+    val nfa = new TestNFABuilder(0, "s")
+      .addTransition(0, 1, "(s) (n1_inner)")
+      .addTransition(
+        1,
+        2,
+        "(n1_inner)-[r_inner]-(n2_inner)",
+        maybeRelPredicate = Some(_ => hasLabels(TraversalEndpoint(varFor("temp"), Endpoint.To), "TO"))
+      )
+      .addTransition(2, 3, "(n2_inner) (t_inner)")
+      .setFinalState(3)
+      .build()
+
+    val logicalQuery = new LogicalQueryBuilder(this)
+      .produceResults("t")
+      .statefulShortestPath(
+        "s",
+        "t",
+        "",
+        None,
+        Set(),
+        Set(),
+        Set("n1_inner" -> "n1", "n2_inner" -> "n2", "t_inner" -> "t"),
+        Set("r_inner" -> "r"),
+        Selector.ShortestGroups(1),
+        nfa,
+        ExpandAll,
+        matchMode = traversalMatchMode
+      )
+      .nodeByIdSeek("s", Set.empty, a.getId)
+      .build()
+
+    val runtimeResult = execute(logicalQuery, runtime)
+
+    runtimeResult should beColumns("t").withRows(inAnyOrder(Seq(Array(b), Array(c))))
   }
 
   private def shortestRow(nodes: Seq[Node], rels: Seq[Relationship] = Seq.empty): Array[Object] = {

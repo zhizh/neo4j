@@ -29,11 +29,11 @@ import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.{Expression => CompiledExpression}
 import org.neo4j.function.Predicates
 import org.neo4j.internal.kernel.api.RelationshipTraversalEntities
+import org.neo4j.kernel.impl.util.ValueUtils
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.VirtualNodeValue
 import org.neo4j.values.virtual.VirtualRelationshipValue
 import org.neo4j.values.virtual.VirtualValues.node
-import org.neo4j.values.virtual.VirtualValues.relationship
 
 import java.util.function.LongPredicate
 import java.util.function.Predicate
@@ -67,12 +67,7 @@ object TraversalPredicates {
         filterRelationship(
           row,
           state,
-          relationship(
-            cursor.relationshipReference(),
-            cursor.sourceNodeReference(),
-            cursor.targetNodeReference(),
-            cursor.`type`()
-          ),
+          ValueUtils.fromRelationshipCursor(cursor),
           node(cursor.originNodeReference()),
           node(cursor.otherNodeReference())
         )
@@ -111,7 +106,7 @@ object TraversalPredicates {
     if (nodePredicates.isEmpty && relationshipPredicates.isEmpty) {
       TraversalPredicates.NONE
     } else {
-      val expansionNodes = relationshipPredicates.flatMap(x => TraversalEndpoint.extract(x.predicate))
+      val traversalEndpoints = relationshipPredicates.flatMap(x => TraversalEndpoint.extract(x.predicate))
 
       val compiledNodePredicates: Seq[NodePredicate] =
         nodePredicates.map { case VariablePredicate(variable, predicate) =>
@@ -138,7 +133,7 @@ object TraversalPredicates {
           ) => {
             state.expressionVariables(ev.offset) = entity
 
-            expansionNodes.foreach { case AllocatedTraversalEndpoint(offset, end) =>
+            traversalEndpoints.foreach { case AllocatedTraversalEndpoint(offset, end) =>
               state.expressionVariables(offset) = end match {
                 case Endpoint.From => expandedFrom
                 case Endpoint.To   => expandingTo

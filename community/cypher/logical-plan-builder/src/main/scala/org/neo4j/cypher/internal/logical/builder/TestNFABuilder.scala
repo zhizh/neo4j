@@ -164,7 +164,7 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
     fromId: Int,
     toId: Int,
     pattern: String,
-    maybeRelPredicate: Option[VariablePredicate] = None,
+    maybeRelPredicate: Option[LogicalVariable => Expression] = None,
     maybeToPredicate: Option[VariablePredicate] = None,
     compoundPredicate: String = ""
   ): TestNFABuilder = {
@@ -186,8 +186,8 @@ class TestNFABuilder(startStateId: Int, startStateName: String) extends NFABuild
         ) =>
         val types = LabelExpression.getRelTypes(relTypeExpression)
         val relVariablePredicate = maybeRelPredicate match {
-          case somePred @ Some(_) => somePred
-          case None               => relPredicate.map(Expand.VariablePredicate(rel, _))
+          case Some(pred) => Some(Expand.VariablePredicate(rel, pred(rel)))
+          case None       => relPredicate.map(Expand.VariablePredicate(rel, _))
         }
 
         val nfaPredicate = RelationshipExpansionPredicate(

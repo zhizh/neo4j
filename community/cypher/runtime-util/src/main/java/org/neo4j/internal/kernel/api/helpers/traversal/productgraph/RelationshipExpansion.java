@@ -22,7 +22,9 @@ package org.neo4j.internal.kernel.api.helpers.traversal.productgraph;
 import java.util.function.Predicate;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
+import org.neo4j.internal.kernel.api.helpers.traversal.ReversedRelTraversalEntities;
 import org.neo4j.internal.kernel.api.helpers.traversal.SlotOrName;
+import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.TraversalDirection;
 
 public record RelationshipExpansion(
         State sourceState,
@@ -33,7 +35,7 @@ public record RelationshipExpansion(
         State targetState)
         implements Transition {
 
-    public boolean testRelationship(RelationshipTraversalEntities rel) {
-        return relPredicate.test(rel);
+    public boolean testRelationship(RelationshipTraversalEntities rel, TraversalDirection direction) {
+        return relPredicate.test(direction.isForward() ? rel : new ReversedRelTraversalEntities(rel));
     }
 }

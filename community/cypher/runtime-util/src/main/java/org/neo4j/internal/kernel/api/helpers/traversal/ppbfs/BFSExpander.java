@@ -35,6 +35,7 @@ import org.neo4j.graphdb.Direction;
 import org.neo4j.internal.helpers.collection.PrefetchingIterator;
 import org.neo4j.internal.kernel.api.KernelReadTracer;
 import org.neo4j.internal.kernel.api.RelationshipTraversalEntities;
+import org.neo4j.internal.kernel.api.helpers.traversal.ReversedRelTraversalEntities;
 import org.neo4j.internal.kernel.api.helpers.traversal.ppbfs.hooks.PPBFSHooks;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.MultiRelationshipExpansion;
 import org.neo4j.internal.kernel.api.helpers.traversal.productgraph.ProductGraphTraversalCursor;
@@ -59,7 +60,7 @@ final class BFSExpander implements AutoCloseable {
     private final HeapTrackingArrayList<State> statesList;
     private final FoundNodes foundNodes;
 
-    record CachedRelPredicate(Predicate<RelationshipTraversalEntities> predicate, long rel) {
+    record CachedRelPredicate(Predicate<RelationshipTraversalEntities> predicate, long rel, TraversalDirection dir) {
         public static long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(CachedRelPredicate.class);
     }
 
@@ -144,16 +145,17 @@ final class BFSExpander implements AutoCloseable {
     }
 
     private boolean cachedRelPredicate(
-            Predicate<RelationshipTraversalEntities> predicate, RelationshipTraversalEntities rel) {
+            Predicate<RelationshipTraversalEntities> predicate,
+            RelationshipTraversalEntities rel,
+            TraversalDirection dir) {
         if (predicate == RelationshipPredicate.ALWAYS_TRUE) {
             return true;
         }
-        // if we implement TraversalEndpoints for stateful shortest, we will need to add TraversalDirection to this
-        // cache key, otherwise we will cache indiscriminately
-        return relPredicateCache.getIfAbsentPut(new CachedRelPredicate(predicate, rel.relationshipReference()), () -> {
-            this.mt.allocateHeap(CachedRelPredicate.SHALLOW_SIZE);
-            return predicate.test(rel);
-        });
+        return relPredicateCache.getIfAbsentPut(
+                new CachedRelPredicate(predicate, rel.relationshipReference(), dir), () -> {
+                    this.mt.allocateHeap(CachedRelPredicate.SHALLOW_SIZE);
+                    return predicate.test(dir.isForward() ? rel : new ReversedRelTraversalEntities(rel));
+                });
     }
 
     private boolean cachedNodePredicate(LongPredicate predicate, long node) {
@@ -256,7 +258,7 @@ final class BFSExpander implements AutoCloseable {
                         it.hasNext(); ) {
                     var rel = it.next();
                     if (mreValidator.validateRelationships(direction, depth, rels, rel)) {
-                        if (cachedRelPredicate(relHop.predicate(), rel)
+                        if (cachedRelPredicate(relHop.predicate(), rel, direction)
                                 && cachedNodePredicate(nodePredicate, rel.otherNodeReference())) {
                             if (nodeTree[depth + 1] == null) {
                                 nodeTree[depth + 1] = HeapTrackingLongArrayList.newLongArrayList(mt);

@@ -30,6 +30,7 @@ import org.neo4j.cypher.internal.compiler.helpers.WindowsSafeAnyRef
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningIntegrationTestSupport
 import org.neo4j.cypher.internal.expressions.DesugaredMapProjection
 import org.neo4j.cypher.internal.expressions.LiteralEntry
+import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.MultiRelationshipPathStep
 import org.neo4j.cypher.internal.expressions.NilPathStep
 import org.neo4j.cypher.internal.expressions.NodePathStep
@@ -2901,27 +2902,25 @@ class ShortestPathPlanningIntegrationTest extends CypherFunSuite with LogicalPla
     val query =
       "MATCH ANY SHORTEST ((u:User)((n)-[r]->(m))+(v)-[r2]->(w) WHERE v{.foo,.bar} = w{.foo,.bar, baz: r2.baz}) RETURN *"
 
-    val expr = equals(
+    def relPredicate(rel: LogicalVariable) = equals(
       DesugaredMapProjection(
-        StartNode(v"r2")(pos),
+        StartNode(rel)(pos),
         Seq(
-          LiteralEntry(propName("foo"), prop(StartNode(v"r2")(pos), "foo"))(pos),
-          LiteralEntry(propName("bar"), prop(StartNode(v"r2")(pos), "bar"))(pos)
+          LiteralEntry(propName("foo"), prop(StartNode(rel)(pos), "foo"))(pos),
+          LiteralEntry(propName("bar"), prop(StartNode(rel)(pos), "bar"))(pos)
         ),
         includeAllProps = false
       )(pos),
       DesugaredMapProjection(
-        EndNode(v"r2")(pos),
+        EndNode(rel)(pos),
         Seq(
-          LiteralEntry(propName("foo"), prop(EndNode(v"r2")(pos), "foo"))(pos),
-          LiteralEntry(propName("bar"), prop(EndNode(v"r2")(pos), "bar"))(pos),
+          LiteralEntry(propName("foo"), prop(EndNode(rel)(pos), "foo"))(pos),
+          LiteralEntry(propName("bar"), prop(EndNode(rel)(pos), "bar"))(pos),
           LiteralEntry(propName("baz"), prop("r2", "baz"))(pos)
         ),
         includeAllProps = false
       )(pos)
     )
-
-    val relPredicate = VariablePredicate(v"r2", expr)
 
     val nfa = new TestNFABuilder(0, "u")
       .addTransition(0, 1, "(u) (n)")

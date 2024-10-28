@@ -149,7 +149,10 @@ object expressionVariableAllocation {
 
       case x: StatefulShortestPath =>
         outerVars =>
-          val innerVars = allocateVariables(outerVars, x.nfa.predicateVariables -- x.boundNodes)
+          val traversalEndpoints = x.folder.treeCollect {
+            case TraversalEndpoint(name, _) => name
+          }
+          val innerVars = allocateVariables(outerVars, x.nfa.predicateVariables -- x.boundNodes ++ traversalEndpoints)
           TraverseChildrenNewAccForSiblings(innerVars, _ => outerVars)
 
       case x: NestedPlanExpression =>

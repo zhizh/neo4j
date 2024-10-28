@@ -24,7 +24,6 @@ import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.STRINGIFIER
-import org.neo4j.exceptions.InternalException
 
 /**
  * This expression resolves to a node reference during certain relationship traversals
@@ -46,11 +45,7 @@ object TraversalEndpoint {
 
   def extract(expr: Expression): Seq[AllocatedTraversalEndpoint] =
     expr.folder.treeCollect {
-      case TraversalEndpoint(ev: ExpressionVariable, endpoint) => AllocatedTraversalEndpoint(ev.offset, endpoint)
-      case TraversalEndpoint(v, _) =>
-        throw new InternalException(
-          s"Error during interpreted physical planning: expression variable '$v' has not been allocated"
-        )
+      case TraversalEndpoint(v, endpoint) => AllocatedTraversalEndpoint(ExpressionVariable.cast(v).offset, endpoint)
     }
 
   case class AllocatedTraversalEndpoint(exprVarOffset: Int, endpoint: Endpoint)
