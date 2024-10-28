@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.frontend
 
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
@@ -105,7 +106,67 @@ class SetClauseSemanticAnalysisTest
   }
 
   test("MATCH (n)-[r]->() SET n = r") {
-    runSemanticAnalysis().errors.toSet shouldBe empty
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher5), testName).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n)-[r]->(m) SET n = r") {
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
+      SemanticError.invalidEntityType(
+        "Relationship",
+        "r",
+        List("Map"),
+        "Type mismatch: expected Map but was Relationship",
+        InputPosition(27, 1, 28)
+      )
+    )
+  }
+
+  test("MATCH (n)-[r]->() SET r = n") {
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher5), testName).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n)-[r]->(m) SET r = n") {
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
+      SemanticError.invalidEntityType(
+        "Node",
+        "n",
+        List("Map"),
+        "Type mismatch: expected Map but was Node",
+        InputPosition(27, 1, 28)
+      )
+    )
+  }
+
+  test("MATCH (n)-[r]->() SET n += r") {
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher5), testName).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n)-[r]->(m) SET n += r") {
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
+      SemanticError.invalidEntityType(
+        "Relationship",
+        "r",
+        List("Map"),
+        "Type mismatch: expected Map but was Relationship",
+        InputPosition(28, 1, 29)
+      )
+    )
+  }
+
+  test("MATCH (n)-[r]->() SET r += n") {
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher5), testName).errors.toSet shouldBe empty
+  }
+
+  test("MATCH (n)-[r]->(m) SET r += n") {
+    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
+      SemanticError.invalidEntityType(
+        "Node",
+        "n",
+        List("Map"),
+        "Type mismatch: expected Map but was Node",
+        InputPosition(28, 1, 29)
+      )
+    )
   }
 
   test("MATCH (n)-[r]->() SET n = properties(r)") {

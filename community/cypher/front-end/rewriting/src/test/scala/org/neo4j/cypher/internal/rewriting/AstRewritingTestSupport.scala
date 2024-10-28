@@ -21,6 +21,8 @@ import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.CreateConstraint
 import org.neo4j.cypher.internal.ast.NodeKey
 import org.neo4j.cypher.internal.ast.RelationshipKey
+import org.neo4j.cypher.internal.ast.SetExactPropertiesFromMapItem
+import org.neo4j.cypher.internal.ast.SetIncludingPropertiesFromMapItem
 import org.neo4j.cypher.internal.ast.ShowTransactionsClause
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.UnionAll
@@ -65,8 +67,10 @@ trait AstRewritingTestSupport extends AstConstructionTestSupport {
    */
   def rewriteASTDifferences(statement: Statement): Statement = {
     statement.endoRewrite(bottomUp(Rewriter.lift {
-      case u: UnionDistinct => u.copy(differentReturnOrderAllowed = true)(u.position)
-      case u: UnionAll      => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: UnionDistinct                     => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: UnionAll                          => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: SetExactPropertiesFromMapItem     => u.copy(rhsMustBeMap = false)(u.position)
+      case u: SetIncludingPropertiesFromMapItem => u.copy(rhsMustBeMap = false)(u.position)
       case c @ CreateConstraint(variable, labelName: LabelName, properties, name, _: NodeKey, ifExistsDo, options) =>
         // Create constraint is a trait so it doesn't have a copy method
         // and it doesn't have a public implementing class to match instead either

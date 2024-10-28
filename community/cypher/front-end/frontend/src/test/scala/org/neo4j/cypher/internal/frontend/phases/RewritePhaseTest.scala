@@ -18,6 +18,8 @@ package org.neo4j.cypher.internal.frontend.phases
 
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
+import org.neo4j.cypher.internal.ast.SetExactPropertiesFromMapItem
+import org.neo4j.cypher.internal.ast.SetIncludingPropertiesFromMapItem
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.StatementHelper.RichStatement
 import org.neo4j.cypher.internal.ast.UnionAll
@@ -162,8 +164,10 @@ trait RewritePhaseTest {
    */
   def rewriteOtherASTDifferences(statement: Statement): Statement = {
     statement.endoRewrite(bottomUp(Rewriter.lift {
-      case u: UnionDistinct => u.copy(differentReturnOrderAllowed = true)(u.position)
-      case u: UnionAll      => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: UnionDistinct                     => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: UnionAll                          => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: SetExactPropertiesFromMapItem     => u.copy(rhsMustBeMap = false)(u.position)
+      case u: SetIncludingPropertiesFromMapItem => u.copy(rhsMustBeMap = false)(u.position)
     }))
   }
 

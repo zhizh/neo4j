@@ -402,7 +402,8 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
           NotificationClassification.DEPRECATION
         ),
         testOmittedResult
-      )
+      ),
+      cypherVersions = Set(CypherVersion.cypher5)
     )
 
     assertNotification(
@@ -417,7 +418,8 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
           NotificationClassification.DEPRECATION
         ),
         testOmittedResult
-      )
+      ),
+      cypherVersions = Set(CypherVersion.cypher5)
     )
 
     assertNotification(
@@ -432,7 +434,8 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
           NotificationClassification.DEPRECATION
         ),
         testOmittedResult
-      )
+      ),
+      cypherVersions = Set(CypherVersion.cypher5)
     )
 
     assertNotification(
@@ -447,7 +450,8 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
           NotificationClassification.DEPRECATION
         ),
         testOmittedResult
-      )
+      ),
+      cypherVersions = Set(CypherVersion.cypher5)
     )
   }
 

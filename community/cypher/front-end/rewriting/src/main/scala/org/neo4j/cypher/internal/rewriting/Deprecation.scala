@@ -205,7 +205,7 @@ object Deprecations {
     }
 
     override def find(semanticTable: SemanticTable): PartialFunction[Any, Deprecation] = Function.unlift {
-      case s @ SetExactPropertiesFromMapItem(lhs: Variable, rhs: Variable)
+      case s @ SetExactPropertiesFromMapItem(lhs: Variable, rhs: Variable, false)
         if semanticTable.typeFor(rhs).isAnyOf(CTNode, CTRelationship) =>
         Some(Deprecation(
           Some(Ref(s) -> s.copy(expression = functionInvocationForSetProperties(s, rhs))(s.position)),
@@ -215,7 +215,7 @@ object Deprecations {
             s"SET ${lhs.name} = properties(${rhs.name})"
           ))
         ))
-      case s @ SetIncludingPropertiesFromMapItem(lhs: Variable, rhs: Variable)
+      case s @ SetIncludingPropertiesFromMapItem(lhs: Variable, rhs: Variable, false)
         if semanticTable.typeFor(rhs).isAnyOf(CTNode, CTRelationship) =>
         Some(Deprecation(
           Some(Ref(s) -> s.copy(expression = functionInvocationForSetProperties(s, rhs))(s.position)),

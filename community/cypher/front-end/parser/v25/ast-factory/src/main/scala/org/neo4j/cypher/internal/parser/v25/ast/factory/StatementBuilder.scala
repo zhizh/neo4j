@@ -274,9 +274,9 @@ trait StatementBuilder extends Cypher25ParserListener {
         val dynamicProp = ctxChild(ctx, 0).ast[ContainerIndex]()
         SetDynamicPropertyItem(dynamicProp, ctxChild(ctx, 2).ast())(dynamicProp.position)
       case _: Cypher25Parser.SetPropsContext =>
-        SetExactPropertiesFromMapItem(ctxChild(ctx, 0).ast(), ctxChild(ctx, 2).ast())(pos(ctx))
+        SetExactPropertiesFromMapItem(ctxChild(ctx, 0).ast(), ctxChild(ctx, 2).ast(), rhsMustBeMap = true)(pos(ctx))
       case _: Cypher25Parser.AddPropContext =>
-        SetIncludingPropertiesFromMapItem(ctxChild(ctx, 0).ast(), ctxChild(ctx, 2).ast())(pos(ctx))
+        SetIncludingPropertiesFromMapItem(ctxChild(ctx, 0).ast(), ctxChild(ctx, 2).ast(), rhsMustBeMap = true)(pos(ctx))
       case _: Cypher25Parser.SetLabelsContext =>
         val (labels, dynamicLabels) = astChild[(Seq[LabelName], Seq[Expression])](ctx, 1)
         SetLabelItem(ctxChild(ctx, 0).ast(), labels, dynamicLabels, containsIs = false)(pos(ctx))

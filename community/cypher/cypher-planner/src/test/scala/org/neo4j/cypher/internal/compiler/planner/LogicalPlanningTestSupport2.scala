@@ -24,6 +24,8 @@ import org.neo4j.configuration.GraphDatabaseInternalSettings
 import org.neo4j.configuration.GraphDatabaseInternalSettings.ExtractLiteral
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
+import org.neo4j.cypher.internal.ast.SetExactPropertiesFromMapItem
+import org.neo4j.cypher.internal.ast.SetIncludingPropertiesFromMapItem
 import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.UnionAll
 import org.neo4j.cypher.internal.ast.UnionDistinct
@@ -265,8 +267,10 @@ object LogicalPlanningTestSupport2 extends MockitoSugar {
    */
   def rewriteASTDifferences(statement: Statement): Statement = {
     statement.endoRewrite(bottomUp(Rewriter.lift {
-      case u: UnionDistinct => u.copy(differentReturnOrderAllowed = true)(u.position)
-      case u: UnionAll      => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: UnionDistinct                     => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: UnionAll                          => u.copy(differentReturnOrderAllowed = true)(u.position)
+      case u: SetExactPropertiesFromMapItem     => u.copy(rhsMustBeMap = false)(u.position)
+      case u: SetIncludingPropertiesFromMapItem => u.copy(rhsMustBeMap = false)(u.position)
     }))
   }
 }

@@ -17,6 +17,7 @@
 package org.neo4j.cypher.internal.ast
 
 import org.neo4j.cypher.internal.ast.semantics.SemanticAnalysisTooling
+import org.neo4j.cypher.internal.ast.semantics.SemanticCheck.when
 import org.neo4j.cypher.internal.ast.semantics.SemanticCheckable
 import org.neo4j.cypher.internal.ast.semantics.SemanticExpressionCheck
 import org.neo4j.cypher.internal.ast.semantics.SemanticPatternCheck
@@ -124,14 +125,19 @@ case class SetPropertyItems(map: Expression, items: Seq[(PropertyKeyName, Expres
   )(this.position)
 }
 
-case class SetExactPropertiesFromMapItem(variable: Variable, expression: Expression)(val position: InputPosition)
-    extends SetProperty {
+case class SetExactPropertiesFromMapItem(variable: Variable, expression: Expression, rhsMustBeMap: Boolean = false)(
+  val position: InputPosition
+) extends SetProperty {
 
   def semanticCheck =
     SemanticExpressionCheck.simple(variable) chain
       expectType(CTNode.covariant | CTRelationship.covariant, variable) chain
       SemanticExpressionCheck.simple(expression) chain
-      expectType(CTMap.covariant, expression)
+      expectType(CTMap.covariant, expression) chain
+      // This was deprecated in Cypher 5 and disallowed in Cypher 25
+      when(rhsMustBeMap) {
+        expectType(CTMap.invariant, expression)
+      }
 
   override def mapExpressions(f: Expression => Expression): SetItem = copy(
     f(variable).asInstanceOf[Variable],
@@ -139,14 +145,19 @@ case class SetExactPropertiesFromMapItem(variable: Variable, expression: Express
   )(this.position)
 }
 
-case class SetIncludingPropertiesFromMapItem(variable: Variable, expression: Expression)(val position: InputPosition)
-    extends SetProperty {
+case class SetIncludingPropertiesFromMapItem(variable: Variable, expression: Expression, rhsMustBeMap: Boolean = false)(
+  val position: InputPosition
+) extends SetProperty {
 
   def semanticCheck =
     SemanticExpressionCheck.simple(variable) chain
       expectType(CTNode.covariant | CTRelationship.covariant, variable) chain
       SemanticExpressionCheck.simple(expression) chain
-      expectType(CTMap.covariant, expression)
+      expectType(CTMap.covariant, expression) chain
+      // This was deprecated in Cypher 5 and disallowed in Cypher 25
+      when(rhsMustBeMap) {
+        expectType(CTMap.invariant, expression)
+      }
 
   override def mapExpressions(f: Expression => Expression): SetItem = copy(
     f(variable).asInstanceOf[Variable],

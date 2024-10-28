@@ -290,8 +290,8 @@ case class Prettifier(
         items.map(i => s"${expr(entity)}.${i._1.name} = ${expr(i._2)}").mkString(", ")
       case SetLabelItem(variable, labels, dynamicLabels, false) => labelsString(variable, labels, dynamicLabels)
       case SetLabelItem(variable, labels, dynamicLabels, true)  => isLabelsString(variable, labels, dynamicLabels)
-      case SetIncludingPropertiesFromMapItem(variable, exp)     => s"${expr(variable)} += ${expr(exp)}"
-      case SetExactPropertiesFromMapItem(variable, exp)         => s"${expr(variable)} = ${expr(exp)}"
+      case SetIncludingPropertiesFromMapItem(variable, exp, _)  => s"${expr(variable)} += ${expr(exp)}"
+      case SetExactPropertiesFromMapItem(variable, exp, _)      => s"${expr(variable)} = ${expr(exp)}"
     }
     items.mkString(", ")
   }

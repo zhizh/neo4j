@@ -729,22 +729,22 @@ object ClauseConverters {
     case SetPropertyItems(entityExpr, items) =>
       SetPropertiesPattern(entityExpr, items)
 
-    case SetExactPropertiesFromMapItem(node, expression) if semanticTable.typeFor(node).is(CTNode) =>
+    case SetExactPropertiesFromMapItem(node, expression, _) if semanticTable.typeFor(node).is(CTNode) =>
       SetNodePropertiesFromMapPattern(node, expression, removeOtherProps = true)
 
-    case SetExactPropertiesFromMapItem(rel, expression) if semanticTable.typeFor(rel).is(CTRelationship) =>
+    case SetExactPropertiesFromMapItem(rel, expression, _) if semanticTable.typeFor(rel).is(CTRelationship) =>
       SetRelationshipPropertiesFromMapPattern(rel, expression, removeOtherProps = true)
 
-    case SetExactPropertiesFromMapItem(vr, expression) =>
+    case SetExactPropertiesFromMapItem(vr, expression, _) =>
       SetPropertiesFromMapPattern(vr, expression, removeOtherProps = true)
 
-    case SetIncludingPropertiesFromMapItem(node, expression) if semanticTable.typeFor(node).is(CTNode) =>
+    case SetIncludingPropertiesFromMapItem(node, expression, _) if semanticTable.typeFor(node).is(CTNode) =>
       SetNodePropertiesFromMapPattern(node, expression, removeOtherProps = false)
 
-    case SetIncludingPropertiesFromMapItem(rel, expression) if semanticTable.typeFor(rel).is(CTRelationship) =>
+    case SetIncludingPropertiesFromMapItem(rel, expression, _) if semanticTable.typeFor(rel).is(CTRelationship) =>
       SetRelationshipPropertiesFromMapPattern(rel, expression, removeOtherProps = false)
 
-    case SetIncludingPropertiesFromMapItem(vr, expression) =>
+    case SetIncludingPropertiesFromMapItem(vr, expression, _) =>
       SetPropertiesFromMapPattern(vr, expression, removeOtherProps = false)
 
     case SetDynamicPropertyItem(ContainerIndex(expr, idx), expression) =>
