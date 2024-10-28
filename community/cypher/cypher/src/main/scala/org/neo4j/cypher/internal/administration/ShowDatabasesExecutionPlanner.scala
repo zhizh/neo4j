@@ -56,6 +56,7 @@ import org.neo4j.cypher.internal.ast.ShowDatabase.STATUS_MSG_COL
 import org.neo4j.cypher.internal.ast.ShowDatabase.STORE_COL
 import org.neo4j.cypher.internal.ast.ShowDatabase.WRITER_COL
 import org.neo4j.cypher.internal.ast.Yield
+import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.procs.SystemCommandExecutionPlan
 import org.neo4j.dbms.database.TopologyInfoService
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.COMPOSITE_DATABASE
@@ -93,7 +94,7 @@ case class ShowDatabasesExecutionPlanner(
   def planShowDatabases(
     scope: DatabaseScope,
     verbose: Boolean,
-    symbols: List[String],
+    symbols: List[LogicalVariable],
     yields: Option[Yield],
     returns: Option[Return]
   ): ExecutionPlan = {

@@ -36,6 +36,7 @@ import org.neo4j.cypher.internal.ast.NamespacedName
 import org.neo4j.cypher.internal.ast.ParameterName
 import org.neo4j.cypher.internal.ast.Return
 import org.neo4j.cypher.internal.ast.Yield
+import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.procs.ParameterTransformer
 import org.neo4j.cypher.internal.procs.SystemCommandExecutionPlan
 import org.neo4j.dbms.systemgraph.TopologyGraphDbmsModel.ALIAS_PROPERTIES
@@ -73,7 +74,7 @@ case class ShowAliasesExecutionPlanner(
     sourcePlan: Option[ExecutionPlan],
     aliasName: Option[DatabaseName],
     verbose: Boolean,
-    symbols: List[String],
+    symbols: List[LogicalVariable],
     yields: Option[Yield],
     returns: Option[Return]
   ): ExecutionPlan = {

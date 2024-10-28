@@ -30,6 +30,7 @@ import org.neo4j.cypher.internal.ast.With
 import org.neo4j.cypher.internal.ast.Yield
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
 import org.neo4j.cypher.internal.ast.prettifier.Prettifier
+import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.runtime.ast.ParameterFromSlot
 import org.neo4j.cypher.internal.util.InputPosition
@@ -84,12 +85,12 @@ object AdministrationShowCommandUtils {
   }
 
   def generateReturnClause(
-    defaultSymbols: List[String],
+    defaultSymbols: List[LogicalVariable],
     yields: Option[Yield],
     returns: Option[Return],
     defaultOrder: Seq[String]
   ): String = {
-    val yieldScope = getScope(defaultSymbols, yields)
+    val yieldScope = getScope(defaultSymbols.map(_.name), yields)
     val returnScope = getScope(yieldScope, returns)
 
     val yieldColumns: Option[Yield] =
@@ -117,8 +118,8 @@ object AdministrationShowCommandUtils {
       // No YIELD or RETURN so just make up a RETURN with everything
       case (None, _) => Seq(Return(
           distinct = false,
-          ReturnItems(includeExisting = false, symbolsToReturnItems(defaultSymbols))(InputPosition.NONE),
-          genDefaultOrderBy(defaultSymbols, defaultOrder),
+          ReturnItems(includeExisting = false, symbolsToReturnItems(defaultSymbols.map(_.name)))(InputPosition.NONE),
+          genDefaultOrderBy(defaultSymbols.map(_.name), defaultOrder),
           None,
           None
         )(InputPosition.NONE))

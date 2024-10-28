@@ -32,6 +32,7 @@ import org.neo4j.cypher.internal.ExecutionPlan
 import org.neo4j.cypher.internal.administration.ShowUsersExecutionPlanner.getAuthCypher
 import org.neo4j.cypher.internal.ast.Return
 import org.neo4j.cypher.internal.ast.Yield
+import org.neo4j.cypher.internal.expressions.LogicalVariable
 import org.neo4j.cypher.internal.procs.ParameterTransformer
 import org.neo4j.cypher.internal.procs.SystemCommandExecutionPlan
 import org.neo4j.internal.kernel.api.security.SecurityAuthorizationHandler
@@ -45,7 +46,7 @@ case class ShowUsersExecutionPlanner(
 ) {
 
   def planShowUsers(
-    symbols: List[String],
+    symbols: List[LogicalVariable],
     withAuth: Boolean,
     yields: Option[Yield],
     returns: Option[Return],
@@ -71,7 +72,11 @@ case class ShowUsersExecutionPlanner(
     )
   }
 
-  def planShowCurrentUser(symbols: List[String], yields: Option[Yield], returns: Option[Return]): ExecutionPlan = {
+  def planShowCurrentUser(
+    symbols: List[LogicalVariable],
+    yields: Option[Yield],
+    returns: Option[Return]
+  ): ExecutionPlan = {
     val currentUserKey = internalKey("currentUser")
     SystemCommandExecutionPlan(
       "ShowCurrentUser",

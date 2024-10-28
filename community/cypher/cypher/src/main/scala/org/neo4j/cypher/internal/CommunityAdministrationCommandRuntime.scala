@@ -256,7 +256,7 @@ case class CommunityAdministrationCommandRuntime(
         val sourcePlan: Option[ExecutionPlan] =
           Some(fullLogicalToExecutable.applyOrElse(source, throwCantCompile).apply(context))
         ShowUsersExecutionPlanner(normalExecutionEngine, securityAuthorizationHandler).planShowUsers(
-          symbols.map(_.name),
+          symbols,
           withAuth,
           yields,
           returns,
@@ -266,7 +266,7 @@ case class CommunityAdministrationCommandRuntime(
     // SHOW CURRENT USER
     case ShowCurrentUser(symbols, yields, returns) => _ =>
         ShowUsersExecutionPlanner(normalExecutionEngine, securityAuthorizationHandler).planShowCurrentUser(
-          symbols.map(_.name),
+          symbols,
           yields,
           returns
         )
@@ -340,7 +340,7 @@ case class CommunityAdministrationCommandRuntime(
           normalExecutionEngine,
           securityAuthorizationHandler
         )
-          .planShowDatabases(scope, verbose, symbols.map(_.name), yields, returns)
+          .planShowDatabases(scope, verbose, symbols, yields, returns)
 
     case DoNothingIfNotExists(source, command, entity, name, operation, valueMapper) => context =>
         val sourcePlan: Option[ExecutionPlan] =
