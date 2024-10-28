@@ -50,6 +50,7 @@ import static org.neo4j.notifications.NotificationCodeWithDescription.deprecated
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedPropertyReferenceInMerge;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedRelationshipTypeSeparator;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedRuntimeOption;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedSeedingOption;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedShortestPathWithFixedLengthRelationship;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedTextIndexProvider;
 import static org.neo4j.notifications.NotificationCodeWithDescription.eagerLoadCsv;
@@ -1707,7 +1708,7 @@ class NotificationCodeWithDescriptionTest {
                 "This feature is deprecated and will be removed in future versions.",
                 SeverityLevel.WARNING,
                 "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
-                "'oldName' is deprecated. It is replaced by 'newName'.",
+                "`oldName` is deprecated. It is replaced by `newName`.",
                 NotificationCategory.DEPRECATION,
                 NotificationClassification.DEPRECATION,
                 "01N01",
@@ -1720,6 +1721,25 @@ class NotificationCodeWithDescriptionTest {
                                 Map.of("feat1", "oldName", "feat2", "newName"))
                         .asMap(),
                 "warn: feature deprecated with replacement. oldName is deprecated. It is replaced by newName.");
+    }
+
+    @Test
+    void shouldConstructNotificationsFor_DEPRECATED_SEEDING_OPTION() {
+        NotificationImplementation notification = deprecatedSeedingOption("oldName");
+
+        verifyNotification(
+                notification,
+                "This feature is deprecated and will be removed in future versions.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
+                "`oldName` is deprecated. Credentials are now supplied via the cloud provider mechanisms.",
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
+                "01N02",
+                new DiagnosticRecord(
+                                warning, NotificationClassification.DEPRECATION, -1, -1, -1, Map.of("feat1", "oldName"))
+                        .asMap(),
+                "warn: feature deprecated without replacement. oldName is deprecated and will be removed without a replacement.");
     }
 
     private void verifyNotification(
@@ -1829,8 +1849,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            69, -110, -29, 93, 12, 13, -1, -80, -46, 19, 27, 69, -117, 15, -81, -37, -63, -55, -63, 10, -34, -35, -122,
-            60, -20, 92, 67, -112, 82, -28, 111, -118
+            8, 88, 104, -71, -110, 26, -76, -126, 122, 74, -44, 81, 60, 56, -96, -10,
+            99, -36, 18, -22, 35, -57, 25, -27, -62, 121, 27, 32, -8, 10, 11, -49
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {

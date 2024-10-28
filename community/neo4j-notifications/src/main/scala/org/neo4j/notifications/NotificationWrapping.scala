@@ -41,6 +41,7 @@ import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInCreate
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInMerge
 import org.neo4j.cypher.internal.util.DeprecatedRelTypeSeparatorNotification
 import org.neo4j.cypher.internal.util.DeprecatedRuntimeNotification
+import org.neo4j.cypher.internal.util.DeprecatedSeedingOption
 import org.neo4j.cypher.internal.util.DeprecatedTextIndexProvider
 import org.neo4j.cypher.internal.util.ExternalAuthNotEnabled
 import org.neo4j.cypher.internal.util.FixedLengthRelationshipInShortestPath
@@ -345,6 +346,8 @@ object NotificationWrapping {
 
     case DeprecatedOptionInOptionMap(oldOption, newOption) =>
       NotificationCodeWithDescription.deprecatedOptionInOptionMap(oldOption, newOption)
+
+    case DeprecatedSeedingOption(option) => NotificationCodeWithDescription.deprecatedSeedingOption(option)
 
     case AuthProviderNotDefined(provider) =>
       NotificationCodeWithDescription.authProviderNotDefined(

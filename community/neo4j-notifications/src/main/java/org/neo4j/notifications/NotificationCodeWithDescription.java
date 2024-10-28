@@ -327,7 +327,11 @@ public enum NotificationCodeWithDescription {
     DEPRECATED_OPTION_IN_OPTION_MAP(
             Status.Statement.FeatureDeprecationWarning,
             GqlStatusInfoCodes.STATUS_01N01,
-            "'%s' is deprecated. It is replaced by '%s'.");
+            "`%s` is deprecated. It is replaced by `%s`."),
+    DEPRECATED_SEEDING_OPTION(
+            Status.Statement.FeatureDeprecationWarning,
+            GqlStatusInfoCodes.STATUS_01N02,
+            "`%s` is deprecated. Credentials are now supplied via the cloud provider mechanisms.");
 
     private final Status status;
     private final GqlStatusInfoCodes gqlStatusInfo;
@@ -736,6 +740,11 @@ public enum NotificationCodeWithDescription {
     public static NotificationImplementation deprecatedOptionInOptionMap(String oldOption, String newOption) {
         return DEPRECATED_OPTION_IN_OPTION_MAP.notificationWithParameters(
                 InputPosition.empty, new String[] {oldOption, newOption}, new String[] {oldOption, newOption});
+    }
+
+    public static NotificationImplementation deprecatedSeedingOption(String oldOption) {
+        return DEPRECATED_SEEDING_OPTION.notificationWithParameters(
+                InputPosition.empty, new String[] {oldOption}, new String[] {oldOption});
     }
 
     private NotificationImplementation notification(InputPosition position) {

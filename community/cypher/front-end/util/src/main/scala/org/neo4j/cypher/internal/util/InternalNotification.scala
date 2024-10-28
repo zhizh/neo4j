@@ -88,6 +88,7 @@ object InternalNotification {
     "ExternalAuthNotEnabled",
     "AggregationSkippedNull",
     "DeprecatedOptionInOptionMap",
+    "DeprecatedSeedingOption",
     "DeprecatedBooleanCoercion",
     "InsecureProtocol"
   )
@@ -184,7 +185,8 @@ case object DeprecatedBooleanCoercion extends InternalNotification {
   def instance: DeprecatedBooleanCoercion.type = this
 }
 
-case class DeprecatedOptionInOptionMap(oldOption: String, newOption: String) extends InternalNotification
+case class DeprecatedOptionInOptionMap(oldOption: String, replacmentOption: String) extends InternalNotification
+case class DeprecatedSeedingOption(oldOption: String) extends InternalNotification
 
 case object InsecureProtocol extends InternalNotification
 
