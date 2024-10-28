@@ -27,6 +27,7 @@ import org.neo4j.gqlstatus.SimpleMessageFormatter;
 import org.neo4j.graphdb.InputPosition;
 import org.neo4j.internal.schema.AllIndexProviderDescriptors;
 import org.neo4j.kernel.api.exceptions.Status;
+import org.neo4j.storageengine.api.DeprecatedFormatWarning;
 
 /**
  * This bundles a specific description with a (potentially) more generic NotificationCode.
@@ -331,7 +332,11 @@ public enum NotificationCodeWithDescription {
     DEPRECATED_SEEDING_OPTION(
             Status.Statement.FeatureDeprecationWarning,
             GqlStatusInfoCodes.STATUS_01N02,
-            "`%s` is deprecated. Credentials are now supplied via the cloud provider mechanisms.");
+            "`%s` is deprecated. Credentials are now supplied via the cloud provider mechanisms."),
+    DEPRECATED_STORE_FORMAT(
+            Status.Statement.FeatureDeprecationWarning,
+            GqlStatusInfoCodes.STATUS_01N00,
+            DeprecatedFormatWarning.getTargetFormatWarning("%s"));
 
     private final Status status;
     private final GqlStatusInfoCodes gqlStatusInfo;
@@ -745,6 +750,13 @@ public enum NotificationCodeWithDescription {
     public static NotificationImplementation deprecatedSeedingOption(String oldOption) {
         return DEPRECATED_SEEDING_OPTION.notificationWithParameters(
                 InputPosition.empty, new String[] {oldOption}, new String[] {oldOption});
+    }
+
+    public static NotificationImplementation deprecatedStoreFormat(String format) {
+        return DEPRECATED_STORE_FORMAT.notificationWithParameters(
+                InputPosition.empty,
+                new String[] {format},
+                new String[] {DeprecatedFormatWarning.getTargetFormatWarning(format)});
     }
 
     private NotificationImplementation notification(InputPosition position) {

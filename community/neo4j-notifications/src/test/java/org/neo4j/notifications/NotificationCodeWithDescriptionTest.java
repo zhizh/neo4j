@@ -52,6 +52,7 @@ import static org.neo4j.notifications.NotificationCodeWithDescription.deprecated
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedRuntimeOption;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedSeedingOption;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedShortestPathWithFixedLengthRelationship;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedStoreFormat;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedTextIndexProvider;
 import static org.neo4j.notifications.NotificationCodeWithDescription.eagerLoadCsv;
 import static org.neo4j.notifications.NotificationCodeWithDescription.exhaustiveShortestPath;
@@ -1742,6 +1743,32 @@ class NotificationCodeWithDescriptionTest {
                 "warn: feature deprecated without replacement. oldName is deprecated and will be removed without a replacement.");
     }
 
+    @Test
+    void shouldConstructNotificationsFor_DEPRECATED_STORE_FORMAT() {
+        NotificationImplementation notification = deprecatedStoreFormat("oldFormat");
+
+        verifyNotification(
+                notification,
+                "This feature is deprecated and will be removed in future versions.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
+                "The targeted store format: oldFormat is deprecated. For details on deprecated store formats, see https://neo4j.com/docs/store-format-deprecations.",
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
+                "01N00",
+                new DiagnosticRecord(
+                                warning,
+                                NotificationClassification.DEPRECATION,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of(
+                                        "item",
+                                        "The targeted store format: oldFormat is deprecated. For details on deprecated store formats, see https://neo4j.com/docs/store-format-deprecations."))
+                        .asMap(),
+                "warn: feature deprecated. The targeted store format: oldFormat is deprecated. For details on deprecated store formats, see https://neo4j.com/docs/store-format-deprecations.");
+    }
+
     private void verifyNotification(
             NotificationImplementation notification,
             String title,
@@ -1849,8 +1876,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            8, 88, 104, -71, -110, 26, -76, -126, 122, 74, -44, 81, 60, 56, -96, -10,
-            99, -36, 18, -22, 35, -57, 25, -27, -62, 121, 27, 32, -8, 10, 11, -49
+            -112, -97, 16, 80, 93, 72, -63, 121, 30, 78, 42, 75, 87, 102, -83, -26, 94, -123, -83, 95, 62, -93, 67, 4,
+            -15, 56, 34, -117, 40, 19, 10, -128
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {
