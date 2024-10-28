@@ -22,6 +22,8 @@ package org.neo4j.cypher.internal.compiler.planner.logical
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
 import org.neo4j.cypher.internal.compiler.ExecutionModel
+import org.neo4j.cypher.internal.compiler.ExecutionModel.BatchedParallel
+import org.neo4j.cypher.internal.compiler.ExecutionModel.Volcano
 import org.neo4j.cypher.internal.compiler.planner.AttributeComparisonStrategy
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningAttributesTestSupport
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningIntegrationTestSupport
@@ -58,6 +60,8 @@ import org.neo4j.cypher.internal.logical.plans.Expand.VariablePredicate
 import org.neo4j.cypher.internal.logical.plans.IndexOrderAscending
 import org.neo4j.cypher.internal.logical.plans.IndexOrderNone
 import org.neo4j.cypher.internal.logical.plans.NestedPlanExistsExpression
+import org.neo4j.cypher.internal.logical.plans.RepeatTrail
+import org.neo4j.cypher.internal.logical.plans.VarExpand
 import org.neo4j.cypher.internal.planner.spi.DatabaseMode
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint
 import org.neo4j.cypher.internal.runtime.ast.TraversalEndpoint.Endpoint.From
@@ -3371,6 +3375,38 @@ trait QuantifiedPathPatternPlanningIntegrationTestBase extends CypherFunSuite wi
       .remoteBatchProperties("cacheNFromStore[a.name]")
       .nodeByLabelScan("a", "User", IndexOrderNone)
       .build()
+  }
+
+  test("Should plan quantified relationship with RepeatTrail when runtime=Parallel") {
+    val query = "MATCH (a:User)-->+(b) RETURN a, b"
+    val planner = plannerBase.setExecutionModel(BatchedParallel(1, 100)).build()
+    val plan = planner.plan(query)
+
+    plan.folder.findAllByClass[RepeatTrail].size shouldBe 1
+  }
+
+  test("Should plan quantified path pattern with RepeatTrail when runtime=Parallel") {
+    val query = "MATCH p = ((a)-[:R]->(b) WHERE a.p < b.p){1,10} RETURN p"
+    val planner = plannerBase.setExecutionModel(BatchedParallel(1, 100)).build()
+    val plan = planner.plan(query)
+
+    plan.folder.findAllByClass[RepeatTrail].size shouldBe 1
+  }
+
+  test("Should plan quantified relationship with VarExpand when runtime is single-threaded") {
+    val query = "MATCH (a:User)-->+(b) RETURN a, b"
+    val planner = plannerBase.setExecutionModel(Volcano).build()
+    val plan = planner.plan(query)
+
+    plan.folder.findAllByClass[VarExpand].size shouldBe 1
+  }
+
+  test("Should plan quantified path pattern with VarExpand when runtime is single-threaded") {
+    val query = "MATCH p = ((a)-[:R]->(b) WHERE a.p < b.p){1,10} RETURN p"
+    val planner = plannerBase.setExecutionModel(Volcano).build()
+    val plan = planner.plan(query)
+
+    plan.folder.findAllByClass[VarExpand].size shouldBe 1
   }
 }
 

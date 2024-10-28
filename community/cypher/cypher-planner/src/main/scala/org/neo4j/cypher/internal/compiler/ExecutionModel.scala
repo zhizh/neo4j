@@ -69,6 +69,14 @@ sealed trait ExecutionModel {
   def invalidatesProvidedOrder(plan: LogicalPlan): Boolean
 
   /**
+   * @return true if the execution model is single threaded i.e. not parallel
+   *
+   * This allows the planner to turn on/off rewrites that would perform
+   * better/worse based on whether a single-threaded runtime is used.
+   */
+  def isSingleThreaded: Boolean
+
+  /**
    * "For Block format, setting a property cursor on a relationship using only
    * the id is much more expensive than setting it using an existing
    * relationship cursor"
@@ -103,6 +111,8 @@ object ExecutionModel {
      * We do not include the ExecutionModel itself, since we also have a compiler for each runtime (see CompilerLibrary).
      */
     override def cacheKey(): Seq[Any] = Seq.empty
+
+    override def isSingleThreaded: Boolean = true
   }
 
   case class BatchedSingleThreaded(smallBatchSize: Int, bigBatchSize: Int) extends Batched {
@@ -128,6 +138,8 @@ object ExecutionModel {
 
         builder.result()
     }
+
+    override def isSingleThreaded: Boolean = true
   }
 
   case class BatchedParallel(smallBatchSize: Int, bigBatchSize: Int) extends Batched {
@@ -153,6 +165,8 @@ object ExecutionModel {
 
         builder.result()
     }
+
+    override def isSingleThreaded: Boolean = false
   }
 
   abstract class Batched extends ExecutionModel {

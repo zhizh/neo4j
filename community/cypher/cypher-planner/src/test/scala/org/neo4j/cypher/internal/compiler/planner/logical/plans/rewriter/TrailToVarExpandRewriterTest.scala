@@ -1106,7 +1106,7 @@ class TrailToVarExpandRewriterTest extends CypherFunSuite with LogicalPlanningTe
     rewrites(selectionAndTrail, expand)
   }
 
-  test("De not rewrite selection and trail to VarLengthExpand(Into) when the selection has more than 1 predicate") {
+  test("Do not rewrite selection and trail to VarLengthExpand(Into) when the selection has more than 1 predicate") {
     val selectionAndTrail = subPlanBuilder
       .projection("1 AS s")
       .filter("`  UNNAMED4` = b", "not a = b")
