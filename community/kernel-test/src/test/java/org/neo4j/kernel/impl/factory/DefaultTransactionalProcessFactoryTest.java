@@ -40,7 +40,8 @@ class DefaultTransactionalProcessFactoryTest {
                 mock(StorageEngine.class),
                 writable(),
                 false,
-                CommandCommitListeners.NO_LISTENERS);
+                CommandCommitListeners.NO_LISTENERS,
+                false);
 
         assertThat(commitProcess).isInstanceOf(DatabaseTransactionCommitProcess.class);
     }
@@ -54,7 +55,8 @@ class DefaultTransactionalProcessFactoryTest {
                 mock(StorageEngine.class),
                 readOnly(),
                 false,
-                CommandCommitListeners.NO_LISTENERS);
+                CommandCommitListeners.NO_LISTENERS,
+                false);
 
         assertThat(commitProcess).isInstanceOf(DatabaseTransactionCommitProcess.class);
     }

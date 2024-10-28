@@ -22,6 +22,7 @@ package org.neo4j.kernel.impl.api;
 import static org.neo4j.kernel.api.exceptions.Status.Transaction.TransactionCommitFailed;
 import static org.neo4j.kernel.api.exceptions.Status.Transaction.TransactionLogError;
 
+import java.util.function.BooleanSupplier;
 import org.neo4j.internal.kernel.api.exceptions.TransactionFailureException;
 import org.neo4j.io.pagecache.OutOfDiskSpaceException;
 import org.neo4j.kernel.api.exceptions.Status;
@@ -38,16 +39,19 @@ public class InternalTransactionCommitProcess implements TransactionCommitProces
     private final StorageEngine storageEngine;
     private final boolean preAllocateSpaceInStores;
     private final CommandCommitListeners commandCommitListeners;
+    private final BooleanSupplier prefetchCommands;
 
     public InternalTransactionCommitProcess(
             TransactionAppender appender,
             StorageEngine storageEngine,
             boolean preAllocateSpaceInStores,
-            CommandCommitListeners commandCommitListeners) {
+            CommandCommitListeners commandCommitListeners,
+            BooleanSupplier prefetchCommands) {
         this.appender = appender;
         this.storageEngine = storageEngine;
         this.preAllocateSpaceInStores = preAllocateSpaceInStores;
         this.commandCommitListeners = commandCommitListeners;
+        this.prefetchCommands = prefetchCommands;
     }
 
     @Override
@@ -59,6 +63,9 @@ public class InternalTransactionCommitProcess implements TransactionCommitProces
         try {
             if (preAllocateSpaceInStores) {
                 preAllocateSpaceInStores(batch, transactionWriteEvent, mode);
+            }
+            if (prefetchCommands.getAsBoolean()) {
+                storageEngine.prefetchPagesForCommands(batch, mode);
             }
 
             long lastAppendIndex = appendToLog(batch, transactionWriteEvent);

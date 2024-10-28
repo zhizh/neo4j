@@ -37,6 +37,7 @@ import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
 import org.neo4j.kernel.availability.DatabaseAvailabilityGuard;
 import org.neo4j.kernel.extension.ExtensionFactory;
@@ -164,4 +165,6 @@ public interface DatabaseCreationContext {
     TransactionsFactory getTransactionsFactory();
 
     CommandCommitListeners getCommandCommitListeners();
+
+    PagePrefetcher getPagePrefetcher();
 }

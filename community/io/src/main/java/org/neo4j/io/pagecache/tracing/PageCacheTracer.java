@@ -502,6 +502,16 @@ public interface PageCacheTracer extends PageCacheCounters {
     void pagesCopied(long copiesCreated);
 
     /**
+     * report number of prefetched pages
+     */
+    default void pagesPrefetched(long count) {}
+
+    /**
+     * report number of prefetched pages resulted in page faults
+     */
+    default void pagesPrefetchedWithFaults(long count) {}
+
+    /**
      * report number of truncated files
      */
     void filesTruncated(long truncatedFiles);

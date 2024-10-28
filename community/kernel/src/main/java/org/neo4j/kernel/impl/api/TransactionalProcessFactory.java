@@ -31,7 +31,8 @@ public interface TransactionalProcessFactory {
             StorageEngine storageEngine,
             DatabaseReadOnlyChecker readOnlyDatabaseChecker,
             boolean preAllocateSpaceInStoreFiles,
-            CommandCommitListeners commandCommitListeners);
+            CommandCommitListeners commandCommitListeners,
+            boolean prefetchPages);
 
     TransactionRollbackProcess createRollbackProcess(
             StorageEngine storageEngine, LogicalTransactionStore transactionStore);

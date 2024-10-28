@@ -82,6 +82,7 @@ import org.neo4j.io.pagecache.context.OldestTransactionIdFactory;
 import org.neo4j.io.pagecache.context.TransactionIdSnapshot;
 import org.neo4j.io.pagecache.context.TransactionIdSnapshotFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
 import org.neo4j.kernel.BinarySupportedKernelVersions;
 import org.neo4j.kernel.KernelVersionProvider;
 import org.neo4j.kernel.api.Kernel;
@@ -225,6 +226,7 @@ public class Database extends AbstractDatabase {
     private final ExternalIdReuseConditionProvider externalIdReuseConditionProvider;
     private final StorageEngineFactorySupplier storageEngineFactorySupplier;
     private final KernelTransactionsFactory kernelTransactionsFactory;
+    private final PagePrefetcher pagePrefetcher;
 
     private TransactionIdSequence transactionIdSequence;
     private IndexProviderMap indexProviderMap;
@@ -317,6 +319,7 @@ public class Database extends AbstractDatabase {
         this.externalIdReuseConditionProvider = context.externalIdReuseConditionProvider();
         this.commandCommitListeners = context.getCommandCommitListeners();
         this.kernelTransactionsFactory = transactionsFactory.kernelTransactionsFactory();
+        this.pagePrefetcher = context.getPagePrefetcher();
     }
 
     /**
@@ -490,7 +493,8 @@ public class Database extends AbstractDatabase {
                 otherDatabaseMemoryTracker,
                 cursorContextFactory,
                 tracers.getPageCacheTracer(),
-                versionStorage);
+                versionStorage,
+                pagePrefetcher);
 
         var metadataProvider = databaseDependencies.satisfyDependency(storageEngine.metadataProvider());
 
@@ -981,7 +985,8 @@ public class Database extends AbstractDatabase {
                 storageEngine,
                 readOnlyDatabaseChecker,
                 databaseConfig.get(GraphDatabaseInternalSettings.out_of_disk_space_protection),
-                commandCommitListeners);
+                commandCommitListeners,
+                databaseConfig.get(GraphDatabaseInternalSettings.prefetch_on_commit));
         var rollbackProcess =
                 commitProcessFactory.createRollbackProcess(storageEngine, logsModule.getLogicalTransactionStore());
         databaseDependencies.satisfyDependency(rollbackProcess);

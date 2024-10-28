@@ -99,4 +99,12 @@ public interface PageFileCounters {
      * @return The number of page evictions that have thrown exceptions thus far.
      */
     long evictionExceptions();
+
+    default long pagesPrefetched() {
+        return 0L;
+    }
+
+    default long pagesPrefetchedWithFaults() {
+        return 0L;
+    }
 }

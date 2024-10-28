@@ -160,6 +160,16 @@ public class DelegatingPageCacheTracer implements PageCacheTracer {
     }
 
     @Override
+    public long prefetchedPages() {
+        return delegate.prefetchedPages();
+    }
+
+    @Override
+    public long prefetchedPagesWithFaults() {
+        return delegate.prefetchedPagesWithFaults();
+    }
+
+    @Override
     public long snapshotsLoaded() {
         return delegate.snapshotsLoaded();
     }
@@ -277,6 +287,16 @@ public class DelegatingPageCacheTracer implements PageCacheTracer {
     @Override
     public void pagesCopied(long copiesCreated) {
         delegate.pagesCopied(copiesCreated);
+    }
+
+    @Override
+    public void pagesPrefetched(long count) {
+        delegate.pagesPrefetched(count);
+    }
+
+    @Override
+    public void pagesPrefetchedWithFaults(long count) {
+        delegate.pagesPrefetchedWithFaults(count);
     }
 
     @Override

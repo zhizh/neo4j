@@ -1526,4 +1526,9 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
     public static final Setting<Boolean> multiversion_index_commands_enabled = newBuilder(
                     "internal.db.multiversion.index.commands.enabled", BOOL, true)
             .build();
+
+    @Internal
+    @Description("Enable background prefetch of the pages affected by transaction commands before applying them")
+    public static final Setting<Boolean> prefetch_on_commit =
+            newBuilder("internal.dbms.prefetch_on_commit", BOOL, false).build();
 }

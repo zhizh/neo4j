@@ -113,6 +113,18 @@ public interface PageFileSwapperTracer extends PageFileCounters {
     void flushes(long flushes);
 
     /**
+     * Report number of pages prefetched
+     * @param count number of pages
+     */
+    void pagesPrefetched(long count);
+
+    /**
+     * Report number of pages prefetched resulted in page faults
+     * @param count number of pages
+     */
+    void pagesPrefetchedWithFaults(long count);
+
+    /**
      * Report number of merges
      * @param merges number of merges
      */
@@ -160,6 +172,12 @@ public interface PageFileSwapperTracer extends PageFileCounters {
 
         @Override
         public void flushes(long flushes) {}
+
+        @Override
+        public void pagesPrefetched(long count) {}
+
+        @Override
+        public void pagesPrefetchedWithFaults(long count) {}
 
         @Override
         public void merges(long merges) {}

@@ -437,6 +437,9 @@ class ParallelRecoveryVisitorTest {
         public void preAllocateStoreFilesForCommands(StorageEngineTransaction batch, TransactionApplicationMode mode) {}
 
         @Override
+        public void prefetchPagesForCommands(StorageEngineTransaction batch, TransactionApplicationMode mode) {}
+
+        @Override
         public void shutdown() {}
 
         @Override

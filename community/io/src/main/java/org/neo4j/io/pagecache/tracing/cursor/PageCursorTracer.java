@@ -23,7 +23,9 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import java.io.Closeable;
 import org.neo4j.io.pagecache.PageSwapper;
+import org.neo4j.io.pagecache.tracing.PageFileSwapperTracer;
 import org.neo4j.io.pagecache.tracing.PinEvent;
+import org.neo4j.io.pagecache.tracing.PrefetchEvent;
 import org.neo4j.io.pagecache.tracing.VectoredPageFaultEvent;
 
 /**
@@ -184,6 +186,10 @@ public interface PageCursorTracer extends PageCursorCounters, Closeable {
      */
     default VectoredPageFaultEvent beginVectoredPageFault(PageSwapper pageSwapper) {
         return VectoredPageFaultEvent.NULL;
+    }
+
+    default PrefetchEvent beginPrefetch(PageFileSwapperTracer fileTracer) {
+        return PrefetchEvent.NULL;
     }
 
     /**

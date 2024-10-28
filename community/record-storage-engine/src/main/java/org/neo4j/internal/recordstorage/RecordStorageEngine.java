@@ -29,6 +29,7 @@ import static org.neo4j.storageengine.api.TransactionApplicationMode.RECOVERY;
 import static org.neo4j.util.Preconditions.checkState;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -82,6 +83,7 @@ import org.neo4j.io.pagecache.PageCacheOpenOptions;
 import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
 import org.neo4j.io.pagecache.tracing.DatabaseFlushEvent;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.kernel.KernelVersion;
@@ -157,6 +159,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
     private final boolean consistencyCheckApply;
     private final boolean parallelIndexUpdatesApply;
     private final InternalLog log;
+    private final PagePrefetcher pagePrefetcher;
     private IndexUpdatesWorkSync indexUpdatesSync;
     private final IdGeneratorFactory idGeneratorFactory;
     private final CursorContextFactory contextFactory;
@@ -200,7 +203,8 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
             LockVerificationFactory lockVerificationFactory,
             CursorContextFactory contextFactory,
             PageCacheTracer pageCacheTracer,
-            VersionStorage versionStorage) {
+            VersionStorage versionStorage,
+            PagePrefetcher pagePrefetcher) {
         this.databaseLayout = databaseLayout;
         this.config = config;
         this.internalLogProvider = internalLogProvider;
@@ -215,7 +219,7 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
         this.otherMemoryTracker = otherMemoryTracker;
         this.kernelVersionRepository = kernelVersionRepository;
         this.lockVerificationFactory = lockVerificationFactory;
-
+        this.pagePrefetcher = pagePrefetcher;
         this.neoStores = new StoreFactory(
                         databaseLayout,
                         config,
@@ -798,6 +802,20 @@ public class RecordStorageEngine implements StorageEngine, Lifecycle {
             } catch (OutOfDiskSpaceException e) {
                 databaseHealth.outOfDiskSpace(e);
                 throw e;
+            }
+        }
+    }
+
+    @Override
+    public void prefetchPagesForCommands(StorageEngineTransaction batch, TransactionApplicationMode mode) {
+        if (!mode.isReverseStep() && batch != null) {
+            try (var txApplier = new PrefetchingTransactionApplier(neoStores, pagePrefetcher)) {
+                while (batch != null) {
+                    batch.commandBatch().accept(txApplier);
+                    batch = batch.next();
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         }
     }

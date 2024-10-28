@@ -229,6 +229,15 @@ public interface StorageEngine extends ReadableStorageEngine, Lifecycle {
             throws OutOfDiskSpaceException, IOException;
 
     /**
+     * Try to load pages that would be modified by the batch. There is no guarantee that all affected pages will be
+     * actually loaded when this method returns.
+     *
+     * @param batch batch of groups of commands to prefetch files for.
+     * @param mode {@link TransactionApplicationMode} that can affect if prefetch needs to happen.
+     */
+    void prefetchPagesForCommands(StorageEngineTransaction batch, TransactionApplicationMode mode);
+
+    /**
      * Conservatively estimate how much reserved space is available for (re)use.
      * @return available reserved space estimate in bytes
      * @throws IOException on error reading from store.

@@ -36,6 +36,8 @@ public class DefaultPageFileSwapperTracer implements PageFileSwapperTracer {
     private final LongAdder evictions = new LongAdder();
     private final LongAdder evictionExceptions = new LongAdder();
     private final LongAdder flushes = new LongAdder();
+    private final LongAdder pagesPrefetched = new LongAdder();
+    private final LongAdder pagesPrefetchedWithFaults = new LongAdder();
     private final LongAdder merges = new LongAdder();
 
     /**
@@ -144,6 +146,16 @@ public class DefaultPageFileSwapperTracer implements PageFileSwapperTracer {
         this.flushes.add(flushes);
     }
 
+    @Override
+    public void pagesPrefetched(long count) {
+        this.pagesPrefetched.add(count);
+    }
+
+    @Override
+    public void pagesPrefetchedWithFaults(long count) {
+        this.pagesPrefetchedWithFaults.add(count);
+    }
+
     /**
      * Report number of merges
      * @param merges number of merges
@@ -206,6 +218,16 @@ public class DefaultPageFileSwapperTracer implements PageFileSwapperTracer {
     @Override
     public long flushes() {
         return flushes.sum();
+    }
+
+    @Override
+    public long pagesPrefetched() {
+        return pagesPrefetched.sum();
+    }
+
+    @Override
+    public long pagesPrefetchedWithFaults() {
+        return pagesPrefetchedWithFaults.sum();
     }
 
     @Override

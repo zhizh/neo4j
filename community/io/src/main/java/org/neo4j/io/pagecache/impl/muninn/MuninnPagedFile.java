@@ -50,6 +50,7 @@ import org.neo4j.io.pagecache.tracing.EvictionRunEvent;
 import org.neo4j.io.pagecache.tracing.FileFlushEvent;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.PageFaultEvent;
+import org.neo4j.io.pagecache.tracing.PageFileSwapperTracer;
 import org.neo4j.io.pagecache.tracing.VectoredPageFaultEvent;
 import org.neo4j.io.pagecache.tracing.version.FileTruncateEvent;
 import org.neo4j.time.Stopwatch;
@@ -1078,6 +1079,11 @@ final class MuninnPagedFile extends PageList implements PagedFile, Flushable {
             }
         }
         return touched;
+    }
+
+    @Override
+    public PageFileSwapperTracer getFileTracer() {
+        return swapper.fileSwapperTracer();
     }
 
     @Override

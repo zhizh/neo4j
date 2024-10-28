@@ -75,8 +75,8 @@ class InternalTransactionCommitProcessTest {
                 .append(any(CompleteTransaction.class), any(LogAppendEvent.class));
         StorageEngine storageEngine = mock(StorageEngine.class);
         var commandCommitListeners = mock(CommandCommitListeners.class);
-        TransactionCommitProcess commitProcess =
-                new InternalTransactionCommitProcess(appender, storageEngine, false, commandCommitListeners);
+        TransactionCommitProcess commitProcess = new InternalTransactionCommitProcess(
+                appender, storageEngine, false, commandCommitListeners, () -> true);
 
         // WHEN
         var mockedTransaction = mockedTransaction(mock(TransactionIdStore.class));
@@ -102,8 +102,8 @@ class InternalTransactionCommitProcessTest {
                 .when(storageEngine)
                 .apply(any(CompleteTransaction.class), any(TransactionApplicationMode.class));
         var commandCommitListeners = mock(CommandCommitListeners.class);
-        TransactionCommitProcess commitProcess =
-                new InternalTransactionCommitProcess(appender, storageEngine, false, commandCommitListeners);
+        TransactionCommitProcess commitProcess = new InternalTransactionCommitProcess(
+                appender, storageEngine, false, commandCommitListeners, () -> true);
         CompleteTransaction transaction = mockedTransaction(transactionIdStore);
 
         // WHEN
@@ -139,7 +139,8 @@ class InternalTransactionCommitProcessTest {
         when(transactionIdStore.nextCommittingTransactionId()).thenReturn(txId);
 
         var storageEngine = mock(StorageEngine.class);
-        var commitProcess = new InternalTransactionCommitProcess(appender, storageEngine, false, NO_LISTENERS);
+        var commitProcess =
+                new InternalTransactionCommitProcess(appender, storageEngine, false, NO_LISTENERS, () -> true);
         var batch = new CompleteCommandBatch(
                 Collections.emptyList(),
                 UNKNOWN_CONSENSUS_INDEX,
@@ -175,8 +176,8 @@ class InternalTransactionCommitProcessTest {
         StorageEngine storageEngine = mock(StorageEngine.class);
 
         var commandCommitListeners = mock(CommandCommitListeners.class);
-        TransactionCommitProcess commitProcess =
-                new InternalTransactionCommitProcess(appender, storageEngine, false, commandCommitListeners);
+        TransactionCommitProcess commitProcess = new InternalTransactionCommitProcess(
+                appender, storageEngine, false, commandCommitListeners, () -> true);
         CompleteCommandBatch noCommandTx = new CompleteCommandBatch(
                 Collections.emptyList(),
                 UNKNOWN_CONSENSUS_INDEX,
@@ -219,7 +220,7 @@ class InternalTransactionCommitProcessTest {
                 .preAllocateStoreFilesForCommands(any(), any());
         var commandCommitListeners = mock(CommandCommitListeners.class);
         TransactionCommitProcess commitProcess =
-                new InternalTransactionCommitProcess(appender, storageEngine, true, commandCommitListeners);
+                new InternalTransactionCommitProcess(appender, storageEngine, true, commandCommitListeners, () -> true);
 
         var transaction = mockedTransaction(mock(TransactionIdStore.class));
         TransactionFailureException exception = assertThrows(
@@ -241,7 +242,7 @@ class InternalTransactionCommitProcessTest {
                 .preAllocateStoreFilesForCommands(any(), any());
         var commandCommitListeners = mock(CommandCommitListeners.class);
         TransactionCommitProcess commitProcess =
-                new InternalTransactionCommitProcess(appender, storageEngine, true, commandCommitListeners);
+                new InternalTransactionCommitProcess(appender, storageEngine, true, commandCommitListeners, () -> true);
 
         var transaction = mockedTransaction(mock(TransactionIdStore.class));
         TransactionFailureException exception = assertThrows(
@@ -258,8 +259,8 @@ class InternalTransactionCommitProcessTest {
         TransactionAppender appender = mock(TransactionAppender.class);
         StorageEngine storageEngine = mock(StorageEngine.class);
         var commandCommitListeners = mock(CommandCommitListeners.class);
-        TransactionCommitProcess commitProcess =
-                new InternalTransactionCommitProcess(appender, storageEngine, false, commandCommitListeners);
+        TransactionCommitProcess commitProcess = new InternalTransactionCommitProcess(
+                appender, storageEngine, false, commandCommitListeners, () -> true);
         commitProcess.commit(mockedTransaction(mock(TransactionIdStore.class)), transactionWriteEvent, INTERNAL);
 
         verify(storageEngine, never()).preAllocateStoreFilesForCommands(any(), any());

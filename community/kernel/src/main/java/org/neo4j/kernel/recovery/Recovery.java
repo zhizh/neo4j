@@ -73,6 +73,7 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.kernel.BinarySupportedKernelVersions;
 import org.neo4j.kernel.KernelVersionProvider;
@@ -613,7 +614,8 @@ public final class Recovery {
                 memoryTracker,
                 cursorContextFactory,
                 tracers.getPageCacheTracer(),
-                recoveryVersionStorage);
+                recoveryVersionStorage,
+                PagePrefetcher.DISABLED);
 
         // multi versioned stores recovery does not support format mode atm
         if (storageEngine.getOpenOptions().contains(MULTI_VERSIONED)) {

@@ -37,6 +37,7 @@ import org.neo4j.io.pagecache.tracing.PageFileSwapperTracer;
 import org.neo4j.io.pagecache.tracing.PageReferenceTranslator;
 import org.neo4j.io.pagecache.tracing.PinEvent;
 import org.neo4j.io.pagecache.tracing.PinPageFaultEvent;
+import org.neo4j.io.pagecache.tracing.PrefetchEvent;
 import org.neo4j.io.pagecache.tracing.VectoredPageFaultEvent;
 
 public class DefaultPageCursorTracer implements PageCursorTracer {
@@ -70,6 +71,8 @@ public class DefaultPageCursorTracer implements PageCursorTracer {
     private long merges;
     private long snapshotsLoaded;
     private long copiesCreated;
+    private long pagesPrefetched;
+    private long pagesPrefetchedWithFaults;
     private long openedCursors;
     private long closedCursors;
 
@@ -78,6 +81,7 @@ public class DefaultPageCursorTracer implements PageCursorTracer {
     private final DefaultPinPageFaultEvent pageFaultEvent = new DefaultPinPageFaultEvent();
     private final DefaultVectoredPageFaultEvent vectoredPageFaultEvent = new DefaultVectoredPageFaultEvent();
     private final DefaultFlushEvent flushEvent = new DefaultFlushEvent();
+    private final DefaultPrefetchEvent prefetchEvent = new DefaultPrefetchEvent();
 
     private final PageCacheTracer pageCacheTracer;
     private final String tag;
@@ -203,6 +207,12 @@ public class DefaultPageCursorTracer implements PageCursorTracer {
         }
         if (copiesCreated > 0) {
             pageCacheTracer.pagesCopied(copiesCreated);
+        }
+        if (pagesPrefetched > 0) {
+            pageCacheTracer.pagesPrefetched(pagesPrefetched);
+        }
+        if (pagesPrefetchedWithFaults > 0) {
+            pageCacheTracer.pagesPrefetchedWithFaults(pagesPrefetchedWithFaults);
         }
         if (openedCursors > 0) {
             pageCacheTracer.openedCursors(openedCursors);
@@ -388,6 +398,12 @@ public class DefaultPageCursorTracer implements PageCursorTracer {
         return vectoredPageFaultEvent;
     }
 
+    @Override
+    public PrefetchEvent beginPrefetch(PageFileSwapperTracer fileTracer) {
+        prefetchEvent.swapperTracer = fileTracer;
+        return prefetchEvent;
+    }
+
     public void setIgnoreCounterCheck(boolean ignoreCounterCheck) {
         this.ignoreCounterCheck = ignoreCounterCheck;
     }
@@ -441,6 +457,7 @@ public class DefaultPageCursorTracer implements PageCursorTracer {
         public void close() {
             faults++;
             swapperTracer.faults(1);
+            prefetchEvent.faults(1);
         }
 
         @Override
@@ -497,6 +514,7 @@ public class DefaultPageCursorTracer implements PageCursorTracer {
             noPinFaults += numberOfPages;
             faults += numberOfPages;
             swapperTracer.faults(numberOfPages);
+            prefetchEvent.faults(numberOfPages);
         }
     }
 
@@ -565,6 +583,30 @@ public class DefaultPageCursorTracer implements PageCursorTracer {
             // one who actually cleared page binding
             if (swapperTracer != null) {
                 swapperTracer.evictions(1);
+            }
+        }
+    }
+
+    private class DefaultPrefetchEvent implements PrefetchEvent {
+
+        private PageFileSwapperTracer swapperTracer;
+
+        @Override
+        public void pagesPrefetched(int count) {
+            pagesPrefetched += count;
+            swapperTracer.pagesPrefetched(count);
+        }
+
+        @Override
+        public void close() {
+            swapperTracer = null;
+        }
+
+        private void faults(int numberOfPages) {
+            // no swapper tracer here, no prefetch is going
+            if (swapperTracer != null) {
+                pagesPrefetchedWithFaults += numberOfPages;
+                swapperTracer.pagesPrefetchedWithFaults(numberOfPages);
             }
         }
     }

@@ -174,4 +174,12 @@ public interface PageCacheCounters {
     long copiedPages();
 
     long snapshotsLoaded();
+
+    default long prefetchedPages() {
+        return 0L;
+    }
+
+    default long prefetchedPagesWithFaults() {
+        return 0L;
+    }
 }

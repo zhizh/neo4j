@@ -41,10 +41,15 @@ public class DefaultTransactionalProcessFactory implements TransactionalProcessF
             StorageEngine storageEngine,
             DatabaseReadOnlyChecker readOnlyChecker,
             boolean preAllocateSpaceInStoreFiles,
-            CommandCommitListeners commandCommitListeners) {
+            CommandCommitListeners commandCommitListeners,
+            boolean prefetchPages) {
         return new DatabaseTransactionCommitProcess(
                 new InternalTransactionCommitProcess(
-                        appender, storageEngine, preAllocateSpaceInStoreFiles, commandCommitListeners),
+                        appender,
+                        storageEngine,
+                        preAllocateSpaceInStoreFiles,
+                        commandCommitListeners,
+                        () -> prefetchPages),
                 readOnlyChecker);
     }
 

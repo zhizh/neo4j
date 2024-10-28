@@ -29,6 +29,7 @@ import static org.neo4j.configuration.GraphDatabaseSettings.tx_state_max_off_hea
 import static org.neo4j.configuration.GraphDatabaseSettings.tx_state_memory_allocation;
 import static org.neo4j.configuration.GraphDatabaseSettings.tx_state_off_heap_block_cache_size;
 import static org.neo4j.configuration.GraphDatabaseSettings.tx_state_off_heap_max_cacheable_block_size;
+import static org.neo4j.io.pagecache.context.FixedVersionContextSupplier.EMPTY_CONTEXT_SUPPLIER;
 import static org.neo4j.kernel.lifecycle.LifecycleAdapter.onShutdown;
 import static org.neo4j.logging.log4j.LogConfig.createLoggerFromXmlConfig;
 
@@ -60,6 +61,9 @@ import org.neo4j.io.fs.watcher.FileWatcher;
 import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.io.locker.Locker;
 import org.neo4j.io.pagecache.PageCache;
+import org.neo4j.io.pagecache.context.CursorContextFactory;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcherFactory;
 import org.neo4j.kernel.BinarySupportedKernelVersions;
 import org.neo4j.kernel.availability.CompositeDatabaseAvailabilityGuard;
 import org.neo4j.kernel.diagnostics.providers.DbmsDiagnosticsManager;
@@ -144,6 +148,7 @@ public class GlobalModule {
     private final CapabilitiesService capabilitiesService;
     private final BinarySupportedKernelVersions binarySupportedKernelVersions;
     private final CommandCommitListeners defaultCommitListeners;
+    private final PagePrefetcher pagePrefetcher;
 
     /**
      * @param globalConfig         configuration affecting global aspects of the system.
@@ -281,6 +286,19 @@ public class GlobalModule {
         globalDependencies.satisfyDependency(capabilitiesService);
         globalDependencies.satisfyDependency(
                 tryResolveOrCreate(NativeAccess.class, NativeAccessProvider::getNativeAccess));
+        pagePrefetcher = tryResolveOrCreate(PagePrefetcher.class, this::createPrefetcher);
+        globalLife.add(pagePrefetcher);
+    }
+
+    private PagePrefetcher createPrefetcher() {
+        if (globalConfig.get(GraphDatabaseInternalSettings.prefetch_on_commit)) {
+            return PagePrefetcherFactory.getInstance()
+                    .create(
+                            pageCache,
+                            jobScheduler,
+                            new CursorContextFactory(tracers.getPageCacheTracer(), EMPTY_CONTEXT_SUPPLIER));
+        }
+        return PagePrefetcher.DISABLED;
     }
 
     private Tracers createDefaultTracers() {
@@ -554,5 +572,9 @@ public class GlobalModule {
 
     public CommandCommitListeners getDefaultCommandCommitListeners() {
         return defaultCommitListeners;
+    }
+
+    public PagePrefetcher getPagePrefetcher() {
+        return pagePrefetcher;
     }
 }

@@ -79,6 +79,7 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
 import org.neo4j.io.pagecache.tracing.DatabaseFlushEvent;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.kernel.api.txstate.TransactionState;
@@ -540,7 +541,8 @@ class NeoStoresTest {
                 LockVerificationFactory.NONE,
                 CONTEXT_FACTORY,
                 PageCacheTracer.NULL,
-                VersionStorage.EMPTY_STORAGE);
+                VersionStorage.EMPTY_STORAGE,
+                PagePrefetcher.DISABLED);
         life = new LifeSupport();
         life.add(storageEngine);
         life.add(storageEngine.schemaAndTokensLifecycle());

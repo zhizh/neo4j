@@ -62,6 +62,8 @@ public class DefaultPageCacheTracer implements PageCacheTracer {
     protected final LongAdder openedCursors = new LongAdder();
     protected final LongAdder closedCursors = new LongAdder();
     protected final LongAdder copiedPages = new LongAdder();
+    protected final LongAdder prefetchedPages = new LongAdder();
+    protected final LongAdder prefetchedPagesWithFaults = new LongAdder();
     protected final LongAdder snapshotsLoaded = new LongAdder();
     protected final AtomicLong maxPages = new AtomicLong();
 
@@ -280,6 +282,16 @@ public class DefaultPageCacheTracer implements PageCacheTracer {
     }
 
     @Override
+    public long prefetchedPages() {
+        return prefetchedPages.sum();
+    }
+
+    @Override
+    public long prefetchedPagesWithFaults() {
+        return prefetchedPagesWithFaults.sum();
+    }
+
+    @Override
     public void iopq(long iopq) {
         iopqPerformed.add(iopq);
     }
@@ -293,6 +305,16 @@ public class DefaultPageCacheTracer implements PageCacheTracer {
     @Override
     public void pagesCopied(long copiesCreated) {
         copiedPages.add(copiesCreated);
+    }
+
+    @Override
+    public void pagesPrefetched(long count) {
+        prefetchedPages.add(count);
+    }
+
+    @Override
+    public void pagesPrefetchedWithFaults(long count) {
+        prefetchedPagesWithFaults.add(count);
     }
 
     @Override

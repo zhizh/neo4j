@@ -34,6 +34,7 @@ public enum Group {
     PAGE_CACHE_EVICTION("PageCacheEviction"),
     /* Page cache background eviction. */
     PAGE_CACHE_PRE_FETCHER("PageCachePreFetcher", ExecutorServiceFactory.cachedWithDiscard(), 4),
+    PAGE_PRE_FETCHER("PagePreFetcher"),
     /** Watch out for, and report, external manipulation of store files. */
     FILE_WATCHER("FileWatcher", ExecutorServiceFactory.unschedulable()),
     /** Monitor and report system-wide pauses, in case they lead to service interruption. */

@@ -50,6 +50,7 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.PagedFile;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.kernel.KernelVersionRepository;
 import org.neo4j.kernel.impl.api.CompleteTransaction;
@@ -124,7 +125,8 @@ class PreAllocationOfStoreFilesTest {
                 LockVerificationFactory.NONE,
                 CursorContextFactory.NULL_CONTEXT_FACTORY,
                 PageCacheTracer.NULL,
-                VersionStorage.EMPTY_STORAGE);
+                VersionStorage.EMPTY_STORAGE,
+                PagePrefetcher.DISABLED);
     }
 
     @AfterEach

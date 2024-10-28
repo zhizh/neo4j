@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.io.pagecache.monitoring.PageFileCounters;
 import org.neo4j.io.pagecache.tracing.FileFlushEvent;
+import org.neo4j.io.pagecache.tracing.PageFileSwapperTracer;
 import org.neo4j.io.pagecache.tracing.version.FileTruncateEvent;
 
 /**
@@ -275,4 +276,11 @@ public interface PagedFile extends AutoCloseable {
      * of this operation.
      */
     void preAllocate(long newFileSizeInPages) throws IOException;
+
+    /**
+     * Return file specific tracer
+     */
+    default PageFileSwapperTracer getFileTracer() {
+        return PageFileSwapperTracer.NULL;
+    }
 }

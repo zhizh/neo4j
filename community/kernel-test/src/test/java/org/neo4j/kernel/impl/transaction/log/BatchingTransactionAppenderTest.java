@@ -466,7 +466,11 @@ class BatchingTransactionAppenderTest {
         // Given
         BatchingTransactionAppender appender = life.add(createTransactionAppender());
         var commitProcess = new InternalTransactionCommitProcess(
-                appender, mock(StorageEngine.class, RETURNS_MOCKS), false, CommandCommitListeners.NO_LISTENERS);
+                appender,
+                mock(StorageEngine.class, RETURNS_MOCKS),
+                false,
+                CommandCommitListeners.NO_LISTENERS,
+                () -> true);
         when(transactionIdStore.nextCommittingTransactionId()).thenReturn(42L);
         var transactionCommitment = new TransactionCommitment(transactionIdStore);
         var transactionIdGenerator = new IdStoreTransactionIdGenerator(transactionIdStore);

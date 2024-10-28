@@ -150,7 +150,8 @@ public abstract class GraphStoreFixture implements AutoCloseable {
                 dependencyResolver.resolveDependency(TransactionAppender.class),
                 dependencyResolver.resolveDependency(StorageEngine.class),
                 false,
-                CommandCommitListeners.NO_LISTENERS);
+                CommandCommitListeners.NO_LISTENERS,
+                () -> true);
         transactionIdStore = database.getDependencyResolver().resolveDependency(TransactionIdStore.class);
         commitmentFactory = database.getDependencyResolver().resolveDependency(TransactionCommitmentFactory.class);
 

@@ -71,6 +71,7 @@ import org.neo4j.io.pagecache.PageCache;
 import org.neo4j.io.pagecache.context.CursorContext;
 import org.neo4j.io.pagecache.context.CursorContextFactory;
 import org.neo4j.io.pagecache.impl.muninn.VersionStorage;
+import org.neo4j.io.pagecache.prefetch.PagePrefetcher;
 import org.neo4j.io.pagecache.tracing.DatabaseFlushEvent;
 import org.neo4j.io.pagecache.tracing.FileFlushEvent;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
@@ -645,7 +646,8 @@ class BatchingNeoStoresTest {
                     LockVerificationFactory.NONE,
                     CONTEXT_FACTORY,
                     PageCacheTracer.NULL,
-                    VersionStorage.EMPTY_STORAGE));
+                    VersionStorage.EMPTY_STORAGE,
+                    PagePrefetcher.DISABLED));
             // Create the relationship type token
             TxState txState = new TxState();
             var transactionIdGenerator = new IdStoreTransactionIdGenerator(storageEngine.metadataProvider());
