@@ -365,15 +365,17 @@ case class InsertCachedProperties(pushdownPropertyReads: Boolean)
     val rewriter = bottomUp(Rewriter.lift {
 
       case produceResult: ProduceResult if cachePropertiesForEntities =>
+        val availableSymbolNames = produceResult.availableSymbols.map(_.name)
         val newColumns =
           produceResult
             .returnColumns
             .map(column =>
-              cachedPropertiesTracker.get(acc.variableWithOriginalName(asVariable(column.variable))).map(cached =>
-                column.copy(cachedProperties = cached)
-              ).getOrElse(column)
+              cachedPropertiesTracker.get(acc.variableWithOriginalName(asVariable(column.variable))).fold(column) {
+                cached =>
+                  val availableCachedProperties = cached.filter(prop => availableSymbolNames.contains(prop.entityName))
+                  column.copy(cachedProperties = availableCachedProperties)
+              }
             )
-
         produceResult.withNewReturnColumns(newColumns)
 
       case aggregating: AggregatingPlan =>
