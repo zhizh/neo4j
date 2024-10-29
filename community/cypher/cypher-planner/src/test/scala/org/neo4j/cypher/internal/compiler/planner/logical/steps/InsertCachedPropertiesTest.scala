@@ -2280,6 +2280,32 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
       .build()
   }
 
+  test("should not introduce PropertiesUsingCachedProperties with unavailable alias after aggregation") {
+    val builder = new LogicalPlanBuilder()
+      .produceResults("result", "c")
+      .projection("properties(n) AS result")
+      .aggregation(Seq("n AS n"), Seq("count(*) AS c"))
+      .filter("x.prop > 123 OR x.prop CONTAINS 'hello'")
+      .projection("n AS x")
+      .nodeByLabelScan("n", "L")
+
+    val (newPlan, _) = replace(builder.build(), builder.getSemanticTable)
+
+    val cachedNpropAsXprop = cachedNodeProp("n", "prop", "x", knownToAccessStore = true)
+
+    newPlan shouldEqual new LogicalPlanBuilder()
+      .produceResults("result", "c")
+      .projection("properties(n) AS result")
+      .aggregation(Seq("n AS n"), Seq("count(*) AS c"))
+      .filterExpression(ors(
+        greaterThan(cachedNpropAsXprop, literalInt(123)),
+        contains(cachedNpropAsXprop, literalString("hello"))
+      ))
+      .projection("n AS x")
+      .nodeByLabelScan("n", "L")
+      .build()
+  }
+
   test("should cache properties of returned and renamed indexed nodes") {
     val builder = new LogicalPlanBuilder()
       .produceResults("x")

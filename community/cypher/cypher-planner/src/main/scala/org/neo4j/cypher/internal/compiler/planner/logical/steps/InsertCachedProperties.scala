@@ -365,26 +365,19 @@ case class InsertCachedProperties(pushdownPropertyReads: Boolean)
     val rewriter = bottomUp(Rewriter.lift {
 
       case produceResult: ProduceResult if cachePropertiesForEntities =>
-        val availableSymbolNames = produceResult.availableSymbols.map(_.name)
         val newColumns =
           produceResult
             .returnColumns
             .map(column =>
               cachedPropertiesTracker.get(acc.variableWithOriginalName(asVariable(column.variable))).fold(column) {
                 cached =>
-                  val availableCachedProperties = cached.filter(prop => availableSymbolNames.contains(prop.entityName))
-                  column.copy(cachedProperties = availableCachedProperties)
+                  column.copy(cachedProperties = cached)
               }
             )
         produceResult.withNewReturnColumns(newColumns)
 
       case aggregating: AggregatingPlan =>
-        // If we rename the variable in the aggregation it is no longer available to get the cached property later
-        aggregating.groupingExpressions.foreach {
-          case (v, oldV: LogicalVariable) if v != oldV =>
-            cachedPropertiesTracker.clear(oldV)
-          case _ => // do nothing
-        }
+        cachedPropertiesTracker.clearUnavailableSymbols(aggregating.availableSymbols)
         aggregating
 
       case properties @ Properties(variable: LogicalVariable) if cachePropertiesForEntities =>
@@ -837,8 +830,18 @@ object RestrictedCaching {
   class CachedPropertiesTracker {
     private val cachedProperties = mutable.Map.empty[LogicalVariable, Set[ASTCachedProperty]]
 
-    def clear(variable: LogicalVariable): Unit = {
-      cachedProperties.remove(variable)
+    def clearUnavailableSymbols(availableSymbols: Set[LogicalVariable]): Unit = {
+      val availableSymbolNames = availableSymbols.map(_.name)
+      cachedProperties
+        .filterInPlace {
+          case (k, _) => availableSymbols.contains(k)
+        }
+        .mapValuesInPlace {
+          case (_, cached) => cached.filter(prop => availableSymbolNames.contains(prop.entityName))
+        }
+        .filterInPlace {
+          case (_, cached) => cached.nonEmpty
+        }
     }
 
     def addOne(variable: LogicalVariable, newProperty: ASTCachedProperty): Unit = {
