@@ -23,6 +23,7 @@ import static java.lang.String.format;
 import static org.neo4j.kernel.api.exceptions.Status.Classification.DatabaseError;
 
 import org.neo4j.bolt.fsm.error.AdmissionControlException;
+import org.neo4j.bolt.fsm.error.BoltException;
 import org.neo4j.bolt.fsm.error.ConnectionTerminating;
 import org.neo4j.bolt.fsm.error.NoSuchStateException;
 import org.neo4j.bolt.fsm.error.StateMachineException;
@@ -35,7 +36,6 @@ import org.neo4j.bolt.protocol.common.message.Error;
 import org.neo4j.bolt.protocol.common.message.request.RequestMessage;
 import org.neo4j.dbms.admissioncontrol.AdmissionControlService;
 import org.neo4j.dbms.admissioncontrol.AdmissionControlToken;
-import org.neo4j.kernel.api.exceptions.Status.Request;
 import org.neo4j.logging.Log;
 import org.neo4j.logging.internal.LogService;
 
@@ -141,10 +141,8 @@ final class StateMachineImpl implements StateMachine, Context {
             throws StateMachineException {
         if (this.failed || this.interrupted) {
             if (!message.isIgnoredWhenFailed()) {
-                handler.onFailure(Error.from(
-                        Request.Invalid,
-                        "Message '" + message + "' cannot be handled by session in the "
-                                + this.state().name() + " state"));
+                handler.onFailure(
+                        Error.from(BoltException.invalidServerState(this.state().name(), message.toString())));
 
                 throw new IllegalRequestParameterException("Request of type "
                         + message.getClass().getName() + " is not permitted while failed or interrupted");

@@ -364,8 +364,10 @@ public class ProtocolViolationIT {
                         // we need to fuzzy check since the string representation
                         // of the begin message change in different protocol versions
                         "cannot be handled by session in the READY state",
-                        GqlStatusInfoCodes.STATUS_50N42.getGqlStatus(),
-                        "error: general processing exception - unexpected error. Unexpected error has occurred. See debug log for details.");
+                        GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
+                        "error: connection exception - protocol error. General network protocol error.",
+                        GqlStatusInfoCodes.STATUS_08N10.getGqlStatus(),
+                        "error: connection exception - invalid server state. The server is not in a state that can process a message of type: 'READY'.");
         ;
     }
 }

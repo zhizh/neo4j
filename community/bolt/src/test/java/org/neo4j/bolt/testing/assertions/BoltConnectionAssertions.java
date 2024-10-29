@@ -443,6 +443,31 @@ public final class BoltConnectionAssertions
                         .contains(statusDescription)));
     }
 
+    public BoltConnectionAssertions receivesFailureFuzzy(
+            Status status,
+            String message,
+            GqlStatus gqlstatus,
+            String statusDescription,
+            GqlStatus causeGqlstatus,
+            String causeStatusDescription) {
+        return this.receivesFailure(meta -> Assertions.assertThat(meta)
+                .containsOnlyKeys("neo4j_code", "message", "gql_status", "description", "cause", "diagnostic_record")
+                .containsEntry("neo4j_code", status.code().serialize())
+                .hasEntrySatisfying("message", msg -> Assertions.assertThat(msg)
+                        .asInstanceOf(InstanceOfAssertFactories.STRING)
+                        .contains(message))
+                .containsEntry("gql_status", gqlstatus.gqlStatusString())
+                .hasEntrySatisfying("description", msg -> Assertions.assertThat(msg)
+                        .asInstanceOf(InstanceOfAssertFactories.STRING)
+                        .contains(statusDescription))
+                .hasEntrySatisfying("cause", causeObj -> Assertions.assertThat(causeObj)
+                        .asInstanceOf(InstanceOfAssertFactories.MAP)
+                        .containsEntry("gql_status", causeGqlstatus.gqlStatusString())
+                        .hasEntrySatisfying("description", msg -> Assertions.assertThat(msg)
+                                .asInstanceOf(InstanceOfAssertFactories.STRING)
+                                .contains(causeStatusDescription))));
+    }
+
     /**
      * Does fuzzy comparison on the message and status description
      *

@@ -22,6 +22,7 @@ package org.neo4j.bolt.protocol.common.message;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import org.neo4j.bolt.fsm.error.BoltException;
 import org.neo4j.bolt.fsm.error.ConnectionTerminating;
 import org.neo4j.bolt.protocol.common.message.response.FailureMessage;
 import org.neo4j.bolt.protocol.common.message.response.FailureMetadata;
@@ -163,12 +164,20 @@ public class Error {
                 + wrappedThrowable + '}';
     }
 
-    public static Error from(Status status, String message) {
+    /**
+     * This function is deprecated because it does not include any GQL status information.
+     * Use the method that takes a Throwable instead.
+     */
+    @Deprecated
+    private static Error from(Status status, String message) {
         return new Error(status, message, false);
     }
 
     public static Error from(Throwable any) {
-        var fatal = false;
+        return from(any, false);
+    }
+
+    public static Error from(Throwable any, boolean fatal) {
 
         for (Throwable cause = any; cause != null; cause = cause.getCause()) {
             Long queryId = null;
@@ -179,26 +188,64 @@ public class Error {
                 queryId = ((HasQuery) cause).query();
             }
             if (cause instanceof DatabaseShutdownException) {
-                return new Error(Status.General.DatabaseUnavailable, cause, fatal, queryId);
+                return new Error(
+                        Status.General.DatabaseUnavailable,
+                        // Change
+                        //   Status.General.DatabaseUnavailable.code().description()
+                        // to
+                        //   cause.getMessage()
+                        // once the GQL constructors of DatabaseShutdownException are used
+                        Status.General.DatabaseUnavailable.code().description(),
+                        any,
+                        fatal,
+                        queryId,
+                        cause);
             }
             if (cause instanceof Status.HasStatus) {
-                return new Error(((Status.HasStatus) cause).status(), cause.getMessage(), any, false, queryId, cause);
+                return new Error(((Status.HasStatus) cause).status(), cause.getMessage(), any, fatal, queryId, cause);
             }
             if (cause instanceof OutOfMemoryError) {
-                return new Error(Status.General.OutOfMemoryError, cause, fatal, queryId);
+                return new Error(
+                        Status.General.OutOfMemoryError,
+                        cause.getMessage(),
+                        any,
+                        fatal,
+                        queryId,
+                        BoltException.outOfMemory(any));
             }
             if (cause instanceof StackOverflowError) {
-                return new Error(Status.General.StackOverFlowError, cause, fatal, queryId);
+                return new Error(
+                        Status.General.StackOverFlowError,
+                        cause.getMessage(),
+                        any,
+                        fatal,
+                        queryId,
+                        BoltException.stackOverflow(any));
             }
         }
 
         // In this case, an error has "slipped out", and we don't have a good way to handle it. This indicates
         // a buggy code path, and we need to try to convince whoever ends up here to tell us about it.
-        return new Error(Status.General.UnknownError, any != null ? any.getMessage() : null, any, fatal, null, any);
+        return new Error(
+                Status.General.UnknownError,
+                any != null ? any.getMessage() : null,
+                any,
+                fatal,
+                null,
+                BoltException.unknownError(any));
     }
 
-    public static Error fatalFrom(Status status, String message) {
+    /**
+     * This function is deprecated because it does not include any GQL status information.
+     * Use the method that takes a Throwable instead.
+     */
+    @Deprecated
+    private static Error fatalFrom(Status status, String message) {
         return new Error(status, message, true);
+    }
+
+    public static Error fatalFrom(Throwable any) {
+        return from(any, true);
     }
 
     public boolean isFatal() {

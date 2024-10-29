@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.neo4j.bolt.BoltServer;
 import org.neo4j.bolt.fsm.StateMachine;
+import org.neo4j.bolt.fsm.error.BoltException;
 import org.neo4j.bolt.fsm.error.StateMachineException;
 import org.neo4j.bolt.protocol.common.BoltProtocol;
 import org.neo4j.bolt.protocol.common.connection.Job;
@@ -56,7 +57,6 @@ import org.neo4j.bolt.tx.error.TransactionException;
 import org.neo4j.dbms.admissioncontrol.AdmissionControlService;
 import org.neo4j.dbms.admissioncontrol.AdmissionControlToken;
 import org.neo4j.graphdb.security.AuthorizationExpiredException;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.impl.query.NotificationConfiguration;
 import org.neo4j.logging.internal.LogService;
 import org.neo4j.memory.HeapEstimator;
@@ -164,9 +164,7 @@ public class AtomicSchedulingConnection extends AbstractConnection {
                 // we get RejectedExecutionException when all threads within the pool are busy (e.g. the server is at
                 // capacity) and the queue (if any) is at its limit - as a result, we immediately return FAILURE and
                 // terminate the connection to free up resources
-                var error = Error.from(
-                        Status.Request.NoThreadsAvailable,
-                        Status.Request.NoThreadsAvailable.code().description());
+                var error = Error.from(BoltException.failedToAcquireExecutionThread());
 
                 this.connector().errorAccountant().notifyThreadStarvation(this, ex);
                 this.notifyListenersSafely("requestResultFailure", listener -> listener.onResponseFailed(error));

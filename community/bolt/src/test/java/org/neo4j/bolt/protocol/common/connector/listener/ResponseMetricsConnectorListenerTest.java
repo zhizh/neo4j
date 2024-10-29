@@ -21,6 +21,7 @@ package org.neo4j.bolt.protocol.common.connector.listener;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.neo4j.bolt.fsm.error.BoltException;
 import org.neo4j.bolt.protocol.common.connection.BoltConnectionMetricsMonitor;
 import org.neo4j.bolt.protocol.common.message.Error;
 import org.neo4j.bolt.testing.mock.ConnectionMockFactory;
@@ -74,9 +75,9 @@ class ResponseMetricsConnectorListenerTest {
 
         var listener = new ResponseMetricsConnectorListener(monitor);
 
-        listener.onResponseFailed(Error.from(Status.Database.DatabaseNotFound, "Oh no! :("));
+        listener.onResponseFailed(Error.from(BoltException.unknownError(new Exception("Oh no :("))));
 
-        Mockito.verify(monitor).responseFailed(Status.Database.DatabaseNotFound);
+        Mockito.verify(monitor).responseFailed(Status.General.UnknownError);
         Mockito.verifyNoMoreInteractions(monitor);
     }
 }

@@ -81,11 +81,17 @@ class ErrorTest {
             // Then
             assertThat(metadata.status()).isEqualTo(Status.General.UnknownError);
             assertThat(metadata.message()).isEqualTo(cause.getMessage());
-            assertThat(metadata.gqlStatus()).isEqualTo(ErrorGqlStatusObject.DEFAULT_STATUS_CODE);
-            assertThat(metadata.description()).isEqualTo(ErrorGqlStatusObject.DEFAULT_STATUS_DESCRIPTION);
+            assertThat(metadata.gqlStatus()).isEqualTo("50N00");
+            assertThat(metadata.description())
+                    .isEqualTo(
+                            "error: general processing exception - internal error. Internal exception raised Throwable: This is not an error we know how to handle.");
             assertThat(metadata.diagnosticRecord())
                     .isEqualTo(DiagnosticRecord.from().build().asMap());
-            assertThat(metadata.cause()).isNull();
+            assertThat(metadata.cause()).isNotNull();
+            assertThat(metadata.cause().gqlStatus()).isEqualTo("50N09");
+            assertThat(metadata.cause().description())
+                    .isEqualTo(
+                            "error: general processing exception - invalid server state transition. The server transitioned into a server state that is not valid in the current context: 'uncaught error'.");
         }
 
         @Test

@@ -22,6 +22,7 @@ package org.neo4j.bolt.protocol.v40.message.encoder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
+import org.neo4j.bolt.fsm.error.BoltException;
 import org.neo4j.bolt.protocol.common.message.Error;
 import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.packstream.error.reader.PackstreamReaderException;
@@ -38,13 +39,13 @@ class FailureMessageEncoderV40Test {
         encoder.write(
                 null,
                 buf,
-                Error.from(Status.Request.InvalidFormat, "Something went wrong! :(")
+                Error.from(BoltException.unknownError(new Exception("Something went wrong! :(")))
                         .asBoltMessage());
 
         PackstreamBufAssertions.assertThat(buf).containsMap(meta -> assertThat(meta)
                 .isNotNull()
                 .hasSize(2)
-                .containsEntry("code", Status.Request.InvalidFormat.code().serialize())
+                .containsEntry("code", Status.General.UnknownError.code().serialize())
                 .containsEntry("message", "Something went wrong! :("));
 
         assertThat(buf.getTarget().isReadable()).isFalse();

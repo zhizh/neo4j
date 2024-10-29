@@ -25,6 +25,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.neo4j.bolt.fsm.error.BoltException;
 import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.fsm.response.metadata.MetadataHandler;
 import org.neo4j.bolt.protocol.common.message.Error;
@@ -130,12 +131,12 @@ class NetworkResponseHandlerTest {
     void shouldAssembleFailureResponse() {
         var handler = new NetworkResponseHandler(this.connection, this.metadataHandler, 512, 0, this.logService);
 
-        handler.onFailure(Error.from(Status.Transaction.Terminated, "Something went wrong!"));
+        handler.onFailure(Error.from(BoltException.unknownError(new Exception("Something went wrong!"))));
 
         var response = this.channel.<FailureMessage>readOutbound();
 
         FailureMessageAssertions.assertThat(response)
-                .hasStatus(Status.Transaction.Terminated)
+                .hasStatus(Status.General.UnknownError)
                 .hasMessage("Something went wrong!")
                 .isNotFatal();
     }
@@ -144,12 +145,12 @@ class NetworkResponseHandlerTest {
     void shouldAssembleFatalFailureResponse() {
         var handler = new NetworkResponseHandler(this.connection, this.metadataHandler, 512, 0, this.logService);
 
-        handler.onFailure(Error.fatalFrom(Status.Transaction.Terminated, "Something went wrong!"));
+        handler.onFailure(Error.fatalFrom(BoltException.unknownError(new Exception("Something went wrong!"))));
 
         var response = this.channel.<FailureMessage>readOutbound();
 
         FailureMessageAssertions.assertThat(response)
-                .hasStatus(Status.Transaction.Terminated)
+                .hasStatus(Status.General.UnknownError)
                 .hasMessage("Something went wrong!")
                 .isFatal();
 
