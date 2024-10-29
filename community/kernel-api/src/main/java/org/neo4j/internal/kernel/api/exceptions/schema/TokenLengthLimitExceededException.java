@@ -24,8 +24,9 @@ import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation;
 import org.neo4j.gqlstatus.GqlParams;
 import org.neo4j.gqlstatus.GqlRuntimeException;
 import org.neo4j.gqlstatus.GqlStatusInfoCodes;
+import org.neo4j.kernel.api.exceptions.Status;
 
-public final class TokenLengthLimitExceededException extends GqlRuntimeException {
+public final class TokenLengthLimitExceededException extends GqlRuntimeException implements Status.HasStatus {
 
     public TokenLengthLimitExceededException(String tokenName, String tokenType, int maxLength) {
         this(
@@ -48,5 +49,10 @@ public final class TokenLengthLimitExceededException extends GqlRuntimeException
         return String.format(
                 "Invalid input %s... A %s name cannot be longer than %d.",
                 tokenName.substring(0, Math.min(tokenName.length(), 100)), tokenType, maxLength);
+    }
+
+    @Override
+    public Status status() {
+        return Status.Schema.TokenLengthError;
     }
 }
