@@ -271,7 +271,7 @@ class ForwardRecoveryIT {
             batchesCounter.incrementAndGet();
             if (batchesCounter.get() == 21) {
                 afterTwentyBatchesMessage =
-                        Iterables.last(monitorLog.serialize().lines().toList());
+                        monitorLog.serialize().lines().toList().toString();
             }
         }
 
