@@ -45,13 +45,15 @@ trait ImmutableAttribute[T] {
 }
 
 object ImmutableAttribute {
+  final private val ARRAY_SIZE_THRESHOLD: Int = 64
+
   def empty[T: ClassTag]: ImmutableAttribute[T] = new ArraySeqImmutableAttribute(ArraySeq.empty[T])
 
   /** Returns a new ImmutableAttribute of the specified values. */
   def apply[T: ClassTag](values: Seq[(Id, T)]): ImmutableAttribute[T] = {
     val arraySize = values.foldLeft(0) { case (acc, (id, _)) => math.max(acc, id.x + 1) }
 
-    if (arraySize > values.size * 3) {
+    if (arraySize > ARRAY_SIZE_THRESHOLD && arraySize > values.size * 3) {
       // Lots of unpopulated ids, use map based implementation to optimise for space.
       val map = IntObjectMaps.mutable.ofInitialCapacity[T](values.size)
       values.foreach { case (id, value) => map.put(id.x, value) }
