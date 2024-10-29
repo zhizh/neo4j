@@ -1924,7 +1924,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             new GqlParams.GqlParam[] {GqlParams.StringParam.propKey, GqlParams.StringParam.operation},
             emptyMap(),
             Condition.DATA_EXCEPTION,
-            "invalid property based access control rule involving non-comutative expressions",
+            "invalid property based access control rule involving non-commutative expressions",
             ErrorClassification.CLIENT_ERROR),
     STATUS_22NA2(
             new GqlStatus("22NA2"),
