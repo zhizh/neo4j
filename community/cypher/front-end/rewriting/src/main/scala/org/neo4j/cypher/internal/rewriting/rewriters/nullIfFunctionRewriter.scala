@@ -46,7 +46,7 @@ case object nullIfFunctionRewriter extends Step with DefaultPostCondition with P
     case f @ FunctionInvocation(FunctionName(namespace, name), _, IndexedSeq(v1: Expression, v2: Expression), _, _)
       if namespace.parts.isEmpty && name.equalsIgnoreCase(NullIf.name) =>
       val alt1 = (Equals(v1, v2)(f.position), Null()(f.position))
-      CaseExpression(None, None, IndexedSeq(alt1), Some(v1))(f.position)
+      CaseExpression(None, IndexedSeq(alt1), Some(v1))(f.position)
   }
 
   val instance: Rewriter = topDown(rewriter)

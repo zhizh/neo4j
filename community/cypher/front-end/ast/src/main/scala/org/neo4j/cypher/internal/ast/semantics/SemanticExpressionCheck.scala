@@ -40,7 +40,6 @@ import org.neo4j.cypher.internal.expressions.BooleanLiteral
 import org.neo4j.cypher.internal.expressions.CachedHasProperty
 import org.neo4j.cypher.internal.expressions.CachedProperty
 import org.neo4j.cypher.internal.expressions.CaseExpression
-import org.neo4j.cypher.internal.expressions.CaseExpression.Placeholder
 import org.neo4j.cypher.internal.expressions.CoerceTo
 import org.neo4j.cypher.internal.expressions.Concatenate
 import org.neo4j.cypher.internal.expressions.ContainerIndex
@@ -371,11 +370,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
 
       case x: CaseExpression =>
         val possibleTypes = unionOfTypes(x.possibleExpressions)
-        SemanticExpressionCheck.check(ctx, x.candidate) chain
-          SemanticCheck.fromState { state =>
-            val exprTypeSpec = x.candidate.fold(TypeSpec.all)(types(_)(state))
-            x.candidateVarName.foldSemanticCheck(declareVariable(_, exprTypeSpec))
-          } chain
+        SemanticExpressionCheck.check(ctx, x.expression) chain
           check(ctx, x.alternatives.flatMap { a => Seq(a._1, a._2) }) chain
           check(ctx, x.default) chain
           expectType(CTBoolean.covariant, x.alternatives.map(_._1)) chain
@@ -828,8 +823,7 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
               SemanticState.recordCurrentScope(x.query)
           } chain specifyType(CTList(CTAny).covariant, x)
 
-      case _: Placeholder => SemanticCheck.success
-      case x: Expression  => semanticCheckFallback(ctx, x)
+      case x: Expression => semanticCheckFallback(ctx, x)
     }
   }
 

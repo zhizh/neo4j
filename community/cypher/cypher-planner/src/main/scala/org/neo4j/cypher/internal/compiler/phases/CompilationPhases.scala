@@ -64,8 +64,6 @@ import org.neo4j.cypher.internal.frontend.phases.Transformer
 import org.neo4j.cypher.internal.frontend.phases.collapseMultipleInPredicates
 import org.neo4j.cypher.internal.frontend.phases.factories.PlanPipelineTransformerFactory
 import org.neo4j.cypher.internal.frontend.phases.isolateAggregation
-import org.neo4j.cypher.internal.frontend.phases.isolateCaseCandidateExpressions
-import org.neo4j.cypher.internal.frontend.phases.replaceExtendedCasePlaceholders
 import org.neo4j.cypher.internal.frontend.phases.rewriting.cnf.CNFNormalizer
 import org.neo4j.cypher.internal.frontend.phases.rewriting.cnf.rewriteEqualityToInPredicate
 import org.neo4j.cypher.internal.frontend.phases.rewriting.cnf.simplifyPredicates
@@ -85,8 +83,6 @@ object CompilationPhases extends FrontEndCompilationPhases {
           Namespacer,
           ProjectNamedPathsRewriter,
           isolateAggregation,
-          isolateCaseCandidateExpressions,
-          replaceExtendedCasePlaceholders,
           transitiveEqualities,
           rewriteEqualityToInPredicate,
           collapseMultipleInPredicates,

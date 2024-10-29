@@ -96,8 +96,6 @@ object RememberToUpdateAstGeneratorTest {
     "org.neo4j.cypher.internal.expressions.AndsReorderable",
     "org.neo4j.cypher.internal.expressions.AssertIsNode",
     "org.neo4j.cypher.internal.expressions.AutoExtractedParameter",
-    "org.neo4j.cypher.internal.expressions.CaseExpression.Placeholder",
-    "org.neo4j.cypher.internal.expressions.CaseExpression.Placeholder.",
     "org.neo4j.cypher.internal.expressions.CachedHasProperty",
     "org.neo4j.cypher.internal.expressions.CachedProperty",
     "org.neo4j.cypher.internal.expressions.CoerceTo",

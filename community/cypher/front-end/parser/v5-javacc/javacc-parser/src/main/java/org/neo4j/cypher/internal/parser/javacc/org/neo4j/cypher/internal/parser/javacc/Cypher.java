@@ -11650,7 +11650,7 @@ labelExpressionStack.pop();
     t = jj_consume_token(CASE);
     caseExpr = Expression();
     jj_consume_token(WHEN);
-    tempWhen = simpleCaseWhenOperandList();
+    tempWhen = simpleCaseWhenOperandList(caseExpr);
 when.addAll( tempWhen );
     jj_consume_token(THEN);
     e = Expression();
@@ -11666,7 +11666,7 @@ for (var i = 0; i < tempWhen.size(); i++) { then.add( e ); }
         break label_48;
       }
       jj_consume_token(WHEN);
-      tempWhen = simpleCaseWhenOperandList();
+      tempWhen = simpleCaseWhenOperandList(caseExpr);
 when.addAll( tempWhen );
       jj_consume_token(THEN);
       e = Expression();
@@ -11687,9 +11687,9 @@ for (var i = 0; i < tempWhen.size(); i++) { then.add( e ); }
     throw new IllegalStateException ("Missing return statement in function");
 }
 
-  final public List<EXPRESSION> simpleCaseWhenOperandList() throws ParseException, Exception {EXPRESSION e;
+  final public List<EXPRESSION> simpleCaseWhenOperandList(EXPRESSION caseExpr) throws ParseException, Exception {EXPRESSION e;
     List<EXPRESSION> list = new ArrayList<>();
-    e = whenOperand();
+    e = whenOperand(caseExpr);
 list.add( e );
     label_49:
     while (true) {
@@ -11698,14 +11698,14 @@ list.add( e );
         break label_49;
       }
       jj_consume_token(COMMA);
-      e = whenOperand();
+      e = whenOperand(caseExpr);
 list.add( e );
     }
 {if ("" != null) return list;}
     throw new IllegalStateException ("Missing return statement in function");
 }
 
-  final public EXPRESSION whenOperand() throws ParseException, Exception {Token t;
+  final public EXPRESSION whenOperand(EXPRESSION lhs) throws ParseException, Exception {Token t;
     EXPRESSION e;
     EXPRESSION rhs;
     ParserCypherTypeName typeName;
@@ -11715,21 +11715,21 @@ t = token;
     case REGEQ:{
       t = jj_consume_token(REGEQ);
       rhs = Expression6();
-{if ("" != null) return astFactory.regeq( pos( t ), astFactory.casePlaceholder(), rhs );}
+{if ("" != null) return astFactory.regeq( pos( t ), lhs, rhs );}
       break;
       }
     case STARTS:{
       t = jj_consume_token(STARTS);
       jj_consume_token(WITH);
       rhs = Expression6();
-{if ("" != null) return astFactory.startsWith( pos( t ), astFactory.casePlaceholder(), rhs );}
+{if ("" != null) return astFactory.startsWith( pos( t ), lhs, rhs );}
       break;
       }
     case ENDS:{
       t = jj_consume_token(ENDS);
       jj_consume_token(WITH);
       rhs = Expression6();
-{if ("" != null) return astFactory.endsWith( pos( t ), astFactory.casePlaceholder(), rhs );}
+{if ("" != null) return astFactory.endsWith( pos( t ), lhs, rhs );}
       break;
       }
     default:
@@ -11737,40 +11737,40 @@ t = token;
       if (jj_2_115(3)) {
         t = jj_consume_token(IS);
         jj_consume_token(NULL);
-{if ("" != null) return astFactory.isNull( pos( t ), astFactory.casePlaceholder() );}
+{if ("" != null) return astFactory.isNull( pos( t ), lhs );}
       } else if (jj_2_116(3)) {
         t = jj_consume_token(IS);
         jj_consume_token(NOT);
         jj_consume_token(NULL);
-{if ("" != null) return astFactory.isNotNull( pos( t ), astFactory.casePlaceholder() );}
+{if ("" != null) return astFactory.isNotNull( pos( t ), lhs );}
       } else if (jj_2_117(3)) {
         t = jj_consume_token(IS);
         normalForm = normalForm();
         jj_consume_token(NORMALIZED);
-{if ("" != null) return astFactory.isNormalized( pos( t ), astFactory.casePlaceholder(), normalForm );}
+{if ("" != null) return astFactory.isNormalized( pos( t ), lhs, normalForm );}
       } else if (jj_2_118(3)) {
         t = jj_consume_token(IS);
         jj_consume_token(NOT);
         normalForm = normalForm();
         jj_consume_token(NORMALIZED);
-{if ("" != null) return astFactory.isNotNormalized( pos( t ), astFactory.casePlaceholder(), normalForm );}
+{if ("" != null) return astFactory.isNotNormalized( pos( t ), lhs, normalForm );}
       } else if (jj_2_119(3)) {
         t = jj_consume_token(IS);
         jj_consume_token(TYPED);
         typeName = cypherTypeName();
-{if ("" != null) return astFactory.isTyped( pos( t ), astFactory.casePlaceholder(), typeName );}
+{if ("" != null) return astFactory.isTyped( pos( t ), lhs, typeName );}
       } else if (jj_2_120(3)) {
         t = jj_consume_token(IS);
         jj_consume_token(NOT);
         jj_consume_token(TYPED);
         typeName = cypherTypeName();
-{if ("" != null) return astFactory.isNotTyped( pos( t ), astFactory.casePlaceholder(), typeName );}
+{if ("" != null) return astFactory.isNotTyped( pos( t ), lhs, typeName );}
       } else {
         switch (jj_ntk == -1 ? jj_ntk_f() : jj_ntk) {
         case COLONCOLON:{
           t = jj_consume_token(COLONCOLON);
           typeName = cypherTypeName();
-{if ("" != null) return astFactory.isTyped( pos( t ), astFactory.casePlaceholder(), typeName );}
+{if ("" != null) return astFactory.isTyped( pos( t ), lhs, typeName );}
           break;
           }
         case EQ:
@@ -11780,7 +11780,7 @@ t = token;
         case LT:
         case NEQ:
         case NEQ2:{
-          e = Expression8ComparatorExpression(astFactory.casePlaceholder());
+          e = Expression8ComparatorExpression(lhs);
 {if ("" != null) return e;}
           break;
           }
@@ -12064,7 +12064,7 @@ t = token;
         case ZONED:
         case IDENTIFIER:{
           e = Expression();
-{if ("" != null) return astFactory.eq( pos( t ), astFactory.casePlaceholder(), e);}
+{if ("" != null) return astFactory.eq( pos( t ), lhs, e);}
           break;
           }
         default:
