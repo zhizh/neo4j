@@ -498,7 +498,8 @@ object CardinalityCostModel {
 
       case Selection(predicate, _) => costPerRowFor(predicate, semanticTable)
 
-      case RemoteBatchPropertiesWithFilter(_, _, properties) => properties.flatMap(_.dependencies).size
+      case RemoteBatchPropertiesWithFilter(_, _, properties) =>
+        properties.flatMap(_.dependencies).size * STORE_LOOKUP_COST_PER_ROW
 
       case _: AllNodesScan => ALL_SCAN_COST_PER_ROW
 
@@ -591,7 +592,7 @@ object CardinalityCostModel {
       case _: PartitionedScanPlan =>
         throw new IllegalStateException("partitioned scans should only be planned at physical planning")
 
-      case RemoteBatchProperties(_, properties) => properties.flatMap(_.dependencies).size
+      case RemoteBatchProperties(_, properties) => properties.flatMap(_.dependencies).size * STORE_LOOKUP_COST_PER_ROW
 
       case _ // Default
         => DEFAULT_COST_PER_ROW

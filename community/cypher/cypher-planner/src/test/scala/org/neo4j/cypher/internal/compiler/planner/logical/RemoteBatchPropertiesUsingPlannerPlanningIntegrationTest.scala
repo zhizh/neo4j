@@ -25,6 +25,7 @@ import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
 import org.neo4j.cypher.internal.compiler.planner.LogicalPlanningIntegrationTestSupport
 import org.neo4j.cypher.internal.expressions.ExplicitParameter
+import org.neo4j.cypher.internal.expressions.HasDegreeGreaterThan
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
@@ -71,6 +72,10 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
     .setRelationshipCardinality("(:Comment)-[:COMMENT_HAS_CREATOR]->()", 2052169)
     .setRelationshipCardinality("()-[:COMMENT_HAS_CREATOR]->(:Person)", 2052169)
     .setRelationshipCardinality("(:Message)-[:COMMENT_HAS_CREATOR]->(:Person)", 2052169)
+    .setRelationshipCardinality("(:Message)-[]->(:Person)", 2052169 + 1003605)
+    .setRelationshipCardinality("(:Message)-[]->()", 2052169 + 1003605)
+    .setRelationshipCardinality("()-[]->()", 2052169 + 1003605 + 180623)
+    .setRelationshipCardinality("()-[]->(:Person)", 2052169 + 1003605 + 180623)
     .addNodeIndex("Person", List("id"), existsSelectivity = 1.0, uniqueSelectivity = 1.0 / 9892.0, isUnique = true)
     .addNodeIndex("Person", List("firstName"), existsSelectivity = 1.0, uniqueSelectivity = 1 / 1323.0)
     .addNodeIndex("Message", List("creationDate"), existsSelectivity = 1.0, uniqueSelectivity = 3033542.0 / 3055774.0)
@@ -911,10 +916,12 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
         .cartesianProduct()
         .|.nodeByLabelScan("a", "Person")
         .antiSemiApply()
-        .|.filter("cacheN[anon_1.firstName] = 'Jon'", "anon_1:Person")
-        .|.remoteBatchProperties("cacheNFromStore[anon_1.firstName]")
-        .|.expandAll("(b)-[anon_0:KNOWS]->(anon_1)")
-        .|.argument("b")
+        .|.expandInto("(b)-[anon_0:KNOWS]->(anon_1)")
+        .|.nodeIndexOperator(
+          "anon_1:Person(firstName = 'Jon')",
+          argumentIds = Set("b"),
+          getValue = Map("firstName" -> DoNotGetValue)
+        )
         .nodeIndexOperator("b:Person(firstName = 'John')", getValue = Map("firstName" -> GetValue))
         .build()
     )
@@ -1134,5 +1141,51 @@ class RemoteBatchPropertiesUsingPlannerPlanningIntegrationTest extends CypherFun
           unique = true
         )
         .build()
+  }
+
+  test("should plan node hash join instead of expandAlls") { // offshore leaks: Q6_no_hint
+    val query =
+      """
+        |MATCH (o1:Person)<-[r1]-(m:Message)-[r2]->(o2:Person)
+        |WHERE id(o1) < id(o2)
+        |  AND NOT o1.firstName CONTAINS "John"
+        |  AND NOT o2.firstName CONTAINS "John"
+        |  AND size([p = (o1)-->() | p]) > 10
+        |  AND size([p = (o2)-->() | p]) > 10
+        |WITH o1,o2,count(*) as freq, collect(m)[0..10] as messages
+        |WHERE freq > 10
+        |WITH *
+        |ORDER BY freq DESC
+        |LIMIT 10
+        |RETURN o1.firstName, o2.firstName, freq, [m IN messages | m.title]
+        |""".stripMargin
+
+    planner.plan(query).stripProduceResults shouldEqual planner.subPlanBuilder()
+      .projection(
+        "cacheN[o1.firstName] AS `o1.firstName`",
+        "cacheN[o2.firstName] AS `o2.firstName`",
+        "[m IN messages | m.title] AS `[m IN messages | m.title]`"
+      )
+      .remoteBatchProperties("cacheNFromStore[o1.firstName]", "cacheNFromStore[o2.firstName]")
+      .top(10, "freq DESC")
+      .filter("freq > 10")
+      .projection("anon_0[0..10] AS messages")
+      .aggregation(Seq("o1 AS o1", "o2 AS o2"), Seq("collect(m) AS anon_0", "count(*) AS freq"))
+      .filter("id(o1) < id(o2)", "NOT r2 = r1")
+      .nodeHashJoin("m")
+      .|.expandAll("(o2)<-[r2]-(m)")
+      .|.filterExpressionOrString(
+        not(contains(cachedNodeProp("o2", "firstName"), literalString("John"))),
+        HasDegreeGreaterThan(v"o2", None, OUTGOING, literalInt(10))(pos)
+      )
+      .|.nodeIndexOperator("o2:Person(firstName)", getValue = Map("firstName" -> GetValue))
+      .filterExpression(hasLabels("m", "Message"))
+      .expandAll("(o1)<-[r1]-(m)")
+      .filterExpressionOrString(
+        not(contains(cachedNodeProp("o1", "firstName"), literalString("John"))),
+        HasDegreeGreaterThan(v"o1", None, OUTGOING, literalInt(10))(pos)
+      )
+      .nodeIndexOperator("o1:Person(firstName)", getValue = Map("firstName" -> GetValue))
+      .build()
   }
 }

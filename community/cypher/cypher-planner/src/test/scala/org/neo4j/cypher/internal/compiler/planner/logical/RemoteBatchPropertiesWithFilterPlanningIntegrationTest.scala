@@ -500,10 +500,12 @@ class RemoteBatchPropertiesWithFilterPlanningIntegrationTest extends CypherFunSu
         .cartesianProduct()
         .|.nodeByLabelScan("a", "Person")
         .antiSemiApply()
-        .|.filterExpression(hasLabels("anon_1", "Person"))
-        .|.remoteBatchPropertiesWithFilter("cacheNFromStore[anon_1.firstName]")("cacheN[anon_1.firstName] = 'Jon'")
-        .|.expandAll("(b)-[anon_0:KNOWS]->(anon_1)")
-        .|.argument("b")
+        .|.expandInto("(b)-[anon_0:KNOWS]->(anon_1)")
+        .|.nodeIndexOperator(
+          "anon_1:Person(firstName = 'Jon')",
+          argumentIds = Set("b"),
+          getValue = Map("firstName" -> DoNotGetValue)
+        )
         .nodeIndexOperator("b:Person(firstName = 'John')", getValue = Map("firstName" -> GetValue))
         .build()
     )
