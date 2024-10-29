@@ -684,10 +684,13 @@ trait GraphIcing {
       val constraint = tx.schema().getConstraintByName(name)
       val properties = constraint.getPropertyKeys.asScala.toList
       val labelOrRelType = constraint.getConstraintType match {
-        case ConstraintType.NODE_PROPERTY_EXISTENCE | ConstraintType.NODE_KEY | ConstraintType.UNIQUENESS | ConstraintType.NODE_PROPERTY_TYPE | ConstraintType.NODE_LABEL_EXISTENCE =>
+        case ConstraintType.NODE_PROPERTY_EXISTENCE | ConstraintType.NODE_KEY | ConstraintType.UNIQUENESS | ConstraintType.NODE_PROPERTY_TYPE =>
           constraint.getLabel.name()
-        case ConstraintType.RELATIONSHIP_PROPERTY_EXISTENCE | ConstraintType.RELATIONSHIP_KEY | ConstraintType.RELATIONSHIP_UNIQUENESS | ConstraintType.RELATIONSHIP_PROPERTY_TYPE | ConstraintType.RELATIONSHIP_SOURCE_LABEL | ConstraintType.RELATIONSHIP_TARGET_LABEL =>
+        case ConstraintType.RELATIONSHIP_PROPERTY_EXISTENCE | ConstraintType.RELATIONSHIP_KEY | ConstraintType.RELATIONSHIP_UNIQUENESS | ConstraintType.RELATIONSHIP_PROPERTY_TYPE =>
           constraint.getRelationshipType.name()
+        case ConstraintType.NODE_LABEL_EXISTENCE | ConstraintType.RELATIONSHIP_SOURCE_LABEL | ConstraintType.RELATIONSHIP_TARGET_LABEL =>
+          // This method does not expect the new constraint types from the graph type
+          throw new IllegalArgumentException(s"Did not expect constraint type ${constraint.getConstraintType} here.")
       }
       (labelOrRelType, properties)
     })
