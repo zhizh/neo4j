@@ -33,21 +33,27 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.concurrent.Future;
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
+import org.neo4j.bolt.negotiation.util.BitMask;
 import org.neo4j.bolt.testing.client.error.BoltTestClientException;
 import org.neo4j.bolt.testing.client.error.BoltTestClientIOException;
 import org.neo4j.bolt.testing.client.error.BoltTestClientInterruptedException;
 import org.neo4j.bolt.testing.client.handler.NotifyingChannelInboundHandler;
 import org.neo4j.bolt.testing.client.handler.TestChannelInitializer;
+import org.neo4j.bolt.testing.client.struct.ProtocolProposal;
 
 public abstract sealed class AbstractNettyConnection implements BoltTestConnection
         permits LocalConnection, SocketConnection, UnixDomainSocketConnection {
@@ -267,6 +273,29 @@ public abstract sealed class AbstractNettyConnection implements BoltTestConnecti
     }
 
     @Override
+    public BoltTestConnection send(ProtocolVersion version, Set<ProtocolCapability> capabilities) throws IOException {
+        var buffer = Unpooled.buffer().writeInt(version.encode());
+
+        writeBitMask(buffer, ProtocolCapability.toBitMask(buffer.alloc(), capabilities));
+
+        return this.sendRaw(buffer);
+    }
+
+    private static void writeBitMask(ByteBuf buf, BitMask mask) {
+        var totalBits = mask.length();
+        var encodedLength = totalBits / 7 + (totalBits % 7 == 0 ? 0 : 1);
+
+        for (var i = 0; i < encodedLength; i++) {
+            var b = mask.readN(Math.min(7, mask.readable()));
+            if (i + 1 < encodedLength) {
+                b ^= 0x80;
+            }
+
+            buf.writeByte(b);
+        }
+    }
+
+    @Override
     public BoltTestConnection send(ByteBuf buf) {
         do {
             var length = Math.min(buf.readableBytes(), MAX_CHUNK_SIZE);
@@ -335,6 +364,61 @@ public abstract sealed class AbstractNettyConnection implements BoltTestConnecti
     @Override
     public ProtocolVersion receiveNegotiatedVersion() {
         return new ProtocolVersion(this.receive(ProtocolVersion.ENCODED_SIZE).readInt());
+    }
+
+    @Override
+    public ProtocolProposal receiveProtocolProposal() {
+        var negotiationVersion = new ProtocolVersion(this.receive(4).readInt());
+
+        var versionLength = this.receiveVarInt();
+        if (versionLength < 0) {
+            throw new BoltTestClientIOException(
+                    "Received illegal protocol proposal: Announced " + versionLength + " versions");
+        }
+
+        var versions = new ArrayList<ProtocolVersion>(versionLength);
+        for (var i = 0; i < versionLength; ++i) {
+            versions.add(new ProtocolVersion(this.receive(4).readInt()));
+        }
+
+        var capabilityMask = this.receiveBitMask();
+        var capabilities = ProtocolCapability.fromBitMask(capabilityMask);
+
+        return new ProtocolProposal(negotiationVersion, versions, capabilities);
+    }
+
+    @Override
+    public int receiveVarInt() {
+        var value = 0;
+        for (var i = 0; i < 5; ++i) {
+            var b = this.receive(1).readUnsignedByte();
+            value ^= (b & 0x7F) << (7 * i);
+
+            if ((b & 0x80) == 0) {
+                return value;
+            }
+        }
+
+        throw new BoltTestClientIOException("Received illegal VarInt consisting of more than 5 bytes");
+    }
+
+    public BitMask receiveBitMask() {
+        var recv = Unpooled.buffer();
+
+        byte i;
+        do {
+            i = this.receive(1).readByte();
+            recv.writeByte(i);
+        } while ((i & 0x80) != 0x00);
+
+        var mask = new BitMask(recv.alloc(), recv.readableBytes() * 7);
+
+        do {
+            var b = recv.readByte();
+            mask.writeN(b, 7);
+        } while (recv.isReadable());
+
+        return mask;
     }
 
     @Override

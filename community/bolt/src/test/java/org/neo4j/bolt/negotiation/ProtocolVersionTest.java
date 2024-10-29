@@ -125,6 +125,33 @@ class ProtocolVersionTest {
     }
 
     @TestFactory
+    Stream<DynamicTest> shouldIdentifyRangedVersions() {
+        return IntStream.rangeClosed(2, 9).boxed().flatMap(major -> IntStream.range(0, 9)
+                .boxed()
+                .flatMap(minor ->
+                        IntStream.range(0, minor).boxed().map(range -> new ProtocolVersion(major, minor, range)))
+                .map(version -> dynamicTest(version.toString(), () -> {
+                    var actual = version.hasRange();
+
+                    assertEquals(version.range() != 0, actual);
+                })));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> shouldIdentifyNegotiationVersions() {
+        return IntStream.rangeClosed(ProtocolVersion.MAX_MAJOR_BIT - 8, ProtocolVersion.MAX_MAJOR_BIT)
+                .boxed()
+                .flatMap(major -> IntStream.range(0, 9).boxed().flatMap(minor -> IntStream.range(0, minor)
+                        .boxed()
+                        .map(range -> new ProtocolVersion(major, minor, range))))
+                .map(version -> dynamicTest(version.toString(), () -> {
+                    var actual = version.isNegotiationVersion();
+
+                    assertEquals(version.major() == ProtocolVersion.MAX_MAJOR_BIT, actual);
+                }));
+    }
+
+    @TestFactory
     Stream<DynamicTest> shouldIdentifyOlderVersionsByMajorComponent() {
         return IntStream.rangeClosed(2, 9)
                 .mapToObj(major -> new ProtocolVersion(major, 2))

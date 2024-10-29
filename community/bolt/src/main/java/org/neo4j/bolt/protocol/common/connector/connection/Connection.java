@@ -26,9 +26,11 @@ import io.netty.util.AttributeKey;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import org.neo4j.bolt.fsm.StateMachine;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.protocol.common.BoltProtocol;
 import org.neo4j.bolt.protocol.common.connection.Job;
 import org.neo4j.bolt.protocol.common.connector.Connector;
@@ -183,14 +185,30 @@ public interface Connection extends TrackedNetworkConnection, TransactionOwner {
     BoltProtocol protocol();
 
     /**
+     * Retrieves a set of capabilities selected by this connection.
+     *
+     * @return a set of capabilities or an empty list of none haven't been selected (yet).
+     */
+    Set<ProtocolCapability> selectedCapabilities();
+
+    /**
+     * Evaluates whether this connection has selected a given protocol capability.
+     *
+     * @param capability a capability to evaluate.
+     * @return true if the given capability has been selected, false otherwise.
+     */
+    boolean hasSelectedCapability(ProtocolCapability capability);
+
+    /**
      * Selects a protocol revision for use with this connection.
      *
      * @param protocol a protocol version.
+     * @param capabilities a set of selected capabilities.
      *
      * @throws NullPointerException when protocol is null.
      * @throws IllegalStateException when the protocol has already been selected.
      */
-    void selectProtocol(BoltProtocol protocol);
+    void selectProtocol(BoltProtocol protocol, Set<ProtocolCapability> capabilities);
 
     /**
      * Retrieves the value reader which shall be used to parse Packstream values via this connection.

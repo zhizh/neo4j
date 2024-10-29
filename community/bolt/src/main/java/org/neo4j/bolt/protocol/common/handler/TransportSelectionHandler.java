@@ -19,7 +19,7 @@
  */
 package org.neo4j.bolt.protocol.common.handler;
 
-import static org.neo4j.bolt.protocol.common.handler.ProtocolHandshakeHandler.BOLT_MAGIC_PREAMBLE;
+import static org.neo4j.bolt.negotiation.handler.LegacyProtocolHandshakeHandler.BOLT_MAGIC_PREAMBLE;
 import static org.neo4j.memory.HeapEstimator.shallowSizeOfInstance;
 
 import io.netty.buffer.ByteBuf;
@@ -37,6 +37,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.util.List;
 import org.neo4j.bolt.negotiation.codec.ProtocolNegotiationRequestDecoder;
 import org.neo4j.bolt.negotiation.codec.ProtocolNegotiationResponseEncoder;
+import org.neo4j.bolt.negotiation.handler.LegacyProtocolHandshakeHandler;
 import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.connector.netty.AbstractNettyConnector;
 import org.neo4j.internal.helpers.Exceptions;
@@ -226,7 +227,7 @@ public class TransportSelectionHandler extends ByteToMessageDecoder {
                 .memoryTracker()
                 .allocateHeap(ProtocolNegotiationResponseEncoder.SHALLOW_SIZE
                         + ProtocolNegotiationRequestDecoder.SHALLOW_SIZE
-                        + ProtocolHandshakeHandler.SHALLOW_SIZE);
+                        + LegacyProtocolHandshakeHandler.SHALLOW_SIZE);
 
         ctx.pipeline()
                 .addLast("protocolNegotiationRequestEncoder", new ProtocolNegotiationResponseEncoder())
@@ -239,7 +240,7 @@ public class TransportSelectionHandler extends ByteToMessageDecoder {
             ctx.pipeline().addLast(ProtocolLoggingHandler.DECODED_NAME, new ProtocolLoggingHandler(this.logging));
         }
 
-        ctx.pipeline().addLast("protocolHandshakeHandler", new ProtocolHandshakeHandler(logging));
+        ctx.pipeline().addLast("protocolHandshakeHandler", new LegacyProtocolHandshakeHandler(logging));
 
         ctx.pipeline().remove(this);
     }

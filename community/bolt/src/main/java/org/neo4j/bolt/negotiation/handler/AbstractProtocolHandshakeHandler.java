@@ -17,114 +17,61 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package org.neo4j.bolt.protocol.common.handler;
+package org.neo4j.bolt.negotiation.handler;
 
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import java.util.Arrays;
-import org.neo4j.bolt.negotiation.ProtocolVersion;
-import org.neo4j.bolt.negotiation.codec.ProtocolNegotiationRequestDecoder;
-import org.neo4j.bolt.negotiation.codec.ProtocolNegotiationResponseEncoder;
-import org.neo4j.bolt.negotiation.message.ProtocolNegotiationRequest;
-import org.neo4j.bolt.negotiation.message.ProtocolNegotiationResponse;
+import io.netty.handler.codec.DecoderException;
+import java.util.Set;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.protocol.common.BoltProtocol;
 import org.neo4j.bolt.protocol.common.codec.BoltStructEncoder;
 import org.neo4j.bolt.protocol.common.connector.connection.Connection;
 import org.neo4j.bolt.protocol.common.connector.netty.AbstractNettyConnector;
+import org.neo4j.bolt.protocol.common.handler.HouseKeeperHandler;
+import org.neo4j.bolt.protocol.common.handler.ProtocolLoggingHandler;
+import org.neo4j.bolt.protocol.common.handler.RequestHandler;
+import org.neo4j.bolt.protocol.common.handler.StateSignalFilterHandler;
 import org.neo4j.bolt.protocol.common.handler.messages.GoodbyeMessageHandler;
 import org.neo4j.bolt.protocol.common.message.response.ResponseMessage;
 import org.neo4j.bolt.runtime.throttle.ChannelReadThrottleHandler;
 import org.neo4j.bolt.runtime.throttle.ChannelWriteThrottleHandler;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.logging.InternalLogProvider;
-import org.neo4j.memory.HeapEstimator;
 import org.neo4j.packstream.codec.PackstreamStructDecoder;
 import org.neo4j.packstream.codec.PackstreamStructEncoder;
 import org.neo4j.packstream.codec.transport.ChunkFrameDecoder;
 import org.neo4j.packstream.codec.transport.ChunkFrameEncoder;
 import org.neo4j.packstream.codec.transport.FrameSignalEncoder;
 
-public class ProtocolHandshakeHandler extends SimpleChannelInboundHandler<ProtocolNegotiationRequest> {
-    public static final long SHALLOW_SIZE = HeapEstimator.shallowSizeOfInstance(ProtocolHandshakeHandler.class);
+public abstract sealed class AbstractProtocolHandshakeHandler<I> extends SimpleChannelInboundHandler<I>
+        permits ModernProtocolHandshakeHandler, LegacyProtocolHandshakeHandler {
 
-    public static final int BOLT_MAGIC_PREAMBLE = 0x6060B017;
+    protected final InternalLogProvider logging;
+    protected final InternalLog log;
 
-    private final InternalLogProvider logging;
-    private final InternalLog log;
+    protected AbstractNettyConnector<?> connector;
+    protected Connection connection;
 
-    private AbstractNettyConnector<?> connector;
-    private Connection connection;
-
-    public ProtocolHandshakeHandler(InternalLogProvider logging) {
-
+    protected AbstractProtocolHandshakeHandler(InternalLogProvider logging) {
         this.logging = logging;
-        this.log = logging.getLog(getClass());
+        this.log = logging.getLog(this.getClass());
     }
 
     @Override
-    public void handlerAdded(ChannelHandlerContext ctx) {
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         this.connection = Connection.getConnection(ctx.channel());
         this.connector = (AbstractNettyConnector<?>) this.connection.connector();
     }
 
-    @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) {
-        this.connection.memoryTracker().releaseHeap(SHALLOW_SIZE);
-    }
-
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ProtocolNegotiationRequest request) throws Exception {
-        // ensure we've received the correct magic number - otherwise just close the connection immediately as we
-        // cannot verify that we are talking to a bolt compatible client
-        if (request.getMagicNumber() != BOLT_MAGIC_PREAMBLE) {
-            log.debug(
-                    "Invalid Bolt handshake signature. Expected 0x%08X, but got: 0x%08X",
-                    BOLT_MAGIC_PREAMBLE, request.getMagicNumber());
-            ctx.close();
-            return;
-        }
-
-        // go through every suggested protocol revision (in order of occurrence) and check whether we are able to
-        // satisfy it (if so - move on)
-        BoltProtocol selectedProtocol = null;
-        var protocolRegistry = this.connector.protocolRegistry();
-        var it = request.proposedVersions().iterator();
-        do {
-            // if the list has been exhausted, then none of the suggested protocol versions is supported by the
-            // server - notify client and abort
-            if (!it.hasNext()) {
-                log.debug(
-                        "Failed Bolt handshake: Bolt versions suggested by client '%s' are not supported by this server.",
-                        Arrays.toString(request.proposedVersions().toArray()));
-
-                ctx.writeAndFlush(new ProtocolNegotiationResponse(ProtocolVersion.INVALID))
-                        .addListener(ChannelFutureListener.CLOSE);
-
-                return;
-            }
-
-            var proposal = it.next();
-
-            // invalid protocol versions are passed to pad the request when less than four unique version ranges are
-            // supported by the client - ignore them
-            if (ProtocolVersion.INVALID.equals(proposal)) {
-                continue;
-            }
-
-            selectedProtocol = protocolRegistry.get(proposal).orElse(null);
-        } while (selectedProtocol == null);
-
-        // copy the final value to a separate variable as the compiler is otherwise incapable of identifying the value
-        // as effectively final within this context
-        var protocol = selectedProtocol;
-
+    public final void finalizeHandshake(
+            ChannelHandlerContext ctx, BoltProtocol protocol, Set<ProtocolCapability> capabilities) {
         // complete handshake by notifying the connection about its new protocol revision and notify the peer about the
         // selected revision
-        this.connection.selectProtocol(protocol);
-        ctx.writeAndFlush(new ProtocolNegotiationResponse(protocol.version()));
+        this.connection.selectProtocol(protocol, capabilities);
+        this.onVersionSelected(ctx, protocol);
 
         // KeepAliveHandler needs the FrameSignalEncoder to send outbound NOOPs
         ctx.pipeline()
@@ -207,18 +154,31 @@ public class ProtocolHandshakeHandler extends SimpleChannelInboundHandler<Protoc
 
         ctx.pipeline()
                 .addLast("requestHandler", new RequestHandler(logging))
-                .addLast(HouseKeeperHandler.HANDLER_NAME, new HouseKeeperHandler(logging))
-                .remove(this);
+                .addLast(HouseKeeperHandler.HANDLER_NAME, new HouseKeeperHandler(logging));
 
-        ctx.pipeline().remove(ProtocolNegotiationResponseEncoder.class);
-        ctx.pipeline().remove(ProtocolNegotiationRequestDecoder.class);
+        this.removeStageHandlers(ctx);
 
         this.connection.notifyListeners(listener -> listener.onProtocolSelected(protocol));
     }
 
+    protected void onVersionSelected(ChannelHandlerContext ctx, BoltProtocol protocol) {}
+
+    protected void removeStageHandlers(ChannelHandlerContext ctx) {
+        ctx.pipeline().remove(this);
+    }
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        log.error("Fatal error occurred during protocol handshaking: " + ctx.channel(), cause);
+        if (cause instanceof DecoderException) {
+            // we'll handle decoder exceptions silently as they indicate an issue with the negotiation
+            // payload (aka a client is speaking a different protocol)
+            log.debug("Failed Bolt handshake: Malformed negotiation payload received.", cause);
+        } else {
+            // all other exceptions are logged properly as they are very likely bugs within the handler
+            // logic
+            log.error("Fatal error occurred during protocol handshaking: " + ctx.channel(), cause);
+        }
+
         ctx.close();
     }
 }

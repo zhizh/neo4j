@@ -25,6 +25,7 @@ import static org.neo4j.bolt.testing.client.BoltTestConnection.DEFAULT_PROTOCOL_
 
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
 import org.neo4j.bolt.test.annotation.BoltTestExtension;
@@ -44,7 +45,7 @@ import org.neo4j.test.extension.testdirectory.EphemeralTestDirectoryExtension;
 @Neo4jWithSocketExtension
 @BoltTestExtension
 @ExtendWith(OtherThreadExtension.class)
-public class NegotiationIT {
+public class LegacyNegotiationIT {
 
     @Inject
     private OtherThread otherThread;
@@ -56,6 +57,25 @@ public class NegotiationIT {
 
         // Then
         BoltConnectionAssertions.assertThat(connection).negotiates(wire.getProtocolVersion());
+
+        // when using legacy negotiation, the protocol version is not echoed back to the client as
+        // it has been returned in the prior stage;
+        // ensure this is the case as this is technically a break in compatibility
+        connection.send(wire.hello());
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesSuccess(meta -> Assertions.assertThat(meta).doesNotContainKey("protocol_version"));
+    }
+
+    @ProtocolTest
+    void shouldUseLegacyNegotiationBasedOnPriority(BoltWire wire, @Connected BoltTestConnection connection)
+            throws Exception {
+        connection.send(wire.getProtocolVersion(), ProtocolVersion.NEGOTIATION_V2);
+
+        BoltConnectionAssertions.assertThat(connection).negotiates(wire.getProtocolVersion());
+
+        connection.send(wire.hello());
+        BoltConnectionAssertions.assertThat(connection)
+                .receivesSuccess(meta -> Assertions.assertThat(meta).doesNotContainKey("protocol_version"));
     }
 
     @TransportTest

@@ -24,8 +24,12 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.protocol.BoltProtocolRegistry;
 import org.neo4j.bolt.protocol.common.connection.BoltDriverMetricsMonitor;
 import org.neo4j.bolt.protocol.common.connection.hint.ConnectionHintRegistry;
@@ -67,6 +71,8 @@ public abstract class AbstractConnector<CFG extends AbstractConfiguration> imple
     private final BoltDriverMetricsMonitor driverMetricsMonitor;
     private final CFG configuration;
 
+    private final Set<ProtocolCapability> supportedCapabilities;
+
     private final List<ConnectorListener> listeners = new ArrayList<>();
 
     public AbstractConnector(
@@ -104,8 +110,14 @@ public abstract class AbstractConnector<CFG extends AbstractConfiguration> imple
         this.errorAccountant = errorAccountant;
         this.trafficAccountant = trafficAccountant;
 
+        var capabilities = EnumSet.noneOf(ProtocolCapability.class);
+        this.registerSupportedCapabilities(capabilities);
+        this.supportedCapabilities = Collections.unmodifiableSet(capabilities);
+
         this.connectionRegistry = new ConnectionRegistry(id, connectionTracker, logging);
     }
+
+    protected void registerSupportedCapabilities(EnumSet<ProtocolCapability> capabilities) {}
 
     @Override
     public String id() {
@@ -130,6 +142,11 @@ public abstract class AbstractConnector<CFG extends AbstractConfiguration> imple
     @Override
     public BoltProtocolRegistry protocolRegistry() {
         return this.protocolRegistry;
+    }
+
+    @Override
+    public Set<ProtocolCapability> supportedCapabilities() {
+        return this.supportedCapabilities;
     }
 
     @Override

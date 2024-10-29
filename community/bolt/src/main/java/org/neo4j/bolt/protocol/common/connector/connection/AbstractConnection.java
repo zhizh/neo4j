@@ -22,6 +22,7 @@ package org.neo4j.bolt.protocol.common.connector.connection;
 import io.netty.channel.Channel;
 import java.net.SocketAddress;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import org.neo4j.bolt.fsm.StateMachine;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.protocol.common.BoltProtocol;
 import org.neo4j.bolt.protocol.common.connector.Connector;
 import org.neo4j.bolt.protocol.common.connector.connection.authentication.AuthenticationFlag;
@@ -75,6 +77,8 @@ public abstract class AbstractConnection implements ConnectionHandle {
     private final List<ConnectionListener> listeners = new CopyOnWriteArrayList<>();
 
     protected final AtomicReference<BoltProtocol> protocol = new AtomicReference<>();
+    protected final AtomicReference<Set<ProtocolCapability>> selectedCapabilities =
+            new AtomicReference<>(EnumSet.noneOf(ProtocolCapability.class));
     private final AtomicReference<Set<Feature>> features = new AtomicReference<>(null);
     protected final AdmissionControlService admissionControl;
     protected volatile StateMachine fsm;
@@ -208,12 +212,26 @@ public abstract class AbstractConnection implements ConnectionHandle {
     }
 
     @Override
-    public void selectProtocol(BoltProtocol protocol) {
+    public Set<ProtocolCapability> selectedCapabilities() {
+        return Collections.unmodifiableSet(this.selectedCapabilities.get());
+    }
+
+    @Override
+    public boolean hasSelectedCapability(ProtocolCapability capability) {
+        return this.selectedCapabilities.get().contains(capability);
+    }
+
+    @Override
+    public void selectProtocol(BoltProtocol protocol, Set<ProtocolCapability> capabilities) {
         Objects.requireNonNull(protocol, "protocol");
 
         if (!this.protocol.compareAndSet(null, protocol)) {
             throw new IllegalStateException("Protocol has already been selected for connection " + this.id);
         }
+
+        // we're the first to initialize the protocol within this connection so make sure to also
+        // update the capability list
+        this.selectedCapabilities.set(capabilities);
 
         // initialize the writer pipeline and struct registry for use with the desired protocol
         var pipeline = new WriterPipeline(this);

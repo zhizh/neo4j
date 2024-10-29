@@ -26,9 +26,12 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.testing.client.error.BoltTestClientException;
+import org.neo4j.bolt.testing.client.struct.ProtocolProposal;
 import org.neo4j.bolt.testing.messages.BoltDefaultWire;
 import org.neo4j.packstream.io.PackstreamBuf;
 
@@ -151,6 +154,8 @@ public interface BoltTestConnection extends AutoCloseable {
     BoltTestConnection send(
             ProtocolVersion version1, ProtocolVersion version2, ProtocolVersion version3, ProtocolVersion version4);
 
+    BoltTestConnection send(ProtocolVersion version, Set<ProtocolCapability> capabilities) throws IOException;
+
     /**
      * Transmits a chunked message via this connection.
      *
@@ -192,7 +197,11 @@ public interface BoltTestConnection extends AutoCloseable {
 
     ProtocolVersion receiveNegotiatedVersion();
 
+    ProtocolProposal receiveProtocolProposal();
+
     int receiveChunkHeader();
+
+    int receiveVarInt() throws IOException, InterruptedException;
 
     ByteBuf receiveMessage();
 

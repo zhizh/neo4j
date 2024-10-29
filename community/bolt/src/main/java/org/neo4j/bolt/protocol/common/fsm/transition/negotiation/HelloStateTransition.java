@@ -23,6 +23,7 @@ import org.neo4j.bolt.fsm.Context;
 import org.neo4j.bolt.fsm.error.StateMachineException;
 import org.neo4j.bolt.fsm.state.StateReference;
 import org.neo4j.bolt.fsm.state.transition.AbstractStateTransition;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.protocol.common.fsm.States;
 import org.neo4j.bolt.protocol.common.fsm.response.ResponseHandler;
 import org.neo4j.bolt.protocol.common.fsm.transition.authentication.AuthenticationStateTransition;
@@ -72,6 +73,12 @@ public final class HelloStateTransition extends AbstractStateTransition<HelloMes
         // TODO: Introduce dedicated handler methods?
         handler.onMetadata("connection_id", Values.stringValue(ctx.connection().id()));
         handler.onMetadata("server", Values.stringValue("Neo4j/" + Version.getNeo4jVersion()));
+
+        if (ctx.connection().hasSelectedCapability(ProtocolCapability.HANDSHAKE_V2)) {
+            handler.onMetadata(
+                    "protocol_version",
+                    Values.stringValue(ctx.connection().protocol().version().toString()));
+        }
 
         var connectionHints = new MapValueBuilder();
         ctx.connection()

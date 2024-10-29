@@ -23,11 +23,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import org.assertj.core.api.AbstractAssert;
 import org.neo4j.bolt.negotiation.ProtocolVersion;
 import org.neo4j.bolt.testing.client.BoltTestConnection;
 import org.neo4j.bolt.testing.client.error.BoltTestClientIOException;
 import org.neo4j.bolt.testing.client.error.BoltTestClientInterruptedException;
+import org.neo4j.bolt.testing.client.struct.ProtocolProposal;
 import org.neo4j.function.Predicates;
 
 public abstract class BoltTestConnectionAssertions<
@@ -59,6 +61,26 @@ public abstract class BoltTestConnectionAssertions<
         }
 
         return (SELF) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public SELF receivesProtocolProposal(Consumer<ProtocolProposal> assertions) {
+        this.isNotNull();
+
+        try {
+            var actual = this.actual.receiveProtocolProposal();
+            assertions.accept(actual);
+        } catch (BoltTestClientIOException ex) {
+            throw new AssertionError("Failed to receive valid protocol proposal", ex);
+        } catch (BoltTestClientInterruptedException ex) {
+            throw new AssertionError("Interrupted while awaiting protocol proposal", ex);
+        }
+
+        return (SELF) this;
+    }
+
+    public SELF receivesProtocolProposal() {
+        return this.receivesProtocolProposal(proposal -> {});
     }
 
     public SELF negotiatesDefaultVersion() {

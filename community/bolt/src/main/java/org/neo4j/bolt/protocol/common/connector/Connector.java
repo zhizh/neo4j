@@ -24,7 +24,9 @@ import java.net.SocketAddress;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Set;
 import java.util.function.Consumer;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.protocol.BoltProtocolRegistry;
 import org.neo4j.bolt.protocol.common.connection.BoltDriverMetricsMonitor;
 import org.neo4j.bolt.protocol.common.connection.hint.ConnectionHintRegistry;
@@ -91,6 +93,13 @@ public interface Connector<CFG extends Connector.Configuration> extends Lifecycl
      * @return a protocol registry.
      */
     BoltProtocolRegistry protocolRegistry();
+
+    /**
+     * Retrieves a set of optionally supported capabilities within this connector.
+     *
+     * @return a set of supported capabilities.
+     */
+    Set<ProtocolCapability> supportedCapabilities();
 
     /**
      * Retrieves the authentication implementation which is responsible for authorizing connections

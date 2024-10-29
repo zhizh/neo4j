@@ -25,6 +25,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import java.net.SocketAddress;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +42,7 @@ import org.mockito.Mockito;
 import org.neo4j.bolt.fsm.StateMachine;
 import org.neo4j.bolt.fsm.StateMachineConfiguration;
 import org.neo4j.bolt.fsm.error.StateMachineException;
+import org.neo4j.bolt.negotiation.message.ProtocolCapability;
 import org.neo4j.bolt.protocol.common.BoltProtocol;
 import org.neo4j.bolt.protocol.common.connection.Job;
 import org.neo4j.bolt.protocol.common.connector.Connector;
@@ -183,7 +185,7 @@ class AtomicSchedulingConnectionTest {
     }
 
     private void selectProtocol() {
-        this.connection.selectProtocol(this.protocol);
+        this.connection.selectProtocol(this.protocol, EnumSet.noneOf(ProtocolCapability.class));
     }
 
     private void authenticate() throws AuthenticationException {
@@ -244,6 +246,17 @@ class AtomicSchedulingConnectionTest {
         Assertions.assertThat(this.connection.clientAddress()).isEqualTo(this.clientAddress);
 
         Mockito.verify(this.channel).remoteAddress();
+    }
+
+    @Test
+    void shouldStoreCapabilities() {
+        var protocol = Mockito.mock(BoltProtocol.class, Mockito.RETURNS_MOCKS);
+
+        this.connection.selectProtocol(protocol, EnumSet.of(ProtocolCapability.HANDSHAKE_V2));
+
+        Assertions.assertThat(this.connection.selectedCapabilities())
+                .hasSize(1)
+                .containsAll(EnumSet.of(ProtocolCapability.HANDSHAKE_V2));
     }
 
     @Test

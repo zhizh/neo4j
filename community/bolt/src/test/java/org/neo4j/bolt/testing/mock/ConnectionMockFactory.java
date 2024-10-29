@@ -193,7 +193,7 @@ public class ConnectionMockFactory extends AbstractMockFactory<ConnectionHandle,
     }
 
     public ArgumentCaptor<BoltProtocol> withProtocolCaptor() {
-        var captor = this.withArgumentCaptor(BoltProtocol.class, Connection::selectProtocol);
+        var captor = this.withArgumentCaptor(BoltProtocol.class, (c, arg) -> c.selectProtocol(arg, Mockito.any()));
         this.withAnswer(Connection::protocol, invocation -> captor.getValue());
         return captor;
     }
