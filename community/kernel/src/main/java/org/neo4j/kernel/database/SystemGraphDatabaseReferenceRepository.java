@@ -25,6 +25,7 @@ import static org.neo4j.kernel.database.NamedDatabaseId.SYSTEM_DATABASE_NAME;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.neo4j.dbms.api.DatabaseManagementException;
@@ -50,6 +51,16 @@ public class SystemGraphDatabaseReferenceRepository implements DatabaseReference
         }
 
         return execute(model -> model.getDatabaseRefByAlias(normalizeCatalogName(databaseAlias.name())));
+    }
+
+    @Override
+    public Optional<DatabaseReference> getByUuid(UUID databaseId) {
+        if (Objects.equals(SYSTEM_DATABASE_REFERENCE.id(), databaseId)) {
+            return Optional.of(SYSTEM_DATABASE_REFERENCE);
+        }
+
+        return execute(
+                model -> model.getDatabaseIdByUUID(databaseId).flatMap(id -> model.getDatabaseRefByAlias(id.name())));
     }
 
     private String normalizeCatalogName(String databaseAlias) {

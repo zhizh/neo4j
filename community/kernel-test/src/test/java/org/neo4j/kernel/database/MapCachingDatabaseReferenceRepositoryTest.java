@@ -22,8 +22,10 @@ package org.neo4j.kernel.database;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atMostOnce;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.neo4j.kernel.database.DatabaseId.SYSTEM_DATABASE_ID;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -34,7 +36,8 @@ import org.mockito.Mockito;
 
 public class MapCachingDatabaseReferenceRepositoryTest {
     private final DatabaseReferenceRepository delegate = Mockito.mock(DatabaseReferenceRepository.class);
-    private final NamedDatabaseId dbId = DatabaseIdFactory.from("random", UUID.randomUUID());
+    private final UUID uuid = UUID.randomUUID();
+    private final NamedDatabaseId dbId = DatabaseIdFactory.from("random", uuid);
     private final NormalizedDatabaseName name = new NormalizedDatabaseName(dbId.name());
     private final NormalizedDatabaseName aliasName = new NormalizedDatabaseName("foo");
     private final DatabaseReference ref = new DatabaseReferenceImpl.Internal(name, dbId, true);
@@ -46,6 +49,7 @@ public class MapCachingDatabaseReferenceRepositoryTest {
     void setUp() {
         when(delegate.getByAlias(aliasName)).thenReturn(Optional.of(aliasRef));
         when(delegate.getByAlias(name)).thenReturn(Optional.of(ref));
+        when(delegate.getByUuid(uuid)).thenReturn(Optional.of(ref));
         databaseRefRepo = new MapCachingDatabaseReferenceRepository(delegate);
     }
 
@@ -61,14 +65,47 @@ public class MapCachingDatabaseReferenceRepositoryTest {
     }
 
     @Test
+    void shouldLookupByUuid() {
+        var lookup = databaseRefRepo.getByUuid(uuid);
+        UUID unknown = UUID.randomUUID();
+
+        // Very unlikely, but could still happen
+        while (unknown == uuid || unknown == SYSTEM_DATABASE_ID.uuid()) {
+            unknown = UUID.randomUUID();
+        }
+
+        var lookupUnknown = databaseRefRepo.getByUuid(unknown);
+
+        assertThat(lookup).contains(ref);
+        assertThat(lookupUnknown).isEmpty();
+    }
+
+    @Test
     void shouldCacheByByName() {
         var lookup = databaseRefRepo.getByAlias(name);
         var lookup2 = databaseRefRepo.getByAlias(name);
+        var lookup3 = databaseRefRepo.getByUuid(uuid);
 
         assertThat(lookup).contains(ref);
         assertThat(lookup).isEqualTo(lookup2);
+        assertThat(lookup).isEqualTo(lookup3);
 
         verify(delegate, atMostOnce()).getByAlias(name);
+        verify(delegate, never()).getByUuid(uuid);
+    }
+
+    @Test
+    void shouldCacheByByUuid() {
+        var lookup = databaseRefRepo.getByUuid(uuid);
+        var lookup2 = databaseRefRepo.getByUuid(uuid);
+        var lookup3 = databaseRefRepo.getByAlias(name);
+
+        assertThat(lookup).contains(ref);
+        assertThat(lookup).isEqualTo(lookup2);
+        assertThat(lookup).isEqualTo(lookup3);
+
+        verify(delegate, atMostOnce()).getByUuid(uuid);
+        verify(delegate, never()).getByAlias(name);
     }
 
     @Test

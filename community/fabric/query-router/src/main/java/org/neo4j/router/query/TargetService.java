@@ -31,11 +31,19 @@ public interface TargetService {
 
     DatabaseReference target(CatalogInfo catalogInfo);
 
-    sealed interface CatalogInfo permits SingleQueryCatalogInfo, UnionQueryCatalogInfo, CompositeCatalogInfo {}
+    sealed interface CatalogInfo permits SingleQueryCatalogInfo, UnionQueryCatalogInfo, CompositeCatalogInfo {
+        boolean canBeCached();
+    }
 
-    record SingleQueryCatalogInfo(Optional<CatalogName> catalogName) implements CatalogInfo {}
+    record SingleQueryCatalogInfo(Optional<CatalogName> catalogName, boolean canBeCached) implements CatalogInfo {}
 
-    record UnionQueryCatalogInfo(List<Optional<CatalogName>> catalogNames) implements CatalogInfo {}
+    record UnionQueryCatalogInfo(List<Optional<CatalogName>> catalogNames, boolean canBeCached)
+            implements CatalogInfo {}
 
-    record CompositeCatalogInfo() implements CatalogInfo {}
+    record CompositeCatalogInfo() implements CatalogInfo {
+        @Override
+        public boolean canBeCached() {
+            return true;
+        }
+    }
 }

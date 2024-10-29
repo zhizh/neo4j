@@ -52,6 +52,7 @@ import org.neo4j.dbms.database.DatabaseContextProvider;
 import org.neo4j.fabric.executor.Location;
 import org.neo4j.kernel.api.procedure.GlobalProcedures;
 import org.neo4j.kernel.availability.UnavailableException;
+import org.neo4j.kernel.database.DatabaseIdRepository;
 import org.neo4j.kernel.database.DatabaseReference;
 import org.neo4j.kernel.database.DatabaseReferenceImpl;
 import org.neo4j.router.QueryRouterException;
@@ -149,7 +150,9 @@ public class QueryProcessorImpl implements QueryProcessor {
         if (cachedValue == null) {
             var preparedForCacheQuery = prepareQueryForCache(
                     preParsedQuery, notificationLogger, query, cancellationChecker, sessionDatabase);
-            cache.put(preParsedQuery, query.parameters(), preparedForCacheQuery);
+            if (preparedForCacheQuery.catalogInfo().canBeCached()) {
+                cache.put(preParsedQuery, query.parameters(), preparedForCacheQuery);
+            }
             cachedValue = preparedForCacheQuery;
         }
         return cachedValue;
@@ -167,7 +170,12 @@ public class QueryProcessorImpl implements QueryProcessor {
                 preParsedQuery.options().queryOptions().cypherVersion());
         var parsedQuery = parse(
                 query, queryTracer, preParsedQuery, resolver, notificationLogger, cancellationChecker, sessionDatabase);
-        var catalogInfo = resolveCatalogInfo(parsedQuery.statement(), sessionDatabase.isComposite());
+        var catalogInfo = resolveCatalogInfo(
+                parsedQuery.statement(),
+                sessionDatabase.isComposite(),
+                databaseContextProvider.databaseIdRepository(),
+                query);
+
         var rewrittenQueryText = rewriteQueryText(parsedQuery, preParsedQuery.options(), cancellationChecker);
         var maybeExtractedParams = formatMaybeExtractedParams(parsedQuery);
         var statementType = StatementType.of(parsedQuery.statement(), resolver);
@@ -183,16 +191,18 @@ public class QueryProcessorImpl implements QueryProcessor {
                 parsingNotifications);
     }
 
-    private TargetService.CatalogInfo resolveCatalogInfo(Statement statement, boolean targetsComposite) {
+    private TargetService.CatalogInfo resolveCatalogInfo(
+            Statement statement, boolean targetsComposite, DatabaseIdRepository databaseIdRepository, Query query) {
         if (statement instanceof AdministrationCommand) {
-            return new TargetService.SingleQueryCatalogInfo(Optional.of(SYSTEM_DATABASE_CATALOG_NAME));
+            return new TargetService.SingleQueryCatalogInfo(Optional.of(SYSTEM_DATABASE_CATALOG_NAME), true);
         }
 
         if (targetsComposite) {
             return new TargetService.CompositeCatalogInfo();
         }
 
-        var graphSelections = staticUseEvaluation.evaluateStaticTopQueriesGraphSelections(statement);
+        var graphSelections = staticUseEvaluation.evaluateStaticTopQueriesGraphSelections(
+                statement, databaseIdRepository, query.parameters());
         return toCatalogInfo(graphSelections);
     }
 
@@ -284,15 +294,26 @@ public class QueryProcessorImpl implements QueryProcessor {
                 sessionDatabase);
     }
 
-    private TargetService.CatalogInfo toCatalogInfo(Seq<Option<CatalogName>> graphSelections) {
+    private TargetService.CatalogInfo toCatalogInfo(Seq<Option<StaticUseEvaluation.CatalogInfo>> graphSelections) {
         if (graphSelections.size() == 1) {
-            return new TargetService.SingleQueryCatalogInfo(OptionConverters.toJava(graphSelections.head()));
+            var catalogInfo = graphSelections.head();
+            var canBeCached = catalogInfo.isEmpty() || catalogInfo.get().canBeCached();
+            var catalogName = OptionConverters.toJava(catalogInfo).map(info -> info.catalogName());
+            return new TargetService.SingleQueryCatalogInfo(catalogName, canBeCached);
         }
 
+        final boolean[] canBeCached = {true};
         var catalogNames = CollectionConverters.asJava(graphSelections).stream()
                 .map(OptionConverters::toJava)
+                .map(catalogInfoOption -> catalogInfoOption.map(catalogInfo -> {
+                    if (!catalogInfo.canBeCached()) {
+                        canBeCached[0] = false;
+                    }
+                    return catalogInfo.catalogName();
+                }))
                 .toList();
-        return new TargetService.UnionQueryCatalogInfo(catalogNames);
+
+        return new TargetService.UnionQueryCatalogInfo(catalogNames, canBeCached[0]);
     }
 
     private static Supplier<DatabaseNotFoundException> databaseNotFound(String databaseNameRaw) {

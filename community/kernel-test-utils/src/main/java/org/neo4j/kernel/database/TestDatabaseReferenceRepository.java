@@ -132,15 +132,21 @@ public final class TestDatabaseReferenceRepository {
                 new NormalizedDatabaseName(SYSTEM_DATABASE_NAME), NAMED_SYSTEM_DATABASE_ID, true);
 
         private final Map<NormalizedDatabaseName, DatabaseReference> databaseReferences;
+        private final Map<UUID, DatabaseReference> databaseReferencesByUUID;
 
         public Fixed(Collection<DatabaseReference> databaseReferences) {
             this.databaseReferences =
                     databaseReferences.stream().collect(Collectors.toMap(DatabaseReference::alias, identity()));
+            this.databaseReferencesByUUID =
+                    databaseReferences.stream().collect(Collectors.toMap(DatabaseReference::id, identity()));
         }
 
         public Fixed(DatabaseReference... databaseReferences) {
             this.databaseReferences =
                     Arrays.stream(databaseReferences).collect(Collectors.toMap(DatabaseReference::alias, identity()));
+            this.databaseReferencesByUUID = Arrays.stream(databaseReferences)
+                    .filter(dbRef -> dbRef.isPrimary() || dbRef.isComposite())
+                    .collect(Collectors.toMap(DatabaseReference::id, identity()));
         }
 
         @Override
@@ -149,6 +155,14 @@ public final class TestDatabaseReferenceRepository {
                 return Optional.of(SYSTEM_DATABASE_REFERENCE);
             }
             return Optional.ofNullable(databaseReferences.get(databaseAlias));
+        }
+
+        @Override
+        public Optional<DatabaseReference> getByUuid(UUID databaseId) {
+            if (Objects.equals(SYSTEM_DATABASE_REFERENCE.id(), databaseId)) {
+                return Optional.of(SYSTEM_DATABASE_REFERENCE);
+            }
+            return Optional.ofNullable(databaseReferencesByUUID.get(databaseId));
         }
 
         @Override

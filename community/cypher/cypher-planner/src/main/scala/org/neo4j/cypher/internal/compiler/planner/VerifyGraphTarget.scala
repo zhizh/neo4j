@@ -21,6 +21,7 @@ package org.neo4j.cypher.internal.compiler.planner
 
 import org.neo4j.cypher.internal.ast.CatalogName
 import org.neo4j.cypher.internal.ast.GraphDirectReference
+import org.neo4j.cypher.internal.ast.GraphFunctionReference
 import org.neo4j.cypher.internal.ast.GraphSelection
 import org.neo4j.cypher.internal.ast.SingleQuery
 import org.neo4j.cypher.internal.ast.Statement
@@ -30,6 +31,9 @@ import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.ast.semantics.SemanticFeature.UseAsMultipleGraphsSelector
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
 import org.neo4j.cypher.internal.compiler.phases.PlannerContext
+import org.neo4j.cypher.internal.evaluator.SimpleInternalExpressionEvaluator
+import org.neo4j.cypher.internal.expressions.FunctionInvocation
+import org.neo4j.cypher.internal.expressions.functions.GraphByElementId
 import org.neo4j.cypher.internal.frontend.phases.BaseContains
 import org.neo4j.cypher.internal.frontend.phases.BaseState
 import org.neo4j.cypher.internal.frontend.phases.CompilationPhaseTracer
@@ -40,10 +44,14 @@ import org.neo4j.cypher.internal.util.StepSequencer
 import org.neo4j.cypher.internal.util.StepSequencer.DefaultPostCondition
 import org.neo4j.cypher.messages.MessageUtilProvider
 import org.neo4j.dbms.api.DatabaseNotFoundException
+import org.neo4j.dbms.api.DatabaseNotFoundExceptionCreator
 import org.neo4j.exceptions.InvalidSemanticsException
 import org.neo4j.kernel.database.DatabaseReferenceRepository
 import org.neo4j.kernel.database.NamedDatabaseId
 import org.neo4j.kernel.database.NormalizedDatabaseName
+import org.neo4j.values.ElementIdDecoder
+import org.neo4j.values.storable.StringValue
+import org.neo4j.values.virtual.MapValue
 
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.IterableHasAsScala
@@ -73,7 +81,8 @@ case object VerifyGraphTarget extends VisitorPhase[PlannerContext, BaseState] wi
         context.databaseReferenceRepository,
         value.statement(),
         context.databaseId,
-        context.config.queryRouterForCompositeQueriesEnabled
+        context.config.queryRouterForCompositeQueriesEnabled,
+        context.params
       )
     }
   }
@@ -95,9 +104,10 @@ case object VerifyGraphTarget extends VisitorPhase[PlannerContext, BaseState] wi
     databaseReferenceRepository: DatabaseReferenceRepository,
     statement: Statement,
     databaseId: NamedDatabaseId,
-    allowCompositeQueries: Boolean
+    allowCompositeQueries: Boolean,
+    params: MapValue
   ): Unit = {
-    evaluateGraphSelection(statement) match {
+    evaluateGraphSelection(statement, databaseReferenceRepository, params) match {
       case Some(graphNameWithContext) =>
         val normalizedDatabaseName = new NormalizedDatabaseName(graphNameWithContext.graphName.qualifiedNameString)
         toScala(
@@ -138,8 +148,12 @@ case object VerifyGraphTarget extends VisitorPhase[PlannerContext, BaseState] wi
       .map(_.fullName())
       .exists(_ == normalizedDatabaseName)
 
-  private def evaluateGraphSelection(statement: Statement): Option[GraphNameWithContext] =
-    findGraphSelection(statement).map(evaluateGraphSelection)
+  private def evaluateGraphSelection(
+    statement: Statement,
+    databaseReferenceRepository: DatabaseReferenceRepository,
+    params: MapValue
+  ): Option[GraphNameWithContext] =
+    findGraphSelection(statement).map(evaluateGraphSelection(_, databaseReferenceRepository, params))
 
   private def findGraphSelection(statement: Statement): Option[PositionalGraphSelection] = {
     // Semantic analysis ensures correct position and use of graph selection.
@@ -157,9 +171,28 @@ case object VerifyGraphTarget extends VisitorPhase[PlannerContext, BaseState] wi
     }
   }
 
-  private def evaluateGraphSelection(graphSelection: PositionalGraphSelection): GraphNameWithContext =
+  private def evaluateGraphSelection(
+    graphSelection: PositionalGraphSelection,
+    databaseReferenceRepository: DatabaseReferenceRepository,
+    params: MapValue
+  ): GraphNameWithContext =
     graphSelection.graphSelection.graphReference match {
       case direct: GraphDirectReference => GraphNameWithContext(direct.catalogName, !graphSelection.leading)
+      case byElementId: GraphFunctionReference if byElementId.functionInvocation.function.equals(GraphByElementId) =>
+        val elementIdExpr = byElementId.arguments.head.asInstanceOf[FunctionInvocation].args.head
+        val elementIdValue =
+          new SimpleInternalExpressionEvaluator().evaluate(elementIdExpr, params = params).asInstanceOf[StringValue]
+        val databaseId = ElementIdDecoder.database(elementIdValue.stringValue())
+
+        GraphNameWithContext(
+          CatalogName.of(
+            databaseReferenceRepository.getByUuid(databaseId).orElseThrow(() =>
+              DatabaseNotFoundExceptionCreator.byElementIdFunction(elementIdValue.stringValue())
+            )
+              .name()
+          ),
+          !graphSelection.leading
+        )
       // Semantic analysis should make sure we don't end up here, so the error does not have to be super descriptive
       case _ => throw new InvalidSemanticsException("Expected static graph selection")
     }

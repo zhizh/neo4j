@@ -3756,6 +3756,15 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
             Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
             "dump is not supported on composite databases",
             ErrorClassification.CLIENT_ERROR),
+    STATUS_42NA7(
+            new GqlStatus("42NA7"),
+            """
+                    No database is corresponding to { %s }. Verify that the elementId is correct.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.db},
+            emptyMap(),
+            Condition.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION,
+            "referenced database not found",
+            ErrorClassification.CLIENT_ERROR),
     STATUS_42NFC(
             new GqlStatus("42NFC"),
             """

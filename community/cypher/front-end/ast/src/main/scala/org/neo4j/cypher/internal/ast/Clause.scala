@@ -126,6 +126,7 @@ import org.neo4j.cypher.internal.util.symbols.CTPath
 import org.neo4j.cypher.internal.util.symbols.CTRelationship
 import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.symbols.CypherType
+import org.neo4j.exceptions.SyntaxException
 import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.kernel.database.NormalizedDatabaseName
@@ -550,18 +551,43 @@ final case class UseGraph(graphReference: GraphReference)(val position: InputPos
   private def checkSingleGraphSelector: SemanticCheck = {
     graphReference match {
       case graphReference: GraphDirectReference => checkSingleTargetGraph(graphReference)
-      case _: GraphFunctionReference =>
-        SemanticCheck.fromFunctionWithContext { (semanticState, context) =>
-          SemanticCheckResult.error(
-            semanticState,
-            context.errorMessageProvider.createDynamicGraphReferenceUnsupportedError(graphReference.print),
-            position
-          )
+      case graphFunction: GraphFunctionReference =>
+        graphFunction.functionInvocation.function match {
+          case GraphByElementId
+            if graphFunction.isConstantForQuery =>
+            if (graphFunction.functionInvocation.arguments.size == 1) {
+              checkSingleTargetGraph(graphFunction)
+            } else {
+              SemanticCheck.error(
+                SemanticError(
+                  SyntaxException.wrongNumberOfArguments(
+                    1,
+                    graphFunction.functionInvocation.arguments.size,
+                    graphFunction.functionInvocation.name,
+                    GraphByElementId.signatures.head.getSignatureAsString
+                  ).getMessage,
+                  position
+                )
+              )
+            }
+          case _ =>
+            SemanticCheck.fromFunctionWithContext { (semanticState, context) =>
+              SemanticCheckResult.error(
+                semanticState,
+                context.errorMessageProvider.createDynamicGraphReferenceUnsupportedError(graphReference.print),
+                position
+              )
+            }
         }
     }
   }
 
-  private def checkSingleTargetGraph(graphReference: GraphDirectReference): SemanticCheck = {
+  /*
+   * The graph-references used inside the query must target the same graph.
+   *
+   * This currently checks equality and will fail if you mix direct and function graph references.
+   */
+  private def checkSingleTargetGraph(graphReference: GraphReference): SemanticCheck = {
     SemanticCheck.fromFunctionWithContext { (semanticState, context) =>
       semanticState.targetGraph match {
         case Some(existingTarget) =>
@@ -630,7 +656,7 @@ final case class GraphFunctionReference(functionInvocation: FunctionInvocation)(
         ))
     }
   }
-  override def isConstantForQuery: Boolean = false
+  override def isConstantForQuery: Boolean = functionInvocation.arguments.forall(_.isConstantForQuery)
 
   override def semanticallyEqual(other: Any): Boolean = other match {
     case GraphFunctionReference(other) =>

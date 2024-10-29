@@ -22,14 +22,17 @@ package org.neo4j.kernel.database;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MapCachingDatabaseReferenceRepository implements DatabaseReferenceRepository.Caching {
     private DatabaseReferenceRepository delegate;
     private volatile Map<NormalizedDatabaseName, DatabaseReference> databaseRefsByName;
+    private volatile Map<UUID, DatabaseReference> databaseRefsByUUID;
 
     public MapCachingDatabaseReferenceRepository(DatabaseReferenceRepository delegate) {
         this.databaseRefsByName = new ConcurrentHashMap<>();
+        this.databaseRefsByUUID = new ConcurrentHashMap<>();
         this.delegate = delegate;
     }
 
@@ -43,7 +46,28 @@ public class MapCachingDatabaseReferenceRepository implements DatabaseReferenceR
 
     @Override
     public Optional<DatabaseReference> getByAlias(NormalizedDatabaseName databaseAlias) {
-        return Optional.ofNullable(databaseRefsByName.computeIfAbsent(databaseAlias, this::lookupReferenceOnDelegate));
+        return Optional.ofNullable(databaseRefsByName.computeIfAbsent(databaseAlias, (alias) -> {
+            var databaseRef = lookupReferenceOnDelegate(alias);
+            if (databaseRef == null) {
+                return null;
+            }
+
+            databaseRefsByUUID.put(databaseRef.id(), databaseRef);
+            return databaseRef;
+        }));
+    }
+
+    @Override
+    public Optional<DatabaseReference> getByUuid(UUID uuid) {
+        return Optional.ofNullable(databaseRefsByUUID.computeIfAbsent(uuid, (uuid1) -> {
+            var databaseRef = lookupReferenceByUuidOnDelegate(uuid1);
+            if (databaseRef == null) {
+                return null;
+            }
+
+            databaseRefsByName.putIfAbsent(databaseRef.alias(), databaseRef);
+            return databaseRef;
+        }));
     }
 
     /**
@@ -51,6 +75,13 @@ public class MapCachingDatabaseReferenceRepository implements DatabaseReferenceR
      */
     private DatabaseReference lookupReferenceOnDelegate(NormalizedDatabaseName databaseName) {
         return delegate.getByAlias(databaseName).orElse(null);
+    }
+
+    /**
+     * May return null, as {@link ConcurrentHashMap#computeIfAbsent} uses null as a signal not to add an entry to for the given key.
+     */
+    private DatabaseReference lookupReferenceByUuidOnDelegate(UUID databaseId) {
+        return delegate.getByUuid(databaseId).orElse(null);
     }
 
     @Override

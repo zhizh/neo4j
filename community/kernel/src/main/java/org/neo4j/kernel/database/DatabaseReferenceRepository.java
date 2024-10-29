@@ -21,6 +21,7 @@ package org.neo4j.kernel.database;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import org.neo4j.kernel.database.DatabaseReferenceImpl.Composite;
 import org.neo4j.kernel.database.DatabaseReferenceImpl.External;
 import org.neo4j.kernel.database.DatabaseReferenceImpl.Internal;
@@ -33,6 +34,11 @@ public interface DatabaseReferenceRepository {
      * Given a database alias, return the corresponding {@link DatabaseReference} from the system database, if one exists.
      */
     Optional<DatabaseReference> getByAlias(NormalizedDatabaseName databaseAlias);
+
+    /**
+     * Given a database uuid, return the corresponding {@link DatabaseReference} from the system database, if one exists.
+     */
+    Optional<DatabaseReference> getByUuid(UUID databaseId);
 
     /**
      * Given a database alias, return the corresponding {@link DatabaseReferenceImpl.Internal} from the system database, if one exists.
