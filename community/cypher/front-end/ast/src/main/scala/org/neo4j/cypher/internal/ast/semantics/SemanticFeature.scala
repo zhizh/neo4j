@@ -65,6 +65,10 @@ object SemanticFeature {
     override def name: String = "Allow MATCH/MERGE/CREATE of dynamic labels and types"
   }
 
+  case object GraphTypes extends SemanticFeature with FeatureToString {
+    override def name: String = "`GRAPH TYPE` schema management"
+  }
+
   private val allSemanticFeatures = Set(
     MultipleDatabases,
     MultipleGraphs,
@@ -73,7 +77,8 @@ object SemanticFeature {
     ShowSetting,
     MatchModes,
     ComposableCommands,
-    DynamicLabelsAndTypes
+    DynamicLabelsAndTypes,
+    GraphTypes
   )
 
   def fromString(str: String): SemanticFeature =
