@@ -64,6 +64,7 @@ public interface DatabaseReference extends Comparable<DatabaseReference>, Privil
      * @return the owning database of this reference. This is used for authorization on property shards which inherit
      * their permissions from the "owning" graph shard.
      */
+    @Override
     String owningDatabaseName();
 
     /**

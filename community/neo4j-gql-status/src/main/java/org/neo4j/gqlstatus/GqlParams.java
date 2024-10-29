@@ -21,6 +21,7 @@ package org.neo4j.gqlstatus;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class GqlParams {
 
@@ -394,7 +395,7 @@ public class GqlParams {
             if (inner != null) {
                 s = inner.process(s);
             }
-            return String.valueOf(s).toUpperCase();
+            return String.valueOf(s).toUpperCase(Locale.ROOT);
         }
     }
 

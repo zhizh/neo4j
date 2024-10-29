@@ -134,6 +134,7 @@ public final class UserFunctionSignature implements DescribedSignature {
         this.supportedQueryLanguages = supportedQueryLanguages;
     }
 
+    @Override
     public QualifiedName name() {
         return name;
     }
@@ -154,6 +155,7 @@ public final class UserFunctionSignature implements DescribedSignature {
         return type;
     }
 
+    @Override
     public Optional<String> description() {
         return Optional.ofNullable(description);
     }

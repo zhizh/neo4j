@@ -178,7 +178,7 @@
     <jakarta.activation-api.version>1.2.2</jakarta.activation-api.version>
     <jakarta.ws.rs-api.version>2.1.6</jakarta.ws.rs-api.version>
     <antlr.version>4.13.2</antlr.version> <!-- You MUST re-generate the parsers after changing this value! -->
-    <error_prone.version>2.33.0</error_prone.version>
+    <error_prone.version>2.34.0</error_prone.version>
     <teavm.version>0.10.2</teavm.version>
     <javapoet.version>1.13.0</javapoet.version>
     <grpc.version>1.68.0</grpc.version>
@@ -946,7 +946,7 @@
                   -Xep:ByteBufferBackingArray:OFF -Xep:LongDoubleConversion:OFF -Xep:NarrowCalculation:OFF \
                   -Xep:JavaUtilDate:OFF -Xep:JavaTimeDefaultTimeZone:OFF -Xep:SameNameButDifferent:OFF \
                   -Xep:EmptyCatch:OFF -Xep:TypeParameterUnusedInFormals:OFF -Xep:ThreadPriorityCheck:OFF \
-                  -Xep:NonApiType:OFF -Xep:StaticAssignmentOfThrowable:OFF \
+                  -Xep:NonApiType:OFF -Xep:StaticAssignmentOfThrowable:OFF -Xep:EnumOrdinal:OFF \
                   -XepExcludedPaths:.*/target/generated-sources/.*</arg>
                 <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
                 <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>

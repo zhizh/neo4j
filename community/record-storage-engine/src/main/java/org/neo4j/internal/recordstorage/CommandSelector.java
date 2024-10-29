@@ -45,6 +45,7 @@ public enum CommandSelector {
             return command.getAfter();
         }
 
+        @Override
         <T> UpdateMode mode(IndexUpdateCommand<T> command) {
             return command.getUpdateMode();
         }
@@ -70,6 +71,7 @@ public enum CommandSelector {
             return command.getBefore();
         }
 
+        @Override
         <T> UpdateMode mode(IndexUpdateCommand<T> command) {
             return switch (command.getUpdateMode()) {
                 case ADDED -> UpdateMode.REMOVED;

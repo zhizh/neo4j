@@ -50,6 +50,7 @@ public interface StorageReader extends AutoCloseable, StorageSchemaReader {
      * @param index The index to check.
      * @return {@code true} if the index exists, {@code false} otherwise.
      */
+    @Override
     boolean indexExists(IndexDescriptor index);
 
     /**

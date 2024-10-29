@@ -19,6 +19,7 @@
  */
 package org.neo4j.configuration.helpers;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -27,8 +28,8 @@ public class FilenamePattern {
     private final String databaseName;
 
     public FilenamePattern(String name) {
-        this.regexPattern =
-                ConfigPatternBuilder.optionalPatternFromConfigString(name.toLowerCase(), Pattern.CASE_INSENSITIVE);
+        this.regexPattern = ConfigPatternBuilder.optionalPatternFromConfigString(
+                name.toLowerCase(Locale.ROOT), Pattern.CASE_INSENSITIVE);
         this.databaseName = name;
     }
 

@@ -76,6 +76,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -886,8 +887,8 @@ class ImportCommandTest {
                 "--", // force the parser to pick up the end of the nodes
                 mixedCaseDatabaseName);
 
-        var db = getDatabaseApi(mixedCaseDatabaseName.toLowerCase());
-        assertEquals(mixedCaseDatabaseName.toLowerCase(), db.databaseName());
+        var db = getDatabaseApi(mixedCaseDatabaseName.toLowerCase(Locale.ROOT));
+        assertEquals(mixedCaseDatabaseName.toLowerCase(Locale.ROOT), db.databaseName());
 
         try (Transaction tx = db.beginTx();
                 ResourceIterable<Node> allNodes = tx.getAllNodes()) {

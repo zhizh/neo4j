@@ -71,6 +71,7 @@ public class IndexConfigValidationRecords {
                 SortedSets.mutable.of(State.values()).without(VALID).toImmutableSortedSet();
     }
 
+    @FunctionalInterface
     public interface NamedSetting {
         String settingName();
     }
@@ -78,6 +79,7 @@ public class IndexConfigValidationRecords {
     public interface KnownSetting extends NamedSetting {
         IndexSetting setting();
 
+        @Override
         default String settingName() {
             return setting().getSettingName();
         }
@@ -90,6 +92,7 @@ public class IndexConfigValidationRecords {
 
         State state();
 
+        @Override
         default int compareTo(IndexConfigValidationRecord other) {
             return COMPARATOR.compare(this, other);
         }

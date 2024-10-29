@@ -451,6 +451,7 @@ public class FabricExecutor {
             this.log = log;
         }
 
+        @Override
         SingleQueryFragmentExecutor.Tracer tracer() {
             return new SingleQueryFragmentExecutor.Tracer() {
 

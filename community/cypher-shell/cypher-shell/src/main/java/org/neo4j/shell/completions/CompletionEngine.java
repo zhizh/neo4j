@@ -62,12 +62,16 @@ public class CompletionEngine {
             this.tokens = tokens;
         }
 
+        @Override
         public void visitTerminal(TerminalNode node) {}
 
+        @Override
         public void visitErrorNode(ErrorNode node) {}
 
+        @Override
         public void enterEveryRule(ParserRuleContext ctx) {}
 
+        @Override
         public void exitEveryRule(ParserRuleContext ctx) {
             if (ctx.getRuleIndex() == Cypher5Parser.RULE_variable) {
                 var c = (Cypher5Parser.VariableContext) ctx;

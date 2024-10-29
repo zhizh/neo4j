@@ -21,6 +21,7 @@ package org.neo4j.configuration.helpers;
 
 import static org.apache.commons.lang3.CharUtils.isAsciiAlphaLower;
 
+import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import org.neo4j.kernel.database.NormalizedDatabaseName;
@@ -72,7 +73,7 @@ public class DatabaseNameValidator {
         if (name.trim().isEmpty()) {
             throw new IllegalArgumentException("The provided database name is empty.");
         }
-        name = name.toLowerCase();
+        name = name.toLowerCase(Locale.ROOT);
         if (name.length() > MAXIMUM_DATABASE_NAME_LENGTH) {
             throw new IllegalArgumentException("The provided database name must have a length between " + 1 + " and "
                     + MAXIMUM_DATABASE_NAME_LENGTH + " characters.");

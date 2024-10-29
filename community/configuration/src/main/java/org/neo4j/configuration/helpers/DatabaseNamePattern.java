@@ -24,6 +24,7 @@ import static org.neo4j.configuration.helpers.DatabaseNameValidator.validateData
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -37,8 +38,8 @@ public class DatabaseNamePattern {
 
     public DatabaseNamePattern(String name) {
         validateDatabaseNamePattern(name);
-        this.regexPattern =
-                ConfigPatternBuilder.optionalPatternFromConfigString(name.toLowerCase(), Pattern.CASE_INSENSITIVE);
+        this.regexPattern = ConfigPatternBuilder.optionalPatternFromConfigString(
+                name.toLowerCase(Locale.ROOT), Pattern.CASE_INSENSITIVE);
         this.databaseName = name;
         this.normalizedDatabaseName = new NormalizedDatabaseName(name).name();
     }

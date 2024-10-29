@@ -1288,6 +1288,7 @@ class SeekCursor<KEY, VALUE> implements Seeker<KEY, VALUE> {
         }
     }
 
+    @Override
     public void reinitializeToNewRange(KEY fromInclusive, KEY toExclusive) {
         if (!ended) {
             try {

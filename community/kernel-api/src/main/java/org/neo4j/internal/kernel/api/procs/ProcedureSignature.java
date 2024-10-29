@@ -241,6 +241,7 @@ public class ProcedureSignature implements DescribedSignature {
         this.supportedQueryLanguages = supportedQueryLanguages;
     }
 
+    @Override
     public QualifiedName name() {
         return name;
     }
@@ -277,6 +278,7 @@ public class ProcedureSignature implements DescribedSignature {
         return outputSignature == VOID;
     }
 
+    @Override
     public Optional<String> description() {
         return Optional.ofNullable(description);
     }

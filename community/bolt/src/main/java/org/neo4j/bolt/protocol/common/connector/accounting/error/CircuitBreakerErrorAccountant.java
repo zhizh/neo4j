@@ -81,6 +81,7 @@ public final class CircuitBreakerErrorAccountant implements ErrorAccountant {
         this.userLog = logging.getUserLog(ErrorAccountant.class);
     }
 
+    @Override
     public void notifyNetworkAbort(Connection connection, Throwable cause) {
         if (this.networkAbortCircuitBreaker == null) {
             this.userLog.warn("[" + connection.id() + "] Terminating connection due to network error", cause);
@@ -92,6 +93,7 @@ public final class CircuitBreakerErrorAccountant implements ErrorAccountant {
         this.networkAbortCircuitBreaker.increment();
     }
 
+    @Override
     public void notifyThreadStarvation(Connection connection, Throwable cause) {
         if (this.threadStarvationCircuitBreaker == null) {
             this.userLog.error(
@@ -109,7 +111,7 @@ public final class CircuitBreakerErrorAccountant implements ErrorAccountant {
         this.threadStarvationCircuitBreaker.increment();
     }
 
-    private abstract class ContinuallyLoggingCircuitBreakerListener implements CircuitBreaker.Listener {
+    private abstract static class ContinuallyLoggingCircuitBreakerListener implements CircuitBreaker.Listener {
 
         private volatile long lastLogLine;
 

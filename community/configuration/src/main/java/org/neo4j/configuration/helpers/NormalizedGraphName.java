@@ -21,12 +21,13 @@ package org.neo4j.configuration.helpers;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Locale;
 import org.neo4j.annotations.api.PublicApi;
 
 @PublicApi
 public record NormalizedGraphName(String name) {
     public NormalizedGraphName(String name) {
         requireNonNull(name, "Graph name should be not null.");
-        this.name = name.toLowerCase();
+        this.name = name.toLowerCase(Locale.ROOT);
     }
 }

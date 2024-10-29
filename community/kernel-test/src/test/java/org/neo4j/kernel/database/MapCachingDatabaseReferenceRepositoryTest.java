@@ -25,6 +25,7 @@ import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,8 +90,8 @@ public class MapCachingDatabaseReferenceRepositoryTest {
 
     @Test
     void shouldIgnoreCase() {
-        var lookup = databaseRefRepo.getByAlias(name.name().toLowerCase());
-        var lookup2 = databaseRefRepo.getByAlias(name.name().toUpperCase());
+        var lookup = databaseRefRepo.getByAlias(name.name().toLowerCase(Locale.ROOT));
+        var lookup2 = databaseRefRepo.getByAlias(name.name().toUpperCase(Locale.ROOT));
 
         assertThat(lookup).contains(ref);
         assertThat(lookup).isEqualTo(lookup2);

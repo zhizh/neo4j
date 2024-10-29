@@ -22,6 +22,7 @@ package org.neo4j.gqlstatus;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 public class ProcessorTest {
@@ -35,7 +36,7 @@ public class ProcessorTest {
     }
 
     private static String expectedUPPER(String s) {
-        return s.toUpperCase();
+        return s.toUpperCase(Locale.ROOT);
     }
 
     private static String expectedCALLABLE_IDENT(String s) {

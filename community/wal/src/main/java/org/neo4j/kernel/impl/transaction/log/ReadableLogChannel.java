@@ -24,5 +24,6 @@ import java.io.IOException;
 public interface ReadableLogChannel extends ReadableLogPositionAwareChannel, VersionableLog {
     void setCurrentPosition(long byteOffset) throws IOException;
 
+    @Override
     long position() throws IOException;
 }

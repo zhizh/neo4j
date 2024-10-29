@@ -19,6 +19,8 @@
  */
 package org.neo4j.gqlstatus;
 
+import java.util.Locale;
+
 /**
  * GQLSTATUS is a code that identifies what notable or problematic condition arose during a query execution.
  * This includes successful completion, warnings, no data, information and exceptions.
@@ -38,7 +40,7 @@ public record GqlStatus(String gqlStatusString) {
             throw new IllegalArgumentException(
                     String.format("GQLSTATUS must be 5 characters and alphanumeric, got: %s.", input));
         }
-        return input.toUpperCase();
+        return input.toUpperCase(Locale.ROOT);
     }
 
     @Override

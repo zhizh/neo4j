@@ -186,7 +186,7 @@ public class QueryStatementLifecycles {
             return monitoringMode.isParentChildMonitoringMode();
         }
 
-        private abstract class MonitoringMode {
+        private abstract static class MonitoringMode {
             abstract boolean isParentChildMonitoringMode();
 
             abstract QueryExecutionMonitor getChildQueryMonitor();

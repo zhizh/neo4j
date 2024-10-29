@@ -27,6 +27,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -68,7 +69,7 @@ public final class TimeUtil {
             }
 
             String unit =
-                    timeWithOrWithoutUnit.substring(unitIndex, unitIndexEnd).toLowerCase();
+                    timeWithOrWithoutUnit.substring(unitIndex, unitIndexEnd).toLowerCase(Locale.ROOT);
             int amount = Integer.parseInt(timeWithOrWithoutUnit.substring(amountIndex, unitIndex));
             timeInNanos += toNanos(unit, amount);
 

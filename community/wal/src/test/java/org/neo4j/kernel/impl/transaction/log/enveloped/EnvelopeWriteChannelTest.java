@@ -917,7 +917,7 @@ class EnvelopeWriteChannelTest {
         }
     }
 
-    private class TestLogTracer implements LogTracers {
+    private static class TestLogTracer implements LogTracers {
         private final CountingLogRotateEvent countingLogRotateEvent = new CountingLogRotateEvent();
         private int rotations = 0;
         private final LogAppendEvent logAppendEvent = new LogAppendEvent() {

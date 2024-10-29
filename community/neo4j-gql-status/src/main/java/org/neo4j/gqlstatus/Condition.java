@@ -19,6 +19,8 @@
  */
 package org.neo4j.gqlstatus;
 
+import java.util.Locale;
+
 // The first four entries of the enum must be in this specific order for GQL-status objects to be sorted in severity
 // order
 public enum Condition {
@@ -70,6 +72,6 @@ public enum Condition {
     }
 
     private String createConditionString() {
-        return this.name().toLowerCase().replace('_', ' ');
+        return this.name().toLowerCase(Locale.ROOT).replace('_', ' ');
     }
 }

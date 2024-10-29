@@ -22,6 +22,7 @@ package org.neo4j.internal.batchimport.input.parquet;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.neo4j.batchimport.api.input.IdType;
@@ -93,7 +94,7 @@ record ParquetColumn(
         if (idTypeValue == null || idTypeValue.isBlank()) {
             return null;
         }
-        return switch (idTypeValue.toUpperCase()) {
+        return switch (idTypeValue.toUpperCase(Locale.ROOT)) {
             case "INT" -> IdType.INTEGER;
             case "STRING" -> IdType.STRING;
             case "ACTUAL" -> IdType.ACTUAL;

@@ -73,6 +73,7 @@ public class MultiVersionExecutionEngine extends ExecutionEngine {
                 context, () -> super.executeQuery(query, parameters, context, prePopulate, subscriber, monitor));
     }
 
+    @Override
     public QueryExecution executeQuery(
             FullyParsedQuery query,
             MapValue parameters,

@@ -107,6 +107,7 @@ public class DiagnosticRecord {
         // innerDiagnosticRecord.put("_status_parameters", statusParameters);
     }
 
+    @Override
     public int hashCode() {
         return innerDiagnosticRecord.hashCode();
     }

@@ -30,6 +30,7 @@ public class TestExceptionFactory implements ASTExceptionFactory {
         return new Exception("SyntaxException!", source);
     }
 
+    @Override
     public Exception syntaxException(
             ErrorGqlStatusObject gqlStatusObject,
             String got,
@@ -46,6 +47,7 @@ public class TestExceptionFactory implements ASTExceptionFactory {
         return new Exception("SyntaxException!", source);
     }
 
+    @Override
     public Exception syntaxException(
             ErrorGqlStatusObject gqlStatusObject, Exception source, int offset, int line, int column) {
         return new Exception("SyntaxException!", source);

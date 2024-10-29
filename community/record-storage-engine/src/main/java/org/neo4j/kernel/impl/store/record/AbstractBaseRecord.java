@@ -221,6 +221,7 @@ public abstract class AbstractBaseRecord implements Mask.Maskable {
         return String.format(",%ssecondaryUnitId=%d", requiresSecondaryUnit() ? "+" : "-", getSecondaryUnitId());
     }
 
+    @Override
     public final String toString() {
         return toString(Mask.NO);
     }

@@ -42,6 +42,7 @@ public class CypherExecutionInterruptedException extends Neo4jException {
                 Status.Transaction.QueryExecutionFailedOnTransaction);
     }
 
+    @Override
     public Status status() {
         return status;
     }

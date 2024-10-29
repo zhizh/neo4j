@@ -135,6 +135,7 @@ class DiagnosticRecordTest {
         // TODO: enable this line again when re-introducing status parameters
         // assertEquals(params, parsedMap.get("_status_parameters"));
 
+        @SuppressWarnings("MisleadingEscapedSpace")
         var jsonWithWhitespaces =
                 """
                 {

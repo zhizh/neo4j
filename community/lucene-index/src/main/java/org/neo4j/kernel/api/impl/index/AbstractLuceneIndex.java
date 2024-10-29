@@ -256,6 +256,7 @@ public abstract class AbstractLuceneIndex<READER extends IndexReader> implements
      * @return iterator over all index files.
      * @see WritableIndexSnapshotFileIterator
      */
+    @Override
     public ResourceIterator<Path> snapshotFiles() throws IOException {
         if (indexStorage.getStoredIndexFailure() != null) {
             return asResourceIterator(iterator(indexStorage.getIndexFailureFile()));

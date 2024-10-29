@@ -32,6 +32,7 @@ public class PhysicalFlushableLogChannel extends PhysicalFlushableChannel implem
         super(channel, scopedBuffer);
     }
 
+    @Override
     public void setChannel(StoreChannel channel) {
         this.channel = channel;
     }
