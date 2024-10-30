@@ -25,31 +25,41 @@ import org.neo4j.annotations.api.PublicApi;
  * Representation for notifications found when executing a query.
  *
  * A notification can be visualized in a client pinpointing problems or other information about the query.
+ * @deprecated replaced by {@link GqlStatusObject}
  */
 @PublicApi
+@Deprecated(forRemoval = true, since = "5.26")
 public interface Notification {
     /**
      * Returns a notification code for the discovered issue.
      * @return the notification code
+     * @deprecated replaced by {@link GqlStatusObject#gqlStatus()}
      */
+    @Deprecated(forRemoval = true, since = "5.26")
     String getCode();
 
     /**
      * Returns a short summary of the notification.
      * @return the title of the notification.
+     * @deprecated replaced by {@link GqlStatusObject#statusDescription()}
      */
+    @Deprecated(forRemoval = true, since = "5.26")
     String getTitle();
 
     /**
      * Returns a longer description of the notification.
      * @return the description of the notification.
+     * @deprecated replaced by {@link GqlStatusObject#statusDescription()}
      */
+    @Deprecated(forRemoval = true, since = "5.26")
     String getDescription();
 
     /**
      * Returns the severity level of this notification.
      * @return the severity level of the notification.
+     * @deprecated replaced by {@link GqlStatusObject#getSeverity()}
      */
+    @Deprecated(forRemoval = true, since = "5.26")
     SeverityLevel getSeverity();
 
     /**
@@ -59,13 +69,17 @@ public interface Notification {
      *
      * @return the position in the query where the issue was found, or
      * {@link org.neo4j.graphdb.InputPosition#empty} if no position is associated with this notification.
+     * @deprecated replaced by {@link GqlStatusObject#getPosition()}
      */
+    @Deprecated(forRemoval = true, since = "5.26")
     InputPosition getPosition();
 
     /**
      * Returns the category of this notification.
      * @return the category of the notification.
+     * @deprecated replaced by {@link GqlStatusObject#getClassification()}
      */
+    @Deprecated(forRemoval = true, since = "5.26")
     default NotificationCategory getCategory() {
         return NotificationCategory.UNKNOWN;
     }

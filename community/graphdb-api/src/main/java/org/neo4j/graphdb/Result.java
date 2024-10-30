@@ -205,7 +205,9 @@ public interface Result extends ResourceIterator<Map<String, Object>> {
      * presented in a client.
      *
      * @return an iterable of all notifications created when running the query.
+     * @deprecated replaced by {@link #getGqlStatusObjects()}
      */
+    @Deprecated(forRemoval = true, since = "5.26")
     Iterable<Notification> getNotifications();
 
     /**
