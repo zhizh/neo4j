@@ -25,6 +25,7 @@ import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.SubqueryVariableShadowing
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlHelper
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class SubqueryCallSemanticAnalysisTest
@@ -469,6 +470,7 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 20, 19),
           "Query must conclude with a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD.",
           InputPosition(19, 1, 20)
         )
@@ -483,6 +485,7 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 23, 22),
           "Query must conclude with a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD.",
           InputPosition(22, 1, 23)
         )
@@ -497,6 +500,7 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 20, 19),
           "Query must conclude with a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD.",
           InputPosition(19, 1, 20)
         )
@@ -512,6 +516,7 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 20, 19),
           "Query must conclude with a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD.",
           InputPosition(19, 1, 20)
         )
@@ -905,6 +910,7 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 23, 22),
           "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
           InputPosition(22, 1, 23)
         )
@@ -918,6 +924,7 @@ class SubqueryCallSemanticAnalysisTest
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 20, 19),
           "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
           InputPosition(19, 1, 20)
         )

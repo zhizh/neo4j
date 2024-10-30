@@ -35,7 +35,6 @@ import org.neo4j.graphdb.TransientTransactionFailureException;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
 import org.neo4j.internal.kernel.api.procs.Neo4jTypes;
 import org.neo4j.internal.kernel.api.procs.QualifiedName;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.procedure.CallableProcedure;
 import org.neo4j.kernel.api.procedure.CallableUserAggregationFunction;
 import org.neo4j.kernel.api.procedure.CallableUserFunction;
@@ -426,17 +425,13 @@ public class GlobalProceduresRegistry extends LifecycleAdapter implements Global
             // the transaction started, and the lock was claimed. Furthermore, we should not wait for the lock,
             // but rather fail with a transient error to avoid blocking a transaction.
             if (!lock.tryLock()) {
-                throw new TransientTransactionFailureException(
-                        Status.Procedure.ProcedureCallFailed,
-                        "The procedure registry is busy. You may retry this operation.");
+                throw TransientTransactionFailureException.procedureRegistryIsBusy();
             }
 
             if (tx.kernelTransaction().procedures().signatureVersion()
                     != getCurrentView().signatureVersion()) {
                 lock.unlock();
-                throw new TransientTransactionFailureException(
-                        Status.Procedure.ProcedureCallFailed,
-                        "The procedure registry was modified by another transaction. You may retry this operation.");
+                throw TransientTransactionFailureException.procedureRegistryWasModified();
             }
 
             return () -> {

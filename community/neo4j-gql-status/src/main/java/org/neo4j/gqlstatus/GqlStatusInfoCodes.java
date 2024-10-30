@@ -3988,7 +3988,7 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_51N07(
             new GqlStatus("51N07"),
             """
-                    The { %s } contains a non-default argument before a default argument. Non-default arguments are not allowed to be positioned after default arguments.""",
+                    The { %s } contains a non-default argument after a default argument. Non-default arguments are not allowed to be positioned after default arguments.""",
             new GqlParams.GqlParam[] {GqlParams.StringParam.procFun},
             emptyMap(),
             Condition.SYSTEM_CONFIGURATION_OR_OPERATION_EXCEPTION,

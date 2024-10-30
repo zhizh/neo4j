@@ -742,6 +742,33 @@ object SemanticError {
     )
   }
 
+  def queryMustConcludeWithClause(position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql42001_42N71(position.line, position.column, position.offset)
+    SemanticError(gql, s"Query must conclude with $validLastClauses.", position)
+  }
+
+  def queryCannotConcludeWithCall(callName: String, position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql42001_42N71(position.line, position.column, position.offset)
+    SemanticError(gql, s"Query cannot conclude with $callName together with YIELD", position)
+  }
+
+  def queryCannotConcludeWithClause(clause: String, position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql42001_42N71(position.line, position.column, position.offset)
+    SemanticError(
+      gql,
+      s"Query cannot conclude with $clause (must be $validLastClauses).",
+      position
+    )
+  }
+
+  private val validLastClauses =
+    "a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD"
+
+  def withIsRequiredBetween(clause1: String, clause2: String, position: InputPosition): SemanticError = {
+    val gql = GqlHelper.getGql42001_42N24(clause1, clause2, position.line, position.column, position.offset)
+    SemanticError(gql, s"WITH is required between $clause1 and $clause2", position)
+  }
+
 }
 
 sealed trait UnsupportedOpenCypher extends SemanticErrorDef

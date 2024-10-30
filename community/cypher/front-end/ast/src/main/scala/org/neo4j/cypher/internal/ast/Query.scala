@@ -39,6 +39,7 @@ import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.Rewriter
 import org.neo4j.cypher.internal.util.SubqueryVariableShadowing
 import org.neo4j.cypher.internal.util.topDown
+import org.neo4j.gqlstatus.GqlHelper
 
 sealed trait Query extends Statement with SemanticCheckable with SemanticAnalysisTooling {
   def containsUpdates: Boolean
@@ -293,7 +294,15 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
   private def checkStandaloneCall(clauses: Seq[Clause]): SemanticCheck = {
     clauses match {
       case Seq(_: UnresolvedCall, where: With) =>
+        val gql = GqlHelper.getGql42001_42N24(
+          "CALL",
+          "WHERE",
+          where.position.line,
+          where.position.column,
+          where.position.offset
+        )
         error(
+          gql,
           "Cannot use standalone call with WHERE (instead use: `CALL ... WITH * WHERE ... RETURN *`)",
           where.position
         )
@@ -355,7 +364,7 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
             case Seq(_: UpdateClause, _: Finish) =>
               None
             case Seq(update: UpdateClause, clause) =>
-              Some(SemanticError(s"WITH is required between ${update.name} and ${clause.name}", clause.position))
+              Some(SemanticError.withIsRequiredBetween(update.name, clause.name, clause.position))
             case _ =>
               None
           }
@@ -394,30 +403,21 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
           missingYield ++ missingReturn
         } else Vector.empty[SemanticError]
 
-      val validLastClauses =
-        "a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD"
-
       val concludeError = clauses match {
         // standalone procedure call
         case Seq(_: CallClause)                    => None
         case Seq(_: GraphSelection, _: CallClause) => None
 
-        case Seq() =>
-          Some(SemanticError(s"Query must conclude with $validLastClauses.", this.position))
+        case Seq() => Some(SemanticError.queryMustConcludeWithClause(this.position))
 
         // otherwise
         case seq => seq.last match {
             case _: UpdateClause | _: Return | _: Finish | _: CommandClause                                  => None
             case subquery: SubqueryCall if !subquery.innerQuery.isReturning && subquery.reportParams.isEmpty => None
             case call: CallClause if call.returnVariables.explicitVariables.isEmpty && !call.yieldAll        => None
-            case call: CallClause =>
-              Some(SemanticError(s"Query cannot conclude with ${call.name} together with YIELD", call.position))
+            case call: CallClause         => Some(SemanticError.queryCannotConcludeWithCall(call.name, call.position))
             case _ if canOmitReturnClause => None
-            case clause =>
-              Some(SemanticError(
-                s"Query cannot conclude with ${clause.name} (must be $validLastClauses).",
-                clause.position
-              ))
+            case clause => Some(SemanticError.queryCannotConcludeWithClause(clause.name, clause.position))
           }
       }
 

@@ -29,6 +29,7 @@ import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.gqlstatus.ErrorGqlStatusObject
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
 import org.neo4j.gqlstatus.GqlHelper
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N71
 import org.neo4j.gqlstatus.GqlParams
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
@@ -1793,6 +1794,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
+            getGql42001_42N71(1, 11, 10),
             "Query cannot conclude with WITH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
             InputPosition(10, 1, 11)
           ),
@@ -1812,6 +1814,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
         query,
         Set(
           SemanticError(
+            getGql42001_42N71(1, 36 + extraLength, 35 + extraLength),
             "Query cannot conclude with WITH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
             InputPosition(35 + extraLength, 1, 36 + extraLength)
           ),
@@ -1918,7 +1921,11 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
     expectErrorsFrom(
       query,
       Set(
-        SemanticError("Query cannot conclude with CALL together with YIELD", InputPosition(10, 1, 11))
+        SemanticError(
+          getGql42001_42N71(1, 11, 10),
+          "Query cannot conclude with CALL together with YIELD",
+          InputPosition(10, 1, 11)
+        )
       )
     )
   }
@@ -1930,6 +1937,7 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
       Set(
         SemanticError("Variable `a` not defined", InputPosition(5, 1, 6)),
         SemanticError(
+          getGql42001_42N71(1, 1, 0),
           "Query cannot conclude with WITH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
           InputPosition(0, 1, 1)
         )

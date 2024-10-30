@@ -675,4 +675,20 @@ public class ProcedureException extends KernelException {
 
         return new ProcedureException(gql, Status.Procedure.ProcedureCallFailed, legacyMessage);
     }
+
+    public static ProcedureException cannotInjectField(String procField, Throwable cause) {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N00)
+                .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N20)
+                        .withParam(GqlParams.StringParam.procField, procField)
+                        .build())
+                .build();
+
+        return new ProcedureException(
+                gql,
+                Status.Procedure.ProcedureCallFailed,
+                cause,
+                "Unable to inject component to field `%s`, please ensure it is public and non-final: %s",
+                procField,
+                cause.getMessage());
+    }
 }

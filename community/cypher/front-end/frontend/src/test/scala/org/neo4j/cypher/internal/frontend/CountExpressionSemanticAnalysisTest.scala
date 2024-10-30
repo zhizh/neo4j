@@ -23,6 +23,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N07
 import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
 import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N71
 
 class CountExpressionSemanticAnalysisTest
     extends CypherFunSuite
@@ -342,10 +343,12 @@ class CountExpressionSemanticAnalysisTest
      """.stripMargin) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N71(3, 5, 40),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(40, 3, 5)
       ),
       SemanticError(
+        getGql42001_42N71(5, 5, 64),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(64, 5, 5)
       )

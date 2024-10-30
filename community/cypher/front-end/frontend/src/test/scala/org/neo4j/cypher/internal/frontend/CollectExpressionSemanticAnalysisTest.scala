@@ -24,6 +24,7 @@ import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N07
 import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N22
 import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N39
 import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N57
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N71
 
 class CollectExpressionSemanticAnalysisTest
     extends CypherFunSuite
@@ -34,6 +35,7 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N71(1, 18, 17),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(17, 1, 18)
       ),
@@ -415,10 +417,12 @@ class CollectExpressionSemanticAnalysisTest
   ) {
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
+        getGql42001_42N71(3, 5, 42),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(42, 3, 5)
       ),
       SemanticError(
+        getGql42001_42N71(5, 5, 66),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(66, 5, 5)
       ),
@@ -448,6 +452,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(74, 5, 5)
       ),
       SemanticError(
+        getGql42001_42N71(6, 5, 88),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(88, 6, 5)
       ),
@@ -477,6 +482,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(56, 4, 5)
       ),
       SemanticError(
+        getGql42001_42N71(3, 5, 42),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(42, 3, 5)
       ),
@@ -506,6 +512,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(69, 5, 5)
       ),
       SemanticError(
+        getGql42001_42N71(6, 5, 83),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(83, 6, 5)
       ),
@@ -535,6 +542,7 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(56, 4, 5)
       ),
       SemanticError(
+        getGql42001_42N71(3, 5, 42),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(42, 3, 5)
       ),
@@ -566,10 +574,12 @@ class CollectExpressionSemanticAnalysisTest
         InputPosition(56, 4, 5)
       ),
       SemanticError(
+        getGql42001_42N71(3, 5, 42),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(42, 3, 5)
       ),
       SemanticError(
+        getGql42001_42N71(8, 5, 111),
         "Query cannot conclude with MATCH (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
         InputPosition(111, 8, 5)
       ),

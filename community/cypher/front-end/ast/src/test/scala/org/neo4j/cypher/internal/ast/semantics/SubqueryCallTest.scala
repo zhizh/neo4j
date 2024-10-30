@@ -400,6 +400,11 @@ class SubqueryCallTest extends CypherFunSuite with AstConstructionTestSupport {
 
     error.msg.should(include("Query cannot conclude with UNWIND"))
     error.position.shouldEqual(unwindPos)
+
+    val gqlError = error.asInstanceOf[SemanticError].gqlStatusObject
+    gqlError.gqlStatus() shouldBe "42001"
+    gqlError.cause() should not be empty
+    gqlError.cause().get().gqlStatus() shouldBe "42N71"
   }
 
   test("subquery allows single query with create and return statement at the end") {

@@ -20,6 +20,7 @@ import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.gqlstatus.ErrorGqlStatusObjectImplementation
+import org.neo4j.gqlstatus.GqlHelper.getGql42001_42N71
 import org.neo4j.gqlstatus.GqlStatusInfoCodes
 
 class LastClauseTest
@@ -49,6 +50,7 @@ class LastClauseTest
 
   def errorCannotConcludeWith(clause: String, offset: Int, line: Int, column: Int): SemanticError =
     SemanticError(
+      getGql42001_42N71(line, column, offset),
       s"Query cannot conclude with $clause (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
       InputPosition(offset, line, column)
     )

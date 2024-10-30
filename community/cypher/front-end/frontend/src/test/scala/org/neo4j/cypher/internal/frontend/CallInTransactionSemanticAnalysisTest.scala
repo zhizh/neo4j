@@ -703,6 +703,7 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 1, 0),
           "Query cannot conclude with CALL (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
           InputPosition(0, 1, 1)
         )
@@ -732,6 +733,7 @@ class CallInTransactionSemanticAnalysisTest extends SemanticAnalysisTestSuite {
       query,
       Set(
         SemanticError(
+          GqlHelper.getGql42001_42N71(1, 1, 0),
           "Query cannot conclude with CALL (must be a RETURN clause, a FINISH clause, an update clause, a unit subquery call, or a procedure call with no YIELD).",
           InputPosition(0, 1, 1)
         )

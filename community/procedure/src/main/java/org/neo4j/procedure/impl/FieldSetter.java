@@ -22,7 +22,6 @@ package org.neo4j.procedure.impl;
 import java.lang.reflect.Field;
 import org.neo4j.function.ThrowingFunction;
 import org.neo4j.internal.kernel.api.exceptions.ProcedureException;
-import org.neo4j.kernel.api.exceptions.Status;
 import org.neo4j.kernel.api.procedure.Context;
 
 /**
@@ -41,12 +40,7 @@ public class FieldSetter {
         try {
             return provider.apply(ctx);
         } catch (Throwable e) {
-            throw new ProcedureException(
-                    Status.Procedure.ProcedureCallFailed,
-                    e,
-                    "Unable to inject component to field `%s`, please ensure it is public and non-final: %s",
-                    field.getName(),
-                    e.getMessage());
+            throw ProcedureException.cannotInjectField(field.getName(), e);
         }
     }
 

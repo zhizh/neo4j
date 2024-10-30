@@ -71,6 +71,26 @@ public class TransientTransactionFailureException extends TransientFailureExcept
         return new TransientTransactionFailureException(gql, Status.Transaction.LeaseExpired, errorMsg);
     }
 
+    public static TransientTransactionFailureException procedureRegistryIsBusy() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N21)
+                .build();
+
+        return new TransientTransactionFailureException(
+                gql,
+                Status.Procedure.ProcedureCallFailed,
+                "The procedure registry is busy. You may retry this operation.");
+    }
+
+    public static TransientTransactionFailureException procedureRegistryWasModified() {
+        var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_51N21)
+                .build();
+
+        return new TransientTransactionFailureException(
+                gql,
+                Status.Procedure.ProcedureCallFailed,
+                "The procedure registry was modified by another transaction. You may retry this operation.");
+    }
+
     @Override
     public Status status() {
         return status;
