@@ -24,6 +24,7 @@ import org.neo4j.cypher.internal.logical.plans.CachedProperties
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.Selection.LabelAndRelTypeInfo
 import org.neo4j.cypher.internal.logical.plans.ordering.ProvidedOrder
+import org.neo4j.cypher.internal.macros.AssertMacros
 import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes.EffectiveCardinalities.MISSING
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
@@ -98,19 +99,25 @@ case class PlanningAttributesCacheKey(
   leveragedOrders: ImmutablePlanningAttributes.LeveragedOrders
 )
 
+trait ImmutablePlanningAttribute[T] {
+  def isDefinedAt(id: Id): Boolean
+  def get(id: Id): T
+  def size: Int
+}
+
 object ImmutablePlanningAttributes {
 
   /**
    * Space optimized version of PlanningAttributes.EffectiveCardinalities,
    * intended to decrease heap usage of query cache.
    */
-  case class EffectiveCardinalities(
+  final case class EffectiveCardinalities(
     private val amounts: ArraySeq[Double],
     private val originalAmounts: ArraySeq[Double]
-  ) {
-    def isDefinedAt(id: Id): Boolean = id.x < amounts.size && amounts(id.x) != MISSING
+  ) extends ImmutablePlanningAttribute[EffectiveCardinality] {
+    override def isDefinedAt(id: Id): Boolean = id.x < amounts.size && amounts(id.x) != MISSING
 
-    def get(id: Id): EffectiveCardinality = {
+    override def get(id: Id): EffectiveCardinality = {
       if (!isDefinedAt(id)) {
         throw new NoSuchElementException(s"Id $id")
       } else {
@@ -123,7 +130,7 @@ object ImmutablePlanningAttributes {
       }
     }
 
-    def size: Int = amounts.count(_ != MISSING)
+    override def size: Int = amounts.count(_ != MISSING)
 
     def toMutable: PlanningAttributes.EffectiveCardinalities = {
       val mutable = new PlanningAttributes.EffectiveCardinalities
@@ -164,13 +171,13 @@ object ImmutablePlanningAttributes {
     private def flatten(value: Double): Double = if (value == MISSING) math.nextUp(MISSING) else value
   }
 
-  case class ProvidedOrders private (
+  final case class ProvidedOrders private (
     private val orders: Map[Int, ProvidedOrder],
-    private val size: Int
-  ) {
-    def isDefinedAt(id: Id): Boolean = id.x < size && !orders.get(id.x).contains(null)
-
-    def get(id: Id): ProvidedOrder = orders.getOrElse(id.x, ProvidedOrder.empty)
+    override val size: Int
+  ) extends ImmutablePlanningAttribute[ProvidedOrder] {
+    AssertMacros.checkOnlyWhenAssertionsAreEnabled(size > orders.keySet.maxOption.getOrElse(-1))
+    override def isDefinedAt(id: Id): Boolean = id.x < size && !orders.get(id.x).contains(null)
+    override def get(id: Id): ProvidedOrder = orders.getOrElse(id.x, ProvidedOrder.empty)
 
     def toMutable: PlanningAttributes.ProvidedOrders = {
       val mutable = new PlanningAttributes.ProvidedOrders()
@@ -200,10 +207,11 @@ object ImmutablePlanningAttributes {
     }
   }
 
-  case class LeveragedOrders private (private val leveraged: BitSet) {
+  final case class LeveragedOrders private (private val leveraged: BitSet) {
 
     def toMutable: PlanningAttributes.LeveragedOrders = {
       val mutable = new PlanningAttributes.LeveragedOrders
+      leveraged.maxOption.foreach(max => mutable.sizeHint(max))
       leveraged.foreach(id => mutable.set(Id(id), true))
       mutable
     }

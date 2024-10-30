@@ -32,6 +32,7 @@ import org.neo4j.cypher.internal.frontend.phases.BaseState
 import org.neo4j.cypher.internal.ir.PlannerQuery
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.options.CypherEagerAnalyzerOption
+import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttribute
 import org.neo4j.cypher.internal.planner.spi.ImmutablePlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.CachedPropertiesPerPlan
@@ -181,9 +182,12 @@ case class CachablePlanningAttributes(
     )
 
   def hasEqualSizeAttributes: Boolean = {
-    val fullAttributes = productIterator
-      .collect { case a: Attribute[_, _] if !a.isInstanceOf[PartialAttribute[_, _]] => a }
-      .toSeq
-    fullAttributes.tail.forall(_.size == fullAttributes.head.size)
+    productIterator
+      .collect {
+        case a: Attribute[_, _] if !a.isInstanceOf[PartialAttribute[_, _]] => a.size
+        case a: ImmutablePlanningAttribute[_]                              => a.size
+      }
+      .distinct
+      .size == 1
   }
 }
