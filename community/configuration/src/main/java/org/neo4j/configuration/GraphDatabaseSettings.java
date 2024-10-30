@@ -979,6 +979,7 @@ public class GraphDatabaseSettings implements SettingsDeclaration {
             .addConstraint(min(0L))
             .build();
 
+    @Deprecated(forRemoval = true)
     @Description(
             "Defines the maximum size of an off-heap memory block that can be cached to speed up allocations. The value must be a power of 2.")
     public static final Setting<Long> tx_state_off_heap_max_cacheable_block_size = newBuilder(
@@ -987,6 +988,7 @@ public class GraphDatabaseSettings implements SettingsDeclaration {
             .addConstraint(POWER_OF_2)
             .build();
 
+    @Deprecated(forRemoval = true)
     @Description(
             "Defines the size of the off-heap memory blocks cache. The cache will contain this number of blocks for each block size "
                     + "that is power of two. Thus, maximum amount of memory used by blocks cache can be calculated as "
