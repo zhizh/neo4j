@@ -22,6 +22,7 @@ package org.neo4j.cypher
 import org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME
 import org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME
 import org.neo4j.configuration.GraphDatabaseSettings.auth_enabled
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.RewindableExecutionResult
 import org.neo4j.cypher.internal.javacompat.GraphDatabaseCypherService
 import org.neo4j.graphdb.Result
@@ -40,6 +41,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.time.Seconds
 import org.scalatest.time.Span
 
+import java.time.ZonedDateTime
 import java.util
 
 import scala.jdk.CollectionConverters.MapHasAsJava
@@ -75,8 +77,11 @@ class TransactionCommandAcceptanceTestSupport extends ExecutionEngineFunSuite wi
     username: String,
     query: String,
     database: String = DEFAULT_DATABASE_NAME,
-    numColumns: Int = 10
+    numColumns: Int = 10,
+    cypherVersion: CypherVersion = CypherVersion.Cypher5 // This needs to be updated when we defaults to Cypher 25
   ): Unit = {
+    val checkCypher5Values = cypherVersion == CypherVersion.Cypher5
+
     resultMap.keys.size should be(numColumns)
     resultMap("database") should be(database)
     resultMap("transactionId").asInstanceOf[String] should startWith(
@@ -90,9 +95,16 @@ class TransactionCommandAcceptanceTestSupport extends ExecutionEngineFunSuite wi
     // Default values:
     resultMap("status") should be("Running")
     resultMap("connectionId") should be("")
-    resultMap("clientAddress") should be("")
+    withClue(s"clientAddress ($cypherVersion): ") {
+      if (checkCypher5Values) resultMap("clientAddress") should be("")
+      else resultMap("clientAddress") should be(null)
+    }
     // Don't check exact values:
-    resultMap("startTime").isInstanceOf[String] should be(true) // This is a timestamp
+    withClue(s"startTime ($cypherVersion): ") {
+      // This is a timestamp
+      if (checkCypher5Values) resultMap("startTime").isInstanceOf[String] should be(true)
+      else resultMap("startTime").isInstanceOf[ZonedDateTime] should be(true)
+    }
     resultMap("elapsedTime").isInstanceOf[DurationValue] should be(true)
   }
 
@@ -174,9 +186,12 @@ class TransactionCommandAcceptanceTestSupport extends ExecutionEngineFunSuite wi
    *
    * Returns the query and the latch.
    */
-  protected def setupUserWithOneTransaction(params: Map[String, AnyRef] = Map.empty): (String, DoubleLatch) = {
+  protected def setupUserWithOneTransaction(
+    params: Map[String, AnyRef] = Map.empty,
+    usePreExistingUser: Boolean = false
+  ): (String, DoubleLatch) = {
     val latch = new DoubleLatch(2, true)
-    createUser()
+    if (!usePreExistingUser) createUser()
     val userQuery = "UNWIND [1,2,3] AS x RETURN x"
     val tx = ThreadedTransaction(latch)
     tx.execute(username, password, threading, userQuery, params)

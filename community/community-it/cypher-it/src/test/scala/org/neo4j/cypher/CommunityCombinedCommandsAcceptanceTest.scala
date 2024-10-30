@@ -21,6 +21,7 @@ package org.neo4j.cypher
 
 import org.neo4j.configuration.GraphDatabaseInternalSettings
 import org.neo4j.cypher.CommunityShowFuncProcAcceptanceTest.readAll
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.graphdb.config.Setting
 import org.neo4j.kernel.api.procedure.GlobalProcedures
 import org.neo4j.test.DoubleLatch
@@ -57,9 +58,15 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
   private val procResourceUrl = getClass.getResource("/procedures.json")
   if (procResourceUrl == null) throw new NoSuchFileException(s"File not found: procedures.json")
 
-  private val allProceduresNames =
+  private val allProceduresNamesCypher5 =
     readAll(procResourceUrl)
       .filterNot(m => m("enterpriseOnly").asInstanceOf[Boolean])
+      .map(m => m("name").asInstanceOf[String])
+
+  private val allProceduresNamesCypher25 =
+    readAll(procResourceUrl)
+      .filterNot(m => m("enterpriseOnly").asInstanceOf[Boolean])
+      .filterNot(m => m("removedInCypher25").asInstanceOf[Boolean])
       .map(m => m("name").asInstanceOf[String])
 
   // Tests
@@ -367,7 +374,7 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
       ).toList
 
       // THEN
-      val expected = allProceduresNames.map(pName =>
+      val expected = allProceduresNamesCypher5.map(pName =>
         Map(
           "txId" -> unwindTransactionId,
           "name" -> pName
@@ -396,7 +403,7 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
       ).toList
 
       // THEN
-      val expected = allProceduresNames.map(pName =>
+      val expected = allProceduresNamesCypher5.map(pName =>
         Map(
           "name" -> pName,
           "txId" -> unwindTransactionId,
@@ -422,7 +429,7 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
     ).toList
 
     // THEN
-    val expected = allProceduresNames.map(pName =>
+    val expected = allProceduresNamesCypher5.map(pName =>
       Map(
         "procedure" -> pName,
         "setting" -> expectedSetting("name"),
@@ -434,7 +441,7 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
 
   test("Should show functions and show procedures") {
     // GIVEN
-    val expectedProcedure = allProceduresNames.head
+    val expectedProcedure = allProceduresNamesCypher5.head
 
     val result = execute(
       s"""SHOW FUNCTIONS
@@ -551,7 +558,7 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
   test("Should show constraints and show procedures") {
     // GIVEN
     graph.createNodeUniquenessConstraintWithName("my_constraint", "L", "p")
-    val expectedProcedure = allProceduresNames.head
+    val expectedProcedure = allProceduresNamesCypher5.head
 
     val result = execute(
       s"""SHOW CONSTRAINTS
@@ -668,7 +675,7 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
   test("Should show indexes and show procedures") {
     // GIVEN
     graph.createNodeIndexWithName("my_index", "L", "p")
-    val expectedProcedure = allProceduresNames.head
+    val expectedProcedure = allProceduresNamesCypher5.head
 
     val result = execute(
       s"""SHOW RANGE INDEXES
@@ -719,7 +726,7 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
   test("Should combine all show and terminate commands") {
     // GIVEN
     val expectedSetting = allSettings(graph).head
-    val expectedProcedure = allProceduresNames.head
+    val expectedProcedure = allProceduresNamesCypher5.head
     graph.createNodeUniquenessConstraintWithName("my_constraint", "L", "p")
     graph.createRelationshipIndexWithName("my_index", "L", "p")
     val (unwindQuery, latch) = setupUserWithOneTransaction(Map("setting" -> expectedSetting("name")))
@@ -764,6 +771,80 @@ class CommunityCombinedCommandsAcceptanceTest extends TransactionCommandAcceptan
       )))
     } finally {
       latch.finishAndWaitForAllToFinish()
+    }
+  }
+
+  test("Combine commands with Cypher versions") {
+    // GIVEN
+    val cypherVersions =
+      (CypherVersion.values().map(cv => (s"CYPHER ${cv.versionName}", cv.equals(CypherVersion.Cypher5)))
+        :+ ("", CypherVersion.Default.equals(CypherVersion.Cypher5)))
+    val expectedSetting = allSettings(graph).head
+    // Cypher 5 has two procedures with 'status' in the name, Cypher 25 only has one
+    val expectedProceduresCypher5 = allProceduresNamesCypher5.filter(_.toLowerCase.contains("status"))
+    expectedProceduresCypher5 should have size 2
+    val expectedProcedureCypher25 = allProceduresNamesCypher25.filter(_.toLowerCase.contains("status"))
+    expectedProcedureCypher25 should have size 1
+    graph.createNodeUniquenessConstraintWithName("my_constraint", "L", "p")
+    graph.createRelationshipIndexWithName("my_index", "L", "p")
+    createUser()
+
+    cypherVersions.foreach { case (cypherVersionString, usesCypher5) =>
+      withClue(cypherVersionString) {
+        // GIVEN
+        val expectedProcedures = if (usesCypher5) expectedProceduresCypher5 else expectedProcedureCypher25
+        val expectedConstraintType = if (usesCypher5) "UNIQUENESS" else "NODE_PROPERTY_UNIQUENESS"
+        val (unwindQuery, latch) = setupUserWithOneTransaction(
+          Map("setting" -> expectedSetting("name")),
+          usePreExistingUser = true
+        )
+
+        try {
+          val unwindTransactionId = getTransactionIdExecutingQuery(unwindQuery)
+
+          // WHEN
+          val result = execute(
+            s"""$cypherVersionString
+               |SHOW TRANSACTION '$unwindTransactionId'
+               |YIELD transactionId AS txId, parameters
+               |SHOW PROCEDURES
+               |YIELD name AS procedure
+               |WHERE toLower(procedure) CONTAINS 'status'
+               |SHOW RANGE INDEXES
+               |YIELD name AS index, entityType, owningConstraint
+               |WHERE owningConstraint IS NULL
+               |SHOW SETTING parameters.setting
+               |YIELD name AS setting, value
+               |TERMINATE TRANSACTION txId
+               |YIELD message
+               |SHOW USER DEFINED FUNCTIONS EXECUTABLE
+               |YIELD name AS function
+               |WHERE function CONTAINS 'return'
+               |SHOW CONSTRAINTS
+               |YIELD name AS constraint, type
+               |RETURN txId, procedure, setting, value, message, function, constraint, type AS constraintType, index, entityType
+               |ORDER BY procedure""".stripMargin
+          ).toList
+
+          // THEN
+          result should be(expectedProcedures.map(expectedProcedure =>
+            Map(
+              "txId" -> unwindTransactionId,
+              "procedure" -> expectedProcedure,
+              "index" -> "my_index",
+              "entityType" -> "RELATIONSHIP",
+              "setting" -> expectedSetting("name"),
+              "value" -> expectedSetting("value"),
+              "message" -> "Transaction terminated.",
+              "function" -> "test.return.latest",
+              "constraint" -> "my_constraint",
+              "constraintType" -> expectedConstraintType
+            )
+          ).sortBy(m => m("procedure").asInstanceOf[String]))
+        } finally {
+          latch.finishAndWaitForAllToFinish()
+        }
+      }
     }
   }
 

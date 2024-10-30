@@ -20,7 +20,9 @@
 package org.neo4j.cypher
 
 import org.neo4j.configuration.GraphDatabaseInternalSettings
+import org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME
 import org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.exceptions.SyntaxException
 
 import java.lang.Boolean.FALSE
@@ -188,6 +190,30 @@ class CommunityShowSettingsAcceptanceTest extends ExecutionEngineFunSuite with S
     result.toList should be(defaultColumnsOf(allSettings(graph)).filter(m =>
       m("name").equals("db.format")
     ))
+  }
+
+  test("show settings with Cypher versions") {
+    val cypherVersions = CypherVersion.values().map(cv => s"CYPHER ${cv.versionName} ") :+ ""
+
+    cypherVersions.foreach { cypherVersionString =>
+      selectDatabase(DEFAULT_DATABASE_NAME)
+      withClue(cypherVersionString + "user database") {
+        // WHEN
+        val result = execute(cypherVersionString + "SHOW SETTINGS")
+
+        // THEN
+        assertContains(defaultColumnsOf(allSettings(graph)), result.toList)
+      }
+
+      selectDatabase(SYSTEM_DATABASE_NAME)
+      withClue(cypherVersionString + "system database") {
+        // WHEN
+        val result = execute(cypherVersionString + "SHOW SETTINGS")
+
+        // THEN
+        assertContains(defaultColumnsOf(allSettings(graph)), result.toList)
+      }
+    }
   }
 
   // Planner tests

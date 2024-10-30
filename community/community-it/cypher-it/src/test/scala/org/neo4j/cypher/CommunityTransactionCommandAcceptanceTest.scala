@@ -21,12 +21,17 @@ package org.neo4j.cypher
 
 import org.neo4j.configuration.GraphDatabaseSettings.DEFAULT_DATABASE_NAME
 import org.neo4j.configuration.GraphDatabaseSettings.SYSTEM_DATABASE_NAME
+import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.exceptions.InvalidSemanticsException
 import org.neo4j.exceptions.SyntaxException
 import org.neo4j.kernel.impl.api.KernelTransactions
 import org.neo4j.test.DoubleLatch
 
 class CommunityTransactionCommandAcceptanceTest extends TransactionCommandAcceptanceTestSupport {
+
+  private val cypherVersions =
+    (CypherVersion.values().map(cv => (s"CYPHER ${cv.versionName} ", cv))
+      :+ ("", CypherVersion.Default))
 
   // SHOW TRANSACTIONS (don't test exact id as it might change)
 
@@ -263,6 +268,43 @@ class CommunityTransactionCommandAcceptanceTest extends TransactionCommandAccept
     )
     assertCorrectDefaultMap(sortedRes(2), "neo4j-transaction-", showUser, "SHOW TRANSACTIONS")
     assertCorrectDefaultMap(sortedRes(3), "neo4j-transaction-", username, user1Query)
+  }
+
+  test("show transactions with Cypher versions") {
+    cypherVersions.foreach { case (cypherVersionString, cypherVersion) =>
+      val query = cypherVersionString + "SHOW TRANSACTIONS"
+
+      selectDatabase(DEFAULT_DATABASE_NAME)
+      withClue(cypherVersionString + "user database") {
+        eventually {
+          // WHEN
+          val result = execute(query).toList
+
+          // THEN
+          result should have size 1
+          assertCorrectDefaultMap(result.head, "neo4j-transaction-", "", query, cypherVersion = cypherVersion)
+        }
+      }
+
+      selectDatabase(SYSTEM_DATABASE_NAME)
+      withClue(cypherVersionString + "system database") {
+        eventually {
+          // WHEN
+          val result = execute(query).toList
+
+          // THEN
+          result should have size 1
+          assertCorrectDefaultMap(
+            result.head,
+            "system-transaction-",
+            "",
+            query,
+            database = SYSTEM_DATABASE_NAME,
+            cypherVersion = cypherVersion
+          )
+        }
+      }
+    }
   }
 
   // yield/where/return tests
@@ -1208,6 +1250,56 @@ class CommunityTransactionCommandAcceptanceTest extends TransactionCommandAccept
       res.head("status") should be("Running")
     } finally {
       latch.finishAndWaitForAllToFinish()
+    }
+  }
+
+  test("terminate transactions with Cypher versions") {
+    // GIVEN
+    createUser()
+
+    cypherVersions.foreach { case (cypherVersionString, _) =>
+      selectDatabase(DEFAULT_DATABASE_NAME)
+      withClue(cypherVersionString + "user database") {
+        // GIVEN
+        val (unwindQuery, latch) = setupUserWithOneTransaction(usePreExistingUser = true)
+
+        try {
+          // WHEN
+          val unwindTransactionId = getTransactionIdExecutingQuery(unwindQuery)
+          val result = execute(cypherVersionString + s"TERMINATE TRANSACTION '$unwindTransactionId'").toList
+
+          // THEN
+          result should be(List(Map(
+            "message" -> "Transaction terminated.",
+            "transactionId" -> unwindTransactionId,
+            "username" -> username
+          )))
+        } finally {
+          latch.finishAndWaitForAllToFinish()
+        }
+      }
+
+      withClue(cypherVersionString + "system database") {
+        // GIVEN
+        selectDatabase(DEFAULT_DATABASE_NAME)
+        val (unwindQuery, latch) = setupUserWithOneTransaction(usePreExistingUser = true)
+
+        try {
+          // WHEN
+          val unwindTransactionId = getTransactionIdExecutingQuery(unwindQuery)
+          selectDatabase(SYSTEM_DATABASE_NAME)
+          val result = execute(cypherVersionString + s"TERMINATE TRANSACTION '$unwindTransactionId'").toList
+
+          // THEN
+          result should be(List(Map(
+            "message" -> "Transaction terminated.",
+            "transactionId" -> unwindTransactionId,
+            "username" -> username
+          )))
+        } finally {
+          latch.finishAndWaitForAllToFinish()
+        }
+      }
     }
   }
 
