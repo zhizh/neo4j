@@ -23,8 +23,10 @@ import org.neo4j.annotations.api.PublicApi;
 
 /**
  * NotificationCategory indicates to a client the category of a notification.
+ * @deprecated replaced by {@link org.neo4j.gqlstatus.NotificationClassification}
  */
 @PublicApi
+@Deprecated(forRemoval = true, since = "5.26")
 public enum NotificationCategory {
     /**
      * deprecated feature/format/functionality
