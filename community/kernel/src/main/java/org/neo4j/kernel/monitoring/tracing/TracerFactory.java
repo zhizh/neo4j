@@ -25,6 +25,7 @@ import org.neo4j.configuration.Config;
 import org.neo4j.configuration.GraphDatabaseInternalSettings;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.version.VersionStorageTracer;
+import org.neo4j.kernel.database.NamedDatabaseId;
 import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
 import org.neo4j.lock.LockTracer;
 import org.neo4j.logging.InternalLog;
@@ -57,10 +58,12 @@ public interface TracerFactory extends NamedService {
      * Create a new DatabaseTracer instance.
      *
      * @param pageCacheTracer page cache tracer
-     * @param clock system clock
+     * @param clock           system clock
+     * @param namedDatabaseId database id
      * @return The created instance.
      */
-    DatabaseTracer createDatabaseTracer(PageCacheTracer pageCacheTracer, Clock clock);
+    DatabaseTracer createDatabaseTracer(
+            PageCacheTracer pageCacheTracer, Clock clock, InternalLog log, NamedDatabaseId namedDatabaseId);
 
     /**
      * Create a new LockTracer instance.

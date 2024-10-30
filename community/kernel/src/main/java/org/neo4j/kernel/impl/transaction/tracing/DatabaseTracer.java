@@ -100,7 +100,7 @@ public interface DatabaseTracer extends TransactionTracer, CheckPointTracer, Log
         }
 
         @Override
-        public TransactionEvent beginTransaction(CursorContext cursorContext) {
+        public TransactionEvent beginTransaction(CursorContext cursorContext, long transactionSequenceNumber) {
             return TransactionEvent.NULL;
         }
 

@@ -22,6 +22,7 @@ package org.neo4j.kernel.monitoring.tracing;
 import java.time.Clock;
 import org.neo4j.configuration.Config;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
+import org.neo4j.kernel.database.NamedDatabaseId;
 import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
 import org.neo4j.lock.LockTracer;
 import org.neo4j.logging.InternalLog;
@@ -45,7 +46,8 @@ public class NullTracersFactory implements TracerFactory {
     }
 
     @Override
-    public DatabaseTracer createDatabaseTracer(PageCacheTracer pageCacheTracer, Clock clock) {
+    public DatabaseTracer createDatabaseTracer(
+            PageCacheTracer pageCacheTracer, Clock clock, InternalLog log, NamedDatabaseId namedDatabaseId) {
         return DatabaseTracer.NULL;
     }
 

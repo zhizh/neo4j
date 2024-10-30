@@ -136,7 +136,7 @@ public class DefaultTracers implements Tracers {
 
     @Override
     public DatabaseTracer getDatabaseTracer(NamedDatabaseId namedDatabaseId) {
-        return tracersFactory.createDatabaseTracer(pageCacheTracer, clock);
+        return tracersFactory.createDatabaseTracer(pageCacheTracer, clock, log, namedDatabaseId);
     }
 
     @Override
@@ -152,17 +152,17 @@ public class DefaultTracers implements Tracers {
         }
     }
 
-    private static TracerFactory selectTracerFactory(String desiredImplementationName, InternalLog msgLog) {
+    private static TracerFactory selectTracerFactory(String desiredImplementationName, InternalLog log) {
         if (isBlank(desiredImplementationName)) {
             return createDefaultTracerFactory();
         }
         try {
             return Services.load(TracerFactory.class, desiredImplementationName).orElseGet(() -> {
-                msgLog.warn("Using default tracer implementations instead of '%s'", desiredImplementationName);
+                log.warn("Using default tracer implementations instead of '%s'", desiredImplementationName);
                 return DefaultTracers.createDefaultTracerFactory();
             });
         } catch (Exception e) {
-            msgLog.warn(
+            log.warn(
                     format(
                             "Failed to instantiate desired tracer implementations '%s', using default",
                             desiredImplementationName),

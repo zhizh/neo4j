@@ -255,7 +255,7 @@ public class TransactionalBatchIT {
             }
 
             @Override
-            public TransactionEvent beginTransaction(CursorContext cursorContext) {
+            public TransactionEvent beginTransaction(CursorContext cursorContext, long transactionSequenceNumber) {
                 return new TransactionEvent() {
                     @Override
                     public void setCommit(boolean commit) {}
@@ -304,6 +304,9 @@ public class TransactionalBatchIT {
 
                     @Override
                     public void setReadOnly(boolean wasReadOnly) {}
+
+                    @Override
+                    public void refreshVisibilityBoundary() {}
                 };
             }
 

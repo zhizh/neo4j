@@ -44,7 +44,7 @@ import org.neo4j.kernel.impl.transaction.tracing.TransactionWriteEvent;
 /**
  * Tracer used to trace database scoped events, like transaction logs rotations, checkpoints, transactions etc
  */
-public class DefaultTracer implements DatabaseTracer {
+public class DefaultDatabaseTracer implements DatabaseTracer {
     private final LongAdder appendedBytes = new LongAdder();
     private final LongAdder numberOfFlushes = new LongAdder();
     private final LongAdder batchesAppended = new LongAdder();
@@ -61,13 +61,13 @@ public class DefaultTracer implements DatabaseTracer {
     private final TransactionEvent transactionEvent = new DefaultTransactionEvent();
     private final CountingLogCheckPointEvent logCheckPointEvent;
 
-    public DefaultTracer(PageCacheTracer pageCacheTracer) {
+    public DefaultDatabaseTracer(PageCacheTracer pageCacheTracer) {
         this.logCheckPointEvent =
                 new CountingLogCheckPointEvent(pageCacheTracer, appendedBytes, countingLogRotateEvent);
     }
 
     @Override
-    public TransactionEvent beginTransaction(CursorContext cursorContext) {
+    public TransactionEvent beginTransaction(CursorContext cursorContext, long transactionSequenceNumber) {
         return transactionEvent;
     }
 
@@ -197,7 +197,7 @@ public class DefaultTracer implements DatabaseTracer {
         return logFileFlushEvent;
     }
 
-    private class DefaultTransactionEvent implements TransactionEvent {
+    public class DefaultTransactionEvent implements TransactionEvent {
 
         @Override
         public void setCommit(boolean commit) {}
@@ -228,6 +228,9 @@ public class DefaultTracer implements DatabaseTracer {
 
         @Override
         public void setReadOnly(boolean wasReadOnly) {}
+
+        @Override
+        public void refreshVisibilityBoundary() {}
     }
 
     private class DefaultTransactionWriteEvent implements TransactionWriteEvent {

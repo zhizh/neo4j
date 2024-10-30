@@ -1022,6 +1022,11 @@ class QueryExecutionLocksIT {
         }
 
         @Override
+        public void reportVisibilityBoundaryRefresh() {
+            internal.reportVisibilityBoundaryRefresh();
+        }
+
+        @Override
         public void assertOpen() {
             internal.assertOpen();
         }

@@ -106,6 +106,8 @@ public class MultiVersionExecutionEngine extends ExecutionEngine {
                 kernelTransaction.retryQuery();
                 versionContext.initRead();
                 versionContext.resetObsoleteHeadState();
+
+                kernelTransaction.reportVisibilityBoundaryRefresh();
             }
 
             result = executor.execute();

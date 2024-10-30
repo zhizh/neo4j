@@ -510,7 +510,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         this.startTimeNanos = clocks.systemClock().nanos();
         this.timeout = transactionTimeout;
         this.lastTransactionIdWhenStarted = lastCommittedTx;
-        this.transactionEvent = transactionTracer.beginTransaction(cursorContext);
+        this.transactionEvent = transactionTracer.beginTransaction(cursorContext, transactionSequenceNumber);
         this.overridableSecurityContext = new OverridableSecurityContext(frozenSecurityContext);
         this.transactionId = NOT_COMMITTED_TRANSACTION_ID;
         this.commitTime = NOT_COMMITTED_TRANSACTION_COMMIT_TIME;
@@ -1212,6 +1212,7 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
     private void schemaTransactionVersionReset() {
         if (isSchemaTransaction()) {
             cursorContext.getVersionContext().initRead();
+            transactionEvent.refreshVisibilityBoundary();
         }
     }
 
@@ -1468,6 +1469,11 @@ public class KernelTransactionImplementation implements KernelTransaction, TxSta
         if (txState != null) {
             txState.reset();
         }
+    }
+
+    @Override
+    public void reportVisibilityBoundaryRefresh() {
+        transactionEvent.refreshVisibilityBoundary();
     }
 
     public long transactionQueryRetries() {

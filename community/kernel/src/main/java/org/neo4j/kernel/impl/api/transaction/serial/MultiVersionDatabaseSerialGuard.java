@@ -56,6 +56,7 @@ public class MultiVersionDatabaseSerialGuard implements DatabaseSerialGuard {
 
         // refresh visibility context
         ktx.cursorContext().getVersionContext().initRead();
+        ktx.reportVisibilityBoundaryRefresh();
     }
 
     @Override

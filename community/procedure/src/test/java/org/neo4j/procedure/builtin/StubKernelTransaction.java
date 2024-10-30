@@ -223,6 +223,11 @@ public class StubKernelTransaction implements KernelTransaction {
     }
 
     @Override
+    public void reportVisibilityBoundaryRefresh() {
+        throw new UnsupportedOperationException("not implemented");
+    }
+
+    @Override
     public boolean isTerminated() {
         return false;
     }

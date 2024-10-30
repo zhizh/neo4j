@@ -222,7 +222,7 @@ public class HighestEverClosedTransactionIT {
             }
 
             @Override
-            public TransactionEvent beginTransaction(CursorContext cursorContext) {
+            public TransactionEvent beginTransaction(CursorContext cursorContext, long transactionSequenceNumber) {
                 return new TransactionEvent() {
                     @Override
                     public void setCommit(boolean commit) {}
@@ -271,6 +271,9 @@ public class HighestEverClosedTransactionIT {
 
                     @Override
                     public void setReadOnly(boolean wasReadOnly) {}
+
+                    @Override
+                    public void refreshVisibilityBoundary() {}
                 };
             }
 

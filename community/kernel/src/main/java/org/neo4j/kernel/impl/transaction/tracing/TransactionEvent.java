@@ -45,6 +45,9 @@ public interface TransactionEvent extends AutoCloseable {
         public void setReadOnly(boolean wasReadOnly) {}
 
         @Override
+        public void refreshVisibilityBoundary() {}
+
+        @Override
         public TransactionWriteEvent beginChunkWriteEvent() {
             return TransactionWriteEvent.NULL;
         }
@@ -95,4 +98,6 @@ public interface TransactionEvent extends AutoCloseable {
      * Specify that the transaction was read-only.
      */
     void setReadOnly(boolean wasReadOnly);
+
+    void refreshVisibilityBoundary();
 }

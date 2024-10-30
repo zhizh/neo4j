@@ -30,7 +30,7 @@ import org.neo4j.configuration.Config;
 import org.neo4j.io.pagecache.tracing.DefaultPageCacheTracer;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.kernel.database.DatabaseIdFactory;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.impl.api.tracer.DefaultDatabaseTracer;
 import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
 import org.neo4j.logging.AssertableLogProvider;
 import org.neo4j.logging.InternalLog;
@@ -39,7 +39,7 @@ import org.neo4j.scheduler.JobScheduler;
 import org.neo4j.time.Clocks;
 import org.neo4j.time.SystemNanoClock;
 
-class DefaultTracersTest {
+class DefaultDatabaseTracersTest {
     private final AssertableLogProvider logProvider = new AssertableLogProvider();
     private final JobScheduler jobScheduler = mock(JobScheduler.class);
     private final SystemNanoClock clock = Clocks.nanoClock();
@@ -89,7 +89,7 @@ class DefaultTracersTest {
     private static void assertDefaultImplementation(DefaultTracers tracers) {
         var namedDatabaseId = DatabaseIdFactory.from("bar", UUID.randomUUID());
         assertThat(tracers.getPageCacheTracer()).isInstanceOf(DefaultPageCacheTracer.class);
-        assertThat(tracers.getDatabaseTracer(namedDatabaseId)).isInstanceOf(DefaultTracer.class);
+        assertThat(tracers.getDatabaseTracer(namedDatabaseId)).isInstanceOf(DefaultDatabaseTracer.class);
     }
 
     private void assertNoWarning() {

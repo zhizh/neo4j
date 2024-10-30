@@ -133,6 +133,7 @@ public class SnapshotExecutionEngine extends ExecutionEngine {
 
             attempt++;
             versionContext.initRead();
+            context.kernelTransaction().reportVisibilityBoundaryRefresh();
 
             materialisedResult = new MaterialisedResult();
 

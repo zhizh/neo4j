@@ -296,6 +296,11 @@ public interface KernelTransaction extends AssertOpen, AutoCloseable {
      */
     void retryQuery();
 
+    /**
+     * Report transaction visibility boundary refresh
+     */
+    void reportVisibilityBoundaryRefresh();
+
     enum Type {
         /**
          * An IMPLICIT transaction is automatically opened together with a query and does not allow multiple queries to be executed in it. The transaction

@@ -1228,6 +1228,12 @@ public class GraphDatabaseInternalSettings implements SettingsDeclaration {
             .build();
 
     @Internal
+    @Description("Dump transaction visibility boundaries in multi versioned database.")
+    public static final Setting<Boolean> multi_version_dump_transaction_visibility_boundaries = newBuilder(
+                    "internal.db.multiversion.transaction.visibility.boundaries.dump", BOOL, false)
+            .build();
+
+    @Internal
     @Description("Page Cache Warmer blocks database start until it's completed")
     public static final Setting<Boolean> pagecache_warmup_blocking = newBuilder(
                     "internal.db.memory.pagecache.warmup.blocking_enabled", BOOL, false)

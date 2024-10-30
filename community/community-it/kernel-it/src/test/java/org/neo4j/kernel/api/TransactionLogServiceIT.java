@@ -74,7 +74,7 @@ import org.neo4j.kernel.availability.DescriptiveAvailabilityRequirement;
 import org.neo4j.kernel.database.Database;
 import org.neo4j.kernel.database.DatabaseTracers;
 import org.neo4j.kernel.database.NamedDatabaseId;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.impl.api.tracer.DefaultDatabaseTracer;
 import org.neo4j.kernel.impl.transaction.log.LogAppendEvent;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
 import org.neo4j.kernel.impl.transaction.log.LogicalTransactionStore;
@@ -1070,13 +1070,13 @@ class TransactionLogServiceIT {
             return VersionStorageTracer.NULL;
         }
 
-        private static class InjectableBeforeApplyDatabaseTracer extends DefaultTracer {
+        private static class InjectableBeforeApplyDatabaseTracer extends DefaultDatabaseTracer {
             public InjectableBeforeApplyDatabaseTracer() {
                 super(PageCacheTracer.NULL);
             }
 
             @Override
-            public TransactionEvent beginTransaction(CursorContext cursorContext) {
+            public TransactionEvent beginTransaction(CursorContext cursorContext, long transactionSequenceNumber) {
                 return new InjectableBeforeApplyTransactionEvent();
             }
         }
@@ -1139,6 +1139,9 @@ class TransactionLogServiceIT {
 
             @Override
             public void setReadOnly(boolean wasReadOnly) {}
+
+            @Override
+            public void refreshVisibilityBoundary() {}
         }
     }
 }

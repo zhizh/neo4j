@@ -27,7 +27,8 @@ import org.neo4j.io.pagecache.tracing.DefaultPageCacheTracer;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
 import org.neo4j.io.pagecache.tracing.version.DefaultVersionStorageTracer;
 import org.neo4j.io.pagecache.tracing.version.VersionStorageTracer;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.database.NamedDatabaseId;
+import org.neo4j.kernel.impl.api.tracer.DefaultDatabaseTracer;
 import org.neo4j.kernel.impl.transaction.tracing.DatabaseTracer;
 import org.neo4j.logging.InternalLog;
 import org.neo4j.monitoring.Monitors;
@@ -51,8 +52,9 @@ public class DefaultTracerFactory implements TracerFactory {
     }
 
     @Override
-    public DatabaseTracer createDatabaseTracer(PageCacheTracer pageCacheTracer, Clock clock) {
-        return new DefaultTracer(pageCacheTracer);
+    public DatabaseTracer createDatabaseTracer(
+            PageCacheTracer pageCacheTracer, Clock clock, InternalLog log, NamedDatabaseId namedDatabaseId) {
+        return new DefaultDatabaseTracer(pageCacheTracer);
     }
 
     @Override

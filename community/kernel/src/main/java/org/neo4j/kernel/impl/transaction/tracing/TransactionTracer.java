@@ -35,7 +35,7 @@ public interface TransactionTracer {
     TransactionTracer NULL = new TransactionTracer() {
 
         @Override
-        public TransactionEvent beginTransaction(CursorContext cursorContext) {
+        public TransactionEvent beginTransaction(CursorContext cursorContext, long transactionSequenceNumber) {
             return TransactionEvent.NULL;
         }
 
@@ -54,8 +54,9 @@ public interface TransactionTracer {
      * A transaction starts.
      * @return An event that represents the transaction.
      * @param cursorContext page cursor context that used by transaction
+     * @param transactionSequenceNumber transaction sequence number
      */
-    TransactionEvent beginTransaction(CursorContext cursorContext);
+    TransactionEvent beginTransaction(CursorContext cursorContext, long transactionSequenceNumber);
 
     /**
      * A commit starts in a context where it is detached from the

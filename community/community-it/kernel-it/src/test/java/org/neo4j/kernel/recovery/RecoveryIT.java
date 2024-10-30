@@ -137,7 +137,7 @@ import org.neo4j.kernel.database.DatabaseTracers;
 import org.neo4j.kernel.extension.ExtensionFactory;
 import org.neo4j.kernel.extension.ExtensionType;
 import org.neo4j.kernel.extension.context.ExtensionContext;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.impl.api.tracer.DefaultDatabaseTracer;
 import org.neo4j.kernel.impl.coreapi.InternalTransaction;
 import org.neo4j.kernel.impl.coreapi.schema.IndexDefinitionImpl;
 import org.neo4j.kernel.impl.transaction.log.CheckpointInfo;
@@ -2604,7 +2604,7 @@ class RecoveryIT {
         }
     }
 
-    private static class CheckpointTracer extends DefaultTracer {
+    private static class CheckpointTracer extends DefaultDatabaseTracer {
 
         private final AtomicInteger openCounter = new AtomicInteger();
 

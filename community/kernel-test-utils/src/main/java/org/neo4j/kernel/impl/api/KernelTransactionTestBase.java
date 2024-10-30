@@ -79,7 +79,7 @@ import org.neo4j.kernel.database.NamedDatabaseId;
 import org.neo4j.kernel.database.PrivilegeDatabaseReferenceImpl;
 import org.neo4j.kernel.impl.api.index.IndexingService;
 import org.neo4j.kernel.impl.api.index.stats.IndexStatisticsStore;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.impl.api.tracer.DefaultDatabaseTracer;
 import org.neo4j.kernel.impl.api.txid.TransactionIdGenerator;
 import org.neo4j.kernel.impl.constraints.StandardConstraintSemantics;
 import org.neo4j.kernel.impl.factory.CanWrite;
@@ -249,7 +249,10 @@ class KernelTransactionTestBase {
                 clock,
                 new AtomicReference<>(CpuClock.NOT_AVAILABLE),
                 new DatabaseTracers(
-                        new DefaultTracer(pageCacheTracer), LockTracer.NONE, pageCacheTracer, versionStorageTracer),
+                        new DefaultDatabaseTracer(pageCacheTracer),
+                        LockTracer.NONE,
+                        pageCacheTracer,
+                        versionStorageTracer),
                 storageEngine,
                 any -> CanWrite.INSTANCE,
                 new CursorContextFactory(pageCacheTracer, EMPTY_CONTEXT_SUPPLIER),

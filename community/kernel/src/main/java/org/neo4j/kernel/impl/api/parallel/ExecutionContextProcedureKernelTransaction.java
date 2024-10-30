@@ -240,6 +240,11 @@ public class ExecutionContextProcedureKernelTransaction implements KernelTransac
     }
 
     @Override
+    public void reportVisibilityBoundaryRefresh() {
+        throw failure("reportVisibilityBoundaryRefresh");
+    }
+
+    @Override
     public Statement acquireStatement() {
         throw failure("acquireStatement");
     }

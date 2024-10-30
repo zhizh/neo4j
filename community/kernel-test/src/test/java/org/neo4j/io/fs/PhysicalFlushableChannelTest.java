@@ -56,7 +56,7 @@ import org.neo4j.io.memory.ByteBuffers;
 import org.neo4j.io.memory.HeapScopedBuffer;
 import org.neo4j.io.memory.ScopedBuffer;
 import org.neo4j.io.pagecache.tracing.PageCacheTracer;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.impl.api.tracer.DefaultDatabaseTracer;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
 import org.neo4j.kernel.impl.transaction.log.PhysicalFlushableLogPositionAwareChannel;
 import org.neo4j.kernel.impl.transaction.log.PhysicalLogVersionedStoreChannel;
@@ -84,7 +84,7 @@ class PhysicalFlushableChannelTest {
     void countChannelFlushEvents() throws IOException {
         var path = directory.homePath().resolve("countChannelFlushEvents");
         var storeChannel = fileSystem.write(path);
-        DefaultTracer databaseTracer = new DefaultTracer(PageCacheTracer.NULL);
+        var databaseTracer = new DefaultDatabaseTracer(PageCacheTracer.NULL);
         try (var channel = new PhysicalLogVersionedStoreChannel(
                 storeChannel, 1, LATEST_LOG_FORMAT, path, nativeChannelAccessor, databaseTracer, true)) {
             channel.flush();

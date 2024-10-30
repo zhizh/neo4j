@@ -57,7 +57,7 @@ import org.neo4j.io.fs.DefaultFileSystemAbstraction;
 import org.neo4j.io.layout.DatabaseLayout;
 import org.neo4j.io.layout.Neo4jLayout;
 import org.neo4j.kernel.api.exceptions.Status;
-import org.neo4j.kernel.impl.api.tracer.DefaultTracer;
+import org.neo4j.kernel.impl.api.tracer.DefaultDatabaseTracer;
 import org.neo4j.kernel.impl.coreapi.TransactionImpl;
 import org.neo4j.kernel.impl.transaction.log.LogPosition;
 import org.neo4j.kernel.impl.transaction.log.ReaderLogVersionBridge;
@@ -164,13 +164,13 @@ class TransactionLogsUpgradeIT {
         // There is a corner case where the upgrade transaction can trigger a rotation just after being written. And
         // then the transaction after the upgrade also triggers a rotation because it is on a new version. There will
         // then be an empty file in the middle, but it should still work.
-        DefaultTracer defaultTracer = testDb.getDependencyResolver().resolveDependency(DefaultTracer.class);
+        var defaultDatabaseTracer = testDb.getDependencyResolver().resolveDependency(DefaultDatabaseTracer.class);
 
         // Fill log with slightly more than we need to trigger rotation later
-        while (defaultTracer.appendedBytes() < DEFAULT_LOG_SEGMENT_SIZE * 2.2) {
+        while (defaultDatabaseTracer.appendedBytes() < DEFAULT_LOG_SEGMENT_SIZE * 2.2) {
             createWriteTransaction(testDb);
         }
-        assertThat(defaultTracer.numberOfLogRotations()).isEqualTo(0);
+        assertThat(defaultDatabaseTracer.numberOfLogRotations()).isEqualTo(0);
         long nodeCountBeforeTxTriggeringUpgrade = getNodeCount(testDb);
         long lastClosedTransactionIdBeforeUpgrade = testDb.getDependencyResolver()
                 .resolveDependency(TransactionIdStore.class)
@@ -186,9 +186,9 @@ class TransactionLogsUpgradeIT {
         upgradeDatabase(managementService, testDb, LATEST_KERNEL_VERSION, GLORIOUS_FUTURE);
 
         DatabaseLayout dbLayout = testDb.databaseLayout();
-        DefaultTracer tracer = ((GraphDatabaseAPI) managementService.database(DEFAULT_DATABASE_NAME))
+        var tracer = ((GraphDatabaseAPI) managementService.database(DEFAULT_DATABASE_NAME))
                 .getDependencyResolver()
-                .resolveDependency(DefaultTracer.class);
+                .resolveDependency(DefaultDatabaseTracer.class);
         assertThat(tracer.numberOfLogRotations()).isEqualTo(2);
 
         shutdownDbms();
