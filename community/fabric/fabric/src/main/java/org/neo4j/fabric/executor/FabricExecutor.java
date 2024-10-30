@@ -111,11 +111,7 @@ public class FabricExecutor {
         var evaluator = StaticEvaluation.from(procedures);
 
         try {
-            var defaultGraphName = fabricTransaction
-                    .getTransactionInfo()
-                    .getSessionDatabaseReference()
-                    .alias()
-                    .name();
+            var defaultGraphName = fabricTransaction.getTransactionInfo().getSessionDatabaseReference();
 
             var catalog = fabricTransaction.getCatalogSnapshot();
             var plannerInstance = planner.instance(

@@ -45,6 +45,7 @@ import org.neo4j.fabric.pipeline.FabricFrontEnd
 import org.neo4j.fabric.planning.FabricPlan.DebugOptions
 import org.neo4j.fabric.planning.FabricQuery.LocalQuery
 import org.neo4j.fabric.planning.FabricQuery.RemoteQuery
+import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.monitoring.Monitors
 import org.neo4j.values.virtual.MapValue
 
@@ -66,14 +67,14 @@ case class FabricPlanner(
     signatureResolver: ProcedureSignatureResolver,
     queryString: String,
     queryParams: MapValue,
-    defaultGraphName: String,
+    sessionDatabase: DatabaseReference,
     catalog: Catalog
   ): PlannerInstance =
     instance(
       signatureResolver,
       queryString,
       queryParams,
-      defaultGraphName,
+      sessionDatabase,
       catalog,
       InternalSyntaxUsageStatsNoOp,
       CancellationChecker.NeverCancelled
@@ -83,7 +84,7 @@ case class FabricPlanner(
     signatureResolver: ProcedureSignatureResolver,
     queryString: String,
     queryParams: MapValue,
-    defaultGraphName: String,
+    sessionDatabase: DatabaseReference,
     catalog: Catalog,
     internalSyntaxUsageStats: InternalSyntaxUsageStats,
     cancellationChecker: CancellationChecker
@@ -97,7 +98,7 @@ case class FabricPlanner(
       ),
       query,
       queryParams,
-      defaultGraphName,
+      sessionDatabase,
       catalog,
       cancellationChecker,
       notificationLogger,
@@ -109,7 +110,7 @@ case class FabricPlanner(
     signatureResolver: ScopedProcedureSignatureResolver,
     query: PreParsedQuery,
     queryParams: MapValue,
-    defaultContextName: String,
+    sessionDatabase: DatabaseReference,
     catalog: Catalog,
     cancellationChecker: CancellationChecker,
     notificationLogger: InternalNotificationLogger,
@@ -123,16 +124,19 @@ case class FabricPlanner(
         queryParams,
         cancellationChecker,
         notificationLogger,
-        internalSyntaxUsageStats
+        internalSyntaxUsageStats,
+        sessionDatabase
       )
 
-    private val useHelper = new UseHelper(catalog, defaultContextName)
+    private val useHelper = new UseHelper(catalog, sessionDatabase.alias().name())
+
+    private val sessionDatabaseAlias: String = sessionDatabase.alias().name()
 
     lazy val plan: FabricPlan = {
       val plan = queryCache.computeIfAbsent(
         query.cacheKey,
         queryParams,
-        defaultContextName,
+        sessionDatabaseAlias,
         () => computePlan(),
         shouldCache,
         cypherConfig.useParameterSizeHint
@@ -147,7 +151,7 @@ case class FabricPlanner(
       val prepared = pipeline.parseAndPrepare.process()
 
       val fragmenter =
-        new FabricFragmenter(defaultContextName, query.statement, prepared.statement(), prepared.semantics())
+        new FabricFragmenter(sessionDatabaseAlias, query.statement, prepared.statement(), prepared.semantics())
       val fragments = fragmenter.fragment
 
       val compositeContext = useHelper.rootTargetsCompositeContext(fragments)

@@ -81,7 +81,25 @@ object SemanticFunctionCheck extends SemanticAnalysisTooling {
       case Reduce =>
         error(s"${Reduce.name}(...) requires '| expression' (an accumulation expression)", invocation.position)
 
-      case f: Function =>
+      case _: Function
+        if invocation.name.equalsIgnoreCase("graph.names") || invocation.name.equalsIgnoreCase(
+          "graph.propertiesByName"
+        ) =>
+        SemanticCheck.fromState(state =>
+          if (state.workingGraph.nonEmpty) { // We are targeting a constituent graph.
+            SemanticError.apply(
+              "Calling %s() is only supported on composite databases.".formatted(invocation.name),
+              invocation.position
+            )
+          } else {
+            SemanticExpressionCheck.check(ctx, invocation.arguments) chain semanticCheck(
+              ctx,
+              invocation
+            )
+          }
+        )
+
+      case _: Function =>
         when(invocation.distinct) {
           error(s"Invalid use of DISTINCT with function '${invocation.functionName.name}'", invocation.position)
         } chain SemanticExpressionCheck.check(ctx, invocation.arguments) chain semanticCheck(

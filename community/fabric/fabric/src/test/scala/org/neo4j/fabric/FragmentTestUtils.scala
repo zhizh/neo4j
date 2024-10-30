@@ -60,6 +60,7 @@ import org.neo4j.fabric.planning.Fragment.Union
 import org.neo4j.fabric.planning.Use
 import org.neo4j.fabric.util.Rewritten.RewritingOps
 import org.neo4j.kernel.database.DatabaseIdFactory
+import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.kernel.database.DatabaseReferenceImpl
 import org.neo4j.kernel.database.NormalizedDatabaseName
 import org.neo4j.monitoring.Monitors
@@ -172,7 +173,8 @@ trait FragmentTestUtils {
       params,
       CancellationChecker.NeverCancelled,
       devNullLogger,
-      InternalSyntaxUsageStatsNoOp
+      InternalSyntaxUsageStatsNoOp,
+      null
     )
 
   def fragment(query: String): Fragment = {
@@ -204,4 +206,10 @@ trait FragmentTestUtils {
       a.asInstanceOf[T]
     }
   }
+
+  protected def databaseReference(name: String): DatabaseReference = new DatabaseReferenceImpl.Internal(
+    new NormalizedDatabaseName(name),
+    DatabaseIdFactory.from(name, UUID.randomUUID()),
+    true
+  )
 }

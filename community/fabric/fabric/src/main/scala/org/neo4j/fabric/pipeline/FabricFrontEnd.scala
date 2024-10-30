@@ -54,6 +54,7 @@ import org.neo4j.cypher.internal.util.InternalNotificationLogger
 import org.neo4j.cypher.rendering.QueryRenderer
 import org.neo4j.fabric.planning.FabricPlan
 import org.neo4j.fabric.util.Errors
+import org.neo4j.kernel.database.DatabaseReference
 import org.neo4j.monitoring
 import org.neo4j.values.virtual.MapValue
 
@@ -99,7 +100,8 @@ case class FabricFrontEnd(
     params: MapValue,
     cancellationChecker: CancellationChecker,
     notificationLogger: InternalNotificationLogger,
-    internalSyntaxUsageStats: InternalSyntaxUsageStats
+    internalSyntaxUsageStats: InternalSyntaxUsageStats,
+    sessionDatabase: DatabaseReference
   ) {
 
     def traceStart(): CompilationTracer.QueryCompilationEvent =
@@ -113,7 +115,7 @@ case class FabricFrontEnd(
       WrappedMonitors(kernelMonitors),
       cancellationChecker,
       internalSyntaxUsageStats,
-      null
+      sessionDatabase
     )
 
     private val semanticFeatures = Seq(
