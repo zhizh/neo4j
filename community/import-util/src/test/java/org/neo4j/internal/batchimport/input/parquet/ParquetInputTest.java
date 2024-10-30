@@ -43,6 +43,7 @@ import blue.strategic.parquet.ParquetWriter;
 import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
@@ -1541,6 +1542,28 @@ class ParquetInputTest {
                         new ParquetMonitor(System.out)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("referring to different groups");
+    }
+
+    @Test
+    void shouldFailOnNonParquetFile() throws Exception {
+        Path nodeFile = createNonParquetFile();
+        assertThatThrownBy(() -> new ParquetInput(
+                        Map.of(Set.of(""), List.<Path[]>of(new Path[] {nodeFile})),
+                        Map.of(),
+                        INTEGER,
+                        ';',
+                        groups,
+                        new ParquetMonitor(System.out)))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Could not read parquet file %s".formatted(nodeFile));
+    }
+
+    private Path createNonParquetFile() throws Exception {
+        Path path = directory.file("test-non.parquet");
+        try (var writer = new FileWriter(path.toFile())) {
+            writer.write("some data for sure not parquet");
+        }
+        return path;
     }
 
     private Path createParquetFile(List<org.apache.parquet.schema.Type> types, List<Object[]> data) throws Exception {
