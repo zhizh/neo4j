@@ -169,7 +169,7 @@ public class Error {
      * Use the method that takes a Throwable instead.
      */
     @Deprecated
-    private static Error from(Status status, String message) {
+    public static Error from(Status status, String message) {
         return new Error(status, message, false);
     }
 

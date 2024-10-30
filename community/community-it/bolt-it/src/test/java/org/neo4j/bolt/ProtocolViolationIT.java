@@ -367,7 +367,7 @@ public class ProtocolViolationIT {
                         GqlStatusInfoCodes.STATUS_08N06.getGqlStatus(),
                         "error: connection exception - protocol error. General network protocol error.",
                         GqlStatusInfoCodes.STATUS_08N10.getGqlStatus(),
-                        "error: connection exception - invalid server state. The server is not in a state that can process a message of type: 'READY'.");
+                        "error: connection exception - invalid server state. Message BeginMessage{bookmarks=[], txTimeout=null, accessMode=WRITE, txMetadata=null, databaseName='null', impersonatedUser='null', notificationsConfig=Default, type=EXPLICIT} cannot be handled by session in the 'READY' state.");
         ;
     }
 }

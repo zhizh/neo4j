@@ -594,8 +594,8 @@ public enum GqlStatusInfoCodes implements GqlStatusInfo {
     STATUS_08N10(
             new GqlStatus("08N10"),
             """
-                    The server is not in a state that can process a message of type: { %s }.""",
-            new GqlParams.GqlParam[] {GqlParams.StringParam.boltMsgType},
+                    Message { %s } cannot be handled by session in the { %s } state.""",
+            new GqlParams.GqlParam[] {GqlParams.StringParam.msg, GqlParams.StringParam.boltServerState},
             emptyMap(),
             Condition.CONNECTION_EXCEPTION,
             "invalid server state",

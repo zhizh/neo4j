@@ -40,19 +40,18 @@ public class BoltException extends GqlException implements Status.HasStatus {
         this.status = status;
     }
 
-    public static BoltException invalidServerState(String messageType, String message) {
+    public static BoltException invalidServerState(String message, String serverState) {
         // DRI-035
         var gql = ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N06)
                 .withCause(ErrorGqlStatusObjectImplementation.from(GqlStatusInfoCodes.STATUS_08N10)
-                        .withParam(GqlParams.StringParam.boltMsgType, messageType)
+                        .withParam(GqlParams.StringParam.msg, message)
+                        .withParam(GqlParams.StringParam.boltServerState, serverState)
                         .build())
                 .build();
         return new BoltException(
                 gql,
                 Status.Request.Invalid,
-                "Message '" + message + "' cannot be handled by session in the " + messageType + " state");
-        // TODO: Is it okay that the `message` is not shown anywhere in the new GQL error descriptions?
-        // The old message did show this.
+                "Message '" + message + "' cannot be handled by session in the " + serverState + " state");
     }
 
     public static BoltException failedToAcquireExecutionThread() {
