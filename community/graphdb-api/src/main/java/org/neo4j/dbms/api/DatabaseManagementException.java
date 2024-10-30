@@ -32,6 +32,10 @@ import org.neo4j.kernel.api.exceptions.Status;
 @PublicApi
 public class DatabaseManagementException extends GqlRuntimeException implements Status.HasStatus {
 
+    /**
+     * @deprecated replaced by {@link #DatabaseManagementException(ErrorGqlStatusObject)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseManagementException() {
         super("");
     }
@@ -40,6 +44,10 @@ public class DatabaseManagementException extends GqlRuntimeException implements 
         super(gqlStatusObject, "");
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseManagementException(ErrorGqlStatusObject, String)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseManagementException(String message) {
         super(message);
     }
@@ -48,6 +56,10 @@ public class DatabaseManagementException extends GqlRuntimeException implements 
         super(gqlStatusObject, message);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseManagementException(ErrorGqlStatusObject, String, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseManagementException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -56,6 +68,10 @@ public class DatabaseManagementException extends GqlRuntimeException implements 
         super(gqlStatusObject, message, cause);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseManagementException(ErrorGqlStatusObject, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseManagementException(Throwable cause) {
         super(ErrorMessageHolder.getOldCauseMessage(cause), cause);
     }

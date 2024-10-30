@@ -28,6 +28,11 @@ import org.neo4j.kernel.api.exceptions.Status;
  */
 @PublicApi
 public class DatabaseExistsException extends DatabaseManagementException {
+
+    /**
+     * @deprecated replaced by {@link #DatabaseExistsException(ErrorGqlStatusObject)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseExistsException() {
         super();
     }
@@ -36,6 +41,10 @@ public class DatabaseExistsException extends DatabaseManagementException {
         super(gqlStatusObject);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseExistsException(ErrorGqlStatusObject, String)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseExistsException(String message) {
         super(message);
     }
@@ -44,6 +53,10 @@ public class DatabaseExistsException extends DatabaseManagementException {
         super(gqlStatusObject, message);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseExistsException(ErrorGqlStatusObject, String, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseExistsException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -52,6 +65,10 @@ public class DatabaseExistsException extends DatabaseManagementException {
         super(gqlStatusObject, message, cause);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseExistsException(ErrorGqlStatusObject, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseExistsException(Throwable cause) {
         super(cause);
     }

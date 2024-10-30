@@ -28,6 +28,11 @@ import org.neo4j.kernel.api.exceptions.Status;
  */
 @PublicApi
 public class DatabaseNotFoundException extends DatabaseManagementException {
+
+    /**
+     * @deprecated replaced by {@link #DatabaseNotFoundException(ErrorGqlStatusObject)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseNotFoundException() {
         super();
     }
@@ -36,6 +41,10 @@ public class DatabaseNotFoundException extends DatabaseManagementException {
         super(gqlStatusObject);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseNotFoundException(ErrorGqlStatusObject, String)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseNotFoundException(String message) {
         super(message);
     }
@@ -44,6 +53,10 @@ public class DatabaseNotFoundException extends DatabaseManagementException {
         super(gqlStatusObject, message);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseNotFoundException(ErrorGqlStatusObject, String, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseNotFoundException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -52,6 +65,10 @@ public class DatabaseNotFoundException extends DatabaseManagementException {
         super(gqlStatusObject, message, cause);
     }
 
+    /**
+     * @deprecated replaced by {@link #DatabaseNotFoundException(ErrorGqlStatusObject, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public DatabaseNotFoundException(Throwable cause) {
         super(cause);
     }

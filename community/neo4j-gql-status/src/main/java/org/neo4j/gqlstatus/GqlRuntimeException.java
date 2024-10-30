@@ -26,6 +26,10 @@ public abstract class GqlRuntimeException extends RuntimeException implements Er
     private final ErrorGqlStatusObject innerGqlStatusObject;
     private final String oldMessage;
 
+    /**
+     * @deprecated replaced by {@link #GqlRuntimeException(ErrorGqlStatusObject, String, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     protected GqlRuntimeException(String message, Throwable cause) {
         super(message, cause);
         this.innerGqlStatusObject = null;
@@ -38,6 +42,10 @@ public abstract class GqlRuntimeException extends RuntimeException implements Er
         this.oldMessage = message;
     }
 
+    /**
+     * @deprecated replaced by {@link #GqlRuntimeException(ErrorGqlStatusObject, String)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     protected GqlRuntimeException(String message) {
         this(message, null);
     }
@@ -52,6 +60,10 @@ public abstract class GqlRuntimeException extends RuntimeException implements Er
         this.oldMessage = ErrorMessageHolder.getOldCauseMessage(cause);
     }
 
+    /**
+     * @deprecated replaced by {@link #GqlRuntimeException(ErrorGqlStatusObject, String, boolean, boolean)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     protected GqlRuntimeException(String message, boolean suppression, boolean stacktrace) {
         super(message, null, suppression, stacktrace);
         this.innerGqlStatusObject = null;

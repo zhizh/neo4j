@@ -31,7 +31,10 @@ import org.neo4j.kernel.api.exceptions.Status;
 public class TransactionFailureException extends GqlRuntimeException implements Status.HasStatus {
     public final Status status;
 
-    @Deprecated
+    /**
+     * @deprecated replaced by {@link #TransactionFailureException(ErrorGqlStatusObject, String)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public TransactionFailureException(String message) {
         super(message);
         this.status = Status.Database.Unknown;
@@ -42,7 +45,10 @@ public class TransactionFailureException extends GqlRuntimeException implements 
         this.status = Status.Database.Unknown;
     }
 
-    @Deprecated
+    /**
+     * @deprecated replaced by {@link #TransactionFailureException(ErrorGqlStatusObject, String, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public TransactionFailureException(String message, Throwable cause) {
         super(message, cause);
         this.status = (cause instanceof Status.HasStatus se) ? se.status() : Status.Database.Unknown;
@@ -53,7 +59,10 @@ public class TransactionFailureException extends GqlRuntimeException implements 
         this.status = (cause instanceof Status.HasStatus se) ? se.status() : Status.Database.Unknown;
     }
 
-    @Deprecated
+    /**
+     * @deprecated replaced by {@link #TransactionFailureException(ErrorGqlStatusObject, String, Status)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public TransactionFailureException(String message, Status status) {
         super(message);
         this.status = status;
@@ -64,7 +73,10 @@ public class TransactionFailureException extends GqlRuntimeException implements 
         this.status = status;
     }
 
-    @Deprecated
+    /**
+     * @deprecated replaced by {@link #TransactionFailureException(ErrorGqlStatusObject, String, Throwable, Status)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     public TransactionFailureException(String message, Throwable cause, Status status) {
         super(message, cause);
         this.status = status;

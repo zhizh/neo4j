@@ -26,6 +26,10 @@ public abstract class GqlException extends Exception implements ErrorGqlStatusOb
     private final ErrorGqlStatusObject innerGqlStatusObject;
     private final String oldMessage;
 
+    /**
+     * @deprecated replaced by {@link #GqlException(ErrorGqlStatusObject, String, Throwable)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     protected GqlException(String message, Throwable cause) {
         super(message, cause);
         this.innerGqlStatusObject = null;
@@ -38,6 +42,10 @@ public abstract class GqlException extends Exception implements ErrorGqlStatusOb
         this.oldMessage = message;
     }
 
+    /**
+     * @deprecated replaced by {@link #GqlException(ErrorGqlStatusObject, String)}
+     */
+    @Deprecated(forRemoval = true, since = "5.26")
     protected GqlException(String message) {
         this(message, null);
     }
