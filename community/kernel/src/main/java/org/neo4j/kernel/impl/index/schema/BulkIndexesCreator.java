@@ -29,6 +29,7 @@ import static org.neo4j.scheduler.Group.INDEX_POPULATION_WORK;
 
 import java.io.IOException;
 import java.util.List;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.factory.primitive.ObjectFloatMaps;
 import org.neo4j.batchimport.api.IndexesCreator;
 import org.neo4j.collection.Dependencies;
@@ -53,8 +54,11 @@ import org.neo4j.kernel.lifecycle.LifeSupport;
 import org.neo4j.kernel.lifecycle.Lifespan;
 import org.neo4j.monitoring.Monitors;
 import org.neo4j.time.Clocks;
+import org.neo4j.util.VisibleForTesting;
 
 public class BulkIndexesCreator implements IndexesCreator {
+
+    private static final float ZERO = 0.0f;
 
     private final BulkIndexCreationContext context;
     private final Lifespan lifespan;
@@ -66,7 +70,7 @@ public class BulkIndexesCreator implements IndexesCreator {
         // need to create the lifecycle in the NONE state as the scheduler has already been started
         // adding an already started lifecycle component and then calling start then fails
         this.lifespan = Lifespan.createWithNoneState();
-        this.indexingService = indexingService(lifespan, context);
+        this.indexingService = createIndexingService(lifespan, context);
         lifespan.start(); // this will call life.init automatically
     }
 
@@ -88,44 +92,55 @@ public class BulkIndexesCreator implements IndexesCreator {
                         .map(indexingService::completeConfiguration)
                         .toArray(IndexDescriptor[]::new));
 
+        var noErrors = true;
         final var progressTracker = ObjectFloatMaps.mutable.<IndexDescriptor>empty();
-        var completed = 0;
-        var failed = 0;
-        while (completed + failed < descriptorCount) {
+        final var seenIndexes = Sets.mutable.<IndexDescriptor>empty();
+        while (seenIndexes.size() < descriptorCount) {
             for (var indexProxy : indexingService.getIndexProxies()) {
                 final var descriptor = indexProxy.getDescriptor();
-                final var latestProgress =
-                        indexProxy.getIndexPopulationProgress().getProgress();
-                final var updatedValue = progressTracker.updateValue(descriptor, latestProgress, lastProgress -> {
-                    creationListener.onUpdate(descriptor, latestProgress - lastProgress);
-                    return latestProgress;
-                });
-                if (updatedValue == latestProgress && latestProgress > 0f) {
-                    // already had some updates on first pass through the loop so update here too
-                    creationListener.onUpdate(descriptor, latestProgress);
+                if (seenIndexes.contains(descriptor)) {
+                    continue;
                 }
 
                 final var state = indexProxy.getState();
                 if (state == InternalIndexState.FAILED) {
-                    failed++;
+                    noErrors = false;
+                    seenIndexes.add(descriptor);
                     creationListener.onFailure(
                             descriptor,
                             indexProxy
                                     .getPopulationFailure()
                                     .asIndexPopulationFailure(
                                             descriptor.schema(), descriptor.userDescription(context.tokenHolders())));
-                } else if (state == InternalIndexState.ONLINE || latestProgress == 1.0f) {
-                    // some proxies are 'tentative' and stay at POPULATING even though they are actually done
-                    completed++;
+                } else {
+                    final var latestProgress =
+                            indexProxy.getIndexPopulationProgress().getProgress();
+                    progressTracker.updateValue(descriptor, 0.0f, lastProgress -> {
+                        if (lastProgress > ZERO) {
+                            final var delta = latestProgress - lastProgress;
+                            if (delta > ZERO) {
+                                creationListener.onUpdate(descriptor, delta);
+                            }
+                        } else if (latestProgress > ZERO) {
+                            // already had some updates on first pass through the loop so update here too
+                            creationListener.onUpdate(descriptor, latestProgress);
+                        }
+
+                        return latestProgress;
+                    });
+
+                    if (state == InternalIndexState.ONLINE || latestProgress == 1.0f) {
+                        // some proxies are 'tentative' and stay at POPULATING even though they are actually done
+                        seenIndexes.add(descriptor);
+                    }
                 }
             }
 
             sleepIgnoreInterrupt();
         }
 
-        final var success = failed == 0;
-        creationListener.onCreationCompleted(success);
-        if (success) {
+        creationListener.onCreationCompleted(noErrors);
+        if (noErrors) {
             try (var creationContext = context.contextFactory().create("Indexing flushing");
                     var flushEvent = context.pageCacheTracer().beginDatabaseFlush()) {
                 indexingService.checkpoint(flushEvent, creationContext);
@@ -139,7 +154,8 @@ public class BulkIndexesCreator implements IndexesCreator {
         lifespan.close();
     }
 
-    private static IndexingService indexingService(LifeSupport life, BulkIndexCreationContext context)
+    @VisibleForTesting
+    protected IndexingService createIndexingService(LifeSupport life, BulkIndexCreationContext context)
             throws IOException {
         final var clock = Clocks.nanoClock();
         final var readOnlyChecker = DatabaseReadOnlyChecker.writable();
