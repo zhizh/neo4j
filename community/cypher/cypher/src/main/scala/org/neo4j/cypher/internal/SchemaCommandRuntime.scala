@@ -867,6 +867,8 @@ object SchemaCommandRuntime extends CypherRuntime[RuntimeContext] {
       }
       val prettyAssertion = asPrettyString.raw(assertion)
       // Currently don't have a constraint command for endpoint and node label existence constraints so let's return the same as if the user wasn't allowed to see the constraint for now
+      // Once we have graph type commands, lets use `(:Label1 => :Label2)`, `(:Label)-[:REL_TYPE =>]->()` and `()-[:REL_TYPE =>]->(:Label)` with correct labels and relationship types
+      // as they don't have constraint commands and that would be their representation in the graph type
       if (constraintType == RELATIONSHIP_ENDPOINT_LABEL || constraintType == NODE_LABEL_EXISTENCE) "constraint"
       else pretty"CONSTRAINT$nameString FOR $pattern REQUIRE $propertyString $prettyAssertion".prettifiedString
     } catch {

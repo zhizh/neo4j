@@ -590,8 +590,8 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
 
     // Override returned constraints:
     when(ctx.getAllConstraints()).thenReturn(Map(
-      nodeConstraintDescriptor -> ConstraintInfo(List(label), List(prop), Some(nodeIndexDescriptor)),
-      relConstraintDescriptor -> ConstraintInfo(List(relType), List(prop), Some(relIndexDescriptor))
+      nodeConstraintDescriptor -> ConstraintInfo(List(label), List(prop), Some(nodeIndexDescriptor), None, None),
+      relConstraintDescriptor -> ConstraintInfo(List(relType), List(prop), Some(relIndexDescriptor), None, None)
     ))
 
     // Set-up which indexes to return:
@@ -658,8 +658,8 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
 
     // Override returned constraints:
     when(ctx.getAllConstraints()).thenReturn(Map(
-      nodeConstraintDescriptor -> ConstraintInfo(List(label), List(prop), Some(nodeIndexDescriptor)),
-      relConstraintDescriptor -> ConstraintInfo(List(relType), List(prop), Some(relIndexDescriptor))
+      nodeConstraintDescriptor -> ConstraintInfo(List(label), List(prop), Some(nodeIndexDescriptor), None, None),
+      relConstraintDescriptor -> ConstraintInfo(List(relType), List(prop), Some(relIndexDescriptor), None, None)
     ))
 
     // Set-up which indexes to return:

@@ -31,6 +31,7 @@ import org.neo4j.cypher.internal.ast.AllDatabaseManagementActions
 import org.neo4j.cypher.internal.ast.AllDatabasesQualifier
 import org.neo4j.cypher.internal.ast.AllDatabasesScope
 import org.neo4j.cypher.internal.ast.AllDbmsAction
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.AllFunctions
 import org.neo4j.cypher.internal.ast.AllGraphAction
 import org.neo4j.cypher.internal.ast.AllGraphsScope
@@ -127,7 +128,6 @@ import org.neo4j.cypher.internal.ast.ExecuteBoostedFunctionAction
 import org.neo4j.cypher.internal.ast.ExecuteBoostedProcedureAction
 import org.neo4j.cypher.internal.ast.ExecuteFunctionAction
 import org.neo4j.cypher.internal.ast.ExecuteProcedureAction
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.ExistsExpression
 import org.neo4j.cypher.internal.ast.FileResource
 import org.neo4j.cypher.internal.ast.Finish
@@ -181,8 +181,9 @@ import org.neo4j.cypher.internal.ast.NamespacedName
 import org.neo4j.cypher.internal.ast.NoOptions
 import org.neo4j.cypher.internal.ast.NoResource
 import org.neo4j.cypher.internal.ast.NoWait
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
 import org.neo4j.cypher.internal.ast.OnCreate
@@ -201,6 +202,7 @@ import org.neo4j.cypher.internal.ast.PrivilegeType
 import org.neo4j.cypher.internal.ast.ProcedureQualifier
 import org.neo4j.cypher.internal.ast.ProcedureResult
 import org.neo4j.cypher.internal.ast.ProcedureResultItem
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
 import org.neo4j.cypher.internal.ast.PropertiesResource
 import org.neo4j.cypher.internal.ast.Query
@@ -210,8 +212,9 @@ import org.neo4j.cypher.internal.ast.ReadAdministrationCommand
 import org.neo4j.cypher.internal.ast.ReadOnlyAccess
 import org.neo4j.cypher.internal.ast.ReadWriteAccess
 import org.neo4j.cypher.internal.ast.ReallocateDatabases
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.RelationshipAllQualifier
@@ -1707,22 +1710,25 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     yieldClause: Yield
   ): Clause = {
     val constraintType: ShowConstraintType = initialConstraintType match {
-      case ShowCommandFilterTypes.ALL                    => AllConstraints
-      case ShowCommandFilterTypes.UNIQUE                 => UniqueConstraints.cypher5
-      case ShowCommandFilterTypes.NODE_UNIQUE            => NodeUniqueConstraints.cypher5
-      case ShowCommandFilterTypes.RELATIONSHIP_UNIQUE    => RelUniqueConstraints.cypher5
-      case ShowCommandFilterTypes.KEY                    => KeyConstraints
-      case ShowCommandFilterTypes.NODE_KEY               => NodeKeyConstraints
-      case ShowCommandFilterTypes.RELATIONSHIP_KEY       => RelKeyConstraints
-      case ShowCommandFilterTypes.EXIST                  => ExistsConstraints.cypher5
-      case ShowCommandFilterTypes.OLD_EXIST              => ExistsConstraints.cypher5
-      case ShowCommandFilterTypes.NODE_EXIST             => NodeExistsConstraints.cypher5
-      case ShowCommandFilterTypes.NODE_OLD_EXIST         => NodeExistsConstraints.cypher5
-      case ShowCommandFilterTypes.RELATIONSHIP_EXIST     => RelExistsConstraints.cypher5
-      case ShowCommandFilterTypes.RELATIONSHIP_OLD_EXIST => RelExistsConstraints.cypher5
-      case ShowCommandFilterTypes.PROP_TYPE              => PropTypeConstraints
-      case ShowCommandFilterTypes.NODE_PROP_TYPE         => NodePropTypeConstraints
-      case ShowCommandFilterTypes.RELATIONSHIP_PROP_TYPE => RelPropTypeConstraints
+      case ShowCommandFilterTypes.ALL                         => AllConstraints
+      case ShowCommandFilterTypes.UNIQUE                      => UniqueConstraints.cypher5
+      case ShowCommandFilterTypes.NODE_UNIQUE                 => NodeUniqueConstraints.cypher5
+      case ShowCommandFilterTypes.RELATIONSHIP_UNIQUE         => RelUniqueConstraints.cypher5
+      case ShowCommandFilterTypes.KEY                         => KeyConstraints
+      case ShowCommandFilterTypes.NODE_KEY                    => NodeKeyConstraints
+      case ShowCommandFilterTypes.RELATIONSHIP_KEY            => RelKeyConstraints
+      case ShowCommandFilterTypes.PROPERTY_EXIST              => PropExistsConstraints.cypher5
+      case ShowCommandFilterTypes.EXIST                       => AllExistsConstraints
+      case ShowCommandFilterTypes.OLD_EXIST                   => AllExistsConstraints
+      case ShowCommandFilterTypes.NODE_PROPERTY_EXIST         => NodePropExistsConstraints.cypher5
+      case ShowCommandFilterTypes.NODE_EXIST                  => NodeAllExistsConstraints
+      case ShowCommandFilterTypes.NODE_OLD_EXIST              => NodeAllExistsConstraints
+      case ShowCommandFilterTypes.RELATIONSHIP_PROPERTY_EXIST => RelPropExistsConstraints.cypher5
+      case ShowCommandFilterTypes.RELATIONSHIP_EXIST          => RelAllExistsConstraints
+      case ShowCommandFilterTypes.RELATIONSHIP_OLD_EXIST      => RelAllExistsConstraints
+      case ShowCommandFilterTypes.PROP_TYPE                   => PropTypeConstraints
+      case ShowCommandFilterTypes.NODE_PROP_TYPE              => NodePropTypeConstraints
+      case ShowCommandFilterTypes.RELATIONSHIP_PROP_TYPE      => RelPropTypeConstraints
       case t => throw new Neo4jASTConstructionException(ASTExceptionFactory.invalidShowFilterType("constraints", t))
     }
     val (yieldAll, yieldedItems) = getYieldAllAndYieldItems(yieldClause)

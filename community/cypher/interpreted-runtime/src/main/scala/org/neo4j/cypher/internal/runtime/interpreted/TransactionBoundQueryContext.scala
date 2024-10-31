@@ -1636,7 +1636,17 @@ private[internal] class TransactionBoundReadQueryContext(
           } catch {
             case _: IndexNotFoundKernelException => None
           }
-        map + (constraint -> runtime.ConstraintInfo(labelsOrTypes, properties, maybeIndex))
+        val (enforcedLabel, endPointType) =
+          if (constraint.isRelationshipEndpointLabelConstraint) {
+            val relEndpointConstraint = constraint.asRelationshipEndpointLabelConstraint
+            val labelName = tokenRead.labelGetName(relEndpointConstraint.endpointLabelId)
+            (Some(labelName), Some(relEndpointConstraint.endpointType))
+          } else if (constraint.isNodeLabelExistenceConstraint) {
+            val labelName = tokenRead.labelGetName(constraint.asNodeLabelExistenceConstraint.requiredLabelId)
+            (Some(labelName), None)
+          } else (None, None)
+
+        map + (constraint -> runtime.ConstraintInfo(labelsOrTypes, properties, maybeIndex, enforcedLabel, endPointType))
     }
   }
 

@@ -20,6 +20,7 @@
 package org.neo4j.cypher.internal.runtime
 
 import org.neo4j.internal.schema.ConstraintDescriptor
+import org.neo4j.internal.schema.EndpointType
 import org.neo4j.internal.schema.IndexDescriptor
 
 case class IndexStatus(
@@ -31,4 +32,10 @@ case class IndexStatus(
 
 case class IndexInfo(indexStatus: IndexStatus, labelsOrTypes: List[String], properties: List[String])
 
-case class ConstraintInfo(labelsOrTypes: List[String], properties: List[String], maybeIndex: Option[IndexDescriptor])
+case class ConstraintInfo(
+  labelsOrTypes: List[String],
+  properties: List[String],
+  maybeIndex: Option[IndexDescriptor],
+  enforcedLabel: Option[String],
+  endPointType: Option[EndpointType]
+)

@@ -85,57 +85,75 @@ private case object RelUniqueConstraintsCypher5 extends RelUniqueConstraints {
   override val description: String = "relationshipUniquenessConstraints"
 }
 
-sealed trait ExistsConstraints extends ShowConstraintType {
+sealed trait PropExistsConstraints extends ShowConstraintType {
   override val output: String = "PROPERTY_EXISTENCE"
   override val prettyPrint: String = "PROPERTY EXISTENCE"
 }
 
-object ExistsConstraints {
-  def cypher25: ExistsConstraints = ExistsConstraintsCypher25
-  def cypher5: ExistsConstraints = ExistsConstraintsCypher5
+object PropExistsConstraints {
+  def cypher25: PropExistsConstraints = PropExistsConstraintsCypher25
+  def cypher5: PropExistsConstraints = PropExistsConstraintsCypher5
 }
 
-private case object ExistsConstraintsCypher25 extends ExistsConstraints {
+private case object PropExistsConstraintsCypher25 extends PropExistsConstraints {
   override val description: String = "propertyExistenceConstraints"
 }
 
-private case object ExistsConstraintsCypher5 extends ExistsConstraints {
+private case object PropExistsConstraintsCypher5 extends PropExistsConstraints {
   override val description: String = "existenceConstraints"
 }
 
-sealed trait NodeExistsConstraints extends ShowConstraintType {
+sealed trait NodePropExistsConstraints extends ShowConstraintType {
   override val output: String = "NODE_PROPERTY_EXISTENCE"
   override val prettyPrint: String = "NODE PROPERTY EXISTENCE"
 }
 
-object NodeExistsConstraints {
-  def cypher25: NodeExistsConstraints = NodeExistsConstraintsCypher25
-  def cypher5: NodeExistsConstraints = NodeExistsConstraintsCypher5
+object NodePropExistsConstraints {
+  def cypher25: NodePropExistsConstraints = NodePropExistsConstraintsCypher25
+  def cypher5: NodePropExistsConstraints = NodePropExistsConstraintsCypher5
 }
 
-private case object NodeExistsConstraintsCypher25 extends NodeExistsConstraints {
+private case object NodePropExistsConstraintsCypher25 extends NodePropExistsConstraints {
   override val description: String = "nodePropertyExistenceConstraints"
 }
 
-private case object NodeExistsConstraintsCypher5 extends NodeExistsConstraints {
+private case object NodePropExistsConstraintsCypher5 extends NodePropExistsConstraints {
   override val description: String = "nodeExistenceConstraints"
 }
 
-sealed trait RelExistsConstraints extends ShowConstraintType {
+sealed trait RelPropExistsConstraints extends ShowConstraintType {
   override val output: String = "RELATIONSHIP_PROPERTY_EXISTENCE"
   override val prettyPrint: String = "RELATIONSHIP PROPERTY EXISTENCE"
 }
 
-object RelExistsConstraints {
-  def cypher25: RelExistsConstraints = RelExistsConstraintsCypher25
-  def cypher5: RelExistsConstraints = RelExistsConstraintsCypher5
+object RelPropExistsConstraints {
+  def cypher25: RelPropExistsConstraints = RelPropExistsConstraintsCypher25
+  def cypher5: RelPropExistsConstraints = RelPropExistsConstraintsCypher5
 }
 
-private case object RelExistsConstraintsCypher25 extends RelExistsConstraints {
+private case object RelPropExistsConstraintsCypher25 extends RelPropExistsConstraints {
   override val description: String = "relationshipPropertyExistenceConstraints"
 }
 
-private case object RelExistsConstraintsCypher5 extends RelExistsConstraints {
+private case object RelPropExistsConstraintsCypher5 extends RelPropExistsConstraints {
+  override val description: String = "relationshipExistenceConstraints"
+}
+
+case object AllExistsConstraints extends ShowConstraintType {
+  override val output: String = "EXISTENCE"
+  override val prettyPrint: String = "EXISTENCE"
+  override val description: String = "existenceConstraints"
+}
+
+case object NodeAllExistsConstraints extends ShowConstraintType {
+  override val output: String = "NODE_EXISTENCE"
+  override val prettyPrint: String = "NODE EXISTENCE"
+  override val description: String = "nodeExistenceConstraints"
+}
+
+case object RelAllExistsConstraints extends ShowConstraintType {
+  override val output: String = "RELATIONSHIP_EXISTENCE"
+  override val prettyPrint: String = "RELATIONSHIP EXISTENCE"
   override val description: String = "relationshipExistenceConstraints"
 }
 
@@ -175,14 +193,19 @@ case object RelPropTypeConstraints extends ShowConstraintType {
   override val description: String = "relationshipPropertyTypeConstraints"
 }
 
-case object RelationshipEndpointLabelConstraints extends ShowConstraintType {
-  override val output: String = "RELATIONSHIP_ENDPOINT_LABEL"
-  override val prettyPrint: String = "RELATIONSHIP ENDPOINT LABEL"
-  override val description: String = "relationshipEndpointLabelConstraints"
+case object RelationshipSourceLabelConstraints extends ShowConstraintType {
+  override val output: String = "RELATIONSHIP_SOURCE_LABEL"
+  override val prettyPrint: String = "RELATIONSHIP SOURCE LABEL"
+  override val description: String = "relationshipSourceLabelConstraints"
+}
+
+case object RelationshipTargetLabelConstraints extends ShowConstraintType {
+  override val output: String = "RELATIONSHIP_TARGET_LABEL"
+  override val prettyPrint: String = "RELATIONSHIP TARGET LABEL"
+  override val description: String = "relationshipTargetLabelConstraints"
 }
 
 case object NodeLabelExistenceConstraints extends ShowConstraintType {
-  // TODO: Verify once CIP: https://docs.google.com/document/d/1UcqorA0YmqgE-Pvs6zDxsGzoC2sKsGYgT5qDkXeQX6Q/edit is approved
   override val output: String = "NODE_LABEL_EXISTENCE"
   override val prettyPrint: String = "NODE LABEL EXISTENCE"
   override val description: String = "nodeLabelExistenceConstraints"

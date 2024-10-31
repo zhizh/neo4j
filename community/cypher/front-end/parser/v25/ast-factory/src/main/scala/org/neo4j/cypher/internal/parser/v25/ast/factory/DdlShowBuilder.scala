@@ -20,6 +20,7 @@ package org.neo4j.cypher.internal.parser.v25.ast.factory
 import org.neo4j.cypher.internal.ast.AliasedReturnItem
 import org.neo4j.cypher.internal.ast.AllConstraints
 import org.neo4j.cypher.internal.ast.AllDatabasesScope
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.AllFunctions
 import org.neo4j.cypher.internal.ast.AllIndexes
 import org.neo4j.cypher.internal.ast.BuiltInFunctions
@@ -30,23 +31,25 @@ import org.neo4j.cypher.internal.ast.CurrentUser
 import org.neo4j.cypher.internal.ast.DatabaseName
 import org.neo4j.cypher.internal.ast.DefaultDatabaseScope
 import org.neo4j.cypher.internal.ast.ExecutableBy
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.FulltextIndexes
 import org.neo4j.cypher.internal.ast.HomeDatabaseScope
 import org.neo4j.cypher.internal.ast.KeyConstraints
 import org.neo4j.cypher.internal.ast.Limit
 import org.neo4j.cypher.internal.ast.LookupIndexes
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
 import org.neo4j.cypher.internal.ast.OrderBy
 import org.neo4j.cypher.internal.ast.ParsedAsYield
 import org.neo4j.cypher.internal.ast.PointIndexes
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
 import org.neo4j.cypher.internal.ast.RangeIndexes
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.Return
@@ -261,12 +264,21 @@ trait DdlShowBuilder extends Cypher25ParserListener {
         val constraintType = AllConstraints
         c.showConstraintsEnd().ast[ShowWrapper]().buildConstraintClauses(constraintType, parentPos)
       case c: Cypher25Parser.ShowConstraintExistContext =>
-        val constraintType = pickShowConstraintType(
-          c.showConstraintEntity(),
-          NodeExistsConstraints.cypher25,
-          RelExistsConstraints.cypher25,
-          ExistsConstraints.cypher25
-        )
+        val constraintType = if (c.constraintExistType().PROPERTY() != null) {
+          pickShowConstraintType(
+            c.showConstraintEntity(),
+            NodePropExistsConstraints.cypher25,
+            RelPropExistsConstraints.cypher25,
+            PropExistsConstraints.cypher25
+          )
+        } else {
+          pickShowConstraintType(
+            c.showConstraintEntity(),
+            NodeAllExistsConstraints,
+            RelAllExistsConstraints,
+            AllExistsConstraints
+          )
+        }
         c.showConstraintsEnd().ast[ShowWrapper]().buildConstraintClauses(constraintType, parentPos)
       case c: Cypher25Parser.ShowConstraintKeyContext =>
         val constraintType = pickShowConstraintType(

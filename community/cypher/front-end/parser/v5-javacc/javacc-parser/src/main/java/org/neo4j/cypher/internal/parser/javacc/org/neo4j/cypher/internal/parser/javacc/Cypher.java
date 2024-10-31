@@ -16275,7 +16275,7 @@ STATEMENT ShowCommand(USE_CLAUSE useClause) throws ParseException, Exception {To
       }
     case PROPERTY:{
       showCommandType = jj_consume_token(PROPERTY);
-      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.EXIST);
+      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.PROPERTY_EXIST);
       break;
       }
     case EXISTENCE:{
@@ -17095,7 +17095,7 @@ if ( clauses != null ) {
       }
     case PROPERTY:{
       jj_consume_token(PROPERTY);
-      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.NODE_EXIST);
+      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.NODE_PROPERTY_EXIST);
       break;
       }
     case EXISTENCE:{
@@ -17150,7 +17150,7 @@ if ( clauses != null ) {
       }
     case PROPERTY:{
       jj_consume_token(PROPERTY);
-      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.RELATIONSHIP_EXIST);
+      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.RELATIONSHIP_PROPERTY_EXIST);
       break;
       }
     case EXISTENCE:{
@@ -17205,7 +17205,7 @@ if ( clauses != null ) {
       }
     case PROPERTY:{
       jj_consume_token(PROPERTY);
-      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.RELATIONSHIP_EXIST);
+      clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.RELATIONSHIP_PROPERTY_EXIST);
       break;
       }
     case EXISTENCE:{
@@ -21020,7 +21020,7 @@ if ( yieldClause != null )
         }
       case PROPERTY:{
         jj_consume_token(PROPERTY);
-        clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.EXIST);
+        clauses = ShowPropertyCommand(start, ShowCommandFilterTypes.PROPERTY_EXIST);
         break;
         }
       case RANGE:{

@@ -24,6 +24,7 @@ import org.neo4j.cypher.QueryPlanTestSupport.StubExecutionPlan
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AllConstraints
 import org.neo4j.cypher.internal.ast.AllDatabasesScope
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.AllFunctions
 import org.neo4j.cypher.internal.ast.AllIndexes
 import org.neo4j.cypher.internal.ast.AllPropertyResource
@@ -41,7 +42,6 @@ import org.neo4j.cypher.internal.ast.ElementsAllQualifier
 import org.neo4j.cypher.internal.ast.ExecuteAdminProcedureAction
 import org.neo4j.cypher.internal.ast.ExecuteBoostedProcedureAction
 import org.neo4j.cypher.internal.ast.ExecuteProcedureAction
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.FileResource
 import org.neo4j.cypher.internal.ast.FulltextIndexes
 import org.neo4j.cypher.internal.ast.GraphDirectReference
@@ -60,9 +60,10 @@ import org.neo4j.cypher.internal.ast.NamespacedName
 import org.neo4j.cypher.internal.ast.NativeAuth
 import org.neo4j.cypher.internal.ast.NoOptions
 import org.neo4j.cypher.internal.ast.NoResource
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKey
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodePropertyExistence
 import org.neo4j.cypher.internal.ast.NodePropertyType
@@ -77,13 +78,15 @@ import org.neo4j.cypher.internal.ast.PointIndexes
 import org.neo4j.cypher.internal.ast.ProcedureAllQualifier
 import org.neo4j.cypher.internal.ast.ProcedureQualifier
 import org.neo4j.cypher.internal.ast.ProcedureResultItem
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
 import org.neo4j.cypher.internal.ast.RangeIndexes
 import org.neo4j.cypher.internal.ast.ReadAction
 import org.neo4j.cypher.internal.ast.ReadOnlyAccess
 import org.neo4j.cypher.internal.ast.ReadWriteAccess
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.RelationshipKey
@@ -4432,7 +4435,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     assertGood(
       attach(
         ShowConstraints(
-          constraintType = ExistsConstraints.cypher5,
+          constraintType = PropExistsConstraints.cypher5,
           List.empty,
           List.empty,
           yieldAll = true
@@ -4445,7 +4448,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     assertGood(
       attach(
         ShowConstraints(
-          constraintType = NodeExistsConstraints.cypher25,
+          constraintType = NodePropExistsConstraints.cypher25,
           List.empty,
           List.empty,
           yieldAll = false
@@ -4464,7 +4467,58 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     assertGood(
       attach(
         ShowConstraints(
-          constraintType = RelExistsConstraints.cypher5,
+          constraintType = RelPropExistsConstraints.cypher5,
+          List.empty,
+          List.empty,
+          yieldAll = true
+        ),
+        1.0
+      ),
+      planDescription(
+        id,
+        "ShowConstraints",
+        NoChildren,
+        Seq(details("relationshipExistenceConstraints, allColumns")),
+        Set.empty
+      )
+    )
+
+    assertGood(
+      attach(
+        ShowConstraints(
+          constraintType = AllExistsConstraints,
+          List.empty,
+          List.empty,
+          yieldAll = true
+        ),
+        1.0
+      ),
+      planDescription(id, "ShowConstraints", NoChildren, Seq(details("existenceConstraints, allColumns")), Set.empty)
+    )
+
+    assertGood(
+      attach(
+        ShowConstraints(
+          constraintType = NodeAllExistsConstraints,
+          List.empty,
+          List.empty,
+          yieldAll = false
+        ),
+        1.0
+      ),
+      planDescription(
+        id,
+        "ShowConstraints",
+        NoChildren,
+        Seq(details("nodeExistenceConstraints, defaultColumns")),
+        Set.empty
+      )
+    )
+
+    assertGood(
+      attach(
+        ShowConstraints(
+          constraintType = RelAllExistsConstraints,
           List.empty,
           List.empty,
           yieldAll = true

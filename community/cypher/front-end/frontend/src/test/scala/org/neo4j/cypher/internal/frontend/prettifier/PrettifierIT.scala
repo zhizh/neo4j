@@ -1212,20 +1212,22 @@ class PrettifierIT extends CypherFunSuite {
     "show constraints" ->
       "SHOW ALL CONSTRAINTS",
     "show exist constraint" ->
-      "SHOW PROPERTY EXISTENCE CONSTRAINTS",
+      "SHOW EXISTENCE CONSTRAINTS",
+    "SHOW NODE EXIST constraint" ->
+      "SHOW NODE EXISTENCE CONSTRAINTS",
+    "show relationship EXIST cOnStRaInTs" ->
+      "SHOW RELATIONSHIP EXISTENCE CONSTRAINTS",
+    "show relationship EXISTENCE cOnStRaInTs" ->
+      "SHOW RELATIONSHIP EXISTENCE CONSTRAINTS",
+    "show rel EXIST cOnStRaInTs" ->
+      "SHOW RELATIONSHIP EXISTENCE CONSTRAINTS",
     "show property existence constraint" ->
       "SHOW PROPERTY EXISTENCE CONSTRAINTS",
-    "SHOW NODE EXIST constraint" ->
-      "SHOW NODE PROPERTY EXISTENCE CONSTRAINTS",
     "SHOW NODE property EXIST constraint" ->
       "SHOW NODE PROPERTY EXISTENCE CONSTRAINTS",
-    "show relationship EXIST cOnStRaInTs" ->
-      "SHOW RELATIONSHIP PROPERTY EXISTENCE CONSTRAINTS",
-    "show relationship EXISTENCE cOnStRaInTs" ->
-      "SHOW RELATIONSHIP PROPERTY EXISTENCE CONSTRAINTS",
-    "show rel EXIST cOnStRaInTs" ->
-      "SHOW RELATIONSHIP PROPERTY EXISTENCE CONSTRAINTS",
     "show rel property EXISTence cOnStRaInTs" ->
+      "SHOW RELATIONSHIP PROPERTY EXISTENCE CONSTRAINTS",
+    "show relationSHIP proPERty EXIST cOnStRaInTs" ->
       "SHOW RELATIONSHIP PROPERTY EXISTENCE CONSTRAINTS",
     ChangedBetween5And25(
       "show unique constraint",
@@ -1302,6 +1304,11 @@ class PrettifierIT extends CypherFunSuite {
         |RETURN DISTINCT type""".stripMargin
     ),
     "show existence constraint YIELD * where name = 'neo4j' Return *" ->
+      """SHOW EXISTENCE CONSTRAINTS
+        |YIELD *
+        |  WHERE name = "neo4j"
+        |RETURN *""".stripMargin,
+    "show PROPERTY existence constraint YIELD * where name = 'neo4j' Return *" ->
       """SHOW PROPERTY EXISTENCE CONSTRAINTS
         |YIELD *
         |  WHERE name = "neo4j"

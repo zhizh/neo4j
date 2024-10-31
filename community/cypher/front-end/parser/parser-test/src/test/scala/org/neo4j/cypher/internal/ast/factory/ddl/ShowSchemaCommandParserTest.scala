@@ -17,20 +17,23 @@
 package org.neo4j.cypher.internal.ast.factory.ddl
 
 import org.neo4j.cypher.internal.ast.AllConstraints
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.AllIndexes
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.FulltextIndexes
 import org.neo4j.cypher.internal.ast.KeyConstraints
 import org.neo4j.cypher.internal.ast.LookupIndexes
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
 import org.neo4j.cypher.internal.ast.PointIndexes
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
 import org.neo4j.cypher.internal.ast.RangeIndexes
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.ShowConstraintType
@@ -794,9 +797,9 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
     ("ALL", AllConstraints),
     ("UNIQUE", UniqueConstraints.cypher25),
     ("NODE KEY", NodeKeyConstraints),
-    ("EXIST", ExistsConstraints.cypher25),
-    ("NODE EXIST", NodeExistsConstraints.cypher25),
-    ("RELATIONSHIP EXIST", RelExistsConstraints.cypher25)
+    ("EXIST", AllExistsConstraints),
+    ("NODE EXIST", NodeAllExistsConstraints),
+    ("RELATIONSHIP EXIST", RelAllExistsConstraints)
   )
 
   // group of added constraint types in 4 and 5, didn't allow brief/verbose
@@ -811,19 +814,19 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
     ("KEY", KeyConstraints),
     ("RELATIONSHIP KEY", RelKeyConstraints),
     ("REL KEY", RelKeyConstraints),
-    ("PROPERTY EXISTENCE", ExistsConstraints.cypher25),
-    ("PROPERTY EXIST", ExistsConstraints.cypher25),
-    ("EXISTENCE", ExistsConstraints.cypher25),
-    ("NODE PROPERTY EXISTENCE", NodeExistsConstraints.cypher25),
-    ("NODE PROPERTY EXIST", NodeExistsConstraints.cypher25),
-    ("NODE EXISTENCE", NodeExistsConstraints.cypher25),
-    ("RELATIONSHIP PROPERTY EXISTENCE", RelExistsConstraints.cypher25),
-    ("RELATIONSHIP PROPERTY EXIST", RelExistsConstraints.cypher25),
-    ("RELATIONSHIP EXISTENCE", RelExistsConstraints.cypher25),
-    ("REL PROPERTY EXISTENCE", RelExistsConstraints.cypher25),
-    ("REL PROPERTY EXIST", RelExistsConstraints.cypher25),
-    ("REL EXISTENCE", RelExistsConstraints.cypher25),
-    ("REL EXIST", RelExistsConstraints.cypher25),
+    ("PROPERTY EXISTENCE", PropExistsConstraints.cypher25),
+    ("PROPERTY EXIST", PropExistsConstraints.cypher25),
+    ("EXISTENCE", AllExistsConstraints),
+    ("NODE PROPERTY EXISTENCE", NodePropExistsConstraints.cypher25),
+    ("NODE PROPERTY EXIST", NodePropExistsConstraints.cypher25),
+    ("NODE EXISTENCE", NodeAllExistsConstraints),
+    ("RELATIONSHIP PROPERTY EXISTENCE", RelPropExistsConstraints.cypher25),
+    ("RELATIONSHIP PROPERTY EXIST", RelPropExistsConstraints.cypher25),
+    ("RELATIONSHIP EXISTENCE", RelAllExistsConstraints),
+    ("REL PROPERTY EXISTENCE", RelPropExistsConstraints.cypher25),
+    ("REL PROPERTY EXIST", RelPropExistsConstraints.cypher25),
+    ("REL EXISTENCE", RelAllExistsConstraints),
+    ("REL EXIST", RelAllExistsConstraints),
     ("NODE PROPERTY TYPE", NodePropTypeConstraints),
     ("RELATIONSHIP PROPERTY TYPE", RelPropTypeConstraints),
     ("REL PROPERTY TYPE", RelPropTypeConstraints),
@@ -847,13 +850,13 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
       (constraintTypesV1 ++ constraintTypeV2).foreach {
         case (constraintTypeKeyword, constraintType) =>
           val cypher5ConstraintType = constraintType match {
-            case _: UniqueConstraints     => UniqueConstraints.cypher5
-            case _: NodeUniqueConstraints => NodeUniqueConstraints.cypher5
-            case _: RelUniqueConstraints  => RelUniqueConstraints.cypher5
-            case _: ExistsConstraints     => ExistsConstraints.cypher5
-            case _: NodeExistsConstraints => NodeExistsConstraints.cypher5
-            case _: RelExistsConstraints  => RelExistsConstraints.cypher5
-            case other                    => other
+            case _: UniqueConstraints         => UniqueConstraints.cypher5
+            case _: NodeUniqueConstraints     => NodeUniqueConstraints.cypher5
+            case _: RelUniqueConstraints      => RelUniqueConstraints.cypher5
+            case _: PropExistsConstraints     => PropExistsConstraints.cypher5
+            case _: NodePropExistsConstraints => NodePropExistsConstraints.cypher5
+            case _: RelPropExistsConstraints  => RelPropExistsConstraints.cypher5
+            case other                        => other
           }
 
           test(s"SHOW $constraintTypeKeyword $constraintKeyword") {
@@ -966,8 +969,8 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
           )(pos),
           withFromYield(returnAllItems.withDefaultOrderOnColumns(List("labelsOrTypes")))
         ),
-      RelExistsConstraints.cypher25,
-      RelExistsConstraints.cypher5,
+      RelPropExistsConstraints.cypher25,
+      RelPropExistsConstraints.cypher5,
       comparePosition = false
     )
   }
@@ -1056,7 +1059,7 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
     )
   }
 
-  test("SHOW EXISTENCE CONSTRAINTS YIELD name AS CONSTRAINT, type AS OUTPUT") {
+  test("SHOW PROPERTY EXISTENCE CONSTRAINTS YIELD name AS CONSTRAINT, type AS OUTPUT") {
     assertAstVersionBased(
       constraintType =>
         singleQuery(
@@ -1071,23 +1074,20 @@ class ShowSchemaCommandParserTest extends AdministrationAndSchemaCommandParserTe
           )(pos),
           withFromYield(returnAllItems.withDefaultOrderOnColumns(List("CONSTRAINT", "OUTPUT")))
         ),
-      ExistsConstraints.cypher25,
-      ExistsConstraints.cypher5,
+      PropExistsConstraints.cypher25,
+      PropExistsConstraints.cypher5,
       comparePosition = false
     )
   }
 
   test("SHOW NODE EXIST CONSTRAINTS WHERE name = 'GRANT'") {
-    assertAstVersionBased(
-      constraintType =>
-        singleQuery(ShowConstraintsClause(
-          constraintType,
-          Some(where(equals(varFor("name"), literalString("GRANT")))),
-          List.empty,
-          yieldAll = false
-        )(pos)),
-      NodeExistsConstraints.cypher25,
-      NodeExistsConstraints.cypher5,
+    assertAst(
+      singleQuery(ShowConstraintsClause(
+        NodeAllExistsConstraints,
+        Some(where(equals(varFor("name"), literalString("GRANT")))),
+        List.empty,
+        yieldAll = false
+      )(pos)),
       comparePosition = false
     )
   }

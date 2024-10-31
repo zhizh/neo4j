@@ -22,20 +22,24 @@ package org.neo4j.cypher.internal.runtime.interpreted.commands.showcommands
 import org.neo4j.common.EntityType
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AllConstraints
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.CommandResultItem
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.KeyConstraints
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
 import org.neo4j.cypher.internal.ast.NodeLabelExistenceConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
-import org.neo4j.cypher.internal.ast.RelationshipEndpointLabelConstraints
+import org.neo4j.cypher.internal.ast.RelationshipSourceLabelConstraints
+import org.neo4j.cypher.internal.ast.RelationshipTargetLabelConstraints
 import org.neo4j.cypher.internal.ast.ShowColumn
 import org.neo4j.cypher.internal.ast.ShowConstraintType
 import org.neo4j.cypher.internal.ast.ShowConstraintsClause.createStatementColumn
@@ -61,6 +65,8 @@ import org.neo4j.cypher.internal.runtime.interpreted.commands.showcommands.ShowS
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
 import org.neo4j.internal.schema
 import org.neo4j.internal.schema.ConstraintDescriptor
+import org.neo4j.internal.schema.EndpointType
+import org.neo4j.internal.schema.GraphTypeDependence
 import org.neo4j.values.AnyValue
 import org.neo4j.values.storable.Values
 import org.neo4j.values.virtual.VirtualValues
@@ -72,6 +78,7 @@ import scala.jdk.CollectionConverters.SeqHasAsJava
 //   ALL
 //   | NODE UNIQUE | RELATIONSHIP UNIQUE | UNIQUE
 //   | NODE EXIST | RELATIONSHIP EXIST | EXIST
+//   | NODE PROPERTY EXIST | RELATIONSHIP PROPERTY EXIST | PROPERTY EXIST
 //   | NODE KEY | RELATIONSHIP KEY | KEY
 //   | NODE PROPERTY TYPE | RELATIONSHIP PROPERTY TYPE | PROPERTY TYPE
 // ] CONSTRAINT[S] [WHERE clause | YIELD clause]
@@ -101,10 +108,22 @@ case class ShowConstraintsCommand(
         c => c.`type`().equals(schema.ConstraintType.UNIQUE_EXISTS) && c.schema.entityType.equals(EntityType.NODE)
       case RelKeyConstraints => c =>
           c.`type`().equals(schema.ConstraintType.UNIQUE_EXISTS) && c.schema.entityType.equals(EntityType.RELATIONSHIP)
-      case _: ExistsConstraints => c => c.`type`().equals(schema.ConstraintType.EXISTS)
-      case _: NodeExistsConstraints =>
+      case _: PropExistsConstraints => c => c.`type`().equals(schema.ConstraintType.EXISTS)
+      case _: NodePropExistsConstraints =>
         c => c.`type`().equals(schema.ConstraintType.EXISTS) && c.schema.entityType.equals(EntityType.NODE)
-      case _: RelExistsConstraints =>
+      case _: RelPropExistsConstraints =>
+        c => c.`type`().equals(schema.ConstraintType.EXISTS) && c.schema.entityType.equals(EntityType.RELATIONSHIP)
+      case AllExistsConstraints =>
+        c =>
+          c.`type`().equals(schema.ConstraintType.EXISTS) ||
+            c.`type`().equals(schema.ConstraintType.NODE_LABEL_EXISTENCE)
+      case NodeAllExistsConstraints =>
+        c =>
+          (
+            c.`type`().equals(schema.ConstraintType.EXISTS) ||
+              c.`type`().equals(schema.ConstraintType.NODE_LABEL_EXISTENCE)
+          ) && c.schema.entityType.equals(EntityType.NODE)
+      case RelAllExistsConstraints =>
         c => c.`type`().equals(schema.ConstraintType.EXISTS) && c.schema.entityType.equals(EntityType.RELATIONSHIP)
       case PropTypeConstraints => c => c.`type`().equals(schema.ConstraintType.PROPERTY_TYPE)
       case NodePropTypeConstraints =>
@@ -138,7 +157,12 @@ case class ShowConstraintsCommand(
         // These don't really have a default/fallback and is used in multiple columns
         // so let's keep them as is regardless of if they are actually needed or not
         val entityType = constraintDescriptor.schema.entityType
-        val constraintType = getConstraintType(constraintDescriptor.`type`, entityType, returnCypher5Values)
+        val constraintType = getConstraintType(
+          constraintDescriptor.`type`,
+          entityType,
+          constraintInfo.endPointType,
+          returnCypher5Values
+        )
 
         requestedColumnsNames.map {
           // The id of the constraint, or null if created in transaction
@@ -149,7 +173,10 @@ case class ShowConstraintsCommand(
             idColumn -> id
           // Name of the constraint, for example "myConstraint"
           case `nameColumn` => nameColumn -> Values.stringValue(constraintDescriptor.getName)
-          // The ConstraintType of this constraint, one of "UNIQUENESS", "RELATIONSHIP_UNIQUENESS", "NODE_KEY", "RELATIONSHIP_KEY", "NODE_PROPERTY_EXISTENCE", "RELATIONSHIP_PROPERTY_EXISTENCE"
+          // The ConstraintType of this constraint, one of "NODE_PROPERTY_UNIQUENESS", "RELATIONSHIP_PROPERTY_UNIQUENESS",
+          //   "NODE_KEY", "RELATIONSHIP_KEY", "NODE_PROPERTY_EXISTENCE", "RELATIONSHIP_PROPERTY_EXISTENCE",
+          //   "NODE_PROPERTY_TYPE", "RELATIONSHIP_PROPERTY_TYPE", "NODE_LABEL_EXISTENCE",
+          //   "RELATIONSHIP_SOURCE_LABEL", "RELATIONSHIP_TARGET_LABEL"
           case `typeColumn` => typeColumn -> Values.stringValue(constraintType.output)
           // Type of entities this constraint represents, either "NODE" or "RELATIONSHIP"
           case `entityTypeColumn` => entityTypeColumn -> Values.stringValue(entityType.name)
@@ -157,10 +184,14 @@ case class ShowConstraintsCommand(
           case `labelsOrTypesColumn` => labelsOrTypesColumn -> VirtualValues.fromList(
               constraintInfo.labelsOrTypes.map(elem => Values.of(elem).asInstanceOf[AnyValue]).asJava
             )
-          // The properties of this constraint, for example ["propKey", "propKey2"]
-          case `propertiesColumn` => propertiesColumn -> VirtualValues.fromList(
-              constraintInfo.properties.map(prop => Values.of(prop).asInstanceOf[AnyValue]).asJava
-            )
+          // The properties of this constraint, for example ["propKey", "propKey2"], or null for label enforcing constraints
+          case `propertiesColumn` =>
+            val properties = Some(constraintInfo.properties)
+              .filterNot(_.isEmpty) // empty list should return NO_VALUE instead of empty list
+              .map(_.map(prop => Values.of(prop).asInstanceOf[AnyValue])) // map the properties to Values
+              .map(props => VirtualValues.fromList(props.asJava)) // make it a ListValue
+              .getOrElse(Values.NO_VALUE) // empty list should be NO_VALUE instead of empty list
+            propertiesColumn -> properties
           // The name of the index associated to the constraint
           case `ownedIndexColumn` =>
             val ownedIndex =
@@ -175,7 +206,7 @@ case class ShowConstraintsCommand(
             propertyTypeColumn -> propertyType.map(Values.stringValue).getOrElse(Values.NO_VALUE)
           // The options for this constraint, shows index provider and config of the backing index
           case `optionsColumn` => optionsColumn -> getOptions(constraintDescriptor, constraintInfo)
-          // The statement to recreate the constraint
+          // The statement to recreate the constraint, or null for dependent constraints
           case `createStatementColumn` =>
             val createString = createConstraintStatement(
               constraintDescriptor.getName,
@@ -183,9 +214,10 @@ case class ShowConstraintsCommand(
               constraintInfo.labelsOrTypes,
               constraintInfo.properties,
               propertyType,
+              constraintDescriptor.graphTypeDependence(),
               returnCypher5Values
             )
-            createStatementColumn -> Values.stringValue(createString)
+            createStatementColumn -> Values.stringOrNoValue(createString)
           case unknown =>
             // This match should cover all existing columns but we get scala warnings
             // on non-exhaustive match due to it being string values
@@ -224,9 +256,11 @@ object ShowConstraintsCommand {
     labelsOrTypes: List[String],
     properties: List[String],
     propertyType: Option[String],
+    graphTypeDependence: GraphTypeDependence,
     returnCypher5Values: Boolean
   ): String = {
-    constraintType match {
+    if (graphTypeDependence.equals(GraphTypeDependence.DEPENDENT)) null
+    else constraintType match {
       case _: NodeUniqueConstraints =>
         createNodeConstraintCommand(name, labelsOrTypes, properties, "IS UNIQUE")
       case _: RelUniqueConstraints =>
@@ -237,9 +271,9 @@ object ShowConstraintsCommand {
       case RelKeyConstraints =>
         val predicate = if (returnCypher5Values) "IS RELATIONSHIP KEY" else "IS KEY"
         createRelConstraintCommand(name, labelsOrTypes, properties, predicate)
-      case _: NodeExistsConstraints =>
+      case _: NodePropExistsConstraints =>
         createNodeConstraintCommand(name, labelsOrTypes, properties, "IS NOT NULL")
-      case _: RelExistsConstraints =>
+      case _: RelPropExistsConstraints =>
         createRelConstraintCommand(name, labelsOrTypes, properties, "IS NOT NULL")
       case NodePropTypeConstraints =>
         val typeString = propertyType.getOrElse(
@@ -251,12 +285,18 @@ object ShowConstraintsCommand {
           throw new IllegalArgumentException(s"Expected a property type for $constraintType constraint.")
         )
         createRelConstraintCommand(name, labelsOrTypes, properties, s"IS :: $typeString")
-      case RelationshipEndpointLabelConstraints =>
-        // Currently not implemented
-        ""
+      case RelationshipSourceLabelConstraints =>
+        // Should not get here as they are always dependent, but lets have the cases anyway for security
+        // and if we ever want to add them as independent constraints as well
+        null
+      case RelationshipTargetLabelConstraints =>
+        // Should not get here as they are always dependent, but lets have the cases anyway for security
+        // and if we ever want to add them as independent constraints as well
+        null
       case NodeLabelExistenceConstraints =>
-        // Currently not implemented
-        ""
+        // Should not get here as they are always dependent, but lets have the cases anyway for security
+        // and if we ever want to add them as independent constraints as well
+        null
       case _ => throw new IllegalArgumentException(
           s"Did not expect constraint type ${constraintType.prettyPrint} for constraint create command."
         )
@@ -266,6 +306,7 @@ object ShowConstraintsCommand {
   private def getConstraintType(
     internalConstraintType: schema.ConstraintType,
     entityType: EntityType,
+    endpointType: Option[EndpointType],
     returnCypher5Values: Boolean
   ): ShowConstraintType = {
     (internalConstraintType, entityType) match {
@@ -276,16 +317,19 @@ object ShowConstraintsCommand {
       case (schema.ConstraintType.UNIQUE_EXISTS, EntityType.NODE)         => NodeKeyConstraints
       case (schema.ConstraintType.UNIQUE_EXISTS, EntityType.RELATIONSHIP) => RelKeyConstraints
       case (schema.ConstraintType.EXISTS, EntityType.NODE) =>
-        if (returnCypher5Values) NodeExistsConstraints.cypher5 else NodeExistsConstraints.cypher25
+        if (returnCypher5Values) NodePropExistsConstraints.cypher5 else NodePropExistsConstraints.cypher25
       case (schema.ConstraintType.EXISTS, EntityType.RELATIONSHIP) =>
-        if (returnCypher5Values) RelExistsConstraints.cypher5 else RelExistsConstraints.cypher25
+        if (returnCypher5Values) RelPropExistsConstraints.cypher5 else RelPropExistsConstraints.cypher25
       case (schema.ConstraintType.PROPERTY_TYPE, EntityType.NODE)         => NodePropTypeConstraints
       case (schema.ConstraintType.PROPERTY_TYPE, EntityType.RELATIONSHIP) => RelPropTypeConstraints
-      case (schema.ConstraintType.RELATIONSHIP_ENDPOINT_LABEL, EntityType.RELATIONSHIP) =>
-        RelationshipEndpointLabelConstraints
+      case (schema.ConstraintType.RELATIONSHIP_ENDPOINT_LABEL, EntityType.RELATIONSHIP) if endpointType.isDefined =>
+        endpointType.get match {
+          case EndpointType.START => RelationshipSourceLabelConstraints
+          case EndpointType.END   => RelationshipTargetLabelConstraints
+        }
       case (schema.ConstraintType.NODE_LABEL_EXISTENCE, EntityType.NODE) => NodeLabelExistenceConstraints
       case _ => throw new IllegalStateException(
-          s"Invalid constraint combination: ConstraintType $internalConstraintType and EntityType $entityType."
+          s"Invalid constraint combination: ConstraintType $internalConstraintType, EntityType $entityType and EndpointType $endpointType."
         )
     }
   }

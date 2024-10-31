@@ -23,16 +23,19 @@ import org.mockito.Mockito.when
 import org.neo4j.configuration.Config
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AllConstraints
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.CommandResultItem
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.KeyConstraints
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.ShowConstraintsClause
@@ -149,18 +152,51 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       .withName("constraint11")
       .withId(11)
 
+  private val nodeLabelExistenceConstraintDescriptor =
+    ConstraintDescriptorFactory.nodeLabelExistenceForSchema(
+      SchemaDescriptors.forNodeLabelExistence(0),
+      1
+    )
+      .withName("constraint12")
+      .withId(12)
+
+  private val relSourceConstraintDescriptor =
+    ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+      relEndpointLabelDescriptor,
+      labelDescriptor.getLabelId,
+      EndpointType.START
+    )
+      .withName("constraint13")
+      .withId(13)
+
+  private val relTargetConstraintDescriptor =
+    ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
+      relEndpointLabelDescriptor,
+      labelDescriptor.getLabelId,
+      EndpointType.END
+    )
+      .withName("constraint14")
+      .withId(14)
+
   private val nodeUniquenessConstraintInfo =
-    ConstraintInfo(List(label), List(prop), Some(nodeUniquenessIndexDescriptor))
+    ConstraintInfo(List(label), List(prop), Some(nodeUniquenessIndexDescriptor), None, None)
 
   private val relUniquenessConstraintInfo =
-    ConstraintInfo(List(relType), List(prop), Some(relUniquenessIndexDescriptor))
+    ConstraintInfo(List(relType), List(prop), Some(relUniquenessIndexDescriptor), None, None)
 
-  private val nodeKeyConstraintInfo = ConstraintInfo(List(label), List(prop), Some(nodeKeyIndexDescriptor))
-  private val relKeyConstraintInfo = ConstraintInfo(List(relType), List(prop), Some(relKeyIndexDescriptor))
-  private val nodeExistConstraintInfo = ConstraintInfo(List(label), List(prop), None)
-  private val relExistConstraintInfo = ConstraintInfo(List(relType), List(prop), None)
-  private val nodePropTypeConstraintInfo = ConstraintInfo(List(label), List(prop), None)
-  private val relPropTypeConstraintInfo = ConstraintInfo(List(relType), List(prop), None)
+  private val nodeKeyConstraintInfo = ConstraintInfo(List(label), List(prop), Some(nodeKeyIndexDescriptor), None, None)
+  private val relKeyConstraintInfo = ConstraintInfo(List(relType), List(prop), Some(relKeyIndexDescriptor), None, None)
+  private val nodeExistConstraintInfo = ConstraintInfo(List(label), List(prop), None, None, None)
+  private val relExistConstraintInfo = ConstraintInfo(List(relType), List(prop), None, None, None)
+  private val nodePropTypeConstraintInfo = ConstraintInfo(List(label), List(prop), None, None, None)
+  private val relPropTypeConstraintInfo = ConstraintInfo(List(relType), List(prop), None, None, None)
+  private val constraintInfo = ConstraintInfo(List(label), List(), None, Some(label2), None)
+
+  private val relSourceConstraintInfo =
+    ConstraintInfo(List(relType), List(), None, Some(label), Some(EndpointType.START))
+
+  private val relTargetConstraintInfo =
+    ConstraintInfo(List(relType), List(), None, Some(label), Some(EndpointType.END))
 
   protected lazy val kernelQueryContext: org.neo4j.internal.kernel.api.QueryContext =
     mock[org.neo4j.internal.kernel.api.QueryContext]
@@ -208,11 +244,12 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
         VirtualValues.list(expected.map(Values.stringValue): _*)
       )
     )
-    properties.foreach(expected =>
-      resultMap(ShowConstraintsClause.propertiesColumn) should be(
-        VirtualValues.list(expected.map(Values.stringValue): _*)
-      )
-    )
+    properties.foreach { maybeExpected =>
+      val expected =
+        if (maybeExpected == null) Values.NO_VALUE
+        else VirtualValues.list(maybeExpected.map(Values.stringValue): _*)
+      resultMap(ShowConstraintsClause.propertiesColumn) should be(expected)
+    }
     index.foreach(expected =>
       resultMap(ShowConstraintsClause.ownedIndexColumn) should be(Values.stringOrNoValue(expected))
     )
@@ -221,7 +258,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     )
     options.foreach(expected => resultMap(ShowConstraintsClause.optionsColumn) should be(expected))
     createStatement.foreach(expected =>
-      resultMap(ShowConstraintsClause.createStatementColumn) should be(Values.stringValue(expected))
+      resultMap(ShowConstraintsClause.createStatementColumn) should be(Values.stringOrNoValue(expected))
     )
   }
 
@@ -259,7 +296,10 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       nodeExistConstraintDescriptor -> nodeExistConstraintInfo,
       relExistConstraintDescriptor -> relExistConstraintInfo,
       nodePropTypeConstraintDescriptor -> nodePropTypeConstraintInfo,
-      relPropTypeConstraintDescriptor -> relPropTypeConstraintInfo
+      relPropTypeConstraintDescriptor -> relPropTypeConstraintInfo,
+      nodeLabelExistenceConstraintDescriptor -> constraintInfo,
+      relSourceConstraintDescriptor -> relSourceConstraintInfo,
+      relTargetConstraintDescriptor -> relTargetConstraintInfo
     ))
   }
 
@@ -378,7 +418,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
-    result should have size 8
+    result should have size 11
     checkResult(
       result.head,
       name = "constraint0",
@@ -429,6 +469,45 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     )
     checkResult(
       result(4),
+      name = "constraint12",
+      id = 12,
+      constraintType = "NODE_LABEL_EXISTENCE",
+      entityType = "NODE",
+      labelsOrTypes = List(label),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result(5),
+      name = "constraint13",
+      id = 13,
+      constraintType = "RELATIONSHIP_SOURCE_LABEL",
+      entityType = "RELATIONSHIP",
+      labelsOrTypes = List(relType),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result(6),
+      name = "constraint14",
+      id = 14,
+      constraintType = "RELATIONSHIP_TARGET_LABEL",
+      entityType = "RELATIONSHIP",
+      labelsOrTypes = List(relType),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result(7),
       name = "constraint2",
       constraintType = "RELATIONSHIP_PROPERTY_UNIQUENESS",
       entityType = "RELATIONSHIP",
@@ -439,7 +518,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
         s"CREATE CONSTRAINT `constraint2` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS UNIQUE"
     )
     checkResult(
-      result(5),
+      result(8),
       name = "constraint3",
       constraintType = "NODE_KEY",
       entityType = "NODE",
@@ -450,7 +529,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
         s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS KEY"
     )
     checkResult(
-      result(6),
+      result(9),
       name = "constraint4",
       constraintType = "RELATIONSHIP_KEY",
       entityType = "RELATIONSHIP",
@@ -461,7 +540,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
         s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS KEY"
     )
     checkResult(
-      result(7),
+      result(10),
       name = "constraint5",
       constraintType = "NODE_PROPERTY_EXISTENCE",
       entityType = "NODE",
@@ -645,7 +724,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
 
     // When
     val showConstraints =
-      ShowConstraintsCommand(ExistsConstraints.cypher25, allColumns, List.empty, CypherVersion.Cypher25)
+      ShowConstraintsCommand(PropExistsConstraints.cypher25, allColumns, List.empty, CypherVersion.Cypher25)
     val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -680,7 +759,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
 
     // When
     val showConstraints =
-      ShowConstraintsCommand(NodeExistsConstraints.cypher25, allColumns, List.empty, CypherVersion.Cypher25)
+      ShowConstraintsCommand(NodePropExistsConstraints.cypher25, allColumns, List.empty, CypherVersion.Cypher25)
     val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -706,7 +785,118 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
 
     // When
     val showConstraints =
-      ShowConstraintsCommand(RelExistsConstraints.cypher25, allColumns, List.empty, CypherVersion.Cypher25)
+      ShowConstraintsCommand(RelPropExistsConstraints.cypher25, allColumns, List.empty, CypherVersion.Cypher25)
+    val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    result should have size 1
+    checkResult(
+      result.head,
+      name = "constraint1",
+      constraintType = "RELATIONSHIP_PROPERTY_EXISTENCE",
+      entityType = "RELATIONSHIP",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint1` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS NOT NULL"
+    )
+  }
+
+  test("show existence constraints should show property existence constraint types") {
+    // Given
+    setupAllConstraints()
+
+    // When
+    val showConstraints =
+      ShowConstraintsCommand(AllExistsConstraints, allColumns, List.empty, CypherVersion.Cypher25)
+    val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    result should have size 3
+    checkResult(
+      result.head,
+      name = "constraint1",
+      constraintType = "RELATIONSHIP_PROPERTY_EXISTENCE",
+      entityType = "RELATIONSHIP",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint1` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS NOT NULL"
+    )
+    checkResult(
+      result(1),
+      name = "constraint12",
+      id = 12,
+      constraintType = "NODE_LABEL_EXISTENCE",
+      entityType = "NODE",
+      labelsOrTypes = List(label),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result(2),
+      name = "constraint5",
+      constraintType = "NODE_PROPERTY_EXISTENCE",
+      entityType = "NODE",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint5` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NOT NULL"
+    )
+  }
+
+  test("show node existence constraints should show node property existence constraint types") {
+    // Given
+    setupAllConstraints()
+
+    // When
+    val showConstraints =
+      ShowConstraintsCommand(NodeAllExistsConstraints, allColumns, List.empty, CypherVersion.Cypher25)
+    val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    result should have size 2
+    checkResult(
+      result.head,
+      name = "constraint12",
+      id = 12,
+      constraintType = "NODE_LABEL_EXISTENCE",
+      entityType = "NODE",
+      labelsOrTypes = List(label),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result.last,
+      name = "constraint5",
+      constraintType = "NODE_PROPERTY_EXISTENCE",
+      entityType = "NODE",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint5` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NOT NULL"
+    )
+  }
+
+  test(
+    "show relationship existence constraints should show relationship property existence constraint types"
+  ) {
+    // Given
+    setupAllConstraints()
+
+    // When
+    val showConstraints =
+      ShowConstraintsCommand(RelAllExistsConstraints, allColumns, List.empty, CypherVersion.Cypher25)
     val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1028,7 +1218,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
-    result should have size 8
+    result should have size 11
     checkResult(
       result.head,
       name = "constraint0",
@@ -1079,6 +1269,45 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     )
     checkResult(
       result(4),
+      name = "constraint12",
+      id = 12,
+      constraintType = "NODE_LABEL_EXISTENCE",
+      entityType = "NODE",
+      labelsOrTypes = List(label),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result(5),
+      name = "constraint13",
+      id = 13,
+      constraintType = "RELATIONSHIP_SOURCE_LABEL",
+      entityType = "RELATIONSHIP",
+      labelsOrTypes = List(relType),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result(6),
+      name = "constraint14",
+      id = 14,
+      constraintType = "RELATIONSHIP_TARGET_LABEL",
+      entityType = "RELATIONSHIP",
+      labelsOrTypes = List(relType),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      result(7),
       name = "constraint2",
       constraintType = "RELATIONSHIP_UNIQUENESS",
       entityType = "RELATIONSHIP",
@@ -1089,7 +1318,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
         s"CREATE CONSTRAINT `constraint2` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS UNIQUE"
     )
     checkResult(
-      result(5),
+      result(8),
       name = "constraint3",
       constraintType = "NODE_KEY",
       entityType = "NODE",
@@ -1100,7 +1329,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
         s"CREATE CONSTRAINT `constraint3` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NODE KEY"
     )
     checkResult(
-      result(6),
+      result(9),
       name = "constraint4",
       constraintType = "RELATIONSHIP_KEY",
       entityType = "RELATIONSHIP",
@@ -1111,7 +1340,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
         s"CREATE CONSTRAINT `constraint4` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS RELATIONSHIP KEY"
     )
     checkResult(
-      result(7),
+      result(10),
       name = "constraint5",
       constraintType = "NODE_PROPERTY_EXISTENCE",
       entityType = "NODE",
@@ -1196,13 +1425,13 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     )
   }
 
-  test("show existence constraints with Cypher 5") {
+  test("show property existence constraints with Cypher 5") {
     // Given
     setupAllConstraints()
 
     // When: all exists
     val showConstraintsAll =
-      ShowConstraintsCommand(ExistsConstraints.cypher5, allColumns, List.empty, CypherVersion.Cypher5)
+      ShowConstraintsCommand(PropExistsConstraints.cypher5, allColumns, List.empty, CypherVersion.Cypher5)
     val resultAll = showConstraintsAll.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1232,7 +1461,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
 
     // When: node exists
     val showConstraintsNode =
-      ShowConstraintsCommand(NodeExistsConstraints.cypher5, allColumns, List.empty, CypherVersion.Cypher5)
+      ShowConstraintsCommand(NodePropExistsConstraints.cypher5, allColumns, List.empty, CypherVersion.Cypher5)
     val resultNode = showConstraintsNode.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1251,7 +1480,106 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
 
     // When: rel exists
     val showConstraintsRel =
-      ShowConstraintsCommand(RelExistsConstraints.cypher5, allColumns, List.empty, CypherVersion.Cypher5)
+      ShowConstraintsCommand(RelPropExistsConstraints.cypher5, allColumns, List.empty, CypherVersion.Cypher5)
+    val resultRel = showConstraintsRel.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    resultRel should have size 1
+    checkResult(
+      resultRel.head,
+      name = "constraint1",
+      constraintType = "RELATIONSHIP_PROPERTY_EXISTENCE",
+      entityType = "RELATIONSHIP",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint1` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS NOT NULL"
+    )
+  }
+
+  test("show existence constraints with Cypher 5") {
+    // Given
+    setupAllConstraints()
+
+    // When: all exists
+    val showConstraintsAll =
+      ShowConstraintsCommand(AllExistsConstraints, allColumns, List.empty, CypherVersion.Cypher5)
+    val resultAll = showConstraintsAll.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    resultAll should have size 3
+    checkResult(
+      resultAll.head,
+      name = "constraint1",
+      constraintType = "RELATIONSHIP_PROPERTY_EXISTENCE",
+      entityType = "RELATIONSHIP",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint1` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS NOT NULL"
+    )
+    checkResult(
+      resultAll(1),
+      name = "constraint12",
+      id = 12,
+      constraintType = "NODE_LABEL_EXISTENCE",
+      entityType = "NODE",
+      labelsOrTypes = List(label),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      resultAll(2),
+      name = "constraint5",
+      constraintType = "NODE_PROPERTY_EXISTENCE",
+      entityType = "NODE",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint5` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NOT NULL"
+    )
+
+    // When: node exists
+    val showConstraintsNode =
+      ShowConstraintsCommand(NodeAllExistsConstraints, allColumns, List.empty, CypherVersion.Cypher5)
+    val resultNode = showConstraintsNode.originalNameRows(queryState, initialCypherRow).toList
+
+    // Then
+    resultNode should have size 2
+    checkResult(
+      resultNode.head,
+      name = "constraint12",
+      id = 12,
+      constraintType = "NODE_LABEL_EXISTENCE",
+      entityType = "NODE",
+      labelsOrTypes = List(label),
+      properties = Some(null),
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement = Some(null)
+    )
+    checkResult(
+      resultNode.last,
+      name = "constraint5",
+      constraintType = "NODE_PROPERTY_EXISTENCE",
+      entityType = "NODE",
+      index = Some(null),
+      propType = Some(null),
+      options = Values.NO_VALUE,
+      createStatement =
+        s"CREATE CONSTRAINT `constraint5` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NOT NULL"
+    )
+
+    // When: rel exists
+    val showConstraintsRel =
+      ShowConstraintsCommand(RelAllExistsConstraints, allColumns, List.empty, CypherVersion.Cypher5)
     val resultRel = showConstraintsRel.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
@@ -1345,8 +1673,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       index = Some(null),
       propType = "BOOLEAN",
       options = Values.NO_VALUE,
-      createStatement =
-        s"CREATE CONSTRAINT `constraint0` FOR (n:`$label`) REQUIRE (n.`$prop`) IS :: BOOLEAN"
+      createStatement = Some(null)
     )
     checkResult(
       result(1),
@@ -1359,8 +1686,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       index = Some(null),
       propType = "STRING",
       options = Values.NO_VALUE,
-      createStatement =
-        s"CREATE CONSTRAINT `constraint1` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS :: STRING"
+      createStatement = Some(null)
     )
     checkResult(
       result(2),
@@ -1373,8 +1699,7 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       index = Some(null),
       propType = Some(null),
       options = Values.NO_VALUE,
-      createStatement =
-        s"CREATE CONSTRAINT `constraint2` FOR (n:`$label`) REQUIRE (n.`$prop`) IS NOT NULL"
+      createStatement = Some(null)
     )
     checkResult(
       result(3),
@@ -1387,28 +1712,15 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
       index = Some(null),
       propType = Some(null),
       options = Values.NO_VALUE,
-      createStatement =
-        s"CREATE CONSTRAINT `constraint3` FOR ()-[r:`$relType`]-() REQUIRE (r.`$prop`) IS NOT NULL"
+      createStatement = Some(null)
     )
   }
 
-  // These tests should be merged later, we need some way to disambiguate between different relationship endpoint label constraints...
-  test("show relationship endpoint label constraints - target") {
-    // Given
-    val relTargetConstraintDescriptor =
-      ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
-        relEndpointLabelDescriptor,
-        labelDescriptor.getLabelId,
-        EndpointType.END
-      )
-        .withName("constraint0")
-        .withId(0)
-    val constraintInfo =
-      ConstraintInfo(List(relType), List(), None)
-
+  test("show relationship source and target label constraints") {
     // Set-up which constraints to return:
     when(ctx.getAllConstraints()).thenReturn(Map(
-      relTargetConstraintDescriptor -> constraintInfo
+      relSourceConstraintDescriptor -> relSourceConstraintInfo,
+      relTargetConstraintDescriptor -> relTargetConstraintInfo
     ))
 
     // When
@@ -1416,77 +1728,36 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
 
     // Then
-    result should have size 1
+    result should have size 2
     checkResult(
       result.head,
-      name = "constraint0",
-      id = 0,
-      constraintType = "RELATIONSHIP_ENDPOINT_LABEL",
+      name = "constraint13",
+      id = 13,
+      constraintType = "RELATIONSHIP_SOURCE_LABEL",
       entityType = "RELATIONSHIP",
       labelsOrTypes = List(relType),
-      properties = List.empty[String],
+      properties = Some(null),
       index = Some(null),
       propType = Some(null),
       options = Values.NO_VALUE,
-      createStatement = ""
+      createStatement = Some(null)
     )
-  }
-
-  // These tests should be merged later, we need some way to disambiguate between different relationship endpoint label constraints...
-  test("show relationship endpoint label constraints - source") {
-    // Given
-    val relSourceConstraintDescriptor =
-      ConstraintDescriptorFactory.relationshipEndpointLabelForSchema(
-        relEndpointLabelDescriptor,
-        labelDescriptor.getLabelId,
-        EndpointType.START
-      )
-        .withName("constraint0")
-        .withId(0)
-
-    val constraintInfo =
-      ConstraintInfo(List(relType), List(), None)
-
-    // Set-up which constraints to return:
-    when(ctx.getAllConstraints()).thenReturn(Map(
-      relSourceConstraintDescriptor -> constraintInfo
-    ))
-
-    // When
-    val showConstraints = ShowConstraintsCommand(AllConstraints, allColumns, List.empty, CypherVersion.Cypher25)
-    val result = showConstraints.originalNameRows(queryState, initialCypherRow).toList
-
-    // Then
-    result should have size 1
     checkResult(
-      result.head,
-      name = "constraint0",
-      id = 0,
-      constraintType = "RELATIONSHIP_ENDPOINT_LABEL",
+      result.last,
+      name = "constraint14",
+      id = 14,
+      constraintType = "RELATIONSHIP_TARGET_LABEL",
       entityType = "RELATIONSHIP",
       labelsOrTypes = List(relType),
-      properties = List.empty[String],
+      properties = Some(null),
       index = Some(null),
       propType = Some(null),
       options = Values.NO_VALUE,
-      createStatement = ""
+      createStatement = Some(null)
     )
-
   }
 
   test("show node label existence constraints") {
-    // Given
-    val nodeLabelExistenceConstraintDescriptor =
-      ConstraintDescriptorFactory.nodeLabelExistenceForSchema(
-        SchemaDescriptors.forNodeLabelExistence(0),
-        1
-      )
-        .withName("constraint0")
-        .withId(0)
-
-    val constraintInfo =
-      ConstraintInfo(List(label), List(), None)
-
     // Set-up which constraints to return:
     when(ctx.getAllConstraints()).thenReturn(Map(
       nodeLabelExistenceConstraintDescriptor -> constraintInfo
@@ -1500,16 +1771,16 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     result should have size 1
     checkResult(
       result.head,
-      name = "constraint0",
-      id = 0,
+      name = "constraint12",
+      id = 12,
       constraintType = "NODE_LABEL_EXISTENCE",
       entityType = "NODE",
       labelsOrTypes = List(label),
-      properties = List.empty[String],
+      properties = Some(null),
       index = Some(null),
       propType = Some(null),
       options = Values.NO_VALUE,
-      createStatement = ""
+      createStatement = Some(null)
     )
 
   }

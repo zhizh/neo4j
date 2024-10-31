@@ -228,14 +228,14 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
       (
         "SHOW REL UNIQUE CONSTRAINTS",
         showConstraint(ast.RelUniqueConstraints.cypher25, _, _, _),
-        "SHOW EXISTENCE CONSTRAINTS",
-        showConstraint(ast.ExistsConstraints.cypher25, _, _, _)
+        "SHOW PROPERTY EXISTENCE CONSTRAINTS",
+        showConstraint(ast.PropExistsConstraints.cypher25, _, _, _)
       ),
       (
-        "SHOW NODE EXIST CONSTRAINTS",
-        showConstraint(ast.NodeExistsConstraints.cypher25, _, _, _),
+        "SHOW NODE PROPERTY EXIST CONSTRAINTS",
+        showConstraint(ast.NodePropExistsConstraints.cypher25, _, _, _),
         "SHOW REL EXIST CONSTRAINTS",
-        showConstraint(ast.RelExistsConstraints.cypher25, _, _, _)
+        showConstraint(ast.RelAllExistsConstraints, _, _, _)
       ),
       (
         "SHOW PROPERTY TYPE CONSTRAINTS",
@@ -370,7 +370,7 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
         "TERMINATE TRANSACTIONS 'db1-transaction-123'",
         terminateTx(Right(literalString("db1-transaction-123")), _, _, _),
         "SHOW NODE EXISTENCE CONSTRAINTS",
-        showConstraint(ast.NodeExistsConstraints.cypher25, _, _, _)
+        showConstraint(ast.NodeAllExistsConstraints, _, _, _)
       ),
       (
         "SHOW CONSTRAINTS",
@@ -535,12 +535,12 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
           scc.copy(constraintType = ast.NodeUniqueConstraints.cypher5)(scc.position)
         case _: ast.RelUniqueConstraints =>
           scc.copy(constraintType = ast.RelUniqueConstraints.cypher5)(scc.position)
-        case _: ast.ExistsConstraints =>
-          scc.copy(constraintType = ast.ExistsConstraints.cypher5)(scc.position)
-        case _: ast.NodeExistsConstraints =>
-          scc.copy(constraintType = ast.NodeExistsConstraints.cypher5)(scc.position)
-        case _: ast.RelExistsConstraints =>
-          scc.copy(constraintType = ast.RelExistsConstraints.cypher5)(scc.position)
+        case _: ast.PropExistsConstraints =>
+          scc.copy(constraintType = ast.PropExistsConstraints.cypher5)(scc.position)
+        case _: ast.NodePropExistsConstraints =>
+          scc.copy(constraintType = ast.NodePropExistsConstraints.cypher5)(scc.position)
+        case _: ast.RelPropExistsConstraints =>
+          scc.copy(constraintType = ast.RelPropExistsConstraints.cypher5)(scc.position)
         case _ => scc
       }
     case stc: ast.ShowTransactionsClause =>

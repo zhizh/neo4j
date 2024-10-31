@@ -87,6 +87,7 @@ class ShowCommandTestBase extends CypherFunSuite {
   // Index and constraint variables
 
   protected lazy val label: String = "Label"
+  protected lazy val label2: String = "Label2"
   protected lazy val relType: String = "REL_TYPE"
   protected lazy val prop: String = "prop"
   protected lazy val labelDescriptor: LabelSchemaDescriptor = SchemaDescriptors.forLabel(0, 0)

@@ -31,6 +31,7 @@ import org.neo4j.cypher.internal.ast.AllDatabaseManagementActions
 import org.neo4j.cypher.internal.ast.AllDatabasesQualifier
 import org.neo4j.cypher.internal.ast.AllDatabasesScope
 import org.neo4j.cypher.internal.ast.AllDbmsAction
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.AllFunctions
 import org.neo4j.cypher.internal.ast.AllGraphAction
 import org.neo4j.cypher.internal.ast.AllGraphsScope
@@ -121,7 +122,6 @@ import org.neo4j.cypher.internal.ast.ExecuteBoostedFunctionAction
 import org.neo4j.cypher.internal.ast.ExecuteBoostedProcedureAction
 import org.neo4j.cypher.internal.ast.ExecuteFunctionAction
 import org.neo4j.cypher.internal.ast.ExecuteProcedureAction
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.ExistsExpression
 import org.neo4j.cypher.internal.ast.FileResource
 import org.neo4j.cypher.internal.ast.Finish
@@ -176,8 +176,9 @@ import org.neo4j.cypher.internal.ast.NamedGraphsScope
 import org.neo4j.cypher.internal.ast.NamespacedName
 import org.neo4j.cypher.internal.ast.NoOptions
 import org.neo4j.cypher.internal.ast.NoWait
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
 import org.neo4j.cypher.internal.ast.OnCreate
@@ -197,6 +198,7 @@ import org.neo4j.cypher.internal.ast.PrivilegeQualifier
 import org.neo4j.cypher.internal.ast.ProcedureQualifier
 import org.neo4j.cypher.internal.ast.ProcedureResult
 import org.neo4j.cypher.internal.ast.ProcedureResultItem
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
 import org.neo4j.cypher.internal.ast.PropertiesResource
 import org.neo4j.cypher.internal.ast.Query
@@ -205,8 +207,9 @@ import org.neo4j.cypher.internal.ast.ReadAction
 import org.neo4j.cypher.internal.ast.ReadOnlyAccess
 import org.neo4j.cypher.internal.ast.ReadWriteAccess
 import org.neo4j.cypher.internal.ast.ReallocateDatabases
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.RelationshipAllQualifier
@@ -1657,9 +1660,12 @@ class AstGenerator(
       if (returnCypher5Values) UniqueConstraints.cypher5 else UniqueConstraints.cypher25,
       if (returnCypher5Values) NodeUniqueConstraints.cypher5 else NodeUniqueConstraints.cypher25,
       if (returnCypher5Values) RelUniqueConstraints.cypher5 else RelUniqueConstraints.cypher25,
-      if (returnCypher5Values) ExistsConstraints.cypher5 else ExistsConstraints.cypher25,
-      if (returnCypher5Values) NodeExistsConstraints.cypher5 else NodeExistsConstraints.cypher25,
-      if (returnCypher5Values) RelExistsConstraints.cypher5 else RelExistsConstraints.cypher25,
+      if (returnCypher5Values) PropExistsConstraints.cypher5 else PropExistsConstraints.cypher25,
+      if (returnCypher5Values) NodePropExistsConstraints.cypher5 else NodePropExistsConstraints.cypher25,
+      if (returnCypher5Values) RelPropExistsConstraints.cypher5 else RelPropExistsConstraints.cypher25,
+      AllExistsConstraints,
+      NodeAllExistsConstraints,
+      RelAllExistsConstraints,
       KeyConstraints,
       NodeKeyConstraints,
       RelKeyConstraints,

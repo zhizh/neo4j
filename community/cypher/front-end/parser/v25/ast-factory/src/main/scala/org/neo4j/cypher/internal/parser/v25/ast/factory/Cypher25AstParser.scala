@@ -77,6 +77,7 @@ final protected class CypherAstBuildingAntlrParser(
     case Cypher25Parser.RULE_alterDatabaseTopology             => false
     case Cypher25Parser.RULE_comparisonExpression6             => false
     case Cypher25Parser.RULE_constraintType                    => false
+    case Cypher25Parser.RULE_constraintExistType               => false
     case Cypher25Parser.RULE_createIndex                       => false
     case Cypher25Parser.RULE_extendedCaseAlternative           => false
     case Cypher25Parser.RULE_extendedWhen                      => false

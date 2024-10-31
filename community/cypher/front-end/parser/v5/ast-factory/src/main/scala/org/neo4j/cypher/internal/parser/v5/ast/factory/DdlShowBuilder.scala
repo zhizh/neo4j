@@ -20,6 +20,7 @@ package org.neo4j.cypher.internal.parser.v5.ast.factory
 import org.neo4j.cypher.internal.ast.AliasedReturnItem
 import org.neo4j.cypher.internal.ast.AllConstraints
 import org.neo4j.cypher.internal.ast.AllDatabasesScope
+import org.neo4j.cypher.internal.ast.AllExistsConstraints
 import org.neo4j.cypher.internal.ast.AllFunctions
 import org.neo4j.cypher.internal.ast.AllIndexes
 import org.neo4j.cypher.internal.ast.BuiltInFunctions
@@ -30,23 +31,25 @@ import org.neo4j.cypher.internal.ast.CurrentUser
 import org.neo4j.cypher.internal.ast.DatabaseName
 import org.neo4j.cypher.internal.ast.DefaultDatabaseScope
 import org.neo4j.cypher.internal.ast.ExecutableBy
-import org.neo4j.cypher.internal.ast.ExistsConstraints
 import org.neo4j.cypher.internal.ast.FulltextIndexes
 import org.neo4j.cypher.internal.ast.HomeDatabaseScope
 import org.neo4j.cypher.internal.ast.KeyConstraints
 import org.neo4j.cypher.internal.ast.Limit
 import org.neo4j.cypher.internal.ast.LookupIndexes
-import org.neo4j.cypher.internal.ast.NodeExistsConstraints
+import org.neo4j.cypher.internal.ast.NodeAllExistsConstraints
 import org.neo4j.cypher.internal.ast.NodeKeyConstraints
+import org.neo4j.cypher.internal.ast.NodePropExistsConstraints
 import org.neo4j.cypher.internal.ast.NodePropTypeConstraints
 import org.neo4j.cypher.internal.ast.NodeUniqueConstraints
 import org.neo4j.cypher.internal.ast.OrderBy
 import org.neo4j.cypher.internal.ast.ParsedAsYield
 import org.neo4j.cypher.internal.ast.PointIndexes
+import org.neo4j.cypher.internal.ast.PropExistsConstraints
 import org.neo4j.cypher.internal.ast.PropTypeConstraints
 import org.neo4j.cypher.internal.ast.RangeIndexes
-import org.neo4j.cypher.internal.ast.RelExistsConstraints
+import org.neo4j.cypher.internal.ast.RelAllExistsConstraints
 import org.neo4j.cypher.internal.ast.RelKeyConstraints
+import org.neo4j.cypher.internal.ast.RelPropExistsConstraints
 import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.Return
@@ -301,7 +304,7 @@ trait DdlShowBuilder extends Cypher5ParserListener {
         c.showConstraintsAllowYield().ast[ShowWrapper]().buildConstraintClauses(constraintType, parentPos)
 
       case c: Cypher5Parser.ShowConstraintRelExistContext =>
-        val constraintType = RelExistsConstraints.cypher5
+        val constraintType = RelAllExistsConstraints
         c.showConstraintsAllowYield().ast[ShowWrapper]().buildConstraintClauses(constraintType, parentPos)
 
       case _: Cypher5Parser.ShowConstraintOldExistsContext =>
@@ -322,6 +325,8 @@ trait DdlShowBuilder extends Cypher5ParserListener {
     val parent = ctx.getParent.asInstanceOf[ShowConstraintMultiContext]
     val entityType =
       if (parent.NODE() != null) Node else if (parent.RELATIONSHIP() != null || parent.REL() != null) Rel else NoEntity
+    val propExists = ctx.constraintExistType() != null && ctx.constraintExistType().PROPERTY() != null
+
     ctx.ast = (entityType, ctx.PROPERTY() != null, ctx.UNIQUENESS() != null) match {
       case (Node, true, _)     => NodePropTypeConstraints
       case (Rel, true, _)      => RelPropTypeConstraints
@@ -329,9 +334,9 @@ trait DdlShowBuilder extends Cypher5ParserListener {
       case (Node, _, true)     => NodeUniqueConstraints.cypher5
       case (Rel, _, true)      => RelUniqueConstraints.cypher5
       case (NoEntity, _, true) => UniqueConstraints.cypher5
-      case (Node, _, _)        => NodeExistsConstraints.cypher5
-      case (Rel, _, _)         => RelExistsConstraints.cypher5
-      case (NoEntity, _, _)    => ExistsConstraints.cypher5
+      case (Node, _, _)        => if (propExists) NodePropExistsConstraints.cypher5 else NodeAllExistsConstraints
+      case (Rel, _, _)         => if (propExists) RelPropExistsConstraints.cypher5 else RelAllExistsConstraints
+      case (NoEntity, _, _)    => if (propExists) PropExistsConstraints.cypher5 else AllExistsConstraints
     }
   }
 
@@ -345,11 +350,11 @@ trait DdlShowBuilder extends Cypher5ParserListener {
     ctx.ast = nodeChild(ctx, 0).getSymbol.getType match {
       case Cypher5Parser.ALL    => AllConstraints
       case Cypher5Parser.UNIQUE => UniqueConstraints.cypher5
-      case Cypher5Parser.EXIST  => ExistsConstraints.cypher5
+      case Cypher5Parser.EXIST  => AllExistsConstraints
       case Cypher5Parser.NODE =>
-        if (ctx.EXIST() != null) NodeExistsConstraints.cypher5 else NodeKeyConstraints
+        if (ctx.EXIST() != null) NodeAllExistsConstraints else NodeKeyConstraints
       case Cypher5Parser.RELATIONSHIP =>
-        RelExistsConstraints.cypher5
+        RelAllExistsConstraints
     }
   }
 
