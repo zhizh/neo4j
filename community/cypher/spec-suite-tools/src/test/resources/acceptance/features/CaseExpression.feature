@@ -589,3 +589,137 @@ Feature: CaseExpression
       | 10  |
       | 10  |
     And no side effects
+
+  Scenario: Simple case with aggregations
+    Given an empty graph
+    When executing query:
+      """
+      UNWIND [['People', 10], ['People', 15], ['String', 1], ['String', 2]] as list
+      WITH list[0] as key, list[1] as value
+      WITH
+          key AS key,
+          CASE key
+              WHEN 'People' then sum(value)
+              ELSE max(value)
+          END as value
+      RETURN *
+      """
+    Then the result should be, in any order:
+      | key        | value |
+      | 'People'   | 25    |
+      | 'String'   | 2     |
+    And no side effects
+    
+  Scenario: Nested Cases
+    Given an empty graph
+    When executing query:
+      """
+      RETURN CASE (CASE (CASE 2 + 1 WHEN 3 THEN 2 ELSE 3 END) WHEN 5 THEN 7 ELSE 8 END) WHEN 3 THEN true ELSE false END as value
+      """
+    Then the result should be, in any order:
+      | value |
+      | false |
+    And no side effects
+    
+  Scenario: Nested Case Expressions
+    Given an empty graph
+    When executing query:
+      """
+      WITH 1 AS a
+      WITH
+        *,
+        CASE a + 1
+          WHEN = 2 THEN 3
+          ELSE 'boom'
+        END AS b
+      WITH
+        *,
+        CASE (CASE b+1 WHEN = 4 THEN 5 ELSE 'boom' end) + 1
+          WHEN = 6 THEN 7
+          ELSE 'boom'
+        END as c
+      WITH
+        *,
+        CASE c + 2
+          WHEN = (CASE c - 1 WHEN = 6 THEN 8 ELSE 'boom' END) + 1 THEN 10
+          ELSE 'boom'
+        end as d
+      WITH
+        *,
+        CASE (CASE d+1 WHEN = (CASE a*2 WHEN = 2 THEN 11 ELSE 'boom' end) THEN 12 ELSE 'boom' END) + 1
+          WHEN = (CASE d+10 WHEN = (CASE a+4 WHEN 5 THEN 20 ELSE 'boom' end) THEN 12 ELSE 'boom' END) + 1 THEN 11
+          ELSE 'boom'
+        END AS e
+      RETURN *
+      """
+    Then the result should be, in order:
+      | a | b | c | d  | e  |
+      | 1 | 3 | 7 | 10 | 11 |
+    And no side effects
+
+  Scenario: Case in a reduce expression
+    Given an empty graph
+    When executing query:
+      """
+      WITH { admin: true, editor: false } as membership
+      RETURN reduce(acc = [], role in keys(membership) | CASE membership[role] WHEN true THEN acc + role ELSE acc END) AS result
+      """
+    Then the result should be, in any order:
+      | result    |
+      | ['admin'] |
+    And no side effects
+
+  Scenario: Case Map Expression
+    Given an empty graph
+    When executing query:
+      """
+      WITH {certified: 4} AS n, {num: 4, answer: true} AS m
+      RETURN {
+         certified: case n.certified when m.num then m.answer else false end
+      } as res
+      """
+    Then the result should be, in any order:
+      | res               |
+      | {certified: true} |
+    And no side effects
+    
+
+  Scenario: Case Expression with nodes and rel references
+    Given an empty graph
+    And having executed:
+    """
+    CREATE ({id: 5})-[:FOO]->({id:10})
+    """
+    When executing query:
+      """
+      MATCH (firstNode)-[anyRelationship]-(secondNode) 
+      WITH firstNode, anyRelationship, secondNode, CASE startNode(anyRelationship).id WHEN firstNode.id THEN '->' ELSE '<-' END as relationshipDirection 
+      RETURN relationshipDirection
+      """
+    Then the result should be, in any order:
+      | relationshipDirection |
+      | '->'                  |
+      | '<-'                  |
+    And no side effects
+    
+
+  Scenario: Case Map Expression in DISTINCT return
+    Given an empty graph
+    And having executed:
+    """
+    CREATE ({language: 'eng'})
+    """
+    When executing query:
+      """
+      MATCH (t)
+      RETURN DISTINCT {
+          currentTopic: {
+              title: CASE "eng" WHEN t.language THEN "English" ELSE "other" END
+          }
+      } AS result
+      """
+    Then the result should be, in any order:
+      | result                             |
+      | {currentTopic: {title: 'English'}} |
+    And no side effects
+    
