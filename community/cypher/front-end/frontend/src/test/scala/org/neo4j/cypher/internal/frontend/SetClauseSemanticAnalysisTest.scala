@@ -20,6 +20,7 @@ import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.GqlParams
 
 class SetClauseSemanticAnalysisTest
     extends CypherFunSuite
@@ -73,7 +74,7 @@ class SetClauseSemanticAnalysisTest
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError.invalidEntityType(
         "Map",
-        "var",
+        GqlParams.StringParam.ident.process("var"),
         List("Node", "Relationship"),
         "Type mismatch: expected Node or Relationship but was Map",
         InputPosition(25, 1, 26)
@@ -113,7 +114,7 @@ class SetClauseSemanticAnalysisTest
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
       SemanticError.invalidEntityType(
         "Relationship",
-        "r",
+        GqlParams.StringParam.ident.process("r"),
         List("Map"),
         "Type mismatch: expected Map but was Relationship",
         InputPosition(27, 1, 28)
@@ -129,7 +130,7 @@ class SetClauseSemanticAnalysisTest
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
       SemanticError.invalidEntityType(
         "Node",
-        "n",
+        GqlParams.StringParam.ident.process("n"),
         List("Map"),
         "Type mismatch: expected Map but was Node",
         InputPosition(27, 1, 28)
@@ -145,7 +146,7 @@ class SetClauseSemanticAnalysisTest
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
       SemanticError.invalidEntityType(
         "Relationship",
-        "r",
+        GqlParams.StringParam.ident.process("r"),
         List("Map"),
         "Type mismatch: expected Map but was Relationship",
         InputPosition(28, 1, 29)
@@ -161,7 +162,7 @@ class SetClauseSemanticAnalysisTest
     runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
       SemanticError.invalidEntityType(
         "Node",
-        "n",
+        GqlParams.StringParam.ident.process("n"),
         List("Map"),
         "Type mismatch: expected Map but was Node",
         InputPosition(28, 1, 29)

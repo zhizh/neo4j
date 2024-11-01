@@ -19,6 +19,7 @@ package org.neo4j.cypher.internal.frontend
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
+import org.neo4j.gqlstatus.GqlParams
 
 class RemoveClauseSemanticAnalysisTest
     extends CypherFunSuite
@@ -72,7 +73,7 @@ class RemoveClauseSemanticAnalysisTest
     runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError.invalidEntityType(
         "Map",
-        "var",
+        GqlParams.StringParam.ident.process("var"),
         List("Node", "Relationship"),
         "Type mismatch: expected Node or Relationship but was Map",
         InputPosition(28, 1, 29)
