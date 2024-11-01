@@ -50,9 +50,9 @@ class QuantifiedPathPatternsSemanticAnalysisTest extends NameBasedSemanticAnalys
   test("MATCH ((a)-[]->(b))+ RETURN a") {
     val result = runSemanticAnalysis()
     result.errors shouldBe empty
-    val innerA = Variable("a")(InputPosition(8, 1, 9))
+    val innerA = Variable("a")(InputPosition(8, 1, 9), Variable.isIsolatedDefault)
     result.semanticTable.types(innerA).specified shouldBe CTNode.invariant
-    val outerA = Variable("a")(InputPosition(28, 1, 29))
+    val outerA = Variable("a")(InputPosition(28, 1, 29), Variable.isIsolatedDefault)
     result.semanticTable.types(outerA).specified shouldBe CTList(CTNode).invariant
   }
 

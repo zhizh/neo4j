@@ -40,7 +40,7 @@ case class UniquenessRewriter(anonymousVariableNameGenerator: AnonymousVariableN
 
   override val innerRewriter: Rewriter = Rewriter.lift {
     case d @ Disjoint(x, y) =>
-      val innerX = Variable(anonymousVariableNameGenerator.nextName)(x.position)
+      val innerX = Variable(anonymousVariableNameGenerator.nextName)(x.position, Variable.isIsolatedDefault)
       NoneIterablePredicate(
         innerX,
         x,
@@ -48,8 +48,8 @@ case class UniquenessRewriter(anonymousVariableNameGenerator: AnonymousVariableN
       )(d.position)
 
     case u @ Unique(list) =>
-      val element1 = Variable(anonymousVariableNameGenerator.nextName)(list.position)
-      val element2 = Variable(anonymousVariableNameGenerator.nextName)(list.position)
+      val element1 = Variable(anonymousVariableNameGenerator.nextName)(list.position, Variable.isIsolatedDefault)
+      val element2 = Variable(anonymousVariableNameGenerator.nextName)(list.position, Variable.isIsolatedDefault)
       AllIterablePredicate(
         element1,
         list,

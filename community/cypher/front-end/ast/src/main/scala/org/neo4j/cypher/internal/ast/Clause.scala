@@ -1210,7 +1210,7 @@ case class Merge(pattern: NonPrefixedPatternPart, actions: Seq[MergeAction], whe
 object Merge {
   // MERGE (a)-[r]->(b {prop: a.prop})
   //                          ^
-  case object SelfReference extends DeprecatedFeature.DeprecatedIn5ErrorIn6
+  case object SelfReference extends DeprecatedFeature.DeprecatedIn5ErrorIn25
 }
 
 case class Create(pattern: Pattern.ForUpdate)(val position: InputPosition) extends CreateOrInsert
@@ -1231,7 +1231,7 @@ case class Create(pattern: Pattern.ForUpdate)(val position: InputPosition) exten
 object Create {
   // CREATE (a), (b {prop: a.prop})
   //                       ^
-  case object SelfReferenceAcrossPatterns extends DeprecatedFeature.DeprecatedIn5ErrorIn6
+  case object SelfReferenceAcrossPatterns extends DeprecatedFeature.DeprecatedIn5ErrorIn25
 }
 
 case class Insert(pattern: Pattern.ForUpdate)(val position: InputPosition) extends CreateOrInsert

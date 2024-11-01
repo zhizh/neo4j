@@ -16,8 +16,10 @@
  */
 package org.neo4j.cypher.internal.ast.factory.ddl
 
+import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.TerminateTransactionsClause
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.expressions.AllIterablePredicate
 import org.neo4j.cypher.internal.util.InputPosition
@@ -504,32 +506,36 @@ class TerminateTransactionsCommandParserTest extends AdministrationAndSchemaComm
   }
 
   test("TERMINATE TRANSACTIONS `yield` YIELD *") {
-    assertAst(
+    def expected(yieldIsEscaped: Boolean) =
       singleQuery(
         TerminateTransactionsClause(
-          Right(varFor("yield")),
+          Right(varFor("yield", yieldIsEscaped)),
           List.empty,
           yieldAll = true,
           None
         )(pos),
         withFromYield(returnAllItems)
-      ),
-      comparePosition = false
-    )
+      )
+    parsesIn[Statement] {
+      case Cypher5 => _.toAst(expected(yieldIsEscaped = true))
+      case _       => _.toAst(expected(yieldIsEscaped = false))
+    }
   }
 
   test("TERMINATE TRANSACTIONS `where` WHERE true") {
-    assertAst(
+    def expected(whereIsEscaped: Boolean) =
       singleQuery(
         TerminateTransactionsClause(
-          Right(varFor("where")),
+          Right(varFor("where", whereIsEscaped)),
           List.empty,
           yieldAll = false,
           Some(InputPosition(31, 1, 32))
         )(pos)
-      ),
-      comparePosition = false
-    )
+      )
+    parsesIn[Statement] {
+      case Cypher5 => _.toAst(expected(whereIsEscaped = true))
+      case _       => _.toAst(expected(whereIsEscaped = false))
+    }
   }
 
   test("TERMINATE TRANSACTIONS 'id' YIELD a ORDER BY a WHERE a = 1") {

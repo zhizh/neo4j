@@ -34,9 +34,9 @@ class FindRepeatedRelationshipsTest extends CypherFunSuite {
   private val pos = DummyPosition(0)
   private val pos2 = DummyPosition(1)
   private val node = NodePattern(None, None, None, None)(pos)
-  private val relR = Variable("r")(pos)
-  private val relRCopy = Variable("r")(pos2)
-  private val relS = Variable("s")(pos)
+  private val relR = Variable("r")(pos, Variable.isIsolatedDefault)
+  private val relRCopy = Variable("r")(pos2, Variable.isIsolatedDefault)
+  private val relS = Variable("s")(pos, Variable.isIsolatedDefault)
 
   test("does find repeated relationships across pattern parts") {
     val relPath0 = RelationshipChain(node, relPattern(relR), node)(pos)

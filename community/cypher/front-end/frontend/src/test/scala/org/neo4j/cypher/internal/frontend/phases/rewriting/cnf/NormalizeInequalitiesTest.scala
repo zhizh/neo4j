@@ -23,15 +23,14 @@ import org.neo4j.cypher.internal.expressions.GreaterThan
 import org.neo4j.cypher.internal.expressions.InequalityExpression
 import org.neo4j.cypher.internal.expressions.LessThan
 import org.neo4j.cypher.internal.expressions.Or
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
 class NormalizeInequalitiesTest extends CypherFunSuite with AstConstructionTestSupport {
 
-  val expression1: Expression = Variable("foo1")(pos)
-  val expression2: Expression = Variable("foo2")(pos)
+  val expression1: Expression = varFor("foo1", pos)
+  val expression2: Expression = varFor("foo2", pos)
 
-  val comparisons = List(
+  val comparisons: Seq[Expression] = List(
     Or(Equals(expression1, expression2)(pos), LessThan(expression1, expression2)(pos))(pos),
     Or(Equals(expression2, expression1)(pos), LessThan(expression1, expression2)(pos))(pos),
     Or(LessThan(expression1, expression2)(pos), Equals(expression1, expression2)(pos))(pos),

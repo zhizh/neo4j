@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.logical.builder
 
+import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.ProcedureResult
 import org.neo4j.cypher.internal.ast.ProcedureResultItem
 import org.neo4j.cypher.internal.ast.UnresolvedCall
@@ -38,23 +39,20 @@ import org.neo4j.cypher.internal.expressions.ProcedureOutput
 import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.expressions.Variable
-import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.cypher.internal.util.test_helpers.TestName
 
-class ParserTest extends CypherFunSuite with TestName {
-  private val pos = InputPosition.NONE
+class ParserTest extends CypherFunSuite with TestName with AstConstructionTestSupport {
 
   test("a AS b") {
-    Parser.parseProjections(testName) should be(Map("b" -> Variable("a")(pos)))
+    Parser.parseProjections(testName) should be(Map("b" -> varFor("a")))
   }
 
   // Finds cached property
   test("cache[n.prop] AS b") {
     Parser.parseProjections(testName) should be(Map("b" -> CachedProperty(
-      Variable("n")(pos),
-      Variable("n")(pos),
+      varFor("n"),
+      varFor("n"),
       PropertyKeyName("prop")(pos),
       NODE_TYPE
     )(pos)))
@@ -62,7 +60,7 @@ class ParserTest extends CypherFunSuite with TestName {
 
   test("b.foo + 5 AS abc09") {
     Parser.parseProjections(testName) should be(Map("abc09" -> Add(
-      Property(Variable("b")(pos), PropertyKeyName("foo")(pos))(pos),
+      Property(varFor("b"), PropertyKeyName("foo")(pos))(pos),
       SignedDecimalIntegerLiteral("5")(pos)
     )(pos)))
   }
@@ -70,32 +68,32 @@ class ParserTest extends CypherFunSuite with TestName {
   // Finds nested cached property
   test("cache[b.foo] + 5 AS abc09") {
     Parser.parseProjections(testName) should be(Map("abc09" -> Add(
-      CachedProperty(Variable("b")(pos), Variable("b")(pos), PropertyKeyName("foo")(pos), NODE_TYPE)(pos),
+      CachedProperty(varFor("b"), varFor("b"), PropertyKeyName("foo")(pos), NODE_TYPE)(pos),
       SignedDecimalIntegerLiteral("5")(pos)
     )(pos)))
   }
 
   test("n:Label") {
     Parser.parseExpression(testName) should be(HasLabelsOrTypes(
-      Variable("n")(pos),
+      varFor("n"),
       Seq(LabelOrRelTypeName("Label")(pos))
     )(pos))
   }
 
   test("`  n@31`") {
-    Parser.parseExpression(testName) should be(Variable("  n@31")(pos))
+    Parser.parseExpression(testName) should be(varFor("  n@31"))
   }
 
   test("All(rel in relationships(path) WHERE id(rel) <> 5)") {
     Parser.parseExpression(testName) should be(
       AllIterablePredicate(
         FilterScope(
-          Variable("rel")(pos),
+          varFor("rel"),
           Some(NotEquals(
             FunctionInvocation(
               FunctionName(Namespace(List())(pos), "id")(pos),
               distinct = false,
-              IndexedSeq(Variable("rel")(pos))
+              IndexedSeq(varFor("rel"))
             )(pos),
             SignedDecimalIntegerLiteral("5")(pos)
           )(pos))
@@ -103,7 +101,7 @@ class ParserTest extends CypherFunSuite with TestName {
         FunctionInvocation(
           FunctionName(Namespace(List())(pos), "relationships")(pos),
           distinct = false,
-          IndexedSeq(Variable("path")(pos))
+          IndexedSeq(varFor("path"))
         )(pos)
       )(pos)
     )
@@ -115,8 +113,8 @@ class ParserTest extends CypherFunSuite with TestName {
       ProcedureName("proc")(pos),
       Some(Seq(SignedDecimalIntegerLiteral("1")(pos))),
       Some(ProcedureResult(IndexedSeq(
-        ProcedureResultItem(None, Variable("foo")(pos))(pos),
-        ProcedureResultItem(ProcedureOutput("bar")(pos), Variable("boo")(pos))(pos)
+        ProcedureResultItem(None, varFor("foo"))(pos),
+        ProcedureResultItem(ProcedureOutput("bar")(pos), varFor("boo"))(pos)
       ))(pos))
     )(pos)
 

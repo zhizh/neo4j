@@ -882,7 +882,7 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     )(p)
 
   override def callResultItem(p: InputPosition, name: String, v: Variable): ProcedureResultItem =
-    if (v == null) ProcedureResultItem(Variable(name)(p))(p)
+    if (v == null) ProcedureResultItem(Variable(name)(p, Variable.isIsolatedDefault))(p)
     else ProcedureResultItem(ProcedureOutput(name)(v.position), v)(p)
 
   override def loadCsvClause(
@@ -1270,7 +1270,7 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
 
   // EXPRESSIONS
 
-  override def newVariable(p: InputPosition, name: String): Variable = Variable(name)(p)
+  override def newVariable(p: InputPosition, name: String): Variable = Variable(name)(p, Variable.isIsolatedDefault)
 
   override def newParameter(p: InputPosition, v: Variable, t: ParameterType): Parameter = {
     ExplicitParameter(v.name, transformParameterType(t))(p)
@@ -1414,7 +1414,7 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
 
   override def isTyped(p: InputPosition, e: Expression, javaType: ParserCypherTypeName): Expression = {
     val scalaType = convertCypherType(javaType)
-    IsTyped(e, scalaType)(p)
+    IsTyped(e, scalaType)(p, IsTyped.withDoubleColonOnlyDefault)
   }
 
   override def isNotTyped(p: InputPosition, e: Expression, javaType: ParserCypherTypeName): Expression = {
@@ -3224,7 +3224,10 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
     LabelExpression.ColonDisjunction(lhs, rhs, containsIs)(p)
 
   override def labelExpressionPredicate(subject: Expression, exp: LabelExpression): Expression =
-    LabelExpressionPredicate(subject, exp)(subject.position)
+    LabelExpressionPredicate(subject, exp)(
+      subject.position,
+      isParenthesized = LabelExpressionPredicate.isParenthesizedDefault
+    )
 
   override def nodeType(): EntityType = EntityType.NODE
 

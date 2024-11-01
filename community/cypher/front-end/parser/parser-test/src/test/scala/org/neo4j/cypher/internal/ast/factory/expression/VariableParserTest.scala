@@ -21,29 +21,26 @@ import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher25
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
-import org.neo4j.cypher.internal.expressions
 import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.parser.v5.Cypher5Parser
-import org.neo4j.cypher.internal.util.DummyPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherScalaCheckDrivenPropertyChecks
 
 class VariableParserTest extends AstParsingTestBase
     with CypherScalaCheckDrivenPropertyChecks {
-  private val t = DummyPosition(0)
 
   test("test variable can contain ascii") {
-    "abc" should parseTo[Variable](expressions.Variable("abc")(t))
-    "a123" should parseTo[Variable](expressions.Variable("a123")(t))
-    "ABC" should parseTo[Variable](expressions.Variable("ABC")(t))
-    "_abc" should parseTo[Variable](expressions.Variable("_abc")(t))
-    "abc_de" should parseTo[Variable](expressions.Variable("abc_de")(t))
+    "abc" should parseTo[Variable](varFor("abc"))
+    "a123" should parseTo[Variable](varFor("a123"))
+    "ABC" should parseTo[Variable](varFor("ABC"))
+    "_abc" should parseTo[Variable](varFor("_abc"))
+    "abc_de" should parseTo[Variable](varFor("abc_de"))
   }
 
   test("test variable can contain utf8") {
-    "aé" should parseTo[Variable](expressions.Variable("aé")(t))
-    "⁔" should parseTo[Variable](expressions.Variable("⁔")(t))
-    "＿test" should parseTo[Variable](expressions.Variable("＿test")(t))
-    "a＿test" should parseTo[Variable](expressions.Variable("a＿test")(t))
+    "aé" should parseTo[Variable](varFor("aé"))
+    "⁔" should parseTo[Variable](varFor("⁔"))
+    "＿test" should parseTo[Variable](varFor("＿test"))
+    "a＿test" should parseTo[Variable](varFor("a＿test"))
   }
 
   test("float literals parse as a variable name") {
@@ -64,10 +61,22 @@ class VariableParserTest extends AstParsingTestBase
   }
 
   test("escaped variable name") {
-    "`abc`" should parseTo[Variable](varFor("abc"))
-    "`This isn\\'t a common variable`" should parseTo[Variable](varFor("This isn\\'t a common variable"))
-    "`a``b`" should parseTo[Variable](varFor("a`b"))
-    "`````abc```" should parseTo[Variable](varFor("``abc`"))
+    "`abc`" should parseIn[Variable] {
+      case Cypher5 => _.toAst(varFor("abc", isIsolated = true))
+      case _       => _.toAst(varFor("abc", isIsolated = false))
+    }
+    "`This isn\\'t a common variable`" should parseIn[Variable] {
+      case Cypher5 => _.toAst(varFor("This isn\\'t a common variable", isIsolated = true))
+      case _       => _.toAst(varFor("This isn\\'t a common variable", isIsolated = false))
+    }
+    "`a``b`" should parseIn[Variable] {
+      case Cypher5 => _.toAst(varFor("a`b", isIsolated = true))
+      case _       => _.toAst(varFor("a`b", isIsolated = false))
+    }
+    "`````abc```" should parseIn[Variable] {
+      case Cypher5 => _.toAst(varFor("``abc`", isIsolated = true))
+      case _       => _.toAst(varFor("``abc`", isIsolated = false))
+    }
   }
 
   test("variables are not allowed uneven number of backticks") {
@@ -132,7 +141,10 @@ class VariableParserTest extends AstParsingTestBase
           cypher should parseTo[Variable](varFor(cypher))
         }
         if (cypher != "``") {
-          s"`$cypher`" should parseTo[Variable](varFor(cypher))
+          s"`$cypher`" should parseIn[Variable] {
+            case Cypher5 => _.toAst(varFor(cypher, isIsolated = true))
+            case _       => _.toAst(varFor(cypher, isIsolated = false))
+          }
         }
       }
   }

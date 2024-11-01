@@ -126,7 +126,7 @@ class SchemaCommandConverterTest extends CypherFunSuite {
     Values.stringValue("COSINE")
   ))
 
-  private val v = Variable("v")(InputPosition.NONE)
+  private val v = Variable("v")(InputPosition.NONE, Variable.isIsolatedDefault)
 
   private val label = labelName("L")
 

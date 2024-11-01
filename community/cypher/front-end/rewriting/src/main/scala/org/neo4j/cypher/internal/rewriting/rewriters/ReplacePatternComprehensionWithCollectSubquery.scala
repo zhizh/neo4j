@@ -96,7 +96,7 @@ case class ReplacePatternComprehensionWithCollectSubquery(
           // with a new anonymous variable.
           val replacementName = anonymousVariableNameGenerator.nextName
           // a def so that we keep noReferenceEqualityAmongVariables
-          def replacement = Variable(replacementName)(pathVar.position)
+          def replacement = Variable(replacementName)(pathVar.position, Variable.isIsolatedDefault)
           val replaceNamedPathVar: Expression => Expression = _.replaceAllOccurrencesBy(pathVar, replacement)
 
           val newChain = applyExpressionRewriterInSimplePattern(pattern.element, replaceNamedPathVar)
@@ -113,7 +113,7 @@ case class ReplacePatternComprehensionWithCollectSubquery(
 
       val where = predicate.map(p => Where(replaceNamedPathVar(p))(p.position))
 
-      val alias = Variable(anonymousVariableNameGenerator.nextName)(projection.position)
+      val alias = Variable(anonymousVariableNameGenerator.nextName)(projection.position, Variable.isIsolatedDefault)
       val returnItem = AliasedReturnItem(replaceNamedPathVar(projection), alias)(projection.position)
 
       val query = SingleQuery(Seq(

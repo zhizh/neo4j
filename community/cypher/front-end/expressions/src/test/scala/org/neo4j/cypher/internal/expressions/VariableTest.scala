@@ -34,6 +34,8 @@ class VariableTest extends CypherFunSuite {
 
       override def position: InputPosition = ???
 
+      override def isIsolated: Boolean = ???
+
       override def productElement(n: Int): Any = ???
 
       override def productArity: Int = ???

@@ -27,10 +27,14 @@ import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N00
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N01
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N02
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N03
+import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N50
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N51
+import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N52
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N60
 import org.neo4j.gqlstatus.GqlStatusInfoCodes.STATUS_01N62
 import org.neo4j.gqlstatus.NotificationClassification
+import org.neo4j.graphdb.InputPosition
+import org.neo4j.graphdb.Notification
 import org.neo4j.graphdb.SeverityLevel
 import org.neo4j.internal.schema.AllIndexProviderDescriptors
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedConnectComponentsPlannerPreParserOption
@@ -40,7 +44,9 @@ import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedFunctio
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedIdentifierUnicode
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedIdentifierWhitespaceUnicode
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedImportingWithInSubqueryCall
+import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedKeywordVariableInWhenOperand
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedNodeOrRelationshipOnRhsSetClause
+import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedPrecedenceOfLabelExpressionPredicate
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureField
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureReturnField
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureWithReplacement
@@ -50,6 +56,9 @@ import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedPropert
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedRelationshipTypeSeparator
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedShortestPathWithFixedLengthRelationship
 import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedTextIndexProvider
+import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedWhereVariableInNodePattern
+import org.neo4j.notifications.NotificationCodeWithDescription.deprecatedWhereVariableInRelationshipPattern
+import org.neo4j.notifications.NotificationCodeWithDescription.missingLabel
 import org.neo4j.notifications.NotificationCodeWithDescription.procedureWarning
 import org.neo4j.notifications.NotificationCodeWithDescription.unionReturnOrder
 import org.neo4j.notifications.NotificationDetail
@@ -638,7 +647,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
     )
   }
 
-  test("should not deprecate valid Union return orders") {
+  test("do not deprecate valid Union return orders") {
     val queries = Seq(
       "RETURN 'val' as one, 'val' as two UNION RETURN 'val' as one, 'val' as two",
       "MATCH (a)-[]-(b) RETURN a, b UNION MATCH (c)-[]-(d) RETURN c as a, d as b",
@@ -665,6 +674,375 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       "RETURN COUNT { MATCH (a)-[]-(b) RETURN a, b UNION ALL MATCH (a)-[]-(b) RETURN a, b }",
       "MATCH (a)-[]-(b) RETURN * UNION ALL MATCH (a)-[]-(b) RETURN *"
     )
+    assertNoDeprecations(queries)
+  }
+
+  private val propertySetsWithProp = Seq("prop: 123", "prop: (1 + 3) * 2")
+  private val warningFillersWithProp = propertySetsWithProp.map(ps => (s"where {$ps}", ps))
+  private val warningFillersWithoutProp = propertySetsWithProp.map(ps => (s"where {}", ""))
+
+  private val propWarning =
+    TestGqlStatusObject(
+      STATUS_01N52.getStatusString,
+      "warn: property key does not exist. The property `prop` does not exist. Verify that the spelling is correct.",
+      SeverityLevel.WARNING,
+      NotificationClassification.UNRECOGNIZED
+    )
+
+  test(
+    "deprecate using unescaped variable named \"where\" in node pattern if directly followed by a property key-value expression only"
+  ) {
+    val queries = Seq(
+      ("MATCH (", ") RETURN *"),
+      (s"MATCH (", ")-->() RETURN *"),
+      (s"MATCH ()-->(", ")-->() RETURN *"),
+      (s"MATCH p=( ()<--(", ")-->() ) {1,3} RETURN *"),
+      (s"MATCH ()-->(b), (b) ( ()<--(", ")-->() ) {1,3} RETURN *"),
+      (s"MATCH (a) WITH a AS where WHERE ()-->(", ")-->() RETURN *"),
+      (s"RETURN EXISTS { ()-->(", ")-->() }"),
+      (s"RETURN [ ()-->(", ")-->() | 123 * 5 ]")
+    )
+    val queriesWithProp =
+      for {
+        (filler, prop) <- warningFillersWithProp
+        (prefix, suffix) <- queries
+      } yield (s"$prefix$filler$suffix", prop)
+    val queriesWithoutProp =
+      for {
+        (filler, prop) <- warningFillersWithoutProp
+        (prefix, suffix) <- queries
+      } yield (s"$prefix$filler$suffix", prop)
+    def whereWarning(prop: String) =
+      TestGqlStatusObject(
+        STATUS_01N01.getStatusString,
+        s"warn: feature deprecated with replacement. (where {$prop}) is deprecated. It is replaced by (`where` {$prop}).",
+        SeverityLevel.WARNING,
+        NotificationClassification.DEPRECATION
+      )
+    queriesWithProp.foreach {
+      case (query, prop) =>
+        assertNotification(
+          Seq(query),
+          shouldContainNotification = true,
+          (ip: InputPosition) => deprecatedWhereVariableInNodePattern(ip, "where", s"{$prop}"),
+          List(
+            whereWarning(prop),
+            propWarning,
+            testOmittedResult
+          ),
+          cypherVersions = Set(CypherVersion.cypher5)
+        )
+    }
+    queriesWithoutProp.foreach {
+      case (query, prop) =>
+        assertNotification(
+          Seq(query),
+          shouldContainNotification = true,
+          (ip: InputPosition) => deprecatedWhereVariableInNodePattern(ip, "where", s"{$prop}"),
+          List(
+            whereWarning(prop),
+            testOmittedResult
+          ),
+          cypherVersions = Set(CypherVersion.cypher5)
+        )
+    }
+  }
+
+  test(
+    "deprecate using unescaped variable named \"where\" in relationship pattern if directly followed by a property key-value expression only"
+  ) {
+    val queries = Seq(
+      ("MATCH ()-[", "]->() RETURN *"),
+      ("MATCH ()<-[", "]-() RETURN *"),
+      ("MATCH ()-[", "]-() RETURN *"),
+      ("MATCH ()-->()<-[", "]-() RETURN *"),
+      ("MATCH p=( ()-[", "]->() ) {1,3} RETURN *"),
+      ("MATCH ()-->(b), (b) ( ()-[", "]->() ) {1,3} RETURN *"),
+      ("MATCH ()-[r]->() WITH r AS where WHERE ()-[", "]->() RETURN *"),
+      ("RETURN EXISTS { ()-[", "]->() }"),
+      ("RETURN [ ()-[", "]->() | 123 * 5 ]")
+    )
+    val queriesWithProp =
+      for {
+        (filler, prop) <- warningFillersWithProp
+        (prefix, suffix) <- queries
+      } yield (s"$prefix$filler$suffix", prop)
+    val queriesWithoutProp =
+      for {
+        (filler, prop) <- warningFillersWithoutProp
+        (prefix, suffix) <- queries
+      } yield (s"$prefix$filler$suffix", prop)
+    def whereWarning(prop: String) =
+      TestGqlStatusObject(
+        STATUS_01N01.getStatusString,
+        s"warn: feature deprecated with replacement. -[where {$prop}]- is deprecated. It is replaced by -[`where` {$prop}]-.",
+        SeverityLevel.WARNING,
+        NotificationClassification.DEPRECATION
+      )
+    queriesWithProp.foreach {
+      case (query, prop) =>
+        assertNotification(
+          Seq(query),
+          shouldContainNotification = true,
+          (ip: InputPosition) => deprecatedWhereVariableInRelationshipPattern(ip, "where", s"{$prop}"),
+          List(
+            whereWarning(prop),
+            propWarning,
+            testOmittedResult
+          ),
+          cypherVersions = Set(CypherVersion.cypher5)
+        )
+    }
+    queriesWithoutProp.foreach {
+      case (query, prop) =>
+        assertNotification(
+          Seq(query),
+          shouldContainNotification = true,
+          (ip: InputPosition) => deprecatedWhereVariableInRelationshipPattern(ip, "where", s"{$prop}"),
+          List(
+            whereWarning(prop),
+            testOmittedResult
+          ),
+          cypherVersions = Set(CypherVersion.cypher5)
+        )
+    }
+  }
+
+  private val noWarningFillersWithoutWHERE =
+    Seq("where", "`where`", "where :Something") ++ ("" +: propertySetsWithProp).flatMap(ps =>
+      Seq(
+        s"where :Something {$ps}",
+        s"`where` {$ps}"
+      )
+    )
+  private val noWarningFillersWithWHERE = Seq("where WHERE true", "where :Something WHERE true")
+
+  test(
+    "do not deprecate using unescaped variable named \"where\" in node pattern if not directly followed by a property key-value expression only"
+  ) {
+    val queries = (noWarningFillersWithoutWHERE ++ noWarningFillersWithWHERE).flatMap(filler =>
+      Seq(
+        s"MATCH ($filler) RETURN *",
+        s"MATCH ($filler)-->() RETURN *",
+        s"MATCH ()-->($filler)-->() RETURN *",
+        s"MATCH p=( ()<--($filler)-->() ) {1,3} RETURN *",
+        s"MATCH ()-->(b), (b) ( ()<--($filler)-->() ) {1,3} RETURN *",
+        s"RETURN EXISTS { ()-->($filler)-->() }",
+        s"RETURN [ ()-->($filler)-->() | 123 * 5 ]"
+      )
+        ++ noWarningFillersWithoutWHERE.flatMap(filler =>
+          Seq(
+            s"MATCH (a) WITH a AS where WHERE ()-->($filler)-->() RETURN *"
+          )
+        )
+    )
+    assertNoDeprecations(queries)
+  }
+
+  test(
+    "do not warn about unescaped variable named \"where\" in relationship pattern if not directly followed by a property key-value expression only"
+  ) {
+    val queries = (noWarningFillersWithoutWHERE ++ noWarningFillersWithWHERE).flatMap(filler =>
+      Seq(
+        s"MATCH ()-[$filler]->() RETURN *",
+        s"MATCH ()<-[$filler]-() RETURN *",
+        s"MATCH ()-[$filler]-() RETURN *",
+        s"MATCH ()-->()<-[$filler]-() RETURN *",
+        s"MATCH p=( ()-[$filler]->() ) {1,3} RETURN *",
+        s"MATCH ()-->(b), (b) ( ()-[$filler]->() ) {1,3} RETURN *",
+        s"RETURN EXISTS { ()-[$filler]->() }",
+        s"RETURN [ ()-[$filler]->() | 123 * 5 ]"
+      )
+        ++ noWarningFillersWithoutWHERE.flatMap(filler =>
+          Seq(
+            s"MATCH ()-[r]->() WITH r AS where WHERE ()-[$filler]->() RETURN *"
+          )
+        )
+    )
+    assertNoDeprecations(queries)
+  }
+
+  private def labelWarning(label: String) =
+    TestGqlStatusObject(
+      STATUS_01N50.getStatusString,
+      s"warn: label does not exist. The label `$label` does not exist. Verify that the spelling is correct.",
+      SeverityLevel.WARNING,
+      NotificationClassification.UNRECOGNIZED
+    )
+
+  test(
+    "deprecate unparenthesized label expression predicate as right-hand side operators of `+`"
+  ) {
+    val labelExpressionPredicates = Seq(
+      ("n:A", Seq("A")),
+      ("n:A&B", Seq("A", "B")),
+      ("n:A|B", Seq("A", "B")),
+      ("n:A|(B&!C)", Seq("A", "B", "C")),
+      ("n IS A", Seq("A")),
+      ("n IS A&B", Seq("A", "B")),
+      ("n IS A|B", Seq("A", "B")),
+      ("n IS A|(B&!C)", Seq("A", "B", "C"))
+    )
+    def isToColon(labelExpressionPredicate: String) = labelExpressionPredicate.replaceFirst("n IS ", "n:")
+    val queries = labelExpressionPredicates.flatMap {
+      case (labelExpressionPredicate, labels) =>
+        val lex = isToColon(labelExpressionPredicate)
+        Seq(
+          (s"MATCH (n) RETURN [1,'abc',3] + $labelExpressionPredicate AS x", lex, labels),
+          (s"MATCH (n) WHERE size([1,'abc',3] + $labelExpressionPredicate) = 4 RETURN 1 AS x", lex, labels),
+          (s"WITH [1,'abc',3] AS y MATCH (n) WITH size(y + $labelExpressionPredicate) AS x RETURN x", lex, labels),
+          (
+            s"WITH [1,'abc',3] AS y MATCH (n) WITH size(range(2, 18, 3) + y + $labelExpressionPredicate) AS x RETURN x",
+            lex,
+            labels
+          )
+        )
+    }
+    queries.foreach {
+      case (query, labelExpressionPredicate, labels) =>
+        assertNotification(
+          Seq(query),
+          shouldContainNotification = true,
+          (ip: InputPosition) => deprecatedPrecedenceOfLabelExpressionPredicate(ip, labelExpressionPredicate),
+          List(
+            TestGqlStatusObject(
+              STATUS_01N01.getStatusString,
+              s"warn: feature deprecated with replacement. ... + $labelExpressionPredicate is deprecated. It is replaced by ... + ($labelExpressionPredicate).",
+              SeverityLevel.WARNING,
+              NotificationClassification.DEPRECATION
+            ),
+            testOmittedResult
+          ) ++ labels.map(labelWarning),
+          cypherVersions = Set(CypherVersion.cypher5)
+        )
+    }
+  }
+
+  test(
+    "do not warn about unparenthesized label expression predicate as right-hand side operators of \"+\""
+  ) {
+    val labelExpressions = Seq(
+      ("n:A", Seq("A")),
+      ("n:A&B", Seq("A", "B")),
+      ("n:A|B", Seq("A", "B")),
+      ("n:A|(B&!C)", Seq("A", "B", "C")),
+      ("n IS A", Seq("A")),
+      ("n IS A&B", Seq("A", "B")),
+      ("n IS A|B", Seq("A", "B")),
+      ("n IS A|(B&!C)", Seq("A", "B", "C"))
+    )
+    val queries = labelExpressions.flatMap {
+      case (labelExpression, labels) =>
+        Seq(
+          (s"MATCH (n) RETURN [1,'abc',3] + ($labelExpression) AS x", labels),
+          (s"MATCH (n) WHERE size([1,'abc',3] + ($labelExpression)) = 4 RETURN 1 AS x", labels),
+          (s"WITH [1,'abc',3] AS y MATCH (n) WITH size(y + ($labelExpression)) AS x RETURN x", labels),
+          (s"WITH [1,'abc',3] AS y MATCH (n) WITH size(range(2, 18, 3) + y + ($labelExpression)) AS x RETURN x", labels)
+        )
+    }
+    queries.foreach {
+      case (query, labels) =>
+        assertNotification(
+          Seq(query),
+          shouldContainNotification = true,
+          (ip: InputPosition) => missingLabel(ip, NotificationDetail.missingLabel(labels.head), labels.head),
+          (labels.map(labelWarning) :+ testOmittedResult).toList,
+          cypherVersions = Set(CypherVersion.cypher5)
+        )
+    }
+  }
+
+  test(
+    "deprecate using unescaped variable named \"is\", \"contains\", or \"in\" in when operand of simple case expression"
+  ) {
+    def warning(variable: String, rhs: String): (TestGqlStatusObject, InputPosition => Notification) =
+      (
+        TestGqlStatusObject(
+          STATUS_01N01.getStatusString,
+          s"warn: feature deprecated with replacement. WHEN $variable$rhs is deprecated. It is replaced by WHEN `$variable`$rhs.",
+          SeverityLevel.WARNING,
+          NotificationClassification.DEPRECATION
+        ),
+        (ip: InputPosition) => deprecatedKeywordVariableInWhenOperand(ip, variable, rhs)
+      )
+    val whenOperands = Seq(
+      ("'abc' AS is", "is :: STRING", warning("is", " :: STRING")),
+      ("1 AS contains", "contains + 1", warning("contains", " + 1")),
+      ("1 AS contains", "contains + \"abc\"", warning("contains", " + \"abc\"")),
+      ("1 AS contains", "contains + 5 * 4", warning("contains", " + 5 * 4")),
+      ("1 AS contains", "contains - 1", warning("contains", " - 1")),
+      ("1 AS contains", "contains - 0.5", warning("contains", " - 0.5")),
+      ("1 AS contains", "contains - 5 * 4", warning("contains", " - 5 * 4")),
+      ("[1, true] AS in", "in [ 1 ]", warning("in", "[1]")),
+      ("[1, true] AS in", "in [ 5 * 4 ]", warning("in", "[5 * 4]")),
+      ("{a: 1, abc: true} AS in", "in [ \"a\" ]", warning("in", "[\"a\"]")),
+      ("{a: 1, abc: true} AS in", "in [ \"a\" + \"bc\" ]", warning("in", "[\"a\" + \"bc\"]"))
+    )
+    val caseExpressions = whenOperands.flatMap {
+      case (proj, when, expected) => Seq(
+          (proj, s"CASE x WHEN $when THEN 1 END", expected),
+          (proj, s"CASE x WHEN $when THEN 1 ELSE 2 END", expected),
+          (proj, s"CASE x WHEN $when THEN 1 WHEN [1, 'abc'][x] THEN 2 ELSE 3 END", expected),
+          (proj, s"CASE x WHEN 0 THEN 0 WHEN $when THEN 1 WHEN [1, 'abc'][x] THEN 2 ELSE 3 END", expected)
+        )
+    }
+    val queries = caseExpressions.map {
+      case (proj, caseExpression, expected) => (s"WITH 1 AS x, $proj RETURN $caseExpression AS x", expected)
+    }
+    queries.foreach {
+      case (query, (gqlStatusObject, createNotification)) =>
+        assertNotification(
+          Seq(query),
+          shouldContainNotification = true,
+          createNotification,
+          List(
+            gqlStatusObject,
+            testOmittedResult
+          ),
+          cypherVersions = Set(CypherVersion.cypher5)
+        )
+    }
+  }
+
+  test(
+    "do not warn using unescaped variable named `is`, `contains`, or `in` in when operand of simple case expression"
+  ) {
+    val whenOperands = Seq(
+      ("'abc' AS is", "`is` :: STRING"),
+      ("'abc' AS is", "(is) :: STRING"),
+      ("'abc' AS is", "is IS :: STRING"),
+      ("1 AS contains", "`contains` + 1"),
+      ("1 AS contains", "(contains) + 1"),
+      ("1 AS contains", "`contains` + \"abc\""),
+      ("1 AS contains", "(contains) + \"abc\""),
+      ("1 AS contains", "`contains` + 5 * 4"),
+      ("1 AS contains", "(contains) + 5 * 4"),
+      ("1 AS contains", "`contains` - 1"),
+      ("1 AS contains", "(contains) - 1"),
+      ("1 AS contains", "`contains` - 0.5"),
+      ("1 AS contains", "(contains) - 0.5"),
+      ("1 AS contains", "`contains` - 5 * 4"),
+      ("1 AS contains", "(contains) - 5 * 4"),
+      ("[1, true] AS in", "`in` [ 1 ]"),
+      ("[1, true] AS in", "(in) [ 1 ]"),
+      ("[1, true] AS in", "`in` [ 5 * 4 ]"),
+      ("[1, true] AS in", "(in) [ 5 * 4 ]"),
+      ("{a: 1, abc: true} AS in", "`in` [ \"a\" ]"),
+      ("{a: 1, abc: true} AS in", "(in) [ \"a\" ]"),
+      ("{a: 1, abc: true} AS in", "`in` [ \"a\" + \"bc\" ]"),
+      ("{a: 1, abc: true} AS in", "(in) [ \"a\" + \"bc\" ]")
+    )
+    val caseExpressions = whenOperands.flatMap {
+      case (proj, when) => Seq(
+          (proj, s"CASE x WHEN $when THEN 1 END"),
+          (proj, s"CASE x WHEN $when THEN 1 ELSE 2 END"),
+          (proj, s"CASE x WHEN $when THEN 1 WHEN [1, 'abc'][x] THEN 2 ELSE 3 END"),
+          (proj, s"CASE x WHEN 0 THEN 0 WHEN $when THEN 1 WHEN [1, 'abc'][x] THEN 2 ELSE 3 END")
+        )
+    }
+    val queries = caseExpressions.map {
+      case (proj, caseExpression) => s"WITH 1 AS x, $proj RETURN $caseExpression AS x"
+    }
     assertNoDeprecations(queries)
   }
 
@@ -1134,7 +1512,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N00.getStatusString,
-          "warn: feature deprecated. CALL subquery without a variable scope clause is now deprecated. Use CALL () { ... }",
+          "warn: feature deprecated. CALL subquery without a variable scope clause is deprecated. Use CALL () { ... }",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),
@@ -1155,7 +1533,7 @@ abstract class DeprecationAcceptanceTestBase extends CypherFunSuite with BeforeA
       List(
         TestGqlStatusObject(
           STATUS_01N00.getStatusString,
-          "warn: feature deprecated. CALL subquery without a variable scope clause is now deprecated. Use CALL (a) { ... }",
+          "warn: feature deprecated. CALL subquery without a variable scope clause is deprecated. Use CALL (a) { ... }",
           SeverityLevel.WARNING,
           NotificationClassification.DEPRECATION
         ),

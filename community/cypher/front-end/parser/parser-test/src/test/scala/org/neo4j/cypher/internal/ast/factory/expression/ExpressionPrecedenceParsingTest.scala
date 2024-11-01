@@ -20,6 +20,7 @@ import org.neo4j.cypher.internal.ast.CollectExpression
 import org.neo4j.cypher.internal.ast.CountExpression
 import org.neo4j.cypher.internal.ast.ExistsExpression
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.ast.test.util.LegacyAstParsingTestSupport
@@ -223,8 +224,21 @@ class ExpressionPrecedenceParsingTest extends AstParsingTestBase with LegacyAstP
     "1 - 2 IS NULL" should parseTo[Expression](isNull(subtract(literalInt(1), literalInt(2))))
 
     //  ([true] + n.p) :: STRING
-    " [true] + n.p :: STRING" should parseTo[Expression] {
-      isTyped(add(listOf(trueLiteral), prop("n", "p")), StringType(isNullable = true)(pos))
+    " [true] + n.p :: STRING" should parseIn[Expression] {
+      case Cypher5 => _.toAst(
+          isTyped(
+            add(listOf(trueLiteral), prop("n", "p")),
+            StringType(isNullable = true)(pos),
+            withDoubleColonOnly = true
+          )
+        )
+      case _ => _.toAst(
+          isTyped(
+            add(listOf(trueLiteral), prop("n", "p")),
+            StringType(isNullable = true)(pos),
+            withDoubleColonOnly = false
+          )
+        )
     }
 
     // (3 - 4) IS NOT TYPED BOOLEAN
@@ -366,6 +380,32 @@ class ExpressionPrecedenceParsingTest extends AstParsingTestBase with LegacyAstP
           single = true
         )(pos)),
         caseExpression(Some(varFor("x")), Some(literalInt(2)), (equals(varFor("x"), trueLiteral), literalInt(1)))
+      )
+    }
+
+    // parenthesized variables: (EXISTS) {RETURN 42}
+    "(EXISTS) {RETURN 42}" should parseIn[Expression] {
+      case Cypher5JavaCc => _.withoutErrors
+      case _             => _.withMessageStart("Invalid input '{'")
+    }
+
+    // parenthesized variables: (x).prop + y
+    "(x).prop + y" should parse[Expression].toAst {
+      add(
+        prop(
+          varFor("x", isIsolated = true),
+          "prop"
+        ),
+        varFor("y")
+      )
+    }
+    "(`x`).prop + `y`" should parse[Expression].toAst {
+      add(
+        prop(
+          varFor("x", isIsolated = true),
+          "prop"
+        ),
+        varFor("y", isIsolated = true)
       )
     }
   }

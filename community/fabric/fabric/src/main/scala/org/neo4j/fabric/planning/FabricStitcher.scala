@@ -117,7 +117,10 @@ case class FabricStitcher(
     }
     val clausesWithoutInsertedWith = if (originalExec.importColumns.isEmpty) clauses else clauses.tail
     val unwind =
-      ast.Unwind(ExplicitParameter(Apply.CALL_IN_TX_ROWS, CTAny)(pos), Variable(Apply.CALL_IN_TX_ROW)(pos))(pos)
+      ast.Unwind(
+        ExplicitParameter(Apply.CALL_IN_TX_ROWS, CTAny)(pos),
+        Variable(Apply.CALL_IN_TX_ROW)(pos, Variable.isIsolatedDefault)
+      )(pos)
     val postUnwindWith = With(ReturnItems(
       includeExisting = false,
       items =
@@ -125,10 +128,10 @@ case class FabricStitcher(
           varName <- originalExec.importColumns :+ Apply.CALL_IN_TX_ROW_ID
         } yield AliasedReturnItem(
           expression = Property(
-            Variable(Apply.CALL_IN_TX_ROW)(pos),
+            Variable(Apply.CALL_IN_TX_ROW)(pos, Variable.isIsolatedDefault),
             (org.neo4j.cypher.internal.expressions PropertyKeyName varName)(pos)
           )(pos),
-          variable = Variable(varName)(pos)
+          variable = Variable(varName)(pos, Variable.isIsolatedDefault)
         )(pos)
     )(pos))(pos)
 
@@ -137,7 +140,7 @@ case class FabricStitcher(
       ScopeClauseSubqueryCall(
         SingleQuery(clausesWithoutInsertedWith)(pos),
         isImportingAll = false,
-        originalExec.importColumns.map(x => Variable(x)(pos)),
+        originalExec.importColumns.map(x => Variable(x)(pos, Variable.isIsolatedDefault)),
         Some(adjustedParameters),
         optional = false
       )(pos)
@@ -180,7 +183,7 @@ case class FabricStitcher(
 
     inTransactionsParameters.copy(reportParams =
       Some(SubqueryCall.InTransactionsReportParameters(
-        Variable(Apply.REPORT_VARIABLE)(inTransactionsParameters.position)
+        Variable(Apply.REPORT_VARIABLE)(inTransactionsParameters.position, Variable.isIsolatedDefault)
       )(inTransactionsParameters.position))
     )(inTransactionsParameters.position)
   }
@@ -425,7 +428,7 @@ case class FabricStitcher(
           val inner = stitch(apply.inner, outermost = false, Some(before.lastUse))
           val innerImports = inner.query.importColumns
           val scopeImports = apply.inner.importColumns
-          val imports = (innerImports ++ scopeImports).distinct.map(Variable(_)(apply.pos))
+          val imports = (innerImports ++ scopeImports).distinct.map(Variable(_)(apply.pos, Variable.isIsolatedDefault))
           before.copy(
             clauses = before.clauses :+ ScopeClauseSubqueryCall(
               inner.query,
@@ -450,7 +453,7 @@ private object Ast {
     if (cond) Some(prod) else None
 
   private def variable(name: String, pos: InputPosition) =
-    internal.expressions.Variable(name)(pos)
+    internal.expressions.Variable(name)(pos, Variable.isIsolatedDefault)
 
   def paramBindings(columns: Seq[String], pos: InputPosition): Option[With] =
     conditionally(

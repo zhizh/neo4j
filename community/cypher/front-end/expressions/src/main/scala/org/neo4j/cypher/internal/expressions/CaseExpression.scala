@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.expressions
 
+import org.neo4j.cypher.internal.util.DeprecatedFeature
 import org.neo4j.cypher.internal.util.InputPosition
 
 case class CaseExpression(
@@ -43,4 +44,10 @@ object CaseExpression {
     default: Option[Expression]
   )(position: InputPosition): CaseExpression =
     CaseExpression(expression, alternatives.toIndexedSeq, default)(position)
+
+  // WHEN is :: TYPE
+  // WHEN contains + x
+  // WHEN contains - x
+  // WHEN in [ x ]
+  case object KeywordVariablesInWhenOperand extends DeprecatedFeature.DeprecatedIn5ErrorIn25
 }

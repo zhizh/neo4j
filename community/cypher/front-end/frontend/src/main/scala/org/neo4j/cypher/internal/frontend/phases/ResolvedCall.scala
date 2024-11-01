@@ -85,7 +85,7 @@ object ResolvedCall {
     position: InputPosition
   ): IndexedSeq[ProcedureResultItem] =
     signature.outputSignature.getOrElse(Seq.empty).map {
-      field => ProcedureResultItem(Variable(field.name)(position))(position)
+      field => ProcedureResultItem(Variable(field.name)(position, Variable.isIsolatedDefault))(position)
     }.toIndexedSeq
 }
 

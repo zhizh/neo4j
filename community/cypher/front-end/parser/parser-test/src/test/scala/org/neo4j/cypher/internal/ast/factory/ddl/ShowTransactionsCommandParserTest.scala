@@ -17,7 +17,9 @@
 package org.neo4j.cypher.internal.ast.factory.ddl
 
 import org.neo4j.cypher.internal.ast.ShowTransactionsClause
+import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.expressions.AllIterablePredicate
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -697,36 +699,40 @@ class ShowTransactionsCommandParserTest extends AdministrationAndSchemaCommandPa
   }
 
   test("SHOW TRANSACTIONS `yield` YIELD *") {
-    assertAstVersionBased(
-      fromCypher5 =>
-        singleQuery(
-          ShowTransactionsClause(
-            Right(varFor("yield")),
-            None,
-            List.empty,
-            yieldAll = true,
-            fromCypher5
-          )(pos),
-          withFromYield(returnAllItems)
-        ),
-      comparePosition = false
-    )
+    def expected(yieldIsEscaped: Boolean, returnCypher5Types: Boolean) =
+      singleQuery(
+        ShowTransactionsClause(
+          Right(varFor("yield", yieldIsEscaped)),
+          None,
+          List.empty,
+          yieldAll = true,
+          returnCypher5Types
+        )(pos),
+        withFromYield(returnAllItems)
+      )
+    parsesIn[Statement] {
+      case Cypher5JavaCc => _.toAst(expected(yieldIsEscaped = false, returnCypher5Types = true))
+      case Cypher5       => _.toAst(expected(yieldIsEscaped = true, returnCypher5Types = true))
+      case _             => _.toAst(expected(yieldIsEscaped = false, returnCypher5Types = false))
+    }
   }
 
   test("SHOW TRANSACTIONS `where` WHERE true") {
-    assertAstVersionBased(
-      fromCypher5 =>
-        singleQuery(
-          ShowTransactionsClause(
-            Right(varFor("where")),
-            Some(where(trueLiteral)),
-            List.empty,
-            yieldAll = false,
-            fromCypher5
-          )(pos)
-        ),
-      comparePosition = false
-    )
+    def expected(whereIsEscaped: Boolean, returnCypher5Types: Boolean) =
+      singleQuery(
+        ShowTransactionsClause(
+          Right(varFor("where", whereIsEscaped)),
+          Some(where(trueLiteral)),
+          List.empty,
+          yieldAll = false,
+          returnCypher5Types
+        )(pos)
+      )
+    parsesIn[Statement] {
+      case Cypher5JavaCc => _.toAst(expected(whereIsEscaped = false, returnCypher5Types = true))
+      case Cypher5       => _.toAst(expected(whereIsEscaped = true, returnCypher5Types = true))
+      case _             => _.toAst(expected(whereIsEscaped = false, returnCypher5Types = false))
+    }
   }
 
   test("SHOW TRANSACTIONS YIELD a ORDER BY a WHERE a = 1") {

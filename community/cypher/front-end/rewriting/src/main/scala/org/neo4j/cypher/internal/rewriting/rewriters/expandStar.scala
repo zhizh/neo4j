@@ -95,7 +95,7 @@ case class expandStar(state: SemanticState) extends Rewriter {
     val expandedItems = orderedSymbolNames.map { id =>
       // We use the position of the clause for variables in new return items.
       // If the position was one of previous declaration, that could destroy scoping.
-      val expr = Variable(id)(clausePos)
+      val expr = Variable(id)(clausePos, Variable.isIsolatedDefault)
       val alias = expr.copyId
       AliasedReturnItem(expr, alias)(clausePos)
     }
@@ -126,7 +126,7 @@ case class expandStar(state: SemanticState) extends Rewriter {
     } yield report.reportAs.name
     val symbolNames = scope.symbolNames ++ outerScopeSymbols -- returnVariables -- reportVariable
     symbolNames.map { id =>
-      Variable(id)(clausePos)
+      Variable(id)(clausePos, Variable.isIsolatedDefault)
     }.toSeq
   }
 }

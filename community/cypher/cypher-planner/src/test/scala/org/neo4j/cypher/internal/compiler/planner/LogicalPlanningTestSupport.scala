@@ -31,6 +31,7 @@ import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.ASTAnnotationMap
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.Hint
+import org.neo4j.cypher.internal.ast.IsTyped
 import org.neo4j.cypher.internal.ast.SetExactPropertiesFromMapItem
 import org.neo4j.cypher.internal.ast.SetIncludingPropertiesFromMapItem
 import org.neo4j.cypher.internal.ast.Statement
@@ -72,6 +73,7 @@ import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.SemanticDirection
+import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.frontend.phases.AstRewriting
 import org.neo4j.cypher.internal.frontend.phases.BaseState
 import org.neo4j.cypher.internal.frontend.phases.FieldSignature
@@ -100,6 +102,7 @@ import org.neo4j.cypher.internal.ir.RegularSinglePlannerQuery
 import org.neo4j.cypher.internal.ir.Selections
 import org.neo4j.cypher.internal.ir.SimplePatternLength
 import org.neo4j.cypher.internal.ir.SinglePlannerQuery
+import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.logical.plans.LogicalPlan
 import org.neo4j.cypher.internal.logical.plans.ordering.ProvidedOrder
 import org.neo4j.cypher.internal.options.CypherDebugOptions
@@ -175,6 +178,18 @@ trait LogicalPlanningTestSupport extends AstConstructionTestSupport with Logical
       case u: UnionAll                          => u.copy(differentReturnOrderAllowed = true)(u.position)
       case u: SetExactPropertiesFromMapItem     => u.copy(rhsMustBeMap = false)(u.position)
       case u: SetIncludingPropertiesFromMapItem => u.copy(rhsMustBeMap = false)(u.position)
+      case v: Variable if v.isIsolated          =>
+        // An isolated variable e.g. "`a`", "(a)" is tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the tracking.
+        v.copy()(v.position, Variable.isIsolatedDefault)
+      case it: IsTyped if it.withDoubleColonOnly =>
+        // Type predicates with only a double column e.g. "x :: INT" are tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the difference.
+        it.copy()(it.position, IsTyped.withDoubleColonOnlyDefault)
+      case lep: LabelExpressionPredicate if lep.isParenthesized =>
+        // Label expression predicates that are parenthesized e.g. "(n:L)" are tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the difference.
+        lep.copy()(lep.position, LabelExpressionPredicate.isParenthesizedDefault)
     }))
   }
 

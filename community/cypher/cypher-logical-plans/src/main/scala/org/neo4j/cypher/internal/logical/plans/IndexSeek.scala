@@ -31,7 +31,6 @@ import org.neo4j.cypher.internal.expressions.RelationshipTypeToken
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.expressions.StringLiteral
 import org.neo4j.cypher.internal.expressions.UnPositionedVariable.varFor
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.LabelId
 import org.neo4j.cypher.internal.util.NonEmptyList
@@ -650,7 +649,7 @@ object IndexSeek {
       value match {
         case INT(int)             => SignedDecimalIntegerLiteral(int)(pos)
         case STRING(str)          => StringLiteral(str)(pos.withInputLength(0))
-        case ID_PATTERN(variable) => Variable(variable)(pos)
+        case ID_PATTERN(variable) => varFor(variable)
         case PARAM =>
           if (paramQueue.isEmpty) throw new IllegalArgumentException(
             "Cannot use parameter syntax '???' without providing parameter expression 'paramExpr'"

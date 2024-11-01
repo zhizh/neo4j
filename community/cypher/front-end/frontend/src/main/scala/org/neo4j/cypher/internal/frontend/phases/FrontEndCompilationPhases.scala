@@ -57,7 +57,9 @@ trait FrontEndCompilationPhases {
   def parsingBase(config: ParsingConfig): Transformer[BaseContext, BaseState, BaseState] = {
     Parse(config.antlrParserEnabled, config.cypherVersion) andThen
       CollectSyntaxUsageMetrics andThen
-      SyntaxDeprecationWarningsAndReplacements(Deprecations.syntacticallyDeprecatedFeatures) andThen
+      SyntaxDeprecationWarningsAndReplacements(
+        Deprecations.SyntacticallyDeprecatedFeatures(config.cypherVersion)
+      ) andThen
       PreparatoryRewriting andThen
       If((_: BaseState) => config.obfuscateLiterals)(
         extractSensitiveLiterals

@@ -17,6 +17,7 @@
 package org.neo4j.cypher.internal.ast.factory.expression
 
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.expressions.Expression
@@ -38,7 +39,14 @@ class ExpressionPostfixParserTest extends AstParsingTestBase {
   }
 
   test("`v`.`1`") {
-    parsesTo[Expression](prop("v", "1"))
+    parsesIn[Expression] {
+      case Cypher5 => _.toAst(
+          propExpression(varFor("v", isIsolated = true), "1")
+        )
+      case _ => _.toAst(
+          prop("v", "1")
+        )
+    }
   }
 
   test("v.ab.`c`.d.`e`.f.g") {

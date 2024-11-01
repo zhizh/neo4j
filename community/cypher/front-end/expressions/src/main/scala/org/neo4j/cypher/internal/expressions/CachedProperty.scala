@@ -51,7 +51,7 @@ trait ASTCachedProperty extends LogicalProperty {
    */
   def propertyKey: PropertyKeyName
 
-  override def map: Expression = Variable(entityName)(this.position)
+  override def map: Expression = Variable(entityName)(this.position, Variable.isIsolatedDefault)
 
   /**
    * @return a textual representation of the entity and the property in the form `n.prop`

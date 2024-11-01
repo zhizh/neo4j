@@ -410,7 +410,7 @@ trait ExpressionBuilder extends Cypher25ParserListener {
       case _               => false
     }
     if (not) IsNotTyped(lhs, cypherType)(pos(ctx))
-    else IsTyped(lhs, cypherType)(pos(ctx))
+    else IsTyped(lhs, cypherType)(pos(ctx), withDoubleColonOnly = false)
   }
 
   private def normalFormComparisonExpression(
@@ -491,7 +491,10 @@ trait ExpressionBuilder extends Cypher25ParserListener {
       case propCtx: Cypher25Parser.PropertyPostfixContext => Property(lhs, ctxChild(propCtx, 0).ast())(p)
       case indexCtx: Cypher25Parser.IndexPostfixContext =>
         ContainerIndex(lhs, ctxChild(indexCtx, 1).ast())(pos(ctxChild(indexCtx, 1)))
-      case labelCtx: Cypher25Parser.LabelPostfixContext => LabelExpressionPredicate(lhs, ctxChild(labelCtx, 0).ast())(p)
+      case labelCtx: Cypher25Parser.LabelPostfixContext => LabelExpressionPredicate(lhs, ctxChild(labelCtx, 0).ast())(
+          p,
+          isParenthesized = LabelExpressionPredicate.isParenthesizedDefault
+        )
       case rangeCtx: Cypher25Parser.RangePostfixContext =>
         ListSlice(lhs, astOpt(rangeCtx.fromExp), astOpt(rangeCtx.toExp))(pos(rhs))
       case _ => throw new IllegalStateException(s"Unexpected rhs $rhs")
@@ -839,7 +842,7 @@ trait ExpressionBuilder extends Cypher25ParserListener {
   final override def exitVariable(
     ctx: Cypher25Parser.VariableContext
   ): Unit = {
-    ctx.ast = Variable(name = ctx.symbolicNameString().ast())(pos(ctx))
+    ctx.ast = Variable(name = ctx.symbolicNameString().ast())(pos(ctx), Variable.isIsolatedDefault)
   }
 
   final override def exitType(ctx: Cypher25Parser.TypeContext): Unit = {

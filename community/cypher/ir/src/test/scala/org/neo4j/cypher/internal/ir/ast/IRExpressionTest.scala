@@ -23,7 +23,6 @@ import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
 import org.neo4j.cypher.internal.expressions.ExpressionWithComputedDependencies
 import org.neo4j.cypher.internal.expressions.LogicalVariable
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.ir.QueryGraph
 import org.neo4j.cypher.internal.ir.RegularSinglePlannerQuery
 import org.neo4j.cypher.internal.ir.Selections
@@ -100,7 +99,7 @@ class IRExpressionTest extends CypherFunSuite with AstConstructionTestSupport {
     )(pos, Some(Set(v"b")), Some(Set(v"a")))
 
     def rename(v: LogicalVariable): LogicalVariable = v match {
-      case v @ LogicalVariable("a") => Variable("o")(v.position)
+      case v @ LogicalVariable("a") => varFor("o", v.position)
       case _                        => v
     }
 

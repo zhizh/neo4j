@@ -42,7 +42,6 @@ import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.RELATIONSHIP_TYPE
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.frontend.phases.CompilationPhaseTracer.NO_TRACING
 import org.neo4j.cypher.internal.frontend.phases.InitialState
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.column
@@ -94,20 +93,20 @@ import org.neo4j.graphdb.schema.IndexType
 
 class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with LogicalPlanConstructionTestSupport {
   // Have specific input positions to test semantic table (not DummyPosition)
-  private val n = Variable("n")(InputPosition.NONE)
-  private val r = Variable("r")(InputPosition.NONE)
-  private val x = Variable("x")(InputPosition.NONE)
-  private val m = Variable("m")(InputPosition.NONE)
-  private val prop = PropertyKeyName("prop")(InputPosition.NONE)
-  private val foo = PropertyKeyName("foo")(InputPosition.NONE)
+  private val n = varFor("n")
+  private val r = varFor("r")
+  private val x = varFor("x")
+  private val m = varFor("m")
+  private val prop = PropertyKeyName("prop")(pos)
+  private val foo = PropertyKeyName("foo")(pos)
   // Same property in different positions
-  private val nProp1 = Property(n, prop)(InputPosition.NONE)
+  private val nProp1 = Property(n, prop)(pos)
   private val nProp2 = Property(n, prop)(InputPosition(1, 2, 3))
   private val nProp3 = Property(n, prop)(InputPosition(4, 5, 6))
-  private val rProp1 = Property(r, prop)(InputPosition.NONE)
+  private val rProp1 = Property(r, prop)(pos)
   private val rProp2 = Property(r, prop)(InputPosition(7, 8, 9))
   // Same property in different positions
-  private val nFoo1 = Property(n, foo)(InputPosition.NONE)
+  private val nFoo1 = Property(n, foo)(pos)
   private val cachedNProp1 = CachedProperty(n, n, prop, NODE_TYPE)(nProp1.position)
   private val cachedNHasProp1 = CachedHasProperty(n, n, prop, NODE_TYPE)(nProp1.position)
   private val cachedNFoo1 = CachedProperty(n, n, foo, NODE_TYPE)(nFoo1.position)
@@ -119,7 +118,7 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
   private val cachedRRelProp2 = CachedProperty(r, r, prop, RELATIONSHIP_TYPE)(rProp2.position)
   private val cachedRRelHasProp2 = CachedHasProperty(r, r, prop, RELATIONSHIP_TYPE)(rProp2.position)
 
-  private val xProp = Property(x, prop)(InputPosition.NONE)
+  private val xProp = Property(x, prop)(pos)
 
   def nodeIndexScan(
     node: String,
@@ -593,7 +592,7 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
     val (newPlan, _) = replace(plan, initialTable)
     val expectedPlan = new LogicalPlanBuilder()
       .produceResults("z")
-      .projection(Map("z" -> CachedProperty(n, m, prop, NODE_TYPE)(InputPosition.NONE)))
+      .projection(Map("z" -> CachedProperty(n, m, prop, NODE_TYPE)(pos)))
       .apply()
       .|.union()
       .|.|.projection("n as m")
@@ -753,7 +752,7 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
           Selection(Seq(equals(cp1, literalInt(2))), Argument(Set(v"n"))),
           Map(v"x" -> n)
         ),
-        Map(v"xProp" -> cachedNProp1.copy(entityVariable = n.copy("x")(n.position))(cachedNProp1.position))
+        Map(v"xProp" -> cachedNProp1.copy(entityVariable = n.renameId("x"))(cachedNProp1.position))
       )
     )
     val initialType = initialTable.types(nProp1)
@@ -919,7 +918,7 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
           Map(v"x" -> n),
           Map(v"count(1)" -> count(literalInt(1)))
         ),
-        Map(v"xProp" -> cachedNProp1.copy(entityVariable = n.copy("x")(n.position))(cachedNProp1.position))
+        Map(v"xProp" -> cachedNProp1.copy(entityVariable = n.renameId("x"))(cachedNProp1.position))
       )
     )
     val initialType = initialTable.types(nProp1)
@@ -937,9 +936,9 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
       .|.nodeByLabelScan("m", "B").withEffectiveCardinality(200)
       // Note, push down properties doesn't keep track of input position in all cases and can produce output like the following
       .cacheProperties(Set[LogicalProperty](Property(
-        Variable("n2")(InputPosition.NONE),
-        PropertyKeyName("prop")(InputPosition.NONE)
-      )(InputPosition.NONE)))
+        varFor("n2"),
+        PropertyKeyName("prop")(pos)
+      )(pos)))
       .aggregation(Seq("n as n2"), Seq("count(n) AS count")).withEffectiveCardinality(3).newVar(
         "n2",
         n2InputPosition,
@@ -953,20 +952,20 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
         .produceResults("`n3.prop`")
         .projection(Map("n3.prop" -> CachedProperty(
           n,
-          Variable("n3")(n2InputPosition),
-          PropertyKeyName("prop")(InputPosition.NONE),
+          varFor("n3", n2InputPosition),
+          PropertyKeyName("prop")(pos),
           NODE_TYPE
-        )(InputPosition.NONE)))
+        )(pos)))
         .projection("n2 AS n3")
         .apply()
         .|.nodeByLabelScan("m", "B")
         .cacheProperties(Set[LogicalProperty](CachedProperty(
           n,
-          Variable("n2")(n2InputPosition),
-          PropertyKeyName("prop")(InputPosition.NONE),
+          varFor("n2", n2InputPosition),
+          PropertyKeyName("prop")(pos),
           NODE_TYPE,
           knownToAccessStore = true
-        )(InputPosition.NONE)))
+        )(pos)))
         .aggregation(Seq("n as n2"), Seq("count(n) AS count"))
         .nodeByLabelScan("n", "A")
         .build()
@@ -994,11 +993,11 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
         .expandAll("(n)-->(m)")
         .cacheProperties(Set[LogicalProperty](CachedProperty(
           n,
-          Variable("n")(InputPosition.NONE),
-          PropertyKeyName("prop")(InputPosition.NONE),
+          varFor("n"),
+          PropertyKeyName("prop")(pos),
           NODE_TYPE,
           knownToAccessStore = true
-        )(InputPosition.NONE)))
+        )(pos)))
         .allNodeScan("n")
         .build()
   }
@@ -1723,14 +1722,14 @@ class InsertCachedPropertiesTest extends CypherFunSuite with PlanMatchHelp with 
         "n",
         "prop",
         value = Add(
-          CachedProperty(n, Variable("n2")(pos), PropertyKeyName("prop")(pos), NODE_TYPE)(pos),
+          CachedProperty(n, varFor("n2"), PropertyKeyName("prop")(pos), NODE_TYPE)(pos),
           SignedDecimalIntegerLiteral("1")(pos)
         )(pos)
       )
       .eager()
       .projection(Map("oldValue" -> CachedProperty(
         n,
-        Variable("n2")(pos),
+        varFor("n2"),
         PropertyKeyName("prop")(pos),
         NODE_TYPE,
         knownToAccessStore = true

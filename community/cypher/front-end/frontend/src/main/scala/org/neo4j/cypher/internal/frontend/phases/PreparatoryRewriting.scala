@@ -29,6 +29,7 @@ import org.neo4j.cypher.internal.rewriting.rewriters.insertWithBetweenOptionalMa
 import org.neo4j.cypher.internal.rewriting.rewriters.mergeInPredicates
 import org.neo4j.cypher.internal.rewriting.rewriters.normalizeWithAndReturnClauses
 import org.neo4j.cypher.internal.rewriting.rewriters.nullIfFunctionRewriter
+import org.neo4j.cypher.internal.rewriting.rewriters.removeSyntaxTracking
 import org.neo4j.cypher.internal.rewriting.rewriters.rewriteShortestPathWithFixedLengthRelationship
 import org.neo4j.cypher.internal.rewriting.rewriters.rewriteShowQuery
 import org.neo4j.cypher.internal.rewriting.rewriters.timestampRewriter
@@ -47,6 +48,7 @@ case object PreparatoryRewriting extends Phase[BaseContext, BaseState, BaseState
   val AccumulatedSteps(orderedSteps, _postConditions) =
     StepSequencer[StepSequencer.Step with PreparatoryRewritingRewriterFactory]().orderSteps(
       Set(
+        removeSyntaxTracking,
         normalizeWithAndReturnClauses,
         insertWithBetweenOptionalMatchAndMatch,
         wrapOptionalCallProcedure,

@@ -19,6 +19,7 @@ package org.neo4j.cypher.internal.ast.factory.query
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher25
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.util.UnicodeHelper
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -41,6 +42,12 @@ class ParameterIdentifiersParserTest extends AstParsingTestBase {
                 return_(aliasedReturnItem(parameter(s"${c}abc", CTAny), paramWithCharName))
               )
             )
+          case Cypher5 if Character.isWhitespace(c) || Character.isSpaceChar(c) =>
+            _.toAstPositioned(
+              singleQuery(
+                return_(aliasedReturnItem(parameter(s"abc", CTAny), paramWithCharName, isIsolated = true))
+              )
+            )
           case _ if Character.isWhitespace(c) || Character.isSpaceChar(c) =>
             _.toAstPositioned(
               singleQuery(
@@ -54,6 +61,12 @@ class ParameterIdentifiersParserTest extends AstParsingTestBase {
               )
             )
           case Cypher25 => _.withSyntaxErrorContaining("Invalid input")
+          case Cypher5 if UnicodeHelper.isIdentifierStart(c, CypherVersion.Cypher5) || (c >= 0x31 && c <= 0x39) =>
+            _.toAstPositioned(
+              singleQuery(
+                return_(aliasedReturnItem(parameter(s"${c}abc", CTAny), paramWithCharName, isIsolated = true))
+              )
+            )
           case _ if UnicodeHelper.isIdentifierStart(c, CypherVersion.Cypher5) || (c >= 0x31 && c <= 0x39) =>
             _.toAstPositioned(
               singleQuery(
@@ -78,6 +91,12 @@ class ParameterIdentifiersParserTest extends AstParsingTestBase {
               )
             )
           case Cypher25 => _.withSyntaxErrorContaining("Invalid input")
+          case Cypher5 if UnicodeHelper.isIdentifierPart(c, CypherVersion.Cypher5) =>
+            _.toAstPositioned(
+              singleQuery(
+                return_(aliasedReturnItem(parameter(s"a${c}abc", CTAny), paramWithCharName, isIsolated = true))
+              )
+            )
           case _ if UnicodeHelper.isIdentifierPart(c, CypherVersion.Cypher5) =>
             _.toAstPositioned(
               singleQuery(

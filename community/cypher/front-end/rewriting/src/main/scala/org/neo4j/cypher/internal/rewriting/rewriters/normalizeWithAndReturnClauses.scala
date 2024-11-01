@@ -164,7 +164,7 @@ case class normalizeWithAndReturnClauses(
     val aliasedReturnItems =
       ri.items.map {
         case i: UnaliasedReturnItem =>
-          val alias = i.alias.getOrElse(Variable(i.name)(i.expression.position))
+          val alias = i.alias.getOrElse(Variable(i.name)(i.expression.position, Variable.isIsolatedDefault))
           AliasedReturnItem(i.expression, alias)(i.position)
         case x => x
       }

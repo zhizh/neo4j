@@ -41,8 +41,10 @@ import static org.neo4j.notifications.NotificationCodeWithDescription.deprecated
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedIdentifierUnicode;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedIdentifierWhitespaceUnicode;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedImportingWithInSubqueryCall;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedKeywordVariableInWhenOperand;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedNodeOrRelationshipOnRhsSetClause;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedOptionInOptionMap;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedPrecedenceOfLabelExpressionPredicate;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureReturnField;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureWithReplacement;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedProcedureWithoutReplacement;
@@ -54,6 +56,8 @@ import static org.neo4j.notifications.NotificationCodeWithDescription.deprecated
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedShortestPathWithFixedLengthRelationship;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedStoreFormat;
 import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedTextIndexProvider;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedWhereVariableInNodePattern;
+import static org.neo4j.notifications.NotificationCodeWithDescription.deprecatedWhereVariableInRelationshipPattern;
 import static org.neo4j.notifications.NotificationCodeWithDescription.eagerLoadCsv;
 import static org.neo4j.notifications.NotificationCodeWithDescription.exhaustiveShortestPath;
 import static org.neo4j.notifications.NotificationCodeWithDescription.externalAuthNotEnabled;
@@ -1034,13 +1038,13 @@ class NotificationCodeWithDescriptionTest {
     void shouldConstructNotificationsFor_DEPRECATED_IMPORTING_WITH_IN_SUBQUERY_CALL() {
         NotificationImplementation notification = deprecatedImportingWithInSubqueryCall(InputPosition.empty, "a");
 
-        String message = "CALL subquery without a variable scope clause is now deprecated. Use CALL (a) { ... }";
+        String message = "CALL subquery without a variable scope clause is deprecated. Use CALL (a) { ... }";
         verifyNotification(
                 notification,
                 "This feature is deprecated and will be removed in future versions.",
                 SeverityLevel.WARNING,
                 "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
-                message,
+                "CALL subquery without a variable scope clause is now deprecated. Use CALL (a) { ... }",
                 NotificationCategory.DEPRECATION,
                 NotificationClassification.DEPRECATION,
                 "01N00",
@@ -1048,6 +1052,106 @@ class NotificationCodeWithDescriptionTest {
                                 warning, NotificationClassification.DEPRECATION, -1, -1, -1, Map.of("item", message))
                         .asMap(),
                 String.format("warn: feature deprecated. %s", message));
+    }
+
+    @Test
+    void shouldConstructNotificationsFor_DEPRECATED_WHERE_VARIABLE_IN_NODE_PATTERN() {
+        NotificationImplementation notification =
+                deprecatedWhereVariableInNodePattern(InputPosition.empty, "Where", "{prop: 5}");
+
+        verifyNotification(
+                notification,
+                "This feature is deprecated and will be removed in future versions.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
+                "'(Where {prop: 5})' is deprecated. It is replaced by '(`Where` {prop: 5})'.",
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
+                "01N01",
+                new DiagnosticRecord(
+                                warning,
+                                NotificationClassification.DEPRECATION,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of("feat1", "(Where {prop: 5})", "feat2", "(`Where` {prop: 5})"))
+                        .asMap(),
+                "warn: feature deprecated with replacement. (Where {prop: 5}) is deprecated. It is replaced by (`Where` {prop: 5}).");
+    }
+
+    @Test
+    void shouldConstructNotificationsFor_DEPRECATED_WHERE_VARIABLE_IN_RELATIONSHIP_PATTERN() {
+        NotificationImplementation notification =
+                deprecatedWhereVariableInRelationshipPattern(InputPosition.empty, "Where", "{prop: 5}");
+
+        verifyNotification(
+                notification,
+                "This feature is deprecated and will be removed in future versions.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
+                "'-[Where {prop: 5}]-' is deprecated. It is replaced by '-[`Where` {prop: 5}]-'.",
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
+                "01N01",
+                new DiagnosticRecord(
+                                warning,
+                                NotificationClassification.DEPRECATION,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of("feat1", "-[Where {prop: 5}]-", "feat2", "-[`Where` {prop: 5}]-"))
+                        .asMap(),
+                "warn: feature deprecated with replacement. -[Where {prop: 5}]- is deprecated. It is replaced by -[`Where` {prop: 5}]-.");
+    }
+
+    @Test
+    void shouldConstructNotificationsFor_DEPRECATED_PRECEDENCE_OF_LABEL_EXPRESSION_PREDICATED() {
+        NotificationImplementation notification =
+                deprecatedPrecedenceOfLabelExpressionPredicate(InputPosition.empty, "n:A");
+
+        verifyNotification(
+                notification,
+                "This feature is deprecated and will be removed in future versions.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
+                "'... + n:A' is deprecated. It is replaced by '... + (n:A)'.",
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
+                "01N01",
+                new DiagnosticRecord(
+                                warning,
+                                NotificationClassification.DEPRECATION,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of("feat1", "... + n:A", "feat2", "... + (n:A)"))
+                        .asMap(),
+                "warn: feature deprecated with replacement. ... + n:A is deprecated. It is replaced by ... + (n:A).");
+    }
+
+    @Test
+    void shouldConstructNotificationsFor_DEPRECATED_KEYWORD_VARIABLE_IN_WHEN_OPERAND() {
+        NotificationImplementation notification =
+                deprecatedKeywordVariableInWhenOperand(InputPosition.empty, "iS", " :: INTEGER");
+
+        verifyNotification(
+                notification,
+                "This feature is deprecated and will be removed in future versions.",
+                SeverityLevel.WARNING,
+                "Neo.ClientNotification.Statement.FeatureDeprecationWarning",
+                "'WHEN iS :: INTEGER' is deprecated. It is replaced by 'WHEN `iS` :: INTEGER'.",
+                NotificationCategory.DEPRECATION,
+                NotificationClassification.DEPRECATION,
+                "01N01",
+                new DiagnosticRecord(
+                                warning,
+                                NotificationClassification.DEPRECATION,
+                                -1,
+                                -1,
+                                -1,
+                                Map.of("feat1", "WHEN iS :: INTEGER", "feat2", "WHEN `iS` :: INTEGER"))
+                        .asMap(),
+                "warn: feature deprecated with replacement. WHEN iS :: INTEGER is deprecated. It is replaced by WHEN `iS` :: INTEGER.");
     }
 
     @Test
@@ -1876,8 +1980,8 @@ class NotificationCodeWithDescriptionTest {
         byte[] notificationHash = DigestUtils.sha256(notificationBuilder.toString());
 
         byte[] expectedHash = new byte[] {
-            -112, -97, 16, 80, 93, 72, -63, 121, 30, 78, 42, 75, 87, 102, -83, -26, 94, -123, -83, 95, 62, -93, 67, 4,
-            -15, 56, 34, -117, 40, 19, 10, -128
+            -22, 2, -112, 73, 11, 74, 44, 78, 94, -111, 108, -12, 43, 33, 52, -76, 1, 81, -43, 2, 31, -13, 77, -10, -38,
+            -41, 11, 1, -64, 96, -70, -65
         };
 
         if (!Arrays.equals(notificationHash, expectedHash)) {

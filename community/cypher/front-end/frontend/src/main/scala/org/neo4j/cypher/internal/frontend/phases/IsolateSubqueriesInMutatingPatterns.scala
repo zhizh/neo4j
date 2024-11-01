@@ -129,7 +129,7 @@ case object IsolateSubqueriesInMutatingPatterns extends StatementRewriter
               // Replace by a new anonymous variable
               val anonVarName = anonymousVariableNameGenerator.nextName
               rewrittenExpressions :+= RewrittenExpression(anonVarName, exp)
-              Variable(anonVarName)(exp.position)
+              Variable(anonVarName)(exp.position, Variable.isIsolatedDefault)
             } else {
               // Do not rewrite
               exp
@@ -151,7 +151,7 @@ case object IsolateSubqueriesInMutatingPatterns extends StatementRewriter
               val uselessUnwindVarName = anonymousVariableNameGenerator.nextName
               Some(Unwind(
                 ListLiteral(Seq(False()(uc.position)))(uc.position),
-                Variable(uselessUnwindVarName)(uc.position)
+                Variable(uselessUnwindVarName)(uc.position, Variable.isIsolatedDefault)
               )(uc.position))
             } else None
 
@@ -164,7 +164,7 @@ case object IsolateSubqueriesInMutatingPatterns extends StatementRewriter
                   case RewrittenExpression(name, expression) =>
                     AliasedReturnItem(
                       expression,
-                      Variable(name)(expression.position)
+                      Variable(name)(expression.position, Variable.isIsolatedDefault)
                     )(expression.position)
                 }
               )(uc.position)

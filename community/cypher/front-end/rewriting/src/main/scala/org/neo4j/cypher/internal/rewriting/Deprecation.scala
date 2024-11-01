@@ -22,6 +22,7 @@ import org.neo4j.cypher.internal.ast.Create
 import org.neo4j.cypher.internal.ast.CreateDatabase
 import org.neo4j.cypher.internal.ast.CreateIndex
 import org.neo4j.cypher.internal.ast.ImportingWithSubqueryCall
+import org.neo4j.cypher.internal.ast.IsTyped
 import org.neo4j.cypher.internal.ast.Merge
 import org.neo4j.cypher.internal.ast.NamespacedName
 import org.neo4j.cypher.internal.ast.Options
@@ -37,6 +38,10 @@ import org.neo4j.cypher.internal.ast.UnionAll
 import org.neo4j.cypher.internal.ast.UnionDistinct
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
+import org.neo4j.cypher.internal.expressions.Add
+import org.neo4j.cypher.internal.expressions.CaseExpression
+import org.neo4j.cypher.internal.expressions.ContainerIndex
+import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.FunctionName
@@ -50,18 +55,24 @@ import org.neo4j.cypher.internal.expressions.RelationshipChain
 import org.neo4j.cypher.internal.expressions.RelationshipPattern
 import org.neo4j.cypher.internal.expressions.ShortestPathsPatternPart
 import org.neo4j.cypher.internal.expressions.StringLiteral
+import org.neo4j.cypher.internal.expressions.Subtract
 import org.neo4j.cypher.internal.expressions.UnsignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonDisjunction
+import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.util.ASTNode
 import org.neo4j.cypher.internal.util.AnonymousVariableNameGenerator
 import org.neo4j.cypher.internal.util.DeprecatedDatabaseNameNotification
 import org.neo4j.cypher.internal.util.DeprecatedImportingWithInSubqueryCall
+import org.neo4j.cypher.internal.util.DeprecatedKeywordVariableInWhenOperand
 import org.neo4j.cypher.internal.util.DeprecatedNodesOrRelationshipsInSetClauseNotification
+import org.neo4j.cypher.internal.util.DeprecatedPrecedenceOfLabelExpressionPredicate
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInCreate
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInMerge
 import org.neo4j.cypher.internal.util.DeprecatedRelTypeSeparatorNotification
 import org.neo4j.cypher.internal.util.DeprecatedTextIndexProvider
+import org.neo4j.cypher.internal.util.DeprecatedWhereVariableInNodePattern
+import org.neo4j.cypher.internal.util.DeprecatedWhereVariableInRelationshipPattern
 import org.neo4j.cypher.internal.util.FixedLengthRelationshipInShortestPath
 import org.neo4j.cypher.internal.util.Foldable.SkipChildren
 import org.neo4j.cypher.internal.util.Foldable.TraverseChildren
@@ -75,11 +86,11 @@ import scala.annotation.tailrec
 
 object Deprecations {
 
-  case object syntacticallyDeprecatedFeatures extends SyntacticDeprecations {
+  case class SyntacticallyDeprecatedFeatures(cypherVersion: CypherVersion) extends SyntacticDeprecations {
 
     val stringifier: ExpressionStringifier = ExpressionStringifier()
 
-    override val find: PartialFunction[Any, Deprecation] = {
+    override val find: PartialFunction[Any, Deprecation] = Function.unlift {
 
       // legacy type separator -[:A|:B]->
       case rel @ RelationshipPattern(variable, Some(labelExpression), None, None, None, _)
@@ -88,24 +99,97 @@ object Deprecations {
           !labelExpression.containsGpmSpecificRelTypeExpression &&
           labelExpression.folder.treeFindByClass[ColonDisjunction].nonEmpty =>
         val rewrittenExpression = labelExpression.replaceColonSyntax
-        Deprecation(
+        Some(Deprecation(
           Some(Ref(rel) -> rel.copy(labelExpression = Some(rewrittenExpression))(rel.position)),
           Some(DeprecatedRelTypeSeparatorNotification(
             labelExpression.folder.treeFindByClass[ColonDisjunction].get.position,
             s":${stringifier.stringifyLabelExpression(labelExpression)}",
             s":${stringifier.stringifyLabelExpression(rewrittenExpression)}"
           ))
-        )
+        ))
       case UnionAll(lhs: Query, rhs: SingleQuery, true) if unionReturnItemsInDifferentOrder(lhs, rhs) =>
-        Deprecation(
+        Some(Deprecation(
           None,
           Some(UnionReturnItemsInDifferentOrder(lhs.position))
-        )
+        ))
       case UnionDistinct(lhs: Query, rhs: SingleQuery, true) if unionReturnItemsInDifferentOrder(lhs, rhs) =>
-        Deprecation(
+        Some(Deprecation(
           None,
           Some(UnionReturnItemsInDifferentOrder(lhs.position))
-        )
+        ))
+
+      case NodePattern(Some(variable), None, Some(properties), None)
+        if NodePattern.WhereVariableInNodePatterns.deprecatedIn(
+          cypherVersion
+        ) && !variable.isIsolated && variable.name.equalsIgnoreCase("where") =>
+        Some(Deprecation(
+          None,
+          Some(DeprecatedWhereVariableInNodePattern(variable.position, variable.name, stringifier(properties)))
+        ))
+      case RelationshipPattern(Some(variable), None, _, Some(properties), None, _)
+        if RelationshipPattern.WhereVariableInRelationshipPatterns.deprecatedIn(
+          cypherVersion
+        ) && !variable.isIsolated && variable.name.equalsIgnoreCase("where") =>
+        Some(Deprecation(
+          None,
+          Some(DeprecatedWhereVariableInRelationshipPattern(variable.position, variable.name, stringifier(properties)))
+        ))
+
+      case Add(_, lep @ LabelExpressionPredicate(_, _))
+        if LabelExpressionPredicate.UnparenthesizedLabelPredicateOnRhsOfAdd.deprecatedIn(
+          cypherVersion
+        ) && !lep.isParenthesized =>
+        Some(Deprecation(
+          None,
+          Some(DeprecatedPrecedenceOfLabelExpressionPredicate(lep.position, stringifier(lep)))
+        ))
+
+      case CaseExpression(Some(_), alternatives, _)
+        if CaseExpression.KeywordVariablesInWhenOperand.deprecatedIn(
+          cypherVersion
+        ) =>
+        alternatives.collectFirst {
+          case (Equals(_, it @ IsTyped(variable: Variable, cypherType)), _)
+            if !variable.isIsolated && variable.name.equalsIgnoreCase("is") && it.withDoubleColonOnly =>
+            Deprecation(
+              None,
+              Some(DeprecatedKeywordVariableInWhenOperand(
+                it.position,
+                variable.name,
+                s" :: ${cypherType.normalizedCypherTypeString()}"
+              ))
+            )
+          case (Equals(_, add @ Add(variable: Variable, rhs)), _)
+            if !variable.isIsolated && variable.name.equalsIgnoreCase("contains") =>
+            Deprecation(
+              None,
+              Some(DeprecatedKeywordVariableInWhenOperand(
+                add.position,
+                variable.name,
+                s" ${add.canonicalOperatorSymbol} ${stringifier(rhs)}"
+              ))
+            )
+          case (Equals(_, subtract @ Subtract(variable: Variable, rhs)), _)
+            if !variable.isIsolated && variable.name.equalsIgnoreCase("contains") =>
+            Deprecation(
+              None,
+              Some(DeprecatedKeywordVariableInWhenOperand(
+                subtract.position,
+                variable.name,
+                s" ${subtract.canonicalOperatorSymbol} ${stringifier(rhs)}"
+              ))
+            )
+          case (Equals(_, containerIndex @ ContainerIndex(variable: Variable, index)), _)
+            if !variable.isIsolated && variable.name.equalsIgnoreCase("in") =>
+            Deprecation(
+              None,
+              Some(DeprecatedKeywordVariableInWhenOperand(
+                containerIndex.position,
+                variable.name,
+                s"[${stringifier(index)}]"
+              ))
+            )
+        }
 
       case s @ ShortestPathsPatternPart(
           relChain @ RelationshipChain(
@@ -133,22 +217,24 @@ object Deprecations {
         val deprecatedParameter = stringifier.patterns.apply(s)
         val replacementParameter = stringifier.patterns.apply(replacement)
 
-        Deprecation(
+        Some(Deprecation(
           None,
           Some(FixedLengthRelationshipInShortestPath(relPat.position, deprecatedParameter, replacementParameter))
-        )
+        ))
 
       case c @ CreateDatabase(nn @ NamespacedName(_, Some(_)), _, _, _, _) =>
-        Deprecation(
+        Some(Deprecation(
           None,
           Some(DeprecatedDatabaseNameNotification(nn.toString, Some(c.position)))
-        )
+        ))
 
       case c: CreateIndex if c.indexType == TextCreateIndex && hasOldTextIndexProvider(c.options) =>
-        Deprecation(
+        Some(Deprecation(
           None,
           Some(DeprecatedTextIndexProvider(c.position))
-        )
+        ))
+
+      case _ => None
     }
 
     private def hasOldTextIndexProvider(options: Options): Boolean = options match {

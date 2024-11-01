@@ -62,7 +62,7 @@ case class PropertyPredicateNormalizer(anonymousVariableNameGenerator: Anonymous
 
   private def varLengthPropertyPredicates(id: LogicalVariable, props: MapExpression): Expression = {
     val idName = anonymousVariableNameGenerator.nextName
-    val newId = Variable(idName)(id.position)
+    val newId = Variable(idName)(id.position, Variable.isIsolatedDefault)
     val expressions = propertyPredicates(newId, props)
     val conjunction = conjunct(expressions.toList)
     AllIterablePredicate(newId, id.copyId, Some(conjunction))(props.position)

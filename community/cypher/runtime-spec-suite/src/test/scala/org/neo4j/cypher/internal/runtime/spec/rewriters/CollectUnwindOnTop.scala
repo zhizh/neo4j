@@ -65,9 +65,9 @@ case class CollectUnwindOnTop(
         case pr @ ProduceResult(source, columns)
           if !ctx.leveragedOrders(source.id) && randomShouldApply(config) =>
           val collectedRowsName = ctx.anonymousVariableNameGenerator.nextName
-          val collectedRowsVar = Variable(collectedRowsName)(pos)
+          val collectedRowsVar = Variable(collectedRowsName)(pos, Variable.isIsolatedDefault)
           val unwoundRowName = ctx.anonymousVariableNameGenerator.nextName
-          val unwoundRowVar = Variable(unwoundRowName)(pos)
+          val unwoundRowVar = Variable(unwoundRowName)(pos, Variable.isIsolatedDefault)
           val rowMapExpr = MapExpression(columns.map { c => PropertyKeyName(c.variable.name)(pos) -> c.variable })(pos)
           val collectExpr = CollectAll(rowMapExpr)(pos)
           val aggregation = Aggregation(source, Map.empty, Map(varFor(collectedRowsName) -> collectExpr))(ctx.idGen)

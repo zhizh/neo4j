@@ -30,7 +30,6 @@ import org.neo4j.cypher.internal.expressions.ListLiteral
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.logical.plans.Aggregation
 import org.neo4j.cypher.internal.logical.plans.AllNodesScan
 import org.neo4j.cypher.internal.logical.plans.AntiSemiApply
@@ -65,7 +64,6 @@ import org.neo4j.cypher.internal.planner.spi.InstrumentedGraphStatistics
 import org.neo4j.cypher.internal.planner.spi.MutableGraphStatisticsSnapshot
 import org.neo4j.cypher.internal.planner.spi.PlanningAttributes.Cardinalities
 import org.neo4j.cypher.internal.util.Cardinality
-import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.LabelId
 import org.neo4j.cypher.internal.util.RelTypeId
 import org.neo4j.cypher.internal.util.attribution.Default
@@ -656,7 +654,7 @@ class CardinalityCalculatorTest extends CypherFunSuite with AstConstructionTestS
   }
 
   test("Selection non-empty source") {
-    val plan = Selection(Seq(Variable("x")(InputPosition.NONE)), Argument())
+    val plan = Selection(Seq(varFor("x")), Argument())
 
     val c = CardinalityCalculator.selectionCardinality(
       plan,
@@ -668,7 +666,7 @@ class CardinalityCalculatorTest extends CypherFunSuite with AstConstructionTestS
   }
 
   test("Selection empty source") {
-    val plan = Selection(Seq(Variable("x")(InputPosition.NONE)), Argument())
+    val plan = Selection(Seq(varFor("x")), Argument())
 
     defaultState.cardinalities.set(plan.source.id, Cardinality.EMPTY)
     val c = CardinalityCalculator.selectionCardinality(
@@ -681,7 +679,7 @@ class CardinalityCalculatorTest extends CypherFunSuite with AstConstructionTestS
   }
 
   test("UnwindCollection non-empty source") {
-    val plan = UnwindCollection(Argument(), varFor("n"), Variable("x")(InputPosition.NONE))
+    val plan = UnwindCollection(Argument(), varFor("n"), varFor("x"))
 
     val c = CardinalityCalculator.unwindCollectionCardinality(
       plan,
@@ -693,7 +691,7 @@ class CardinalityCalculatorTest extends CypherFunSuite with AstConstructionTestS
   }
 
   test("UnwindCollection empty source") {
-    val plan = UnwindCollection(Argument(), varFor("n"), Variable("x")(InputPosition.NONE))
+    val plan = UnwindCollection(Argument(), varFor("n"), varFor("x"))
 
     defaultState.cardinalities.set(plan.source.id, Cardinality.EMPTY)
     val c = CardinalityCalculator.unwindCollectionCardinality(

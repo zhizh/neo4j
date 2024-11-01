@@ -196,9 +196,9 @@ case class pruningVarExpander(
     ): Option[Expression] = expression match {
       case minLength @ Min(length @ Length(PathExpression(step)))
         if step.dependencies.contains(varExpand.relName) =>
-        Some(Min(Variable(distanceName)(length.position))(minLength.position))
+        Some(Min(Variable(distanceName)(length.position, Variable.isIsolatedDefault))(minLength.position))
       case minSize @ Min(size @ Size(variable: Variable)) if variable == varExpand.relName =>
-        Some(Min(Variable(distanceName)(size.position))(minSize.position))
+        Some(Min(Variable(distanceName)(size.position, Variable.isIsolatedDefault))(minSize.position))
       case _ =>
         None
     }

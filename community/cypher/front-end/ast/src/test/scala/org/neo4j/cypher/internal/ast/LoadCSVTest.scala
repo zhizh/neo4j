@@ -30,7 +30,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 class LoadCSVTest extends CypherFunSuite {
 
   val literalURL = StringLiteral("file:///tmp/foo.csv")(DummyPosition(4).withInputLength(1))
-  val variable = Variable("a")(DummyPosition(4))
+  val variable = Variable("a")(DummyPosition(4), Variable.isIsolatedDefault)
 
   test("cannot overwrite existing variable") {
     val loadCSV = LoadCSV(withHeaders = true, literalURL, variable, None)(DummyPosition(6))

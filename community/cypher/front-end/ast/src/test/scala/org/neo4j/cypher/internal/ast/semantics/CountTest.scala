@@ -47,7 +47,7 @@ class CountTest extends SemanticFunSuite {
 
   private val nodePredicate =
     Equals(
-      Property(Variable("n")(pos), PropertyKeyName("prop")(pos))(pos),
+      Property(Variable("n")(pos, Variable.isIsolatedDefault), PropertyKeyName("prop")(pos))(pos),
       StringLiteral("test")(pos.withInputLength(0))
     )(pos)
   private val property: Property = Property(variable("x"), PropertyKeyName("prop")(pos))(pos)

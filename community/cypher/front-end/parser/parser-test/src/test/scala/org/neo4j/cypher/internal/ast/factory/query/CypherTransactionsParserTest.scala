@@ -31,7 +31,6 @@ import org.neo4j.cypher.internal.ast.SubqueryCall.InTransactionsReportParameters
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.ast.test.util.LegacyAstParsingTestSupport
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.OpenCypherExceptionFactory
 import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.exceptions.SyntaxException
@@ -199,7 +198,7 @@ class CypherTransactionsParserTest extends AstParsingTestBase with LegacyAstPars
           None,
           None,
           None,
-          Some(InTransactionsReportParameters(Variable("status")(pos))(pos))
+          Some(InTransactionsReportParameters(varFor("status"))(pos))
         ),
         create(nodePat(Some("n")))
       )
@@ -213,7 +212,7 @@ class CypherTransactionsParserTest extends AstParsingTestBase with LegacyAstPars
           Some(InTransactionsBatchParameters(literalInt(50))(pos)),
           None,
           None,
-          Some(InTransactionsReportParameters(Variable("status")(pos))(pos))
+          Some(InTransactionsReportParameters(varFor("status"))(pos))
         ),
         create(nodePat(Some("n")))
       )
@@ -227,7 +226,7 @@ class CypherTransactionsParserTest extends AstParsingTestBase with LegacyAstPars
           Some(InTransactionsBatchParameters(literalInt(50))(pos)),
           None,
           None,
-          Some(InTransactionsReportParameters(Variable("status")(pos))(pos))
+          Some(InTransactionsReportParameters(varFor("status"))(pos))
         ),
         create(nodePat(Some("n")))
       )
@@ -254,7 +253,7 @@ class CypherTransactionsParserTest extends AstParsingTestBase with LegacyAstPars
       val expectedBatchParams = Some(InTransactionsBatchParameters(literalInt(50))(pos))
       val expectedConcurrencyParams = Some(InTransactionsConcurrencyParameters(Some(literalInt(7)))(pos))
       val expectedErrorParams = Some(InTransactionsErrorParameters(errorBehaviour)(pos))
-      val expectedStatusParams = Some(InTransactionsReportParameters(Variable("status")(pos))(pos))
+      val expectedStatusParams = Some(InTransactionsReportParameters(varFor("status"))(pos))
 
       test(s"CALL { CREATE (n) } IN TRANSACTIONS $errorString") {
         val expected =

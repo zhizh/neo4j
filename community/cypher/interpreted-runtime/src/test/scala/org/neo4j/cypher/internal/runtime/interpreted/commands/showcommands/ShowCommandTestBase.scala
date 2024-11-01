@@ -23,12 +23,14 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.when
 import org.neo4j.common.DependencyResolver
+import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.runtime.CypherRow
 import org.neo4j.cypher.internal.runtime.QueryContext
 import org.neo4j.cypher.internal.runtime.QueryTransactionalContext
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.CommunityCypherRowFactory
 import org.neo4j.cypher.internal.runtime.interpreted.pipes.QueryState
+import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.dbms.database.DatabaseContext
 import org.neo4j.graphdb.ExecutionPlanDescription
@@ -83,6 +85,9 @@ class ShowCommandTestBase extends CypherFunSuite {
   implicit protected def listToOption[T](value: List[T]): Option[List[T]] = Some(value)
   implicit protected def mapToOption(value: Map[String, AnyValue]): Option[Map[String, AnyValue]] = Some(value)
   implicit protected def valueToOption(value: AnyValue): Option[AnyValue] = Some(value)
+
+  // Variables
+  def varFor(name: String): Variable = Variable(name)(InputPosition.NONE, Variable.isIsolatedDefault)
 
   // Index and constraint variables
 

@@ -41,6 +41,10 @@ object InternalNotification {
     "RedundantOptionalProcedure",
     "RedundantOptionalSubquery",
     "DeprecatedImportingWithInSubqueryCall",
+    "DeprecatedWhereVariableInNodePattern",
+    "DeprecatedWhereVariableInRelationshipPattern",
+    "DeprecatedPrecedenceOfLabelExpressionPredicate",
+    "DeprecatedKeywordVariableInWhenOperand",
     "UnionReturnItemsInDifferentOrder",
     "HomeDatabaseNotPresent",
     "FixedLengthRelationshipInShortestPath",
@@ -128,6 +132,24 @@ case class RedundantOptionalProcedure(position: InputPosition, proc: String) ext
 case class RedundantOptionalSubquery(position: InputPosition) extends InternalNotification
 
 case class DeprecatedImportingWithInSubqueryCall(position: InputPosition, variable: String) extends InternalNotification
+
+case class DeprecatedWhereVariableInNodePattern(position: InputPosition, variableName: String, properties: String)
+    extends InternalNotification
+
+case class DeprecatedWhereVariableInRelationshipPattern(
+  position: InputPosition,
+  variableName: String,
+  properties: String
+) extends InternalNotification
+
+case class DeprecatedPrecedenceOfLabelExpressionPredicate(position: InputPosition, labelExpression: String)
+    extends InternalNotification
+
+case class DeprecatedKeywordVariableInWhenOperand(
+  position: InputPosition,
+  variableName: String,
+  remainingExpression: String
+) extends InternalNotification
 
 case class UnionReturnItemsInDifferentOrder(position: InputPosition) extends InternalNotification
 

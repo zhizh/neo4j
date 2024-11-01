@@ -25,7 +25,6 @@ import org.neo4j.cypher.internal.expressions.RelationshipChain
 import org.neo4j.cypher.internal.expressions.RelationshipPattern
 import org.neo4j.cypher.internal.expressions.RelationshipsPattern
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
-import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 
 class ExpressionParserTest extends AstParsingTestBase with LegacyAstParsingTestSupport {
 
@@ -110,10 +109,10 @@ class ExpressionParserTest extends AstParsingTestBase with LegacyAstParsingTestS
           RelationshipPattern(None, None, None, None, None, OUTGOING)(pos),
           NodePattern(None, None, None, None)(pos)
         )(pos))(pos),
-        predicate = Some(LabelExpressionPredicate(
+        predicate = Some(labelExpressionPredicate(
           function("last", function("nodes", varFor("p"))),
           labelOrRelTypeLeaf("End")
-        )(pos)),
+        )),
         projection = varFor("p")
       )(pos, None, None)
     }

@@ -271,6 +271,7 @@ import org.neo4j.cypher.internal.logical.plans.VarExpand
 import org.neo4j.cypher.internal.rewriting.rewriters.HasLabelsAndHasTypeNormalizer
 import org.neo4j.cypher.internal.rewriting.rewriters.combineHasLabels
 import org.neo4j.cypher.internal.rewriting.rewriters.desugarMapProjection
+import org.neo4j.cypher.internal.rewriting.rewriters.removeSyntaxTracking
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.InputPosition.NONE
 import org.neo4j.cypher.internal.util.LabelId
@@ -3214,7 +3215,12 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
   }
 
   protected def expressionRewriter: Rewriter =
-    inSequence(hasLabelsAndHasTypeNormalizer, combineHasLabels, desugarMapProjection.instance)
+    inSequence(
+      removeSyntaxTracking.instance,
+      hasLabelsAndHasTypeNormalizer,
+      combineHasLabels,
+      desugarMapProjection.instance
+    )
 
   /**
    * Returns the finalized output of the builder.
@@ -3285,7 +3291,7 @@ abstract class AbstractLogicalPlanBuilder[T, IMPL <: AbstractLogicalPlanBuilder[
   }
 
   // AST construction
-  protected def varFor(name: String): Variable = Variable(name)(pos)
+  protected def varFor(name: String): Variable = Variable(name)(pos, Variable.isIsolatedDefault)
   private def labelName(s: String): LabelName = LabelName(s)(pos)
   private def relTypeName(s: String): RelTypeName = RelTypeName(s)(pos)
 
@@ -3306,7 +3312,7 @@ object AbstractLogicalPlanBuilder {
   case class Predicate(entity: String, predicate: String) {
 
     def asVariablePredicate: VariablePredicate =
-      VariablePredicate(Variable(entity)(pos), Parser.parseExpression(predicate))
+      VariablePredicate(Variable(entity)(pos, Variable.isIsolatedDefault), Parser.parseExpression(predicate))
   }
 
   case class TrailParameters(

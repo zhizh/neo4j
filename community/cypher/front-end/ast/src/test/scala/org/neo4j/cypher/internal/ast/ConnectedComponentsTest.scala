@@ -101,5 +101,5 @@ class ConnectedComponentsTest extends CypherFunSuite {
     ))
   }
 
-  private def varFor(name: String): LogicalVariable = Variable(name)(null)
+  private def varFor(name: String): LogicalVariable = Variable(name)(null, Variable.isIsolatedDefault)
 }

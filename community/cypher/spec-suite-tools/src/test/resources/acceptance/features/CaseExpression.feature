@@ -609,7 +609,7 @@ Feature: CaseExpression
       | 'People'   | 25    |
       | 'String'   | 2     |
     And no side effects
-    
+
   Scenario: Nested Cases
     Given an empty graph
     When executing query:
@@ -620,7 +620,7 @@ Feature: CaseExpression
       | value |
       | false |
     And no side effects
-    
+
   Scenario: Nested Case Expressions
     Given an empty graph
     When executing query:
@@ -682,7 +682,7 @@ Feature: CaseExpression
       | res               |
       | {certified: true} |
     And no side effects
-    
+
 
   Scenario: Case Expression with nodes and rel references
     Given an empty graph
@@ -692,8 +692,8 @@ Feature: CaseExpression
     """
     When executing query:
       """
-      MATCH (firstNode)-[anyRelationship]-(secondNode) 
-      WITH firstNode, anyRelationship, secondNode, CASE startNode(anyRelationship).id WHEN firstNode.id THEN '->' ELSE '<-' END as relationshipDirection 
+      MATCH (firstNode)-[anyRelationship]-(secondNode)
+      WITH firstNode, anyRelationship, secondNode, CASE startNode(anyRelationship).id WHEN firstNode.id THEN '->' ELSE '<-' END as relationshipDirection
       RETURN relationshipDirection
       """
     Then the result should be, in any order:
@@ -701,7 +701,7 @@ Feature: CaseExpression
       | '->'                  |
       | '<-'                  |
     And no side effects
-    
+
 
   Scenario: Case Map Expression in DISTINCT return
     Given an empty graph
@@ -722,4 +722,16 @@ Feature: CaseExpression
       | result                             |
       | {currentTopic: {title: 'English'}} |
     And no side effects
-    
+
+
+  Scenario: Simple case with a dynamic property access
+    Given any graph
+    When executing query:
+      """
+      WITH 1 AS x, {a: 1, abc: true} AS y
+      RETURN CASE x WHEN y [ "a" ] THEN 1 END AS x
+      """
+    Then the result should be, in any order:
+      | x |
+      | 1 |
+    And no side effects

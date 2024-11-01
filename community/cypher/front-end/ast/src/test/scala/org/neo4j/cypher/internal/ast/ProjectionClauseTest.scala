@@ -266,7 +266,7 @@ class ProjectionClauseTest extends CypherFunSuite with AstConstructionTestSuppor
   test("RETURN should fail to declare variable existing in outer scope") {
     val varPosition = InputPosition(100, 4, 10)
     val returnItems: Seq[AliasedReturnItem] = Seq(
-      AliasedReturnItem(literalInt(1), varFor("x").copy()(varPosition))(pos)
+      AliasedReturnItem(literalInt(1), varFor("x", varPosition))(pos)
     )
     val listedReturnItems = ReturnItems(includeExisting = false, returnItems) _
     val returnObj = Return(distinct = false, listedReturnItems, None, None, None) _

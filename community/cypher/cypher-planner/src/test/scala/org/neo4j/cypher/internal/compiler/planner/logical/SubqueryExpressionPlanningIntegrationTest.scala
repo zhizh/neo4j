@@ -44,7 +44,6 @@ import org.neo4j.cypher.internal.expressions.SemanticDirection
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.expressions.SingleRelationshipPathStep
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.expressions.functions.Head
 import org.neo4j.cypher.internal.expressions.functions.IsEmpty
 import org.neo4j.cypher.internal.ir.EagernessReason.Conflict
@@ -1897,7 +1896,7 @@ class SubqueryExpressionPlanningIntegrationTest extends CypherFunSuite with Logi
       nestedCollection,
       add(varFor("sum", pos), varFor("x", pos))
     )
-    val expr = ContainerIndex(Variable("nodes")(pos), reduceExprWithNestedPlan)(pos)
+    val expr = ContainerIndex(varFor("nodes"), reduceExprWithNestedPlan)(pos)
     val plan = planner.plan(q).stripProduceResults
 
     plan should equal(planner.subPlanBuilder()
@@ -1939,7 +1938,7 @@ class SubqueryExpressionPlanningIntegrationTest extends CypherFunSuite with Logi
       nestedCollection,
       add(varFor("sum", pos), varFor("x", pos))
     )
-    val expr = ContainerIndex(Variable("rels")(pos), reduceExprWithNestedPlan)(pos)
+    val expr = ContainerIndex(varFor("rels"), reduceExprWithNestedPlan)(pos)
     val plan = planner.plan(q).stripProduceResults
 
     plan should equal(planner.subPlanBuilder()

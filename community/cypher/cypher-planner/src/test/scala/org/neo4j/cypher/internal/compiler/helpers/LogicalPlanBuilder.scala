@@ -73,7 +73,7 @@ class LogicalPlanBuilder(wholePlan: Boolean = true, resolver: Resolver = new Log
   }
 
   def newVar(name: String, inputPosition: InputPosition, typ: CypherType): LogicalPlanBuilder = {
-    val variable = Variable(name)(inputPosition)
+    val variable = Variable(name)(inputPosition, Variable.isIsolatedDefault)
     newVariable(variable, typ)
     this
   }
@@ -83,7 +83,7 @@ class LogicalPlanBuilder(wholePlan: Boolean = true, resolver: Resolver = new Log
   }
 
   def newVar(name: String, inputPosition: InputPosition, typ: TypeSpec): LogicalPlanBuilder = {
-    val variable = Variable(name)(inputPosition)
+    val variable = Variable(name)(inputPosition, Variable.isIsolatedDefault)
     newVariable(variable, typ)
     this
   }

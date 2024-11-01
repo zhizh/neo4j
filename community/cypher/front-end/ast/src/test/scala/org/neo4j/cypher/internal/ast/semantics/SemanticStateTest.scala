@@ -16,10 +16,10 @@
  */
 package org.neo4j.cypher.internal.ast.semantics
 
+import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.expressions.DummyExpression
 import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.DummyPosition
 import org.neo4j.cypher.internal.util.Ref
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -32,11 +32,11 @@ import org.neo4j.cypher.internal.util.symbols.CTString
 import org.neo4j.cypher.internal.util.symbols.TypeSpec
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
-class SemanticStateTest extends CypherFunSuite {
+class SemanticStateTest extends CypherFunSuite with AstConstructionTestSupport {
 
   test("should declare variable once") {
-    val variable1 = Variable("foo")(DummyPosition(0))
-    val variable2 = Variable("foo")(DummyPosition(3))
+    val variable1 = varFor("foo", DummyPosition(0))
+    val variable2 = varFor("foo", DummyPosition(3))
     val state = SemanticState.clean.declareVariable(variable1, CTNode).getOrElse(fail())
 
     state.declareVariable(variable2, CTNode) match {
@@ -47,9 +47,9 @@ class SemanticStateTest extends CypherFunSuite {
   }
 
   test("should collect all variables when implicitly declared") {
-    val variable1 = Variable("foo")(DummyPosition(0))
-    val variable2 = Variable("foo")(DummyPosition(2))
-    val variable3 = Variable("foo")(DummyPosition(3))
+    val variable1 = varFor("foo", DummyPosition(0))
+    val variable2 = varFor("foo", DummyPosition(2))
+    val variable3 = varFor("foo", DummyPosition(3))
 
     SemanticState.clean.implicitVariable(variable1, CTNode) chain
       ((_: SemanticState).implicitVariable(variable2, CTNode)) chain
@@ -63,8 +63,8 @@ class SemanticStateTest extends CypherFunSuite {
   }
 
   test("should constrain types for consecutive implicit variable declarations") {
-    val variable1 = Variable("foo")(DummyPosition(0))
-    val variable2 = Variable("foo")(DummyPosition(3))
+    val variable1 = varFor("foo", DummyPosition(0))
+    val variable2 = varFor("foo", DummyPosition(3))
 
     SemanticState.clean.implicitVariable(variable1, CTNode | CTRelationship) chain
       ((_: SemanticState).implicitVariable(variable2, CTNode)) match {
@@ -100,17 +100,17 @@ class SemanticStateTest extends CypherFunSuite {
   }
 
   test("should fail if no possible types remain after implicit variable declaration") {
-    SemanticState.clean.implicitVariable(Variable("foo")(DummyPosition(0)), CTMap) chain
-      ((_: SemanticState).implicitVariable(Variable("foo")(DummyPosition(3)), CTNode)) match {
+    SemanticState.clean.implicitVariable(varFor("foo", DummyPosition(0)), CTMap) chain
+      ((_: SemanticState).implicitVariable(varFor("foo", DummyPosition(3)), CTNode)) match {
       case Right(_) => fail("Expected an error")
       case Left(error) =>
         error.position should equal(DummyPosition(3))
         error.msg should equal("Type mismatch: foo defined with conflicting type Map (expected Node)")
     }
 
-    SemanticState.clean.implicitVariable(Variable("foo")(DummyPosition(0)), CTNode | CTRelationship) chain
-      ((_: SemanticState).implicitVariable(Variable("foo")(DummyPosition(3)), CTNode | CTInteger)) chain
-      ((_: SemanticState).implicitVariable(Variable("foo")(DummyPosition(9)), CTInteger | CTRelationship)) match {
+    SemanticState.clean.implicitVariable(varFor("foo", DummyPosition(0)), CTNode | CTRelationship) chain
+      ((_: SemanticState).implicitVariable(varFor("foo", DummyPosition(3)), CTNode | CTInteger)) chain
+      ((_: SemanticState).implicitVariable(varFor("foo", DummyPosition(9)), CTInteger | CTRelationship)) match {
       case Right(_) => fail("Expected an error")
       case Left(error) =>
         error.position should equal(DummyPosition(9))
@@ -145,7 +145,7 @@ class SemanticStateTest extends CypherFunSuite {
   }
 
   test("should find symbol in parent") {
-    val s1 = SemanticState.clean.declareVariable(Variable("foo")(DummyPosition(0)), CTNode).getOrElse(fail())
+    val s1 = SemanticState.clean.declareVariable(varFor("foo", DummyPosition(0)), CTNode).getOrElse(fail())
     val s2 = s1.newChildScope
     s2.symbolTypes("foo") should equal(CTNode: TypeSpec)
   }
@@ -153,23 +153,23 @@ class SemanticStateTest extends CypherFunSuite {
   test("should list all symbols from local scope") {
     val state =
       for {
-        next <- SemanticState.clean.declareVariable(Variable("foo")(DummyPosition(0)), CTNode)
-        next <- next.declareVariable(Variable("bar")(DummyPosition(0)), CTNode)
+        next <- SemanticState.clean.declareVariable(varFor("foo", DummyPosition(0)), CTNode)
+        next <- next.declareVariable(varFor("bar", DummyPosition(0)), CTNode)
       } yield next
     state.getOrElse(fail()).currentScope.availableSymbolDefinitions.map(_.asVariable) should equal(Set(
-      Variable("foo")(DummyPosition(0)),
-      Variable("bar")(DummyPosition(0))
+      varFor("foo", DummyPosition(0)),
+      varFor("bar", DummyPosition(0))
     ))
   }
 
   test("should declare union variable") {
     val state = SemanticState.clean.declareVariable(
-      Variable("foo")(DummyPosition(0)),
+      varFor("foo", DummyPosition(0)),
       CTNode,
       unionVariable = true
     ).getOrElse(fail())
     state.currentScope.availableSymbolDefinitions.map(_.asVariable) should equal(Set(
-      Variable("foo")(DummyPosition(0))
+      varFor("foo", DummyPosition(0))
     ))
     state.currentScope.localSymbol("foo").getOrElse(fail()).unionSymbol should equal(true)
   }
@@ -177,24 +177,24 @@ class SemanticStateTest extends CypherFunSuite {
   test("should list all symbols from local scope but not from child scopes") {
     val state =
       for {
-        next <- SemanticState.clean.declareVariable(Variable("foo")(DummyPosition(0)), CTNode)
+        next <- SemanticState.clean.declareVariable(varFor("foo", DummyPosition(0)), CTNode)
         child = next.newChildScope
-        child2 <- child.declareVariable(Variable("bar")(DummyPosition(0)), CTNode)
+        child2 <- child.declareVariable(varFor("bar", DummyPosition(0)), CTNode)
         parent = child2.popScope
       } yield parent
     state.getOrElse(fail()).currentScope.availableSymbolDefinitions.map(_.asVariable) should equal(
-      Set(Variable("foo")(DummyPosition(0)))
+      Set(varFor("foo", DummyPosition(0)))
     )
   }
 
   test("should list all symbols from local scope and parent scope, but not sibling scope") {
     val errorOrStates =
       for {
-        parent <- SemanticState.clean.declareVariable(Variable("foo")(DummyPosition(0)), CTNode)
+        parent <- SemanticState.clean.declareVariable(varFor("foo", DummyPosition(0)), CTNode)
         sibling = parent.newChildScope
-        sibling2 <- sibling.declareVariable(Variable("bar")(DummyPosition(0)), CTNode)
+        sibling2 <- sibling.declareVariable(varFor("bar", DummyPosition(0)), CTNode)
         child = sibling2.newSiblingScope
-        child2 <- child.declareVariable(Variable("baz")(DummyPosition(0)), CTNode)
+        child2 <- child.declareVariable(varFor("baz", DummyPosition(0)), CTNode)
       } yield (child2, sibling2)
 
     val (state1, state2) = errorOrStates match {
@@ -203,45 +203,45 @@ class SemanticStateTest extends CypherFunSuite {
     }
 
     state1.currentScope.availableSymbolDefinitions.map(_.asVariable) should equal(Set(
-      Variable("foo")(DummyPosition(0)),
-      Variable("baz")(DummyPosition(0))
+      varFor("foo", DummyPosition(0)),
+      varFor("baz", DummyPosition(0))
     ))
     state2.currentScope.availableSymbolDefinitions.map(_.asVariable) should equal(Set(
-      Variable("foo")(DummyPosition(0)),
-      Variable("bar")(DummyPosition(0))
+      varFor("foo", DummyPosition(0)),
+      varFor("bar", DummyPosition(0))
     ))
   }
 
   test("should override symbol in parent") {
-    val s1 = SemanticState.clean.declareVariable(Variable("foo")(DummyPosition(0)), CTNode).getOrElse(fail())
-    val s2 = s1.newChildScope.declareVariable(Variable("foo")(DummyPosition(0)), CTString).getOrElse(fail())
+    val s1 = SemanticState.clean.declareVariable(varFor("foo", DummyPosition(0)), CTNode).getOrElse(fail())
+    val s2 = s1.newChildScope.declareVariable(varFor("foo", DummyPosition(0)), CTString).getOrElse(fail())
 
     s2.symbolTypes("foo") should equal(CTString: TypeSpec)
   }
 
   test("should extend symbol in parent") {
-    val s1 = SemanticState.clean.declareVariable(Variable("foo")(DummyPosition(0)), CTNode).getOrElse(fail())
-    val s2 = s1.newChildScope.implicitVariable(Variable("foo")(DummyPosition(0)), CTAny.covariant).getOrElse(fail())
+    val s1 = SemanticState.clean.declareVariable(varFor("foo", DummyPosition(0)), CTNode).getOrElse(fail())
+    val s2 = s1.newChildScope.implicitVariable(varFor("foo", DummyPosition(0)), CTAny.covariant).getOrElse(fail())
     s2.symbolTypes("foo") should equal(CTNode: TypeSpec)
   }
 
   test("should return types of variable") {
-    val variable = Variable("foo")(DummyPosition(0))
+    val variable = varFor("foo", DummyPosition(0))
     val s1 = SemanticState.clean.declareVariable(variable, CTNode).getOrElse(fail())
     s1.expressionType(variable).actual should equal(CTNode: TypeSpec)
   }
 
   test("should return types of variable at later expression") {
-    val variable1 = Variable("foo")(DummyPosition(0))
-    val variable2 = Variable("foo")(DummyPosition(3))
+    val variable1 = varFor("foo", DummyPosition(0))
+    val variable2 = varFor("foo", DummyPosition(3))
     val s1 = SemanticState.clean.declareVariable(variable1, CTNode).getOrElse(fail())
     val s2 = s1.implicitVariable(variable2, CTNode).getOrElse(fail())
     s2.expressionType(variable2).actual should equal(CTNode: TypeSpec)
   }
 
   test("should maintain separate TypeInfo for equivalent expressions") {
-    val exp1 = Property(Variable("n")(DummyPosition(0)), PropertyKeyName("prop")(DummyPosition(3)))(DummyPosition(0))
-    val exp2 = Property(Variable("n")(DummyPosition(6)), PropertyKeyName("prop")(DummyPosition(9)))(DummyPosition(6))
+    val exp1 = Property(varFor("n", DummyPosition(0)), PropertyKeyName("prop")(DummyPosition(3)))(DummyPosition(0))
+    val exp2 = Property(varFor("n", DummyPosition(6)), PropertyKeyName("prop")(DummyPosition(9)))(DummyPosition(6))
     val s1 = SemanticState.clean.specifyType(exp1, CTNode).getOrElse(fail())
     val s2 = s1.specifyType(exp2, CTRelationship).getOrElse(fail())
 
@@ -254,18 +254,18 @@ class SemanticStateTest extends CypherFunSuite {
   }
 
   test("should gracefully update a variable") {
-    val s1 = SemanticState.clean.declareVariable(Variable("foo")(DummyPosition(0)), CTNode).getOrElse(fail())
+    val s1 = SemanticState.clean.declareVariable(varFor("foo", DummyPosition(0)), CTNode).getOrElse(fail())
     val s2: SemanticState =
-      s1.newChildScope.declareVariable(Variable("foo")(DummyPosition(0)), CTRelationship).getOrElse(fail())
+      s1.newChildScope.declareVariable(varFor("foo", DummyPosition(0)), CTRelationship).getOrElse(fail())
     s1.symbolTypes("foo") should equal(CTNode.invariant)
     s2.symbolTypes("foo") should equal(CTRelationship.invariant)
   }
 
   test("should be able to import scopes") {
-    val foo0 = Variable("foo")(DummyPosition(0))
-    val foo1 = Variable("foo")(DummyPosition(1))
-    val bar = Variable("bar")(DummyPosition(1))
-    val baz = Variable("baz")(DummyPosition(4))
+    val foo0 = varFor("foo", DummyPosition(0))
+    val foo1 = varFor("foo", DummyPosition(1))
+    val bar = varFor("bar", DummyPosition(1))
+    val baz = varFor("baz", DummyPosition(4))
 
     val s1 =
       SemanticState.clean
@@ -288,11 +288,11 @@ class SemanticStateTest extends CypherFunSuite {
   }
 
   test("should be able to import scopes and honor excludes") {
-    val foo0 = Variable("foo")(DummyPosition(0))
-    val foo1 = Variable("foo")(DummyPosition(1))
-    val bar = Variable("bar")(DummyPosition(1))
-    val baz = Variable("baz")(DummyPosition(4))
-    val frob = Variable("frob")(DummyPosition(5))
+    val foo0 = varFor("foo", DummyPosition(0))
+    val foo1 = varFor("foo", DummyPosition(1))
+    val bar = varFor("bar", DummyPosition(1))
+    val baz = varFor("baz", DummyPosition(4))
+    val frob = varFor("frob", DummyPosition(5))
 
     val s1 =
       SemanticState.clean

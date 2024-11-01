@@ -25,7 +25,6 @@ import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.CurrentUser
 import org.neo4j.cypher.internal.ast.ShowProceduresClause
 import org.neo4j.cypher.internal.ast.User
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.graphdb.Result
 import org.neo4j.internal.kernel.api.procs.FieldSignature
@@ -835,18 +834,18 @@ class ShowProceduresCommandTest extends ShowCommandTestBase {
   test("show procedures should rename columns renamed in YIELD") {
     // Given: YIELD name AS procedure, admin, isDeprecated AS deprecated, description
     val yieldColumns: List[CommandResultItem] = List(
-      CommandResultItem(ShowProceduresClause.nameColumn, Variable("procedure")(InputPosition.NONE))(InputPosition.NONE),
+      CommandResultItem(ShowProceduresClause.nameColumn, varFor("procedure"))(InputPosition.NONE),
       CommandResultItem(
         ShowProceduresClause.adminColumn,
-        Variable(ShowProceduresClause.adminColumn)(InputPosition.NONE)
+        varFor(ShowProceduresClause.adminColumn)
       )(InputPosition.NONE),
       CommandResultItem(
         ShowProceduresClause.isDeprecatedColumn,
-        Variable("deprecated")(InputPosition.NONE)
+        varFor("deprecated")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowProceduresClause.descriptionColumn,
-        Variable(ShowProceduresClause.descriptionColumn)(InputPosition.NONE)
+        varFor(ShowProceduresClause.descriptionColumn)
       )(InputPosition.NONE)
     )
 

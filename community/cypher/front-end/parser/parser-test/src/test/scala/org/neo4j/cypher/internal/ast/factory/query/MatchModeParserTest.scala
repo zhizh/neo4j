@@ -34,7 +34,6 @@ import org.neo4j.cypher.internal.expressions.PatternPartWithSelector
 import org.neo4j.cypher.internal.expressions.RelationshipChain
 import org.neo4j.cypher.internal.expressions.RelationshipPattern
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
-import org.neo4j.cypher.internal.expressions.Variable
 
 import scala.collection.immutable.ArraySeq
 
@@ -302,7 +301,7 @@ class MatchModeParserTest extends AstParsingTestBase with LegacyAstParsingTestSu
             ForMatch(ArraySeq(PatternPartWithSelector(
               AllPaths()(pos),
               NamedPatternPart(
-                Variable("BINDINGS")(pos),
+                varFor("BINDINGS"),
                 PathPatternPart(RelationshipChain(
                   NodePattern(None, None, None, None)(pos),
                   RelationshipPattern(None, None, None, None, None, OUTGOING)(pos),
@@ -329,7 +328,7 @@ class MatchModeParserTest extends AstParsingTestBase with LegacyAstParsingTestSu
             ForMatch(ArraySeq(PatternPartWithSelector(
               AllPaths()(pos),
               NamedPatternPart(
-                Variable("BINDINGS")(pos),
+                varFor("BINDINGS"),
                 PathPatternPart(RelationshipChain(
                   NodePattern(None, None, None, None)(pos),
                   RelationshipPattern(None, None, None, None, None, OUTGOING)(pos),

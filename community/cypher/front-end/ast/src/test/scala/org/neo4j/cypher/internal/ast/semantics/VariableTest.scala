@@ -17,15 +17,14 @@
 package org.neo4j.cypher.internal.ast.semantics
 
 import org.neo4j.cypher.internal.ast.SemanticCheckInTest.SemanticCheckWithDefaultContext
-import org.neo4j.cypher.internal.expressions.Variable
-import org.neo4j.cypher.internal.util.DummyPosition
+import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.CTAny
 
 class VariableTest extends SemanticFunSuite {
 
   test("shouldDefineVariableDuringSemanticCheckWhenUndefined") {
-    val position = DummyPosition(0)
-    val variable = Variable("x")(position)
+    val position = InputPosition.NONE
+    val variable = varFor("x", position)
 
     val result = SemanticExpressionCheck.simple(variable).run(SemanticState.clean)
     result.errors should have size 1

@@ -23,6 +23,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.neo4j.cypher.internal.CypherVersion
+import org.neo4j.cypher.internal.ast.IsTyped
 import org.neo4j.cypher.internal.ast.Query
 import org.neo4j.cypher.internal.ast.SetExactPropertiesFromMapItem
 import org.neo4j.cypher.internal.ast.SetIncludingPropertiesFromMapItem
@@ -33,8 +34,10 @@ import org.neo4j.cypher.internal.ast.semantics.SemanticFeature.UseAsSingleGraphS
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
 import org.neo4j.cypher.internal.compiler.CypherPlannerConfiguration
 import org.neo4j.cypher.internal.compiler.phases.PlannerContext
+import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.frontend.phases.BaseState
 import org.neo4j.cypher.internal.frontend.phases.CompilationPhaseTracer
+import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.parser.AstParserFactory
 import org.neo4j.cypher.internal.util.CancellationChecker
 import org.neo4j.cypher.internal.util.Neo4jCypherExceptionFactory
@@ -318,6 +321,18 @@ class VerifyGraphTargetTest extends CypherFunSuite {
       case u: UnionAll                          => u.copy(differentReturnOrderAllowed = true)(u.position)
       case u: SetExactPropertiesFromMapItem     => u.copy(rhsMustBeMap = false)(u.position)
       case u: SetIncludingPropertiesFromMapItem => u.copy(rhsMustBeMap = false)(u.position)
+      case v: Variable if v.isIsolated          =>
+        // An isolated variable e.g. "`a`", "(a)" is tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the tracking.
+        v.copy()(v.position, Variable.isIsolatedDefault)
+      case it: IsTyped if it.withDoubleColonOnly =>
+        // Type predicates with only a double column e.g. "x :: INT" are tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the difference.
+        it.copy()(it.position, IsTyped.withDoubleColonOnlyDefault)
+      case lep: LabelExpressionPredicate if lep.isParenthesized =>
+        // Label expression predicates that are parenthesized e.g. "(n:L)" are tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the difference.
+        lep.copy()(lep.position, LabelExpressionPredicate.isParenthesizedDefault)
     }))
   }
 }

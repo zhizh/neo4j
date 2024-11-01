@@ -372,7 +372,8 @@ trait StatementBuilder extends Cypher5ParserListener {
   private def nonEmptyVariables(list: Cypher5Parser.NonEmptyNameListContext): NonEmptyList[Variable] = {
     NonEmptyList.from(
       list.children.asScala.collect {
-        case nameCtx: Cypher5Parser.SymbolicNameStringContext => Variable(nameCtx.ast())(pos(nameCtx))
+        case nameCtx: Cypher5Parser.SymbolicNameStringContext =>
+          Variable(nameCtx.ast())(pos(nameCtx), Variable.isIsolatedDefault)
       }
     )
   }
@@ -463,7 +464,8 @@ trait StatementBuilder extends Cypher5ParserListener {
     ctx: Cypher5Parser.ProcedureResultItemContext
   ): Unit = {
     val str = ctx.symbolicNameString().ast[String]()
-    ctx.ast = if (ctx.variable() == null) ProcedureResultItem(Variable(str)(pos(ctx)))(pos(ctx))
+    ctx.ast = if (ctx.variable() == null)
+      ProcedureResultItem(Variable(str)(pos(ctx), Variable.isIsolatedDefault))(pos(ctx))
     else {
       val v = ctx.variable().ast[Variable]()
       ProcedureResultItem(ProcedureOutput(str)(v.position), v)(pos(ctx))

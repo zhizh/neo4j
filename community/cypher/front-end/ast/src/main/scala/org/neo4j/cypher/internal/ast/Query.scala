@@ -779,12 +779,12 @@ sealed trait Union extends Query {
       // we need to find out what extra variables to include here.
       if (lhs.returnVariables.includeExisting) {
         scopeFromLhs.symbolNames.foreach { name =>
-          builder.addOne(Mapping(Variable(name)(this.position), name, name))
+          builder.addOne(Mapping(Variable(name)(this.position, Variable.isIsolatedDefault), name, name))
         }
       }
       if (rhs.returnVariables.includeExisting) {
         scopeFromRhs.symbolNames.foreach { name =>
-          builder.addOne(Mapping(Variable(name)(this.position), name, name))
+          builder.addOne(Mapping(Variable(name)(this.position, Variable.isIsolatedDefault), name, name))
         }
       }
       builder.result()
@@ -862,7 +862,7 @@ sealed trait UnmappedUnion extends Union {
       rhsCol <- rhs.returnColumns.find(_.name == lhsCol.name)
     } yield {
       // This assumes that lhs.returnColumns and rhs.returnColumns agree
-      UnionMapping(Variable(lhsCol.name)(this.position), lhsCol, rhsCol)
+      UnionMapping(Variable(lhsCol.name)(this.position, Variable.isIsolatedDefault), lhsCol, rhsCol)
     }
   }
 

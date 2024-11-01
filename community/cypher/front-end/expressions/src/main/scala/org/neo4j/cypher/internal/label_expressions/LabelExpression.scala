@@ -29,17 +29,60 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Negation
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
 import org.neo4j.cypher.internal.util.ASTNode
+import org.neo4j.cypher.internal.util.DeprecatedFeature
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.bottomUp
 
 import scala.annotation.tailrec
 
 /**
- * @param entity expression to evaluate to the entity we want to check
+ * @param entity          expression to evaluate to the entity we want to check
+ * @param isParenthesized indicator if the label expression predicate was parenthesized, e.g. (n:L)
+ *                        Note that isParenthesized may be false, even if the predicate was parenthesized.
+ *                        Currently, isParenthesized is only set to true for parenthesized
+ *                        label expression predicate in the Cypher5 parser.
  */
-case class LabelExpressionPredicate(entity: Expression, labelExpression: LabelExpression)(val position: InputPosition)
+case class LabelExpressionPredicate(
+  entity: Expression,
+  labelExpression: LabelExpression
+)(val position: InputPosition, val isParenthesized: Boolean)
     extends BooleanExpression {
   override def isConstantForQuery: Boolean = false
+
+  override def dup(children: Seq[AnyRef]): this.type =
+    children.size match {
+      case 2 =>
+        LabelExpressionPredicate(
+          children.head.asInstanceOf[Expression],
+          children(1).asInstanceOf[LabelExpression]
+        )(position, isParenthesized).asInstanceOf[this.type]
+      case 3 =>
+        LabelExpressionPredicate(
+          children.head.asInstanceOf[Expression],
+          children(1).asInstanceOf[LabelExpression]
+        )(
+          children(2).asInstanceOf[InputPosition],
+          isParenthesized
+        ).asInstanceOf[this.type]
+      case 4 =>
+        LabelExpressionPredicate(
+          children.head.asInstanceOf[Expression],
+          children(1).asInstanceOf[LabelExpression]
+        )(
+          children(2).asInstanceOf[InputPosition],
+          children(3).asInstanceOf[Boolean]
+        ).asInstanceOf[this.type]
+      case _ => throw new IllegalStateException("LabelExpressionPredicate has at least 2 and at most 4 children.")
+    }
+}
+
+object LabelExpressionPredicate {
+
+  val isParenthesizedDefault: Boolean = false
+
+  // ... + n:P
+  //       ^
+  case object UnparenthesizedLabelPredicateOnRhsOfAdd extends DeprecatedFeature.DeprecatedIn5ErrorIn25
 }
 
 sealed trait LabelExpression extends ASTNode {

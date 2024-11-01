@@ -327,7 +327,7 @@ case class InsertCachedProperties(pushdownPropertyReads: Boolean)
 
   private def asVariable(lv: LogicalVariable): Variable = lv match {
     case v: Variable => v
-    case _           => Variable(lv.name)(lv.position)
+    case _           => Variable(lv.name)(lv.position, Variable.isIsolatedDefault)
   }
 
   private def cacheProperty(
@@ -680,7 +680,7 @@ case object InsertCachedProperties extends StepSequencer.Step with DefaultPostCo
       while (previousNames.contains(name)) {
         name = previousNames(name)
       }
-      variable.copy(name)(variable.position)
+      variable.renameId(name)
     }
 
     private def ifShouldCache(

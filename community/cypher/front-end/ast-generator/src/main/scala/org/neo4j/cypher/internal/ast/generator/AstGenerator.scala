@@ -718,7 +718,7 @@ class AstGenerator(
     }
     for {
       name <- nameGen
-    } yield Variable(name)(pos)
+    } yield Variable(name)(pos, Variable.isIsolatedDefault)
   }
 
   // Predicates
@@ -779,7 +779,7 @@ class AstGenerator(
       Not(r)(pos),
       IsNull(r)(pos),
       IsNotNull(r)(pos),
-      IsTyped(r, typeName)(pos),
+      IsTyped(r, typeName)(pos, IsTyped.withDoubleColonOnlyDefault),
       IsNotTyped(r, typeName)(pos),
       IsNormalized(r, normalForm)(pos),
       IsNotNormalized(r, normalForm)(pos)
@@ -1587,7 +1587,7 @@ class AstGenerator(
       batchSize.map(InTransactionsBatchParameters(_)(pos)),
       concurrency.map(InTransactionsConcurrencyParameters(_)(pos)),
       onErrorBehaviour.map(InTransactionsErrorParameters(_)(pos)),
-      reportAs.map(v => InTransactionsReportParameters(Variable(s"`$v`")(pos))(pos))
+      reportAs.map(v => InTransactionsReportParameters(Variable(s"`$v`")(pos, Variable.isIsolatedDefault))(pos))
     )(pos)
 
   def _clause: Gen[Clause] = oneOf(

@@ -25,7 +25,6 @@ import org.neo4j.configuration.Config
 import org.neo4j.configuration.SettingImpl
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.ShowSettingsClause
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.runtime.interpreted.QueryStateHelper
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.ParameterFromSlot
 import org.neo4j.cypher.internal.util.InputPosition
@@ -318,18 +317,18 @@ class ShowSettingsCommandTest extends ShowCommandTestBase {
   test("show settings should rename columns renamed in YIELD") {
     // Given: YIELD name AS setting, startupValue AS startupVal, value, description
     val yieldColumns: List[CommandResultItem] = List(
-      CommandResultItem(ShowSettingsClause.nameColumn, Variable("setting")(InputPosition.NONE))(InputPosition.NONE),
+      CommandResultItem(ShowSettingsClause.nameColumn, varFor("setting"))(InputPosition.NONE),
       CommandResultItem(
         ShowSettingsClause.startupValueColumn,
-        Variable("startupVal")(InputPosition.NONE)
+        varFor("startupVal")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowSettingsClause.valueColumn,
-        Variable(ShowSettingsClause.valueColumn)(InputPosition.NONE)
+        varFor(ShowSettingsClause.valueColumn)
       )(InputPosition.NONE),
       CommandResultItem(
         ShowSettingsClause.descriptionColumn,
-        Variable(ShowSettingsClause.descriptionColumn)(InputPosition.NONE)
+        varFor(ShowSettingsClause.descriptionColumn)
       )(InputPosition.NONE)
     )
 

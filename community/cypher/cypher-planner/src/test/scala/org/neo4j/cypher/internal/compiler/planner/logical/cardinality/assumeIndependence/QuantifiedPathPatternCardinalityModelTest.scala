@@ -29,14 +29,12 @@ import org.neo4j.cypher.internal.expressions.DifferentRelationships
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.SemanticDirection
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.ir.NodeBinding
 import org.neo4j.cypher.internal.ir.PatternRelationship
 import org.neo4j.cypher.internal.ir.QuantifiedPathPattern
 import org.neo4j.cypher.internal.ir.Selections
 import org.neo4j.cypher.internal.ir.SimplePatternLength
 import org.neo4j.cypher.internal.util.Cardinality
-import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.LabelId
 import org.neo4j.cypher.internal.util.NonEmptyList
 import org.neo4j.cypher.internal.util.RelTypeId
@@ -90,8 +88,8 @@ class QuantifiedPathPatternCardinalityModelTest extends CypherFunSuite with Quan
 
     val labelInfo: LabelInfo =
       Map(
-        v"start" -> Set(LabelName("A")(InputPosition.NONE)),
-        v"end" -> Set(LabelName("B")(InputPosition.NONE))
+        v"start" -> Set(LabelName("A")(pos)),
+        v"end" -> Set(LabelName("B")(pos))
       )
 
     val qpp =
@@ -103,21 +101,21 @@ class QuantifiedPathPatternCardinalityModelTest extends CypherFunSuite with Quan
             v"r_i",
             (v"a_i", v"b_i"),
             SemanticDirection.OUTGOING,
-            List(RelTypeName("R")(InputPosition.NONE)),
+            List(RelTypeName("R")(pos)),
             SimplePatternLength
           ),
           PatternRelationship(
             v"s_i",
             (v"b_i", v"c_i"),
             SemanticDirection.INCOMING,
-            List(RelTypeName("R")(InputPosition.NONE)),
+            List(RelTypeName("R")(pos)),
             SimplePatternLength
           )
         ),
         selections = Selections.from(DifferentRelationships(
-          Variable("r_i")(InputPosition.NONE),
-          Variable("s_i")(InputPosition.NONE)
-        )(InputPosition.NONE)),
+          varFor("r_i"),
+          varFor("s_i")
+        )(pos)),
         repetition = Repetition.apply(2, UpperBound.Limited(2)),
         nodeVariableGroupings =
           Set(variableGrouping(v"a_i", v"a"), variableGrouping(v"b_i", v"b"), variableGrouping(v"c_i", v"c")),

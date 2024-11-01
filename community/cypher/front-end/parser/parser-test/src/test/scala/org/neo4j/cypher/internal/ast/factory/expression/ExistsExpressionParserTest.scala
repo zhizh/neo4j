@@ -31,7 +31,6 @@ import org.neo4j.cypher.internal.expressions.RelationshipChain
 import org.neo4j.cypher.internal.expressions.RelationshipPattern
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.InputPosition
 
 class ExistsExpressionParserTest extends AstParsingTestBase {
@@ -46,7 +45,7 @@ class ExistsExpressionParserTest extends AstParsingTestBase {
         match_(
           RelationshipChain(
             nodePat(Some("m")),
-            RelationshipPattern(Some(Variable("r")(InputPosition(30, 2, 21))), None, None, None, None, OUTGOING)(
+            RelationshipPattern(Some(varFor("r", InputPosition(30, 2, 21))), None, None, None, None, OUTGOING)(
               InputPosition(28, 2, 19)
             ),
             nodePat(Some("p"))
@@ -73,12 +72,12 @@ class ExistsExpressionParserTest extends AstParsingTestBase {
         match_(
           RelationshipChain(
             nodePat(Some("m")),
-            RelationshipPattern(Some(Variable("r")(InputPosition(36, 2, 27))), None, None, None, None, OUTGOING)(
+            RelationshipPattern(Some(varFor("r", InputPosition(36, 2, 27))), None, None, None, None, OUTGOING)(
               InputPosition(34, 2, 25)
             ),
             nodePat(Some("p"))
           )(pos),
-          where = Some(where(greaterThan(prop(Variable("p")(pos), "a"), literal(5))))
+          where = Some(where(greaterThan(prop(varFor("p"), "a"), literal(5))))
         )
       )
     )(InputPosition(16, 2, 7), None, None)
@@ -101,7 +100,7 @@ class ExistsExpressionParserTest extends AstParsingTestBase {
         match_(
           RelationshipChain(
             nodePat(Some("m")),
-            RelationshipPattern(Some(Variable("r")(InputPosition(36, 2, 27))), None, None, None, None, OUTGOING)(
+            RelationshipPattern(Some(varFor("r", InputPosition(36, 2, 27))), None, None, None, None, OUTGOING)(
               InputPosition(34, 2, 25)
             ),
             nodePat(Some("p"))
@@ -128,7 +127,7 @@ class ExistsExpressionParserTest extends AstParsingTestBase {
         match_(
           RelationshipChain(
             nodePat(Some("m")),
-            RelationshipPattern(Some(Variable("r")(InputPosition(36, 2, 27))), None, None, None, None, OUTGOING)(
+            RelationshipPattern(Some(varFor("r", InputPosition(36, 2, 27))), None, None, None, None, OUTGOING)(
               InputPosition(34, 2, 25)
             ),
             nodePat(Some("p"))
@@ -248,7 +247,7 @@ class ExistsExpressionParserTest extends AstParsingTestBase {
                     Equals(varFor("i"), SignedDecimalIntegerLiteral("4")(pos))(pos)
                   )
                 )(pos),
-                Property(Variable("n")(pos), PropertyKeyName("prop")(pos))(pos)
+                Property(varFor("n"), PropertyKeyName("prop")(pos))(pos)
               )(pos)
             )
           )

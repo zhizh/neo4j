@@ -742,8 +742,8 @@ class SlottedRewriterTest extends CypherFunSuite with AstConstructionTestSupport
     // given
     val arg = Argument()
     val property = CachedProperty(
-      Variable("n.prop")(InputPosition.NONE),
-      Variable("n")(InputPosition.NONE),
+      Variable("n.prop")(InputPosition.NONE, Variable.isIsolatedDefault),
+      Variable("n")(InputPosition.NONE, Variable.isIsolatedDefault),
       PropertyKeyName("prop")(InputPosition.NONE),
       NODE_TYPE
     )(InputPosition.NONE)

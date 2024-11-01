@@ -48,7 +48,7 @@ object AdministrationShowCommandUtils {
       case columns => Some(OrderBy(columns.zipWithIndex.map {
           case (col, i) =>
             val pos = InputPosition(i, 1, 0)
-            ast.AscSortItem(Variable(col)(pos))(pos)
+            ast.AscSortItem(Variable(col)(pos, Variable.isIsolatedDefault))(pos)
         })(InputPosition.NONE))
     }
 
@@ -100,7 +100,9 @@ object AdministrationShowCommandUtils {
       returns.map(r => r.copy(orderBy = calcOrderBy(r, returnScope, defaultOrder, explicitSort))(r.position))
 
     def symbolsToReturnItems(symbols: List[String]): List[ReturnItem] =
-      symbols.map(s => UnaliasedReturnItem(Variable(s)(InputPosition.NONE), s)(InputPosition.NONE))
+      symbols.map(s =>
+        UnaliasedReturnItem(Variable(s)(InputPosition.NONE, Variable.isIsolatedDefault), s)(InputPosition.NONE)
+      )
 
     val clauses = (yieldColumns, returnColumns) match {
       // YIELD with WHERE and no RETURN so convert YIELD / WHERE to WITH and YIELD to RETURN

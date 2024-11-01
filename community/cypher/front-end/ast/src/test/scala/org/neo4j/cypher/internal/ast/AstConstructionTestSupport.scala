@@ -179,7 +179,6 @@ import org.neo4j.cypher.internal.label_expressions.LabelExpression
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.DynamicLeaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
-import org.neo4j.cypher.internal.util.DummyPosition
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.NonEmptyList
 import org.neo4j.cypher.internal.util.SizeBucket
@@ -194,7 +193,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 trait AstConstructionTestSupport {
-  protected val pos: InputPosition = DummyPosition(0)
+  protected val pos: InputPosition = InputPosition.NONE
   protected val defaultPos: InputPosition = InputPosition(0, 1, 1)
 
   implicit def withPos[T](expr: InputPosition => T): T = expr(pos)
@@ -204,8 +203,12 @@ trait AstConstructionTestSupport {
   implicit protected def statementToStatements(statement: Statement): Statements =
     Statements(Seq(statement))
 
-  def varFor(name: String): Variable = varFor(name, pos)
-  def varFor(name: String, position: InputPosition): Variable = Variable(name)(position)
+  def varFor(name: String): Variable = varFor(name, pos, isIsolated = false)
+  def varFor(name: String, isIsolated: Boolean): Variable = varFor(name, pos, isIsolated)
+  def varFor(name: String, position: InputPosition): Variable = varFor(name, position, isIsolated = false)
+
+  def varFor(name: String, position: InputPosition, isIsolated: Boolean): Variable =
+    Variable(name)(position, isIsolated)
 
   def labelName(s: String, position: InputPosition = pos): LabelName = LabelName(s)(position)
 
@@ -348,10 +351,10 @@ trait AstConstructionTestSupport {
     ListLiteral(expressions)(position)
 
   def listOfInt(values: Long*): ListLiteral =
-    ListLiteral(values.toSeq.map(literalInt(_)))(pos)
+    ListLiteral(values.toSeq.map(i => literalInt(i, pos)))(pos)
 
   def listOfFloat(values: Double*): ListLiteral = {
-    ListLiteral(values.toSeq.map(literalFloat(_)))(pos)
+    ListLiteral(values.toSeq.map(literalFloat))(pos)
   }
 
   def listOfString(stringValues: String*): ListLiteral =
@@ -593,7 +596,21 @@ trait AstConstructionTestSupport {
   def isNotNull(expression: Expression): IsNotNull = IsNotNull(expression)(pos)
 
   def isTyped(expression: Expression, typeName: CypherType): IsTyped =
-    IsTyped(expression, typeName)(pos)
+    isTyped(expression, typeName, pos, withDoubleColonOnly = false)
+
+  def isTyped(expression: Expression, typeName: CypherType, position: InputPosition): IsTyped =
+    isTyped(expression, typeName, position, withDoubleColonOnly = false)
+
+  def isTyped(expression: Expression, typeName: CypherType, withDoubleColonOnly: Boolean): IsTyped =
+    isTyped(expression, typeName, pos, withDoubleColonOnly)
+
+  def isTyped(
+    expression: Expression,
+    typeName: CypherType,
+    position: InputPosition,
+    withDoubleColonOnly: Boolean
+  ): IsTyped =
+    IsTyped(expression, typeName)(position, withDoubleColonOnly)
 
   def isNotTyped(expression: Expression, typeName: CypherType): IsNotTyped =
     IsNotTyped(expression, typeName)(pos)
@@ -766,11 +783,24 @@ trait AstConstructionTestSupport {
     Leaf(LabelOrRelTypeName(name)(position), containsIs)
 
   def labelExpressionPredicate(v: String, labelExpression: LabelExpression): LabelExpressionPredicate =
-    labelExpressionPredicate(varFor(v), labelExpression)
+    labelExpressionPredicate(varFor(v), labelExpression, isParenthesized = false)
 
-  def labelExpressionPredicate(subject: Expression, labelExpression: LabelExpression): LabelExpressionPredicate = {
-    LabelExpressionPredicate(subject, labelExpression)(pos)
-  }
+  def labelExpressionPredicate(
+    v: String,
+    labelExpression: LabelExpression,
+    isParenthesized: Boolean
+  ): LabelExpressionPredicate =
+    labelExpressionPredicate(varFor(v), labelExpression, isParenthesized)
+
+  def labelExpressionPredicate(subject: Expression, labelExpression: LabelExpression): LabelExpressionPredicate =
+    labelExpressionPredicate(subject, labelExpression, isParenthesized = false)
+
+  def labelExpressionPredicate(
+    subject: Expression,
+    labelExpression: LabelExpression,
+    isParenthesized: Boolean
+  ): LabelExpressionPredicate =
+    LabelExpressionPredicate(subject, labelExpression)(pos, isParenthesized)
 
   def ands(expressions: Expression*): Ands = Ands(expressions)(pos)
 
@@ -786,7 +816,7 @@ trait AstConstructionTestSupport {
     namePos: InputPosition = pos,
     position: InputPosition = pos
   ): NodePattern =
-    NodePattern(name.map(Variable(_)(namePos)), labelExpression, properties, predicates)(position)
+    NodePattern(name.map(varFor(_, namePos)), labelExpression, properties, predicates)(position)
 
   def relPat(
     name: Option[String] = None,
@@ -798,7 +828,7 @@ trait AstConstructionTestSupport {
     namePos: InputPosition = pos,
     position: InputPosition = pos
   ): RelationshipPattern =
-    RelationshipPattern(name.map(Variable(_)(namePos)), labelExpression, length, properties, predicates, direction)(
+    RelationshipPattern(name.map(varFor(_, namePos)), labelExpression, length, properties, predicates, direction)(
       position
     )
 
@@ -1038,7 +1068,7 @@ trait AstConstructionTestSupport {
     SetLabelItem(varFor(node), labels.map(label => LabelName(label)(pos)), dynamicLabels, containsIs)(pos)
 
   def setPropertyItem(map: String, propertyName: String, expr: Expression): SetPropertyItem =
-    SetPropertyItem(Property(Variable(map)(pos), PropertyKeyName(propertyName)(pos))(pos), expr)(pos)
+    SetPropertyItem(Property(varFor(map, pos), PropertyKeyName(propertyName)(pos))(pos), expr)(pos)
 
   def remove(items: Seq[RemoveItem]): Remove = Remove(items)(pos)
 
@@ -1051,7 +1081,7 @@ trait AstConstructionTestSupport {
     RemoveLabelItem(varFor(node), labels.map(label => LabelName(label)(pos)), dynamicLabels, containsIs)(pos)
 
   def removePropertyItem(map: String, propertyName: String): RemovePropertyItem =
-    RemovePropertyItem(Property(Variable(map)(pos), PropertyKeyName(propertyName)(pos))(pos))
+    RemovePropertyItem(Property(varFor(map, pos), PropertyKeyName(propertyName)(pos))(pos))
 
   def finish(): Finish = Finish()(pos)
 
@@ -1102,6 +1132,12 @@ trait AstConstructionTestSupport {
     originalExpr,
     varFor(newName, increasePos(originalExpr.position, originalExpr.asCanonicalStringVal.length + 4))
   )(originalExpr.position)
+
+  def aliasedReturnItem(originalExpr: Expression, newName: String, isIsolated: Boolean): AliasedReturnItem =
+    AliasedReturnItem(
+      originalExpr,
+      varFor(newName, increasePos(originalExpr.position, originalExpr.asCanonicalStringVal.length + 4), isIsolated)
+    )(originalExpr.position)
 
   def autoAliasedReturnItem(originalExpr: Expression): AliasedReturnItem = AliasedReturnItem(
     originalExpr,

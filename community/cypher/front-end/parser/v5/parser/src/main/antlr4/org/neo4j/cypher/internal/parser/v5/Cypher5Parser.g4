@@ -714,7 +714,7 @@ namespace
    ;
 
 variable
-   : symbolicNameString
+   : symbolicVariableNameString
    ;
 
 // Returns non-list of propertyKeyNames
@@ -1768,6 +1768,19 @@ mapOrParameter
 
 map
    : LCURLY (propertyKeyName COLON expression (COMMA propertyKeyName COLON expression)*)? RCURLY
+   ;
+
+symbolicVariableNameString
+   : escapedSymbolicVariableNameString
+   | unescapedSymbolicVariableNameString
+   ;
+
+escapedSymbolicVariableNameString
+   : escapedSymbolicNameString
+   ;
+
+unescapedSymbolicVariableNameString
+   : unescapedSymbolicNameString
    ;
 
 symbolicNameString

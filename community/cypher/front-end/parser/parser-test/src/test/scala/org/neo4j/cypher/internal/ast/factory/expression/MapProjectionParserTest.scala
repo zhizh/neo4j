@@ -24,55 +24,52 @@ import org.neo4j.cypher.internal.expressions.MapProjection
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.PropertySelector
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.expressions.VariableSelector
-import org.neo4j.cypher.internal.util.DummyPosition
 
 class MapProjectionParserTest extends AstParsingTestBase with LegacyAstParsingTestSupport {
-  private val t = DummyPosition(0)
 
   test("testIdentifierCanContainASCII") {
     "abc{}" should parseTo[MapProjection](
-      MapProjection(Variable("abc")(t), Seq.empty)(t)
+      MapProjection(varFor("abc"), Seq.empty)(pos)
     )
 
     "abc{.id}" should parseTo[MapProjection](
       MapProjection(
-        Variable("abc")(t),
-        Seq(PropertySelector(PropertyKeyName("id")(t))(t))
-      )(t)
+        varFor("abc"),
+        Seq(PropertySelector(PropertyKeyName("id")(pos))(pos))
+      )(pos)
     )
 
     "abc{id}" should parseTo[MapProjection](
       MapProjection(
-        Variable("abc")(t),
-        Seq(VariableSelector(Variable("id")(t))(t))
-      )(t)
+        varFor("abc"),
+        Seq(VariableSelector(varFor("id"))(pos))
+      )(pos)
     )
 
     "abc { id : 42 }" should parseTo[MapProjection](
       MapProjection(
-        Variable("abc")(t),
-        Seq(LiteralEntry(PropertyKeyName("id")(t), SignedDecimalIntegerLiteral("42")(t))(t))
-      )(t)
+        varFor("abc"),
+        Seq(LiteralEntry(PropertyKeyName("id")(pos), SignedDecimalIntegerLiteral("42")(pos))(pos))
+      )(pos)
     )
 
     "abc { `a p a` : 42 }" should parseTo[MapProjection](
       MapProjection(
-        Variable("abc")(t),
-        Seq(LiteralEntry(PropertyKeyName("a p a")(t), SignedDecimalIntegerLiteral("42")(t))(t))
-      )(t)
+        varFor("abc"),
+        Seq(LiteralEntry(PropertyKeyName("a p a")(pos), SignedDecimalIntegerLiteral("42")(pos))(pos))
+      )(pos)
     )
 
     "abc { id : 42, .foo, bar }" should parseTo[MapProjection](
       MapProjection(
-        Variable("abc")(t),
+        varFor("abc"),
         Seq(
-          LiteralEntry(PropertyKeyName("id")(t), SignedDecimalIntegerLiteral("42")(t))(t),
-          PropertySelector(PropertyKeyName("foo")(t))(t),
-          VariableSelector(Variable("bar")(t))(t)
+          LiteralEntry(PropertyKeyName("id")(pos), SignedDecimalIntegerLiteral("42")(pos))(pos),
+          PropertySelector(PropertyKeyName("foo")(pos))(pos),
+          VariableSelector(varFor("bar"))(pos)
         )
-      )(t)
+      )(pos)
     )
   }
 

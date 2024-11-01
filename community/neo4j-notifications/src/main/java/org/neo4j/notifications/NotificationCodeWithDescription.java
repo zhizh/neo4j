@@ -212,6 +212,22 @@ public enum NotificationCodeWithDescription {
             Status.Statement.FeatureDeprecationWarning,
             GqlStatusInfoCodes.STATUS_01N00,
             "CALL subquery without a variable scope clause is now deprecated. " + "Use CALL (%s) { ... }"),
+    DEPRECATED_WHERE_VARIABLE_IN_NODE_PATTERN(
+            Status.Statement.FeatureDeprecationWarning,
+            GqlStatusInfoCodes.STATUS_01N01,
+            "'%s' is deprecated. It is replaced by '%s'."),
+    DEPRECATED_WHERE_VARIABLE_IN_RELATIONSHIP_PATTERN(
+            Status.Statement.FeatureDeprecationWarning,
+            GqlStatusInfoCodes.STATUS_01N01,
+            "'%s' is deprecated. It is replaced by '%s'."),
+    DEPRECATED_PRECEDENCE_OF_LABEL_EXPRESSION_PREDICATED(
+            Status.Statement.FeatureDeprecationWarning,
+            GqlStatusInfoCodes.STATUS_01N01,
+            "'%s' is deprecated. It is replaced by '%s'."),
+    DEPRECATED_KEYWORD_VARIABLE_IN_WHEN_OPERAND(
+            Status.Statement.FeatureDeprecationWarning,
+            GqlStatusInfoCodes.STATUS_01N01,
+            "'%s' is deprecated. It is replaced by '%s'."),
     UNION_RETURN_ORDER(
             Status.Statement.FeatureDeprecationWarning,
             GqlStatusInfoCodes.STATUS_01N00,
@@ -606,9 +622,49 @@ public enum NotificationCodeWithDescription {
         return DEPRECATED_IMPORTING_WITH_IN_SUBQUERY_CALL.notificationWithParameters(
                 position, new String[] {variable}, new String[] {
                     String.format(
-                            "CALL subquery without a variable scope clause is now deprecated. Use CALL (%s) { ... }",
+                            "CALL subquery without a variable scope clause is deprecated. Use CALL (%s) { ... }",
                             variable)
                 });
+    }
+
+    public static NotificationImplementation deprecatedWhereVariableInNodePattern(
+            InputPosition position, String variableName, String properties) {
+        String nodePatternWithUnescapedVariable = String.format("(%s %s)", variableName, properties);
+        String nodePatternWithEscapedVariable = String.format("(`%s` %s)", variableName, properties);
+        return DEPRECATED_WHERE_VARIABLE_IN_NODE_PATTERN.notificationWithParameters(
+                position,
+                new String[] {nodePatternWithUnescapedVariable, nodePatternWithEscapedVariable},
+                new String[] {nodePatternWithUnescapedVariable, nodePatternWithEscapedVariable});
+    }
+
+    public static NotificationImplementation deprecatedWhereVariableInRelationshipPattern(
+            InputPosition position, String variableName, String properties) {
+        String relPatternWithUnescapedVariable = String.format("-[%s %s]-", variableName, properties);
+        String relPatternWithEscapedVariable = String.format("-[`%s` %s]-", variableName, properties);
+        return DEPRECATED_WHERE_VARIABLE_IN_RELATIONSHIP_PATTERN.notificationWithParameters(
+                position,
+                new String[] {relPatternWithUnescapedVariable, relPatternWithEscapedVariable},
+                new String[] {relPatternWithUnescapedVariable, relPatternWithEscapedVariable});
+    }
+
+    public static NotificationImplementation deprecatedPrecedenceOfLabelExpressionPredicate(
+            InputPosition position, String labelExpressionPredicate) {
+        String unparenthesizedLabelExpressionPredicate = String.format("... + %s", labelExpressionPredicate);
+        String parenthesizedLabelExpressionPredicate = String.format("... + (%s)", labelExpressionPredicate);
+        return DEPRECATED_PRECEDENCE_OF_LABEL_EXPRESSION_PREDICATED.notificationWithParameters(
+                position,
+                new String[] {unparenthesizedLabelExpressionPredicate, parenthesizedLabelExpressionPredicate},
+                new String[] {unparenthesizedLabelExpressionPredicate, parenthesizedLabelExpressionPredicate});
+    }
+
+    public static NotificationImplementation deprecatedKeywordVariableInWhenOperand(
+            InputPosition position, String variableName, String remainingExpression) {
+        String whenOperandWithUnescapedVariable = String.format("WHEN %s%s", variableName, remainingExpression);
+        String whenOperandWithEscapedVariable = String.format("WHEN `%s`%s", variableName, remainingExpression);
+        return DEPRECATED_KEYWORD_VARIABLE_IN_WHEN_OPERAND.notificationWithParameters(
+                position,
+                new String[] {whenOperandWithUnescapedVariable, whenOperandWithEscapedVariable},
+                new String[] {whenOperandWithUnescapedVariable, whenOperandWithEscapedVariable});
     }
 
     public static NotificationImplementation unionReturnOrder(InputPosition position) {

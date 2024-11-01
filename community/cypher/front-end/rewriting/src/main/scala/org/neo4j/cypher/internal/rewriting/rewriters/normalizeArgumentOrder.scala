@@ -17,6 +17,7 @@
 package org.neo4j.cypher.internal.rewriting.rewriters
 
 import org.neo4j.cypher.internal.ast.semantics.SemanticState
+import org.neo4j.cypher.internal.expressions.ContainerIndex
 import org.neo4j.cypher.internal.expressions.Equals
 import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.InequalityExpression
@@ -64,6 +65,9 @@ case object normalizeArgumentOrder extends StepSequencer.Step with ASTRewriterFa
       predicate
 
     case predicate @ Equals(lhs, rhs @ Property(_, _)) =>
+      predicate.copy(lhs = rhs, rhs = lhs)(predicate.position)
+
+    case predicate @ Equals(lhs, rhs @ ContainerIndex(_, _)) =>
       predicate.copy(lhs = rhs, rhs = lhs)(predicate.position)
 
     case inequality: InequalityExpression =>

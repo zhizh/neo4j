@@ -34,7 +34,6 @@ import org.neo4j.cypher.internal.ast.RangeIndexes
 import org.neo4j.cypher.internal.ast.ShowIndexesClause
 import org.neo4j.cypher.internal.ast.TextIndexes
 import org.neo4j.cypher.internal.ast.VectorIndexes
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.runtime.ConstraintInfo
 import org.neo4j.cypher.internal.runtime.IndexInfo
 import org.neo4j.cypher.internal.runtime.IndexStatus
@@ -1287,18 +1286,18 @@ class ShowIndexesCommandTest extends ShowCommandTestBase {
   test("show indexes should rename columns renamed in YIELD") {
     // Given: YIELD name AS index, labelsOrTypes, createStatement AS create, type
     val yieldColumns: List[CommandResultItem] = List(
-      CommandResultItem(ShowIndexesClause.nameColumn, Variable("index")(InputPosition.NONE))(InputPosition.NONE),
+      CommandResultItem(ShowIndexesClause.nameColumn, varFor("index"))(InputPosition.NONE),
       CommandResultItem(
         ShowIndexesClause.labelsOrTypesColumn,
-        Variable(ShowIndexesClause.labelsOrTypesColumn)(InputPosition.NONE)
+        varFor(ShowIndexesClause.labelsOrTypesColumn)
       )(InputPosition.NONE),
       CommandResultItem(
         ShowIndexesClause.createStatementColumn,
-        Variable("create")(InputPosition.NONE)
+        varFor("create")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowIndexesClause.typeColumn,
-        Variable(ShowIndexesClause.typeColumn)(InputPosition.NONE)
+        varFor(ShowIndexesClause.typeColumn)
       )(InputPosition.NONE)
     )
 

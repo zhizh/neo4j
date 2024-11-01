@@ -37,7 +37,6 @@ import org.neo4j.cypher.internal.expressions.RelationshipsPattern
 import org.neo4j.cypher.internal.expressions.SemanticDirection.BOTH
 import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.frontend.phases.Namespacer
 import org.neo4j.cypher.internal.frontend.phases.rewriting.cnf.flattenBooleanOperators
 import org.neo4j.cypher.internal.ir.AggregatingQueryProjection
@@ -523,7 +522,7 @@ class CreateIrExpressionsTest extends CypherFunSuite with AstConstructionTestSup
     val nameGenerator = makeAnonymousVariableNameGenerator()
     val existsVariable = varFor(nameGenerator.nextName)
 
-    val semanticTable = new SemanticTable().addNode(Variable("n")(InputPosition(16, 1, 17)))
+    val semanticTable = new SemanticTable().addNode(varFor("n", InputPosition(16, 1, 17)))
 
     val rewritten = rewrite(esc, semanticTable)
     val existsIRExpression = rewritten.asInstanceOf[ExistsIRExpression]
@@ -937,7 +936,7 @@ class CreateIrExpressionsTest extends CypherFunSuite with AstConstructionTestSup
     val nameGenerator = makeAnonymousVariableNameGenerator()
     val countVariable = varFor(nameGenerator.nextName)
 
-    val semanticTable = new SemanticTable().addNode(Variable("n")(InputPosition(16, 1, 17)))
+    val semanticTable = new SemanticTable().addNode(varFor("n", InputPosition(16, 1, 17)))
 
     val rewritten = rewrite(ce, semanticTable)
     val countIRExpression = rewritten.asInstanceOf[CountIRExpression]
@@ -1597,7 +1596,7 @@ class CreateIrExpressionsTest extends CypherFunSuite with AstConstructionTestSup
     val ce = CollectExpression(rewrittenQuery)(pos, Some(Set(r, m)), Some(Set(n)))
 
     val countVariable = varFor(makeAnonymousVariableNameGenerator().nextName)
-    val semanticTable = new SemanticTable().addNode(Variable("n")(InputPosition(16, 1, 17)))
+    val semanticTable = new SemanticTable().addNode(varFor("n", InputPosition(16, 1, 17)))
 
     val rewritten = rewrite(ce, semanticTable)
     val collectIRExpression = rewritten.asInstanceOf[ListIRExpression]

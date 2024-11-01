@@ -252,7 +252,7 @@ object TestStatement {
   def apply(e: Expression): Statement = {
     val returnClause = Return(ReturnItems(
       includeExisting = false,
-      Seq(AliasedReturnItem(e, Variable("")(InputPosition.NONE))(InputPosition.NONE))
+      Seq(AliasedReturnItem(e, Variable("")(InputPosition.NONE, Variable.isIsolatedDefault))(InputPosition.NONE))
     )(InputPosition.NONE))(InputPosition.NONE)
     SingleQuery(Seq(returnClause))(InputPosition.NONE)
   }

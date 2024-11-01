@@ -99,9 +99,9 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
             PropertiesResource(propSeq)(pos),
             List(PatternQualifier(
               Seq(labelQualifierA),
-              Some(Variable("a")(_)),
+              Some(varFor("a")),
               Equals(
-                Property(Variable("a")(_), PropertyKeyName("prop2")(_))(_),
+                Property(varFor("a"), PropertyKeyName("prop2")(_))(_),
                 literal(1)
               )(_)
             )),
@@ -226,11 +226,11 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
       (expression match {
         case _: MapExpression => List(
             (None, s"(:A $expressionString)"),
-            (Some(Variable("n")(pos)), s"(n:A $expressionString)")
+            (Some(varFor("n")), s"(n:A $expressionString)")
           )
         case _: BooleanExpression => List(
-            (Some(Variable("n")(pos)), s"(n:A) WHERE $expressionString"),
-            (Some(Variable("n")(pos)), s"(n:A WHERE $expressionString)"),
+            (Some(varFor("n")), s"(n:A) WHERE $expressionString"),
+            (Some(varFor("n")), s"(n:A WHERE $expressionString)"),
             (
               None,
               s"(:A) WHERE $expressionString"
@@ -305,7 +305,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelAllQualifier() _),
-            Some(Variable("n")(_)),
+            Some(varFor("n")),
             equals(prop(varFor("n"), "prop1"), literalInt(1))
           )),
           Seq(literalRole),
@@ -320,7 +320,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelAllQualifier() _),
-            Some(Variable("n")(_)),
+            Some(varFor("n")),
             equals(prop(varFor("n"), "prop1"), literalInt(1))
           )),
           Seq(literalRole),
@@ -339,7 +339,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelAllQualifier() _),
-            Some(Variable("a")(_)),
+            Some(varFor("a")),
             equals(prop(varFor("b"), "prop1"), literalInt(1))
           )),
           Seq(literalRole),
@@ -354,7 +354,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelAllQualifier() _),
-            Some(Variable("a")(_)),
+            Some(varFor("a")),
             equals(prop(varFor("b"), "prop1"), literalInt(1))
           )),
           Seq(literalRole),
@@ -373,12 +373,12 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelAllQualifier() _),
-            Some(Variable("n")(_)),
+            Some(varFor("n")),
             equals(
               literalInt(1),
               FunctionInvocation.apply(
                 FunctionName(Namespace(List("n"))(pos), "prop1")(pos),
-                Variable("foo")(pos)
+                varFor("foo")
               )(pos)
             )
           )),
@@ -394,12 +394,12 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelAllQualifier() _),
-            Some(Variable("n")(_)),
+            Some(varFor("n")),
             equals(
               literalInt(1),
               FunctionInvocation.apply(
                 FunctionName(Namespace(List("n"))(pos), "prop1")(pos),
-                Variable("foo")(pos)
+                varFor("foo")
               )(pos)
             )
           )),
@@ -419,7 +419,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelQualifier("A") _),
-            Some(Variable("n")(_)),
+            Some(varFor("n")),
             ExistsExpression(
               SingleQuery(
                 List(
@@ -428,7 +428,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
                     MatchMode.DifferentRelationships(implicitlyCreated = true)(pos),
                     ForMatch(List(PatternPartWithSelector(
                       AllPaths()(pos),
-                      PathPatternPart(NodePattern(Some(Variable("n")(pos)), None, None, None)(pos))
+                      PathPatternPart(NodePattern(Some(varFor("n")), None, None, None)(pos))
                     )))(pos),
                     List(),
                     None
@@ -449,7 +449,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
           AllPropertyResource() _,
           List(PatternQualifier(
             Seq(LabelQualifier("A") _),
-            Some(Variable("n")(_)),
+            Some(varFor("n")),
             ExistsExpression(
               SingleQuery(
                 List(
@@ -458,7 +458,7 @@ class ReadMatchPropertyPrivilegeAdministrationCommandParserTest
                     MatchMode.DifferentRelationships(implicitlyCreated = true)(pos),
                     ForMatch(List(PatternPartWithSelector(
                       AllPaths()(pos),
-                      PathPatternPart(NodePattern(Some(Variable("n")(pos)), None, None, None)(pos))
+                      PathPatternPart(NodePattern(Some(varFor("n")), None, None, None)(pos))
                     )))(pos),
                     List(),
                     None

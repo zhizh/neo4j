@@ -34,7 +34,8 @@ case class IndexedProperty(
 ) {
   def shouldGetValue: Boolean = getValueFromIndex == GetValue
 
-  def asCachedProperty(node: String): CachedProperty = asCachedProperty(Variable(node)(InputPosition.NONE))
+  def asCachedProperty(node: String): CachedProperty =
+    asCachedProperty(Variable(node)(InputPosition.NONE, Variable.isIsolatedDefault))
 
   def asCachedProperty(node: LogicalVariable): CachedProperty =
     CachedProperty(

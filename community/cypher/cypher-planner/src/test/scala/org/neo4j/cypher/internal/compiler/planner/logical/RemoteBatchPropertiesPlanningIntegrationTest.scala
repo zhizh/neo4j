@@ -31,14 +31,12 @@ import org.neo4j.cypher.internal.expressions.NODE_TYPE
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.Predicate
 import org.neo4j.cypher.internal.logical.builder.AbstractLogicalPlanBuilder.createNode
 import org.neo4j.cypher.internal.logical.plans.Expand.ExpandInto
 import org.neo4j.cypher.internal.logical.plans.GetValue
 import org.neo4j.cypher.internal.logical.plans.SingleQueryExpression
 import org.neo4j.cypher.internal.planner.spi.DatabaseMode
-import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
@@ -176,7 +174,7 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
       .remoteBatchProperties("cacheNFromStore[person.firstName]")
       .nodeIndexOperator(
         "person:Person(id = ???)",
-        paramExpr = Some(ExplicitParameter("Person", CTAny)(InputPosition.NONE)),
+        paramExpr = Some(ExplicitParameter("Person", CTAny)(pos)),
         getValue = Map("id" -> GetValue),
         unique = true
       )
@@ -200,17 +198,17 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
       .projection(Map(
         "personLastName" -> CachedProperty(
           // notice how `originalEntity` and `entityVariable` differ here
-          originalEntity = Variable("person")(InputPosition.NONE),
-          entityVariable = Variable("earlyAdopter")(InputPosition.NONE),
-          PropertyKeyName("lastName")(InputPosition.NONE),
+          originalEntity = varFor("person"),
+          entityVariable = varFor("earlyAdopter"),
+          PropertyKeyName("lastName")(pos),
           NODE_TYPE
-        )(InputPosition.NONE),
+        )(pos),
         "friendLastName" -> CachedProperty(
-          originalEntity = Variable("friend")(InputPosition.NONE),
-          entityVariable = Variable("friend")(InputPosition.NONE),
-          PropertyKeyName("lastName")(InputPosition.NONE),
+          originalEntity = varFor("friend"),
+          entityVariable = varFor("friend"),
+          PropertyKeyName("lastName")(pos),
           NODE_TYPE
-        )(InputPosition.NONE)
+        )(pos)
       ))
       .remoteBatchProperties("cacheNFromStore[friend.lastName]")
       .filter("friend:Person")
@@ -267,7 +265,7 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
       .expand("(person)-[anon_0:KNOWS*1..2]-(friend)")
       .nodeIndexOperator(
         "person:Person(id = ???)",
-        paramExpr = Some(ExplicitParameter("Person", CTAny)(InputPosition.NONE)),
+        paramExpr = Some(ExplicitParameter("Person", CTAny)(pos)),
         getValue = Map("id" -> GetValue),
         unique = true
       )
@@ -329,7 +327,7 @@ class RemoteBatchPropertiesPlanningIntegrationTest extends CypherFunSuite with L
       .bfsPruningVarExpand("(person)-[:KNOWS*1..2]-(friend)")
       .nodeIndexOperator(
         "person:Person(id = ???)",
-        paramExpr = Some(ExplicitParameter("Person", CTAny)(InputPosition.NONE)),
+        paramExpr = Some(ExplicitParameter("Person", CTAny)(pos)),
         unique = true
       )
       .build()

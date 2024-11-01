@@ -25,15 +25,51 @@ import org.neo4j.cypher.internal.util.symbols.CTAny
 import org.neo4j.cypher.internal.util.symbols.CTBoolean
 import org.neo4j.cypher.internal.util.symbols.CypherType
 
-case class IsTyped(lhs: Expression, typeName: CypherType)(val position: InputPosition)
-    extends BooleanExpression
+case class IsTyped(lhs: Expression, typeName: CypherType)(
+  val position: InputPosition,
+  val withDoubleColonOnly: Boolean
+) extends BooleanExpression
     with RightUnaryOperatorExpression {
 
   override val signatures = Vector(
     TypeSignature(argumentTypes = Vector(CTAny, CTAny), outputType = CTBoolean)
   )
 
+  def copyAndKeepMeta(lhs: Expression = lhs, typeName: CypherType = typeName): IsTyped =
+    copy(lhs = lhs, typeName = typeName)(position, withDoubleColonOnly)
+
   override def canonicalOperatorSymbol = "IS ::"
+
+  override def dup(children: Seq[AnyRef]): this.type =
+    children.size match {
+      case 2 =>
+        IsTyped(
+          children.head.asInstanceOf[Expression],
+          children(1).asInstanceOf[CypherType]
+        )(position, withDoubleColonOnly).asInstanceOf[this.type]
+      case 3 =>
+        IsTyped(
+          children.head.asInstanceOf[Expression],
+          children(1).asInstanceOf[CypherType]
+        )(
+          children(2).asInstanceOf[InputPosition],
+          withDoubleColonOnly
+        ).asInstanceOf[this.type]
+      case 4 =>
+        IsTyped(
+          children.head.asInstanceOf[Expression],
+          children(1).asInstanceOf[CypherType]
+        )(
+          children(2).asInstanceOf[InputPosition],
+          children(3).asInstanceOf[Boolean]
+        ).asInstanceOf[this.type]
+      case _ => throw new IllegalStateException("IsTyped has at least 2 and at most 4 children.")
+    }
+}
+
+object IsTyped {
+
+  val withDoubleColonOnlyDefault: Boolean = false
 }
 
 case class IsNotTyped(lhs: Expression, typeName: CypherType)(val position: InputPosition)
@@ -43,6 +79,9 @@ case class IsNotTyped(lhs: Expression, typeName: CypherType)(val position: Input
   override val signatures = Vector(
     TypeSignature(argumentTypes = Vector(CTAny, CTAny), outputType = CTBoolean)
   )
+
+  def copyAndKeepMeta(lhs: Expression = lhs, typeName: CypherType = typeName): IsNotTyped =
+    copy(lhs = lhs, typeName = typeName)(position)
 
   override def canonicalOperatorSymbol = "IS NOT ::"
 }

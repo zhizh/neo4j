@@ -62,11 +62,15 @@ case class simplifyPredicates(semanticState: SemanticState, cancellationChecker:
   }
 
   private def computeReplacement: Expression => Expression = {
-    case n @ Not(Not(innerExpression))                  => simplifyToInnerExpression(n, innerExpression)
-    case n @ Not(IsNull(innerExpression))               => IsNotNull(innerExpression)(n.position)
-    case n @ Not(IsNotNull(innerExpression))            => IsNull(innerExpression)(n.position)
-    case n @ Not(IsNotTyped(innerExpression, typeName)) => IsTyped(innerExpression, typeName)(n.position)
-    case n @ IsNotTyped(innerExpression, typeName) => Not(IsTyped(innerExpression, typeName)(n.position))(n.position)
+    case n @ Not(Not(innerExpression))       => simplifyToInnerExpression(n, innerExpression)
+    case n @ Not(IsNull(innerExpression))    => IsNotNull(innerExpression)(n.position)
+    case n @ Not(IsNotNull(innerExpression)) => IsNull(innerExpression)(n.position)
+    case n @ Not(IsNotTyped(innerExpression, typeName)) =>
+      IsTyped(innerExpression, typeName)(n.position, withDoubleColonOnly = IsTyped.withDoubleColonOnlyDefault)
+    case n @ IsNotTyped(innerExpression, typeName) => Not(IsTyped(innerExpression, typeName)(
+        n.position,
+        withDoubleColonOnly = IsTyped.withDoubleColonOnlyDefault
+      ))(n.position)
     case n @ Not(IsNotNormalized(innerExpression, normalForm)) => IsNormalized(innerExpression, normalForm)(n.position)
     case n @ IsNotNormalized(innerExpression, normalForm) =>
       Not(IsNormalized(innerExpression, normalForm)(n.position))(n.position)

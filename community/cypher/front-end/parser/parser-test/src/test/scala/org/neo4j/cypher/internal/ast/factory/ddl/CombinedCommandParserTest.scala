@@ -17,6 +17,7 @@
 package org.neo4j.cypher.internal.ast.factory.ddl
 
 import org.neo4j.cypher.internal.ast
+import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.expressions.Expression
@@ -1301,41 +1302,49 @@ class CombinedCommandParserTest extends AdministrationAndSchemaCommandParserTest
   ) {
     // From astGenerator, it wasn't a parsing problem
     // but now I have already added the test to check that so it can stay :shrug:
-    assertAstVersionBased(
-      fromCypher5 =>
-        singleQuery(
-          use(List("test")),
-          ast.ShowTransactionsClause(Right(literalString("")), None, List.empty, yieldAll = true, fromCypher5)(pos),
-          withFromYield(returnAllItems),
-          ast.ShowTransactionsClause(Left(List("", "", "")), None, List.empty, yieldAll = true, fromCypher5)(pos),
-          withFromYield(returnAllItems),
-          ast.ShowTransactionsClause(
-            Right(varFor("콺")),
-            None,
-            List(commandResultItem("碌"), commandResultItem("脃"), commandResultItem("麪")),
-            yieldAll = false,
-            fromCypher5
-          )(pos),
-          withFromYield(
-            returnAllItems.withDefaultOrderOnColumns(List("碌", "脃", "麪")),
-            Some(orderBy(sortItem(nullLiteral))),
-            Some(skip(1)),
-            where = Some(where(SignedOctalIntegerLiteral("0o1")(pos)))
-          ),
-          returnClause(
-            returnItems(
-              ast.AliasedReturnItem(isNotNull(literalString("")), varFor("ጤ"))(pos)
-            ).withExisting(true),
-            Some(orderBy(
-              ast.DescSortItem(SignedHexIntegerLiteral("-0x1")(pos))(pos),
-              ast.DescSortItem(varFor("怭"))(pos)
-            )),
-            Some(ast.Limit(nullLiteral)(pos)),
-            skip = Some(ast.Skip(literalFloat(1.9121409685506285E89))(pos))
-          )
+    def expected(variablesAreEscaped: Boolean, returnCypher5Types: Boolean) =
+      singleQuery(
+        use(List("test")),
+        ast.ShowTransactionsClause(Right(literalString("")), None, List.empty, yieldAll = true, returnCypher5Types)(
+          pos
         ),
-      comparePosition = false
-    )
+        withFromYield(returnAllItems),
+        ast.ShowTransactionsClause(Left(List("", "", "")), None, List.empty, yieldAll = true, returnCypher5Types)(pos),
+        withFromYield(returnAllItems),
+        ast.ShowTransactionsClause(
+          Right(varFor("콺", variablesAreEscaped)),
+          None,
+          List(
+            commandResultItem("碌", variablesAreEscaped),
+            commandResultItem("脃", variablesAreEscaped),
+            commandResultItem("麪", variablesAreEscaped)
+          ),
+          yieldAll = false,
+          returnCypher5Types
+        )(pos),
+        withFromYield(
+          returnAllItems.withDefaultOrderOnColumns(List("碌", "脃", "麪")),
+          Some(orderBy(sortItem(nullLiteral))),
+          Some(skip(1)),
+          where = Some(where(SignedOctalIntegerLiteral("0o1")(pos)))
+        ),
+        returnClause(
+          returnItems(
+            ast.AliasedReturnItem(isNotNull(literalString("")), varFor("ጤ", variablesAreEscaped))(pos)
+          ).withExisting(true),
+          Some(orderBy(
+            ast.DescSortItem(SignedHexIntegerLiteral("-0x1")(pos))(pos),
+            ast.DescSortItem(varFor("怭", variablesAreEscaped))(pos)
+          )),
+          Some(ast.Limit(nullLiteral)(pos)),
+          skip = Some(ast.Skip(literalFloat(1.9121409685506285E89))(pos))
+        )
+      )
+    parsesIn[Statement] {
+      case Cypher5JavaCc => _.toAst(expected(variablesAreEscaped = false, returnCypher5Types = true))
+      case Cypher5       => _.toAst(expected(variablesAreEscaped = true, returnCypher5Types = true))
+      case _             => _.toAst(expected(variablesAreEscaped = false, returnCypher5Types = false))
+    }
   }
 
   test(

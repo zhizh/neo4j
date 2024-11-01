@@ -205,6 +205,6 @@ case object SelectPatternPredicates extends SelectionCandidateGenerator {
 
   private def freshId(existsExpression: Expression, anonymousVariableNameGenerator: AnonymousVariableNameGenerator) = {
     val name = anonymousVariableNameGenerator.nextName
-    Variable(name)(existsExpression.position)
+    Variable(name)(existsExpression.position, Variable.isIsolatedDefault)
   }
 }

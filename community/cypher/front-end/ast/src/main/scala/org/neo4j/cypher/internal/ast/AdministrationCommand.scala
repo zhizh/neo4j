@@ -135,7 +135,8 @@ sealed trait ReadAdministrationCommand extends AdministrationCommand {
   def returns: Option[Return] = yieldOrWhere.flatMap(yw => yw.left.toOption.flatMap { case (_, r) => r })
   def withYieldOrWhere(newYieldOrWhere: YieldOrWhere): ReadAdministrationCommand
 
-  override def returnColumns: List[LogicalVariable] = returnColumnNames.map(name => Variable(name)(position))
+  override def returnColumns: List[LogicalVariable] =
+    returnColumnNames.map(name => Variable(name)(position, Variable.isIsolatedDefault))
 
   override def semanticCheck: SemanticCheck = SemanticCheck.nestedCheck {
 
@@ -673,10 +674,10 @@ object ShowRoles {
   def apply(withUsers: Boolean, showAll: Boolean, yieldOrWhere: YieldOrWhere)(position: InputPosition): ShowRoles = {
     val defaultColumnSet =
       if (withUsers) List(
-        ShowColumn(Variable("role")(position), CTString, "role"),
-        ShowColumn(Variable("member")(position), CTString, "member")
+        ShowColumn(Variable("role")(position, Variable.isIsolatedDefault), CTString, "role"),
+        ShowColumn(Variable("member")(position, Variable.isIsolatedDefault), CTString, "member")
       )
-      else List(ShowColumn(Variable("role")(position), CTString, "role"))
+      else List(ShowColumn(Variable("role")(position, Variable.isIsolatedDefault), CTString, "role"))
     ShowRoles(withUsers, showAll, yieldOrWhere, defaultColumnSet)(position)
   }
 }
@@ -1340,12 +1341,12 @@ final case class DeallocateServers(dryRun: Boolean, serverNames: Seq[Either[Stri
   override def returnColumns: List[LogicalVariable] =
     if (dryRun) {
       List(
-        Variable("database")(position),
-        Variable("fromServerName")(position),
-        Variable("fromServerId")(position),
-        Variable("toServerName")(position),
-        Variable("toServerId")(position),
-        Variable("mode")(position)
+        Variable("database")(position, Variable.isIsolatedDefault),
+        Variable("fromServerName")(position, Variable.isIsolatedDefault),
+        Variable("fromServerId")(position, Variable.isIsolatedDefault),
+        Variable("toServerName")(position, Variable.isIsolatedDefault),
+        Variable("toServerId")(position, Variable.isIsolatedDefault),
+        Variable("mode")(position, Variable.isIsolatedDefault)
       )
     } else List.empty
 
@@ -1364,12 +1365,12 @@ final case class ReallocateDatabases(dryRun: Boolean)(
   override def returnColumns: List[LogicalVariable] =
     if (dryRun) {
       List(
-        Variable("database")(position),
-        Variable("fromServerName")(position),
-        Variable("fromServerId")(position),
-        Variable("toServerName")(position),
-        Variable("toServerId")(position),
-        Variable("mode")(position)
+        Variable("database")(position, Variable.isIsolatedDefault),
+        Variable("fromServerName")(position, Variable.isIsolatedDefault),
+        Variable("fromServerId")(position, Variable.isIsolatedDefault),
+        Variable("toServerName")(position, Variable.isIsolatedDefault),
+        Variable("toServerId")(position, Variable.isIsolatedDefault),
+        Variable("mode")(position, Variable.isIsolatedDefault)
       )
     } else List.empty
 
@@ -1598,7 +1599,7 @@ sealed trait WaitableAdministrationCommand extends WriteAdministrationCommand {
 
   override def returnColumns: List[LogicalVariable] = waitUntilComplete match {
     case NoWait => List.empty
-    case _      => List("address", "state", "message", "success").map(Variable(_)(position))
+    case _      => List("address", "state", "message", "success").map(Variable(_)(position, Variable.isIsolatedDefault))
   }
 }
 

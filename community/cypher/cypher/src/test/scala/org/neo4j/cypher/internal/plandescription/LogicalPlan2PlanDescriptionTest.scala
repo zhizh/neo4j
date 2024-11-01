@@ -151,7 +151,6 @@ import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.expressions.SingleRelationshipPathStep
 import org.neo4j.cypher.internal.expressions.StringLiteral
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.expressions.functions.Collect
 import org.neo4j.cypher.internal.expressions.functions.Count
 import org.neo4j.cypher.internal.expressions.functions.IsEmpty
@@ -437,7 +436,6 @@ import org.neo4j.cypher.internal.runtime.ast.MakeTraversable
 import org.neo4j.cypher.internal.runtime.ast.RuntimeConstant
 import org.neo4j.cypher.internal.util.EffectiveCardinality
 import org.neo4j.cypher.internal.util.ExactSize
-import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.LabelId
 import org.neo4j.cypher.internal.util.NonEmptyList
 import org.neo4j.cypher.internal.util.PropertyKeyId
@@ -1822,7 +1820,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         DirectedRelationshipTypeScan(
           varFor("r"),
           varFor("x"),
-          RelTypeName("R")(InputPosition.NONE),
+          RelTypeName("R")(pos),
           varFor("y"),
           Set.empty,
           IndexOrderNone
@@ -1843,7 +1841,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         UndirectedRelationshipTypeScan(
           varFor("r"),
           varFor("x"),
-          RelTypeName("R")(InputPosition.NONE),
+          RelTypeName("R")(pos),
           varFor("y"),
           Set.empty,
           IndexOrderNone
@@ -1866,7 +1864,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         PartitionedDirectedRelationshipTypeScan(
           varFor("r"),
           varFor("x"),
-          RelTypeName("R")(InputPosition.NONE),
+          RelTypeName("R")(pos),
           varFor("y"),
           Set.empty
         ),
@@ -1886,7 +1884,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         PartitionedUndirectedRelationshipTypeScan(
           varFor("r"),
           varFor("x"),
-          RelTypeName("R")(InputPosition.NONE),
+          RelTypeName("R")(pos),
           varFor("y"),
           Set.empty
         ),
@@ -5131,7 +5129,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
     val functionSignature = UserFunctionSignature(
       QualifiedName(Seq.empty, "datetime"),
       IndexedSeq(FieldSignature("Input", CTAny, Some(stringValue("DEFAULT_TEMPORAL_ARGUMENT")))),
-      BooleanType(isNullable = true)(InputPosition.NONE),
+      BooleanType(isNullable = true)(pos),
       None,
       None,
       isAggregate = false,
@@ -5522,7 +5520,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           lhsLP,
           varFor("i"),
           parameter("p", CTList(CTInteger)),
-          Seq(SetNodePropertyPattern(varFor("x"), PropertyKeyName("prop")(InputPosition.NONE), stringLiteral("foo")))
+          Seq(SetNodePropertyPattern(varFor("x"), PropertyKeyName("prop")(pos), stringLiteral("foo")))
         ),
         32.2
       ),
@@ -7319,8 +7317,8 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           HomeScope,
           PatternQualifier(
             Seq(LabelQualifier("Label1")(pos)),
-            Some(Variable("n")(pos)),
-            Equals(Property(Variable("n")(pos), PropertyKeyName("prop1")(pos))(pos), Null.NULL)(pos)
+            Some(varFor("n")),
+            Equals(Property(varFor("n"), PropertyKeyName("prop1")(pos))(pos), Null.NULL)(pos)
           ),
           util.Left("role1"),
           immutable = false,
@@ -8361,7 +8359,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           GraphDirectReference(CatalogName("composite", "remote"))(pos),
           Set.empty,
           Map.empty,
-          Set(Variable("col")(pos))
+          Set(varFor("col"))
         ),
         666.0
       ),
@@ -8382,7 +8380,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
           GraphDirectReference(CatalogName("composite", "remote"))(pos),
           Set.empty,
           Map.empty,
-          Set(Variable("col")(pos))
+          Set(varFor("col"))
         ),
         666.0
       ),
@@ -8418,7 +8416,7 @@ class LogicalPlan2PlanDescriptionTest extends CypherFunSuite with TableDrivenPro
         SelectOrSemiApply(
           lhsLP,
           rhsLP,
-          IsEmpty.asInvocation(MakeTraversable(Variable("n")(pos)))(InputPosition.NONE)
+          IsEmpty.asInvocation(MakeTraversable(varFor("n")))(pos)
         ),
         2345.0
       ),

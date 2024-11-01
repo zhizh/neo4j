@@ -23,7 +23,6 @@ import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.Parameter
 import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.RelTypeName
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.expressions.functions.Count
 import org.neo4j.cypher.internal.expressions.functions.Labels
 import org.neo4j.cypher.internal.expressions.functions.Type
@@ -3478,7 +3477,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     fromDefault: Boolean
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createRangeNodeIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       LabelName("Person")(increasePos(varPos, 3)),
       props,
       name,
@@ -3496,7 +3495,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     fromDefault: Boolean
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createRangeRelationshipIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       RelTypeName("R")(increasePos(varPos, 3)),
       props,
       name,
@@ -3515,7 +3514,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createLookupIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       isNodeIndex = true,
       function(Labels.name, varFor("n2")),
       name,
@@ -3530,7 +3529,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createLookupIndex(
-      Variable("r1")(varPos),
+      varFor("r1", varPos),
       isNodeIndex = false,
       function(Type.name, varFor("r2")),
       name,
@@ -3562,7 +3561,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createFulltextNodeIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       labels.map(labelName(_)),
       props,
       name,
@@ -3579,7 +3578,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createFulltextRelationshipIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       types.map(relTypeName(_)),
       props,
       name,
@@ -3595,7 +3594,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createTextNodeIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       LabelName("Person")(increasePos(varPos, 3)),
       props,
       name,
@@ -3611,7 +3610,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createTextRelationshipIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       RelTypeName("R")(increasePos(varPos, 3)),
       props,
       name,
@@ -3627,7 +3626,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createPointNodeIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       LabelName("Person")(increasePos(varPos, 3)),
       props,
       name,
@@ -3643,7 +3642,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createPointRelationshipIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       RelTypeName("R")(increasePos(varPos, 3)),
       props,
       name,
@@ -3659,7 +3658,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createVectorNodeIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       LabelName("Person")(increasePos(varPos, 3)),
       props,
       name,
@@ -3675,7 +3674,7 @@ class IndexCommandsParserTest extends AdministrationAndSchemaCommandParserTestBa
     options: ast.Options
   ): InputPosition => ast.CreateIndex =
     ast.CreateIndex.createVectorRelationshipIndex(
-      Variable("n1")(varPos),
+      varFor("n1", varPos),
       RelTypeName("R")(increasePos(varPos, 3)),
       props,
       name,

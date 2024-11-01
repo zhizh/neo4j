@@ -22,6 +22,7 @@ import org.neo4j.cypher.internal.ast.ReturnItems
 import org.neo4j.cypher.internal.ast.SingleQuery
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.UnaliasedReturnItem
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.expressions.And
@@ -41,7 +42,6 @@ import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
-import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.util.symbols.CTAny
 
 /**
@@ -640,6 +640,38 @@ class MatchNodeLabelExpressionsParserTest extends AstParsingTestBase {
       )
     }
   }
+
+  // syntax tracking
+  test("MATCH (n)-[r]-() WHERE (n:A & (B | X)) AND r:R") {
+    def expected(isParenthesized: Boolean): Clause =
+      match_(
+        RelationshipChain(
+          NodePattern(Some(varFor("n")), None, None, None)(pos),
+          RelationshipPattern(Some(varFor("r")), None, None, None, None, BOTH)(pos),
+          NodePattern(None, None, None, None)(pos)
+        )(pos),
+        where = Some(
+          where(and(
+            labelExpressionPredicate(
+              "n",
+              labelConjunction(
+                labelOrRelTypeLeaf("A"),
+                labelDisjunction(
+                  labelOrRelTypeLeaf("B"),
+                  labelOrRelTypeLeaf("X")
+                )
+              ),
+              isParenthesized = isParenthesized
+            ),
+            labelExpressionPredicate("r", labelOrRelTypeLeaf("R"), isParenthesized = false)
+          ))
+        )
+      )
+    parsesIn[Clause] {
+      case Cypher5 => _.toAst(expected(isParenthesized = true))
+      case _       => _.toAst(expected(isParenthesized = false))
+    }
+  }
 }
 
 class ExpressionLabelExpressionsParserTest extends AstParsingTestBase {
@@ -742,7 +774,7 @@ class ExpressionLabelExpressionsParserTest extends AstParsingTestBase {
   //              000000000111111111122222222223333333333
   //              123456789012345678901234567890123456789
   test("[x IN [1,2,3] WHERE (n:A | B) | x]") {
-    parsesTo[Expression] {
+    def expected(isParenthesized: Boolean): Expression =
       listComprehension(
         varFor("x"),
         listOfInt(1, 2, 3),
@@ -752,10 +784,14 @@ class ExpressionLabelExpressionsParserTest extends AstParsingTestBase {
             labelOrRelTypeLeaf("A", (1, 24, 23)),
             labelOrRelTypeLeaf("B", (1, 28, 27)),
             (1, 26, 25)
-          )
+          ),
+          isParenthesized
         )),
         Some(varFor("x"))
       )
+    parsesIn[Expression] {
+      case Cypher5 => _.toAst(expected(isParenthesized = true))
+      case _       => _.toAst(expected(isParenthesized = false))
     }
   }
 
@@ -848,14 +884,14 @@ class ExpressionLabelExpressionsParserTest extends AstParsingTestBase {
                 ListComprehension(
                   ExtractScope(
                     varFor("x"),
-                    Some(LabelExpressionPredicate(
+                    Some(labelExpressionPredicate(
                       varFor("n"),
                       Disjunctions(Seq(
                         Leaf(LabelOrRelTypeName("A")(pos)),
                         Leaf(LabelOrRelTypeName("b")(pos)),
                         Leaf(LabelOrRelTypeName("x")(pos))
                       ))(pos)
-                    )(pos)),
+                    )),
                     None
                   )(pos),
                   ListLiteral(Seq(literal(1), literal(2), literal(3)))(pos)
@@ -887,16 +923,16 @@ class ExpressionLabelExpressionsParserTest extends AstParsingTestBase {
                   ExtractScope(
                     varFor("x"),
                     Some(And(
-                      LabelExpressionPredicate(
+                      labelExpressionPredicate(
                         varFor("n"),
                         Disjunctions(Vector(Leaf(LabelOrRelTypeName("A")(pos)), Leaf(LabelOrRelTypeName("B")(pos))))(
                           pos
                         )
-                      )(pos),
-                      LabelExpressionPredicate(
+                      ),
+                      labelExpressionPredicate(
                         varFor("n"),
                         Disjunctions(Seq(Leaf(LabelOrRelTypeName("C")(pos)), Leaf(LabelOrRelTypeName("D")(pos))))(pos)
-                      )(pos)
+                      )
                     )(pos)),
                     Some(varFor("x"))
                   )(pos),

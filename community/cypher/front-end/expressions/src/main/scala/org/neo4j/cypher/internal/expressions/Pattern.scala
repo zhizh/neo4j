@@ -19,6 +19,7 @@ package org.neo4j.cypher.internal.expressions
 import org.neo4j.cypher.internal.expressions.PatternPart.Selector
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
 import org.neo4j.cypher.internal.util.ASTNode
+import org.neo4j.cypher.internal.util.DeprecatedFeature
 import org.neo4j.cypher.internal.util.InputPosition
 
 import scala.annotation.tailrec
@@ -487,6 +488,12 @@ case class NodePattern(
 
 }
 
+object NodePattern {
+  // (where {...})
+  //  ^
+  case object WhereVariableInNodePatterns extends DeprecatedFeature.DeprecatedIn5ErrorIn25
+}
+
 /**
  * Represents one relationship (without its neighbouring nodes) in a pattern.
  */
@@ -529,4 +536,10 @@ case class RelationshipPattern(
       predicate = predicate.map(f)
     )(this.position)
   }
+}
+
+object RelationshipPattern {
+  // -[where {...}]-
+  //   ^
+  case object WhereVariableInRelationshipPatterns extends DeprecatedFeature.DeprecatedIn5ErrorIn25
 }

@@ -18,18 +18,38 @@ package org.neo4j.cypher.internal.expressions
 
 import org.neo4j.cypher.internal.util.InputPosition
 
-case class Variable(name: String)(val position: InputPosition) extends LogicalVariable {
+/* Note that isIsolated may be false, even if the variable was isolated (escaped or parenthesized).
+ * Currently, isIsolated is only set to true for isolated variables in the Cypher5 parser.
+ */
+case class Variable(name: String)(val position: InputPosition, val isIsolated: Boolean) extends LogicalVariable {
+  override def copyId: Variable = copy()(position, isIsolated)
 
-  override def copyId: Variable = copy()(position)
+  override def withPosition(position: InputPosition): LogicalVariable =
+    copy()(position = position, Variable.isIsolatedDefault)
 
-  override def withPosition(position: InputPosition): LogicalVariable = copy()(position = position)
-
-  override def renameId(newName: String): Variable = copy(name = newName)(position)
+  override def renameId(newName: String): Variable = copy(name = newName)(position, isIsolated)
 
   override def asCanonicalStringVal: String = name
+
+  override def dup(children: Seq[AnyRef]): this.type = {
+    children.size match {
+      case 1 => Variable(children.head.asInstanceOf[String])(position, isIsolated).asInstanceOf[this.type]
+      case 2 => Variable(children.head.asInstanceOf[String])(
+          children(1).asInstanceOf[InputPosition],
+          isIsolated
+        ).asInstanceOf[this.type]
+      case 3 => Variable(children.head.asInstanceOf[String])(
+          children(1).asInstanceOf[InputPosition],
+          children(2).asInstanceOf[Boolean]
+        ).asInstanceOf[this.type]
+      case _ => throw new IllegalStateException("Variable has at least 1 and at most 3 children.")
+    }
+  }
 }
 
 object Variable {
+
+  val isIsolatedDefault: Boolean = false
 
   implicit val byName: Ordering[Variable] =
     Ordering.by { (variable: Variable) =>
@@ -38,5 +58,5 @@ object Variable {
 }
 
 object UnPositionedVariable {
-  def varFor(name: String): LogicalVariable = Variable(name)(InputPosition.NONE)
+  def varFor(name: String): LogicalVariable = Variable(name)(InputPosition.NONE, Variable.isIsolatedDefault)
 }

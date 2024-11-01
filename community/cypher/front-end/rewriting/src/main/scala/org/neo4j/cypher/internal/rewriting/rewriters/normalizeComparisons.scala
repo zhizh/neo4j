@@ -98,7 +98,7 @@ case object normalizeComparisons extends StepSequencer.Step with ASTRewriterFact
     case c @ IsNotNull(lhs) =>
       IsNotNull(lhs.endoRewrite(copyVariables))(c.position)
     case c @ IsTyped(lhs, cypherType) =>
-      IsTyped(lhs.endoRewrite(copyVariables), cypherType)(c.position)
+      IsTyped(lhs.endoRewrite(copyVariables), cypherType)(c.position, c.withDoubleColonOnly)
     case c @ IsNotTyped(lhs, cypherType) =>
       IsNotTyped(lhs.endoRewrite(copyVariables), cypherType)(c.position)
     case c @ IsNormalized(lhs, normalForm) =>

@@ -29,12 +29,10 @@ import org.neo4j.cypher.internal.expressions.NodePattern
 import org.neo4j.cypher.internal.expressions.RelTypeName
 import org.neo4j.cypher.internal.expressions.RelationshipPattern
 import org.neo4j.cypher.internal.expressions.SemanticDirection
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.frontend.phases.ValidSymbolicNamesInLabelExpressions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Disjunctions
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Wildcard
-import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.util.CancellationChecker
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
@@ -44,23 +42,23 @@ class ValidSymbolicNamesInLabelExpressionsTest extends CypherFunSuite with AstCo
   val condition: Any => Seq[String] = ValidSymbolicNamesInLabelExpressions(_)(CancellationChecker.NeverCancelled)
 
   test("A NodePattern can contain a Label in its label expression") {
-    val labelName = LabelName("A")(InputPosition.NONE)
-    val nodePattern = NodePattern(None, Some(Leaf(labelName)), None, None)(InputPosition.NONE)
+    val labelName = LabelName("A")(pos)
+    val nodePattern = NodePattern(None, Some(Leaf(labelName)), None, None)(pos)
     condition(nodePattern) shouldBe empty
   }
 
   test("A NodePattern cannot contain a RelType in its label expression") {
     val relTypeName = RelTypeName("A")(InputPosition(1, 3, 2))
-    val nodePattern = NodePattern(None, Some(Leaf(relTypeName)), None, None)(InputPosition.NONE)
+    val nodePattern = NodePattern(None, Some(Leaf(relTypeName)), None, None)(pos)
     condition(nodePattern) shouldEqual List(
       "Illegal symbolic name RelTypeName(A) inside a node pattern at position: line 3, column 2 (offset: 1)"
     )
   }
 
   test("A RelationshipPattern can contain a RelType in its label expression") {
-    val relTypeName = RelTypeName("A")(InputPosition.NONE)
+    val relTypeName = RelTypeName("A")(pos)
     val relationshipPattern =
-      RelationshipPattern(None, Some(Leaf(relTypeName)), None, None, None, SemanticDirection.BOTH)(InputPosition.NONE)
+      RelationshipPattern(None, Some(Leaf(relTypeName)), None, None, None, SemanticDirection.BOTH)(pos)
     condition(relationshipPattern) shouldBe empty
   }
 
@@ -68,7 +66,7 @@ class ValidSymbolicNamesInLabelExpressionsTest extends CypherFunSuite with AstCo
     val labelOrRelTypeName = LabelOrRelTypeName("A")(InputPosition(1, 3, 2))
     val relationshipPattern =
       RelationshipPattern(None, Some(Leaf(labelOrRelTypeName)), None, None, None, SemanticDirection.BOTH)(
-        InputPosition.NONE
+        pos
       )
     condition(relationshipPattern) shouldEqual List(
       "Illegal symbolic name LabelOrRelTypeName(A) inside a relationship pattern at position: line 3, column 2 (offset: 1)"
@@ -76,17 +74,17 @@ class ValidSymbolicNamesInLabelExpressionsTest extends CypherFunSuite with AstCo
   }
 
   test("A LabelExpressionPredicate can contain a LabelOrRelType in its label expression") {
-    val entity = Variable("n")(InputPosition.NONE)
-    val labelOrRelTypeName = LabelOrRelTypeName("A")(InputPosition.NONE)
-    val labelExpressionPredicate = LabelExpressionPredicate(entity, Leaf(labelOrRelTypeName))(InputPosition.NONE)
-    condition(labelExpressionPredicate) shouldBe empty
+    val entity = varFor("n", pos)
+    val labelOrRelTypeName = LabelOrRelTypeName("A")(pos)
+    val labelExpressionPred = labelExpressionPredicate(entity, Leaf(labelOrRelTypeName))
+    condition(labelExpressionPred) shouldBe empty
   }
 
   test("A LabelExpressionPredicate cannot contain a Label in its label expression") {
-    val entity = Variable("n")(InputPosition.NONE)
+    val entity = varFor("n")
     val labelName = LabelName("A")(InputPosition(1, 3, 2))
-    val labelExpressionPredicate = LabelExpressionPredicate(entity, Leaf(labelName))(InputPosition.NONE)
-    condition(labelExpressionPredicate) shouldEqual List(
+    val labelExpressionPred = labelExpressionPredicate(entity, Leaf(labelName))
+    condition(labelExpressionPred) shouldEqual List(
       "Illegal symbolic name LabelName(A) inside a label expression predicate at position: line 3, column 2 (offset: 1)"
     )
   }
@@ -96,33 +94,33 @@ class ValidSymbolicNamesInLabelExpressionsTest extends CypherFunSuite with AstCo
    * MATCH (n:A|%) WHERE n:B
    */
   test("Allow a more complex valid AST") {
-    val variable = Variable("n")(InputPosition.NONE)
-    val labelName = LabelName("A")(InputPosition.NONE)
-    val wildcard = Wildcard()(InputPosition.NONE)
-    val disjunction = Disjunctions(Seq(Leaf(labelName), wildcard))(InputPosition.NONE)
-    val nodePattern = NodePattern(Some(variable), Some(disjunction), None, None)(InputPosition.NONE)
+    val variable = varFor("n")
+    val labelName = LabelName("A")(pos)
+    val wildcard = Wildcard()(pos)
+    val disjunction = Disjunctions(Seq(Leaf(labelName), wildcard))(pos)
+    val nodePattern = NodePattern(Some(variable), Some(disjunction), None, None)(pos)
     val pattern = patternForMatch(nodePattern)
-    val labelOrRelTypeName = LabelOrRelTypeName("B")(InputPosition.NONE)
-    val labelExpressionPredicate = LabelExpressionPredicate(variable, Leaf(labelOrRelTypeName))(InputPosition.NONE)
-    val where = Where(labelExpressionPredicate)(InputPosition.NONE)
-    val matchClause = Match(optional = false, MatchMode.default(InputPosition.NONE), pattern, Seq.empty, Some(where))(
-      InputPosition.NONE
+    val labelOrRelTypeName = LabelOrRelTypeName("B")(pos)
+    val labelExpressionPred = labelExpressionPredicate(variable, Leaf(labelOrRelTypeName))
+    val where = Where(labelExpressionPred)(pos)
+    val matchClause = Match(optional = false, MatchMode.default(pos), pattern, Seq.empty, Some(where))(
+      pos
     )
     condition(matchClause) shouldBe empty
   }
 
   test("Report all errors in a more complex invalid AST") {
-    val variable = Variable("n")(InputPosition.NONE)
+    val variable = varFor("n")
     val relTypeName = RelTypeName("A")(InputPosition(1, 3, 2))
-    val wildcard = Wildcard()(InputPosition.NONE)
-    val disjunction = Disjunctions(Seq(Leaf(relTypeName), wildcard))(InputPosition.NONE)
-    val nodePattern = NodePattern(Some(variable), Some(disjunction), None, None)(InputPosition.NONE)
+    val wildcard = Wildcard()(pos)
+    val disjunction = Disjunctions(Seq(Leaf(relTypeName), wildcard))(pos)
+    val nodePattern = NodePattern(Some(variable), Some(disjunction), None, None)(pos)
     val pattern = patternForMatch(nodePattern)
     val labelName = LabelName("B")(InputPosition(41, 10, 42))
-    val labelExpressionPredicate = LabelExpressionPredicate(variable, Leaf(labelName))(InputPosition.NONE)
-    val where = Where(labelExpressionPredicate)(InputPosition.NONE)
-    val matchClause = Match(optional = false, MatchMode.default(InputPosition.NONE), pattern, Seq.empty, Some(where))(
-      InputPosition.NONE
+    val labelExpressionPred = labelExpressionPredicate(variable, Leaf(labelName))
+    val where = Where(labelExpressionPred)(pos)
+    val matchClause = Match(optional = false, MatchMode.default(pos), pattern, Seq.empty, Some(where))(
+      pos
     )
     condition(matchClause) shouldEqual List(
       "Illegal symbolic name RelTypeName(A) inside a node pattern at position: line 3, column 2 (offset: 1)",

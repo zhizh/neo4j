@@ -266,14 +266,14 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
+              Some(varFor("n", p)),
               And(
                 op(
-                  Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p),
+                  Property(varFor("n", p), PropertyKeyName("prop1")(p))(p),
                   SignedDecimalIntegerLiteral("1")(p)
                 ),
                 op(
-                  Property(Variable("n")(p), PropertyKeyName("prop2")(p))(p),
+                  Property(varFor("n", p), PropertyKeyName("prop2")(p))(p),
                   SignedDecimalIntegerLiteral("1")(p)
                 )
               )(p)
@@ -296,14 +296,14 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
+              Some(varFor("n", p)),
               Or(
                 op(
-                  Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p),
+                  Property(varFor("n", p), PropertyKeyName("prop1")(p))(p),
                   SignedDecimalIntegerLiteral("1")(p)
                 ),
                 op(
-                  Property(Variable("n")(p), PropertyKeyName("prop2")(p))(p),
+                  Property(varFor("n", p), PropertyKeyName("prop2")(p))(p),
                   SignedDecimalIntegerLiteral("1")(p)
                 )
               )(p)
@@ -324,8 +324,8 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
-              op(Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p), Null.NULL)
+              Some(varFor("n", p)),
+              op(Property(varFor("n", p), PropertyKeyName("prop1")(p))(p), Null.NULL)
             ),
             Seq(literalString("role1"))
           )(p)
@@ -343,8 +343,8 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
-              op(Null.NULL, Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p))
+              Some(varFor("n", p)),
+              op(Null.NULL, Property(varFor("n", p), PropertyKeyName("prop1")(p))(p))
             ),
             Seq(literalString("role1"))
           )(p)
@@ -364,8 +364,8 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
-              Not(op(Property(Variable("n")(p), PropertyKeyName("prop")(p))(p), Null.NULL))(p)
+              Some(varFor("n", p)),
+              Not(op(Property(varFor("n", p), PropertyKeyName("prop")(p))(p), Null.NULL))(p)
             ),
             Seq(literalString("role1"))
           )(p)
@@ -385,8 +385,8 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
-              Not(op(Null.NULL, Property(Variable("n")(p), PropertyKeyName("prop")(p))(p)))(p)
+              Some(varFor("n", p)),
+              Not(op(Null.NULL, Property(varFor("n", p), PropertyKeyName("prop")(p))(p)))(p)
             ),
             Seq(literalString("role1"))
           )(p)
@@ -406,8 +406,8 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
-              op(Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p), NaN()(p))
+              Some(varFor("n", p)),
+              op(Property(varFor("n", p), PropertyKeyName("prop1")(p))(p), NaN()(p))
             ),
             Seq(literalString("role1"))
           )(p)
@@ -427,8 +427,8 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
-              op(NaN()(p), Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p))
+              Some(varFor("n", p)),
+              op(NaN()(p), Property(varFor("n", p), PropertyKeyName("prop1")(p))(p))
             ),
             Seq(literalString("role1"))
           )(p)
@@ -448,9 +448,9 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
+              Some(varFor("n", p)),
               op(
-                Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p),
+                Property(varFor("n", p), PropertyKeyName("prop1")(p))(p),
                 Add(SignedDecimalIntegerLiteral("1")(p), SignedDecimalIntegerLiteral("2")(p))(p)
               )
             ),
@@ -472,7 +472,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
+              Some(varFor("n", p)),
               op(
                 prop(varFor("n"), "prop1"),
                 function("date.realtime")
@@ -580,7 +580,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
                 false,
                 None,
                 qualifierFn(
-                  Some(Variable("n")(p)),
+                  Some(varFor("n", p)),
                   expression
                 ),
                 Seq(literalString("role1"))
@@ -671,7 +671,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
                 false,
                 None,
                 qualifierFn(
-                  Some(Variable("n")(p)),
+                  Some(varFor("n", p)),
                   expression
                 ),
                 Seq(literalString("role1"))
@@ -695,9 +695,9 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
+              Some(varFor("n", p)),
               Not(Not(op(
-                Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p),
+                Property(varFor("n", p), PropertyKeyName("prop1")(p))(p),
                 SignedDecimalIntegerLiteral("1")(p)
               ))(p))(p)
             ),
@@ -720,8 +720,8 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
             false,
             None,
             qualifierFn(
-              Some(Variable("n")(p)),
-              op(SignedDecimalIntegerLiteral("1")(p), Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p))
+              Some(varFor("n", p)),
+              op(SignedDecimalIntegerLiteral("1")(p), Property(varFor("n", p), PropertyKeyName("prop1")(p))(p))
             ),
             Seq(literalString("role1"))
           )(p)
@@ -885,7 +885,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
               false,
               None,
               qualifierFn(
-                Some(Variable("n")(p)),
+                Some(varFor("n", p)),
                 expression
               ),
               Seq(literalString("role1"))
@@ -958,7 +958,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
               false,
               None,
               qualifierFn(
-                Some(Variable("n")(p)),
+                Some(varFor("n", p)),
                 expression
               ),
               Seq(literalString("role1"))
@@ -1047,7 +1047,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
               false,
               None,
               qualifierFn(
-                Some(Variable("n")(p)),
+                Some(varFor("n", p)),
                 expression
               ),
               Seq(literalString("role1"))
@@ -1172,7 +1172,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
               false,
               None,
               qualifierFn(
-                Some(Variable("n")(p)),
+                Some(varFor("n", p)),
                 expression
               ),
               Seq(literalString("role1"))
@@ -1209,7 +1209,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           GraphPrivilege(TraverseAction, HomeGraphScope()(p))(p),
           false,
           None,
-          qualifierFn(Some(Variable("n")(p)), expression),
+          qualifierFn(Some(varFor("n", p)), expression),
           Seq(literalString("role1"))
         )(p)
 
@@ -1228,9 +1228,9 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           false,
           None,
           qualifierFn(
-            Some(Variable("node")(p)),
+            Some(varFor("node", p)),
             Equals(
-              Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p),
+              Property(varFor("n", p), PropertyKeyName("prop1")(p))(p),
               SignedDecimalIntegerLiteral("1")(p)
             )(p)
           ),
@@ -1254,7 +1254,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           qualifierFn(
             None,
             Equals(
-              Property(Variable("n")(p), PropertyKeyName("prop1")(p))(p),
+              Property(varFor("n", p), PropertyKeyName("prop1")(p))(p),
               SignedDecimalIntegerLiteral("1")(p)
             )(p)
           ),
@@ -1276,13 +1276,13 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           false,
           None,
           qualifierFn(
-            Some(Variable("n")(p)),
+            Some(varFor("n", p)),
             Equals(
               SignedDecimalIntegerLiteral("1")(p),
               FunctionInvocation(
                 FunctionName(Namespace(List("n"))(p), "prop1")(p),
                 distinct = false,
-                Vector(Variable("foo")(p))
+                Vector(varFor("foo", p))
               )(p)
             )(p)
           ),
@@ -1306,7 +1306,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
           false,
           None,
           qualifierFn(
-            Some(Variable("n")(_)),
+            Some(varFor("n", p)),
             ExistsExpression(
               SingleQuery(
                 List(
@@ -1315,7 +1315,7 @@ class AdministrationCommandTest extends CypherFunSuite with AstConstructionTestS
                     MatchMode.DifferentRelationships(implicitlyCreated = true)(p),
                     ForMatch(List(PatternPartWithSelector(
                       AllPaths()(p),
-                      PathPatternPart(NodePattern(Some(Variable("n")(pos)), None, None, None)(p))
+                      PathPatternPart(NodePattern(Some(varFor("n", pos)), None, None, None)(p))
                     )))(p),
                     List(),
                     None

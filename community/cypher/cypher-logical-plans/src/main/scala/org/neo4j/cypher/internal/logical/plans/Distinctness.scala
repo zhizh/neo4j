@@ -135,7 +135,8 @@ object DistinctColumns {
       new DistinctColumns(columns)
     }
 
-  def apply(columnName: String): Distinctness = DistinctColumns(Variable(columnName)(InputPosition.NONE))
+  def apply(columnName: String): Distinctness =
+    DistinctColumns(Variable(columnName)(InputPosition.NONE, Variable.isIsolatedDefault))
 
 }
 

@@ -40,7 +40,6 @@ import org.neo4j.cypher.internal.ast.RelPropTypeConstraints
 import org.neo4j.cypher.internal.ast.RelUniqueConstraints
 import org.neo4j.cypher.internal.ast.ShowConstraintsClause
 import org.neo4j.cypher.internal.ast.UniqueConstraints
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.runtime.ConstraintInfo
 import org.neo4j.cypher.internal.runtime.IndexInfo
 import org.neo4j.cypher.internal.runtime.IndexStatus
@@ -1174,19 +1173,19 @@ class ShowConstraintsCommandTest extends ShowCommandTestBase {
     val yieldColumns: List[CommandResultItem] = List(
       CommandResultItem(
         ShowConstraintsClause.nameColumn,
-        Variable("constraint")(InputPosition.NONE)
+        varFor("constraint")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowConstraintsClause.labelsOrTypesColumn,
-        Variable(ShowConstraintsClause.labelsOrTypesColumn)(InputPosition.NONE)
+        varFor(ShowConstraintsClause.labelsOrTypesColumn)
       )(InputPosition.NONE),
       CommandResultItem(
         ShowConstraintsClause.createStatementColumn,
-        Variable("create")(InputPosition.NONE)
+        varFor("create")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowConstraintsClause.typeColumn,
-        Variable(ShowConstraintsClause.typeColumn)(InputPosition.NONE)
+        varFor(ShowConstraintsClause.typeColumn)
       )(InputPosition.NONE)
     )
 

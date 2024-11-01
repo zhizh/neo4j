@@ -23,7 +23,6 @@ import org.neo4j.cypher.internal.ast.ReturnItems
 import org.neo4j.cypher.internal.ast.SemanticCheckInTest.SemanticCheckWithDefaultContext
 import org.neo4j.cypher.internal.ast.UnaliasedReturnItem
 import org.neo4j.cypher.internal.expressions.NodePattern
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
@@ -115,7 +114,7 @@ class SubqueryCallTest extends CypherFunSuite with AstConstructionTestSupport {
     val error = singleQuery(
       with_(literal(1).as("x")),
       importingWithSubqueryCall(
-        return_(AliasedReturnItem(literal(2), Variable("x")(varPos))(pos))
+        return_(AliasedReturnItem(literal(2), varFor("x", varPos))(pos))
       ),
       return_(literal(1).as("y"))
     )

@@ -17,7 +17,9 @@
 package org.neo4j.cypher.internal.ast.factory.expression
 
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.ParserInTest
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.expressions.CaseExpression
 import org.neo4j.cypher.internal.expressions.Expression
@@ -280,14 +282,20 @@ class CaseExpressionParserTest extends AstParsingTestBase {
       |  ELSE 'else'
       |END""".stripMargin
   ) {
-    parsesTo[Expression] {
+    def expected(withDoubleColonOnly: Boolean) =
       CaseExpression(
         Some(literalInt(1)),
         List(
-          equals(literalInt(1), isTyped(varFor("is"), IntegerType(isNullable = true)(pos))) -> literalString("is int")
+          equals(
+            literalInt(1),
+            isTyped(varFor("is"), IntegerType(isNullable = true)(pos), withDoubleColonOnly)
+          ) -> literalString("is int")
         ),
         Some(literalString("else"))
       )(pos)
+    parsesIn[Expression] {
+      case Cypher5 => _.toAst(expected(withDoubleColonOnly = true))
+      case _       => _.toAst(expected(withDoubleColonOnly = false))
     }
   }
 
@@ -300,16 +308,19 @@ class CaseExpressionParserTest extends AstParsingTestBase {
       |  ELSE 'else'
       |END""".stripMargin
   ) {
-    parsesTo[Expression] {
+    def expected(withDoubleColonOnly: Boolean) =
       CaseExpression(
         Some(literalInt(1)),
         List(
           isTyped(literalInt(1), IntegerType(isNullable = true)(pos)) -> literalInt(1),
           isNotTyped(literalInt(1), IntegerType(isNullable = true)(pos)) -> literalInt(2),
-          isTyped(literalInt(1), IntegerType(isNullable = true)(pos)) -> literalInt(3)
+          isTyped(literalInt(1), IntegerType(isNullable = true)(pos), withDoubleColonOnly) -> literalInt(3)
         ),
         Some(literalString("else"))
       )(pos)
+    parsesIn[Expression] {
+      case Cypher5 => _.toAst(expected(withDoubleColonOnly = true))
+      case _       => _.toAst(expected(withDoubleColonOnly = false))
     }
   }
 
@@ -370,67 +381,93 @@ class CaseExpressionParserTest extends AstParsingTestBase {
 
   test("case expression combinations") {
     val in = varFor("input")
-    val alts = Seq(
-      "=~ '.*'" -> regex(in, literal(".*")),
-      "starts with 'zzz'" -> startsWith(in, literal("zzz")),
-      "ends with 'zzz'" -> endsWith(in, literal("zzz")),
-      "is null" -> isNull(in),
-      "is not null" -> isNotNull(in),
-      "is typed Int" -> isTyped(in, CTInteger),
-      "is not typed Int" -> isNotTyped(in, CTInteger),
-      ":: Int" -> isTyped(in, CTInteger),
-      "= 'x'" -> equals(in, literal("x")),
-      "<> 'x'" -> notEquals(in, literal("x")),
-      "!= 'x'" -> InvalidNotEquals(in, literal("x"))(pos),
-      "< 0" -> lessThan(in, literal(0)),
-      "> 0" -> greaterThan(in, literal(0)),
-      "<= 0" -> lessThanOrEqual(in, literal(0)),
-      ">= 0" -> greaterThanOrEqual(in, literal(0)),
-      "a" -> equals(in, varFor("a")),
-      "a.p" -> equals(in, prop("a", "p")),
-      "a[0]" -> equals(in, containerIndex(varFor("a"), 0)),
-      "false" -> equals(in, literal(false))
+    val altsPart2 = Seq[(String, (ParserInTest, Expression) => Expression)](
+      "=~ '.*'" -> ((_, lhs) => regex(lhs, literal(".*"))),
+      "starts with 'zzz'" -> ((_, lhs) => startsWith(lhs, literal("zzz"))),
+      "ends with 'zzz'" -> ((_, lhs) => endsWith(lhs, literal("zzz"))),
+      "is null" -> ((_, lhs) => isNull(lhs)),
+      "is not null" -> ((_, lhs) => isNotNull(lhs)),
+      "is typed Int" -> ((_, lhs) => isTyped(lhs, CTInteger)),
+      "is not typed Int" -> ((_, lhs) => isNotTyped(lhs, CTInteger)),
+      ":: Int" -> ((parserInTest, lhs) =>
+        parserInTest match {
+          case Cypher5 => isTyped(lhs, CTInteger, withDoubleColonOnly = true)
+          case _       => isTyped(lhs, CTInteger, withDoubleColonOnly = false)
+        }
+      ),
+      "= 'x'" -> ((_, lhs) => equals(lhs, literal("x"))),
+      "<> 'x'" -> ((_, lhs) => notEquals(lhs, literal("x"))),
+      "!= 'x'" -> ((_, lhs) => InvalidNotEquals(lhs, literal("x"))(pos)),
+      "< 0" -> ((_, lhs) => lessThan(lhs, literal(0))),
+      "> 0" -> ((_, lhs) => greaterThan(lhs, literal(0))),
+      "<= 0" -> ((_, lhs) => lessThanOrEqual(lhs, literal(0))),
+      ">= 0" -> ((_, lhs) => greaterThanOrEqual(lhs, literal(0)))
+    )
+    val altsExpression = altsPart2 ++ Seq[(String, (ParserInTest, Expression) => Expression)](
+      "a" -> ((_, lhs) => equals(lhs, varFor("a"))),
+      "a.p" -> ((_, lhs) => equals(lhs, prop("a", "p"))),
+      "a[0]" -> ((_, lhs) => equals(lhs, containerIndex(varFor("a"), 0))),
+      "false" -> ((_, lhs) => equals(lhs, literal(false)))
     )
 
-    alts.foreach { case (cypherWhen, exp) =>
-      s"case ${in.name} when $cypherWhen then true end" should parseTo[Expression] {
-        caseExpression(Some(in), None, exp -> trueLiteral)
-      }
-      if (!exp.isInstanceOf[Equals]) {
-        s"case when ${in.name} $cypherWhen then true end" should parseTo[Expression] {
-          caseExpression(None, None, exp -> trueLiteral)
-        }
-      }
+    altsExpression.foreach {
+      case (cypherWhen, expF) =>
+        s"case ${in.name} when $cypherWhen then true end" should parseIn[Expression](parserInTest =>
+          _.toAst(caseExpression(Some(in), None, expF(parserInTest, in) -> trueLiteral))
+        )
+    }
+
+    altsPart2.foreach {
+      case (cypherWhen, expF) =>
+        s"case when ${in.name} $cypherWhen then true end" should parseIn[Expression](parserInTest =>
+          _.toAst(caseExpression(None, None, expF(parserInTest, in) -> trueLiteral))
+        )
     }
 
     for {
-      (aCypher, aExp) <- alts
-      (bCypher, bExp) <- alts
+      (aCypher, aExpF) <- altsExpression
+      (bCypher, bExpF) <- altsExpression
     } {
       s"""case ${in.name}
          |when $aCypher then 'a'
          |when $bCypher then 'b'
          |else 'c'
          |end
-         |""".stripMargin should parseTo[Expression] {
-        caseExpression(Some(in), Some(literal("c")), aExp -> literal("a"), bExp -> literal("b"))
-      }
+         |""".stripMargin should parseIn[Expression](parserInTest =>
+        _.toAst(
+          caseExpression(
+            Some(in),
+            Some(literal("c")),
+            aExpF(parserInTest, in) -> literal("a"),
+            bExpF(parserInTest, in) -> literal("b")
+          )
+        )
+      )
       s"""case ${in.name}
          |when $aCypher, $bCypher then 'yes'
          |end
-         |""".stripMargin should parseTo[Expression] {
-        caseExpression(Some(in), None, aExp -> literal("yes"), bExp -> literal("yes"))
-      }
+         |""".stripMargin should parseIn[Expression](parserInTest =>
+        _.toAst(
+          caseExpression(
+            Some(in),
+            None,
+            aExpF(parserInTest, in) -> literal("yes"),
+            bExpF(parserInTest, in) -> literal("yes")
+          )
+        )
+      )
     }
 
     s"""case ${in.name}
        |when
-       |  ${alts.map(_._1).mkString(",\n  ")}
+       |  ${altsExpression.map(_._1).mkString(",\n  ")}
        |then
        |  true
        |end
-       |""".stripMargin should parseTo[Expression] {
-      caseExpression(Some(in), None, alts.map(a => a._2 -> trueLiteral): _*)
-    }
+       |""".stripMargin should parseIn[Expression](parserInTest =>
+      _.toAst(
+        caseExpression(Some(in), None, altsExpression.map(a => a._2(parserInTest, in) -> trueLiteral): _*)
+      )
+    )
   }
 }

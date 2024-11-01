@@ -606,8 +606,8 @@ class SlottedRowTest extends CypherFunSuite {
 
   private def prop(node: String, prop: String) =
     CachedProperty(
-      Variable(node)(InputPosition.NONE),
-      Variable(node)(InputPosition.NONE),
+      Variable(node)(InputPosition.NONE, Variable.isIsolatedDefault),
+      Variable(node)(InputPosition.NONE, Variable.isIsolatedDefault),
       PropertyKeyName(prop)(InputPosition.NONE),
       NODE_TYPE
     )(InputPosition.NONE).runtimeKey

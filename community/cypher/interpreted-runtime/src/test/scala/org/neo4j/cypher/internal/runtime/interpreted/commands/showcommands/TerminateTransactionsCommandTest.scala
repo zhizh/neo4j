@@ -25,7 +25,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.when
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.TerminateTransactionsClause
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.runtime.interpreted.commands.expressions.ListLiteral
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.dbms.database.DatabaseContext
@@ -482,11 +481,11 @@ class TerminateTransactionsCommandTest extends ShowCommandTestBase {
     val yieldColumns: List[CommandResultItem] = List(
       CommandResultItem(
         TerminateTransactionsClause.transactionIdColumn,
-        Variable("txId")(InputPosition.NONE)
+        varFor("txId")
       )(InputPosition.NONE),
       CommandResultItem(
         TerminateTransactionsClause.usernameColumn,
-        Variable(TerminateTransactionsClause.usernameColumn)(InputPosition.NONE)
+        varFor(TerminateTransactionsClause.usernameColumn)
       )(InputPosition.NONE)
     )
 

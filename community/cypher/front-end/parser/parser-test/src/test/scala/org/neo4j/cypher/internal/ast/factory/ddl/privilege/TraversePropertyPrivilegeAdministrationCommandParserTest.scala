@@ -76,9 +76,9 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
           GraphPrivilege(TraverseAction, HomeGraphScope()(pos))(pos),
           List(PatternQualifier(
             Seq(labelQualifierA),
-            Some(Variable("a")(_)),
+            Some(varFor("a")),
             Equals(
-              Property(Variable("a")(_), PropertyKeyName("prop2")(_))(_),
+              Property(varFor("a"), PropertyKeyName("prop2")(_))(_),
               literal(1)
             )(_)
           )),
@@ -103,12 +103,12 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
       (expression match {
         case _: MapExpression => List(
             (None, s"($expressionString)"),
-            (Some(Variable("n")(pos)), s"(n $expressionString)")
+            (Some(varFor("n")), s"(n $expressionString)")
           )
         case _: BooleanExpression => List(
-            (Some(Variable("n")(pos)), s"(n) WHERE $expressionString"),
-            (Some(Variable("n")(pos)), s"(n WHERE $expressionString)"),
-            (Some(Variable("WHERE")(pos)), s"(WHERE WHERE $expressionString)"), // WHERE as variable
+            (Some(varFor("n")), s"(n) WHERE $expressionString"),
+            (Some(varFor("n")), s"(n WHERE $expressionString)"),
+            (Some(varFor("WHERE")), s"(WHERE WHERE $expressionString)"), // WHERE as variable
             (
               None,
               s"() WHERE $expressionString"
@@ -143,12 +143,12 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
       (expression match {
         case _: MapExpression => List(
             (None, s"(:A $expressionString)"),
-            (Some(Variable("n")(pos)), s"(n:A $expressionString)")
+            (Some(varFor("n")), s"(n:A $expressionString)")
           )
         case _: BooleanExpression => List(
-            (Some(Variable("n")(pos)), s"(n:A) WHERE $expressionString"),
-            (Some(Variable("n")(pos)), s"(n:A WHERE $expressionString)"),
-            (Some(Variable("WHERE")(pos)), s"(WHERE:A WHERE $expressionString)"), // WHERE as variable
+            (Some(varFor("n")), s"(n:A) WHERE $expressionString"),
+            (Some(varFor("n")), s"(n:A WHERE $expressionString)"),
+            (Some(varFor("WHERE")), s"(WHERE:A WHERE $expressionString)"), // WHERE as variable
             (
               None,
               s"(:A) WHERE $expressionString"
@@ -175,11 +175,11 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
       (expression match {
         case _: MapExpression => List(
             (None, s"(:`A B` $expressionString)"),
-            (Some(Variable("n")(pos)), s"(n:`A B` $expressionString)")
+            (Some(varFor("n")), s"(n:`A B` $expressionString)")
           )
         case _: BooleanExpression => List(
-            (Some(Variable("n")(pos)), s"(n:`A B`) WHERE $expressionString"),
-            (Some(Variable("n")(pos)), s"(n:`A B` WHERE $expressionString)"),
+            (Some(varFor("n")), s"(n:`A B`) WHERE $expressionString"),
+            (Some(varFor("n")), s"(n:`A B` WHERE $expressionString)"),
             (
               None,
               s"(:`A B`) WHERE $expressionString"
@@ -206,11 +206,11 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
       (expression match {
         case _: MapExpression => List(
             (None, s"(:`:A` $expressionString)"),
-            (Some(Variable("n")(pos)), s"(n:`:A` $expressionString)")
+            (Some(varFor("n")), s"(n:`:A` $expressionString)")
           )
         case _: BooleanExpression => List(
-            (Some(Variable("n")(pos)), s"(n:`:A`) WHERE $expressionString"),
-            (Some(Variable("n")(pos)), s"(n:`:A` WHERE $expressionString)"),
+            (Some(varFor("n")), s"(n:`:A`) WHERE $expressionString"),
+            (Some(varFor("n")), s"(n:`:A` WHERE $expressionString)"),
             (
               None,
               s"(:`:A`) WHERE $expressionString"
@@ -237,11 +237,11 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
       (expression match {
         case _: MapExpression => List(
             (None, s"(:A|B $expressionString)"),
-            (Some(Variable("n")(pos)), s"(n:A|B $expressionString)")
+            (Some(varFor("n")), s"(n:A|B $expressionString)")
           )
         case _: BooleanExpression => List(
-            (Some(Variable("n")(pos)), s"(n:A|B) WHERE $expressionString"),
-            (Some(Variable("n")(pos)), s"(n:A|B WHERE $expressionString)"),
+            (Some(varFor("n")), s"(n:A|B) WHERE $expressionString"),
+            (Some(varFor("n")), s"(n:A|B WHERE $expressionString)"),
             (
               None,
               s"(:A|B) WHERE $expressionString"
@@ -281,11 +281,11 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
       (expression match {
         case _: MapExpression => List(
             (None, s"(:A $expressionString)"),
-            (Some(Variable("n")(pos)), s"(n:A $expressionString)")
+            (Some(varFor("n")), s"(n:A $expressionString)")
           )
         case _: BooleanExpression => List(
-            (Some(Variable("n")(pos)), s"(n:A) WHERE $expressionString"),
-            (Some(Variable("n")(pos)), s"(n:A WHERE $expressionString)"),
+            (Some(varFor("n")), s"(n:A) WHERE $expressionString"),
+            (Some(varFor("n")), s"(n:A WHERE $expressionString)"),
             (
               None,
               s"(:A) WHERE $expressionString"
@@ -327,7 +327,7 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
         GraphPrivilege(TraverseAction, AllGraphsScope()(pos))(pos),
         List(PatternQualifier(
           Seq(LabelAllQualifier() _),
-          Some(Variable("n")(_)),
+          Some(varFor("n")),
           equals(prop(varFor("n"), "prop1"), literalInt(1))
         )),
         Seq(literalRole),
@@ -344,7 +344,7 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
         GraphPrivilege(TraverseAction, AllGraphsScope()(pos))(pos),
         List(PatternQualifier(
           Seq(LabelAllQualifier() _),
-          Some(Variable("a")(_)),
+          Some(varFor("a")),
           equals(prop(varFor("b"), "prop1"), literalInt(1))
         )),
         Seq(literalRole),
@@ -361,12 +361,12 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
         GraphPrivilege(TraverseAction, AllGraphsScope()(pos))(pos),
         List(PatternQualifier(
           Seq(LabelAllQualifier() _),
-          Some(Variable("n")(_)),
+          Some(varFor("n")),
           equals(
             literalInt(1),
             FunctionInvocation.apply(
               FunctionName(Namespace(List("n"))(pos), "prop1")(pos),
-              Variable("foo")(pos)
+              varFor("foo")
             )(pos)
           )
         )),
@@ -380,12 +380,12 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
         GraphPrivilege(TraverseAction, AllGraphsScope()(pos))(pos),
         List(PatternQualifier(
           Seq(LabelAllQualifier() _),
-          Some(Variable("n")(_)),
+          Some(varFor("n")),
           equals(
             literalInt(1),
             FunctionInvocation.apply(
               FunctionName(Namespace(List("n"))(pos), "prop1")(pos),
-              Variable("foo")(pos)
+              varFor("foo")
             )(pos)
           )
         )),
@@ -403,7 +403,7 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
         GraphPrivilege(TraverseAction, AllGraphsScope()(pos))(pos),
         List(PatternQualifier(
           Seq(LabelQualifier("A") _),
-          Some(Variable("n")(_)),
+          Some(varFor("n")),
           ExistsExpression(
             SingleQuery(
               List(
@@ -412,7 +412,7 @@ class TraversePropertyPrivilegeAdministrationCommandParserTest
                   MatchMode.DifferentRelationships(implicitlyCreated = true)(pos),
                   ForMatch(List(PatternPartWithSelector(
                     AllPaths()(pos),
-                    PathPatternPart(NodePattern(Some(Variable("n")(pos)), None, None, None)(pos))
+                    PathPatternPart(NodePattern(Some(varFor("n")), None, None, None)(pos))
                   )))(pos),
                   List(),
                   None

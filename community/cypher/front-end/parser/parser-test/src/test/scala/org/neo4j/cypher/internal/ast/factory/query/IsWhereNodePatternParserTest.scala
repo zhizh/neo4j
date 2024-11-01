@@ -21,7 +21,6 @@ import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.ast.test.util.LegacyAstParsingTestSupport
 import org.neo4j.cypher.internal.expressions.NodePattern
-import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.exceptions.SyntaxException
 
 /**
@@ -76,10 +75,10 @@ class IsWhereNodePatternParserTest extends AstParsingTestBase with LegacyAstPars
           parsesTo[NodePattern](
             nodePat(
               maybeVariableName,
-              predicates = Some(LabelExpressionPredicate(
+              predicates = Some(labelExpressionPredicate(
                 varFor(isOrWhere),
                 labelOrRelTypeLeaf(isOrWhere2, containsIs = true)
-              )(pos))
+              ))
             )
           )
         }
@@ -105,10 +104,10 @@ class IsWhereNodePatternParserTest extends AstParsingTestBase with LegacyAstPars
               nodePat(
                 maybeVariableName,
                 labelExpression = Some(labelLeaf(isOrWhere, containsIs = true)),
-                predicates = Some(LabelExpressionPredicate(
+                predicates = Some(labelExpressionPredicate(
                   varFor(isOrWhere2),
                   labelOrRelTypeLeaf(isOrWhere3, containsIs = true)
-                )(pos))
+                ))
               )
             )
           }

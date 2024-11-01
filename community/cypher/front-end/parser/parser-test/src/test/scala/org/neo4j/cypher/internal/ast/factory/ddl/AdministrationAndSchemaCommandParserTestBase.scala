@@ -103,8 +103,22 @@ class AdministrationAndSchemaCommandParserTestBase extends AstParsingTestBase {
 
   def pwParam(name: String): Parameter = parameter(name, CTString)
 
-  def commandResultItem(original: String, alias: Option[String] = None): ast.CommandResultItem =
+  def commandResultItem(original: String): ast.CommandResultItem =
+    commandResultItem(original, alias = None)
+
+  def commandResultItem(original: String, alias: Option[String]): ast.CommandResultItem =
     ast.CommandResultItem(original, alias.map(varFor).getOrElse(varFor(original)))(pos)
+
+  def commandResultItem(
+    original: String,
+    varIsEscaped: Boolean,
+    alias: Option[(String, Boolean)] = None
+  ): ast.CommandResultItem = {
+    ast.CommandResultItem(
+      original,
+      alias.map { case (name, isEscaped) => varFor(name, isEscaped) }.getOrElse(varFor(original, varIsEscaped))
+    )(pos)
+  }
 
   def withFromYield(
     returnItems: ast.ReturnItems,

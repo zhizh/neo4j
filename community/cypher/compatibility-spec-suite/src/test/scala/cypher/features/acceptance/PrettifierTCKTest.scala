@@ -30,6 +30,7 @@ import org.neo4j.cypher.internal.ast.factory.neo4j.JavaCCParser
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
 import org.neo4j.cypher.internal.ast.prettifier.Prettifier
 import org.neo4j.cypher.internal.parser.AstParserFactory
+import org.neo4j.cypher.internal.rewriting.rewriters
 import org.neo4j.cypher.internal.util.Neo4jCypherExceptionFactory
 import org.neo4j.cypher.internal.util.OpenCypherExceptionFactory
 import org.neo4j.cypher.internal.util.Rewriter
@@ -46,12 +47,23 @@ import scala.util.Try
 class PrettifierTCKTest extends PrettifierTCKTestBase {
 
   override protected def parseStatements(query: String): Statement =
-    AstParserFactory(CypherVersion.Cypher5)(query, Neo4jCypherExceptionFactory(query, None), None).singleStatement()
+    removeSyntaxTracking(
+      AstParserFactory(CypherVersion.Cypher5)(query, Neo4jCypherExceptionFactory(query, None), None).singleStatement()
+    )
 
   @Test
   def allVersionsHaveCoverage(): Unit = {
-    // If this starts to fail you need to add a new prettifyer test for the new version and adapt this test.
+    // If this starts to fail you need to add a new prettifier test for the new version and adapt this test.
     assertEquals(Set(CypherVersion.Cypher5, CypherVersion.Cypher25), CypherVersion.values().toSet)
+  }
+
+  /**
+   * The Cypher5 parser tracks a number of syntax characteristics
+   * that causes "query" and "prettified" to have different ASTs.
+   * This is rewrite removes the tracking.
+   */
+  private def removeSyntaxTracking(statement: Statement): Statement = {
+    statement.endoRewrite(rewriters.removeSyntaxTracking.instance)
   }
 }
 

@@ -35,8 +35,10 @@ import org.neo4j.cypher.internal.util.DeprecatedFunctionNotification
 import org.neo4j.cypher.internal.util.DeprecatedIdentifierUnicode
 import org.neo4j.cypher.internal.util.DeprecatedIdentifierWhitespaceUnicode
 import org.neo4j.cypher.internal.util.DeprecatedImportingWithInSubqueryCall
+import org.neo4j.cypher.internal.util.DeprecatedKeywordVariableInWhenOperand
 import org.neo4j.cypher.internal.util.DeprecatedNodesOrRelationshipsInSetClauseNotification
 import org.neo4j.cypher.internal.util.DeprecatedOptionInOptionMap
+import org.neo4j.cypher.internal.util.DeprecatedPrecedenceOfLabelExpressionPredicate
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInCreate
 import org.neo4j.cypher.internal.util.DeprecatedPropertyReferenceInMerge
 import org.neo4j.cypher.internal.util.DeprecatedRelTypeSeparatorNotification
@@ -44,6 +46,8 @@ import org.neo4j.cypher.internal.util.DeprecatedRuntimeNotification
 import org.neo4j.cypher.internal.util.DeprecatedSeedingOption
 import org.neo4j.cypher.internal.util.DeprecatedStoreFormat
 import org.neo4j.cypher.internal.util.DeprecatedTextIndexProvider
+import org.neo4j.cypher.internal.util.DeprecatedWhereVariableInNodePattern
+import org.neo4j.cypher.internal.util.DeprecatedWhereVariableInRelationshipPattern
 import org.neo4j.cypher.internal.util.ExternalAuthNotEnabled
 import org.neo4j.cypher.internal.util.FixedLengthRelationshipInShortestPath
 import org.neo4j.cypher.internal.util.GrantRoleCommandHasNoEffectNotification
@@ -265,6 +269,29 @@ object NotificationWrapping {
       NotificationCodeWithDescription.deprecatedImportingWithInSubqueryCall(
         pos.withOffset(offset).asInputPosition,
         varName
+      )
+    case DeprecatedWhereVariableInNodePattern(pos, variableName, properties) =>
+      NotificationCodeWithDescription.deprecatedWhereVariableInNodePattern(
+        pos.withOffset(offset).asInputPosition,
+        variableName,
+        properties
+      )
+    case DeprecatedWhereVariableInRelationshipPattern(pos, variableName, properties) =>
+      NotificationCodeWithDescription.deprecatedWhereVariableInRelationshipPattern(
+        pos.withOffset(offset).asInputPosition,
+        variableName,
+        properties
+      )
+    case DeprecatedPrecedenceOfLabelExpressionPredicate(pos, labelExpressionPredicate) =>
+      NotificationCodeWithDescription.deprecatedPrecedenceOfLabelExpressionPredicate(
+        pos.withOffset(offset).asInputPosition,
+        labelExpressionPredicate
+      )
+    case DeprecatedKeywordVariableInWhenOperand(pos, variableName, remainingExpression) =>
+      NotificationCodeWithDescription.deprecatedKeywordVariableInWhenOperand(
+        pos.withOffset(offset).asInputPosition,
+        variableName,
+        remainingExpression
       )
     case UnionReturnItemsInDifferentOrder(pos) =>
       NotificationCodeWithDescription.unionReturnOrder(

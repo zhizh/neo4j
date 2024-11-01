@@ -89,7 +89,7 @@ case object DebugPrinter extends Phase[PlannerContext, LogicalPlanState, Logical
     val unwind = UnwindCollection(Argument(Set.empty), varFor("col"), expression)
     val logicalPlan = ProduceResult(unwind, Seq(Column(varFor("col"), Set.empty)))
 
-    val variable = Variable("col")(pos)
+    val variable = Variable("col")(pos, Variable.isIsolatedDefault)
     val returnItem = AliasedReturnItem(variable, variable)(pos)
     val returnClause = Return(
       distinct = false,

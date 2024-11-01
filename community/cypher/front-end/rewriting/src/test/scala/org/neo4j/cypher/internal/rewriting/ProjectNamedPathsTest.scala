@@ -1915,15 +1915,15 @@ class ProjectNamedPathsTest extends CypherFunSuite with AstRewritingTestSupport 
 
     val expected = PathExpression(
       NodePathStep(
-        Variable("a")(pos),
+        varFor("a", pos),
         RepeatPathStep.asRepeatPathStep(
           List(
-            Variable("n")(pos),
-            Variable("r")(pos),
-            Variable("m")(pos),
-            Variable("q")(pos)
+            varFor("n", pos),
+            varFor("r", pos),
+            varFor("m", pos),
+            varFor("q", pos)
           ),
-          Variable("b")(pos),
+          varFor("b", pos),
           NilPathStep()(pos)
         )(pos)
       )(pos)
@@ -1937,15 +1937,15 @@ class ProjectNamedPathsTest extends CypherFunSuite with AstRewritingTestSupport 
 
     val expected = PathExpression(
       NodePathStep(
-        Variable("  UNNAMED0")(pos),
+        varFor("  UNNAMED0", pos),
         RepeatPathStep.asRepeatPathStep(
           List(
-            Variable("n")(pos),
-            Variable("r")(pos),
-            Variable("m")(pos),
-            Variable("q")(pos)
+            varFor("n", pos),
+            varFor("r", pos),
+            varFor("m", pos),
+            varFor("q", pos)
           ),
-          Variable("  UNNAMED1")(pos),
+          varFor("  UNNAMED1", pos),
           NilPathStep()(pos)
         )(pos)
       )(pos)
@@ -1959,10 +1959,10 @@ class ProjectNamedPathsTest extends CypherFunSuite with AstRewritingTestSupport 
 
     val expected = PathExpression(
       NodePathStep(
-        Variable("a")(pos),
+        varFor("a", pos),
         RepeatPathStep.asRepeatPathStep(
-          List(Variable("n")(pos), Variable("r")(pos), Variable("m")(pos), Variable("q")(pos)),
-          Variable("  UNNAMED0")(pos),
+          List(varFor("n", pos), varFor("r", pos), varFor("m", pos), varFor("q", pos)),
+          varFor("  UNNAMED0", pos),
           MultiRelationshipPathStep(
             rel = v"r2",
             toNode = Some(v"k"),

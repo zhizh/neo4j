@@ -28,7 +28,6 @@ import org.neo4j.cypher.internal.ast.CurrentUser
 import org.neo4j.cypher.internal.ast.ShowFunctionsClause
 import org.neo4j.cypher.internal.ast.User
 import org.neo4j.cypher.internal.ast.UserDefinedFunctions
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.expressions.functions.Category
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.graphdb.Result
@@ -1184,18 +1183,18 @@ class ShowFunctionsCommandTest extends ShowCommandTestBase {
   test("show functions should rename columns renamed in YIELD") {
     // Given: YIELD name AS function, aggregating AS aggr, isBuiltIn, description
     val yieldColumns: List[CommandResultItem] = List(
-      CommandResultItem(ShowFunctionsClause.nameColumn, Variable("function")(InputPosition.NONE))(InputPosition.NONE),
+      CommandResultItem(ShowFunctionsClause.nameColumn, varFor("function"))(InputPosition.NONE),
       CommandResultItem(
         ShowFunctionsClause.aggregatingColumn,
-        Variable("aggr")(InputPosition.NONE)
+        varFor("aggr")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowFunctionsClause.isBuiltInColumn,
-        Variable(ShowFunctionsClause.isBuiltInColumn)(InputPosition.NONE)
+        varFor(ShowFunctionsClause.isBuiltInColumn)
       )(InputPosition.NONE),
       CommandResultItem(
         ShowFunctionsClause.descriptionColumn,
-        Variable(ShowFunctionsClause.descriptionColumn)(InputPosition.NONE)
+        varFor(ShowFunctionsClause.descriptionColumn)
       )(InputPosition.NONE)
     )
 

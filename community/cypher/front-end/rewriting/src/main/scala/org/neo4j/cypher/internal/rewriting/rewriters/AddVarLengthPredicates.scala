@@ -79,7 +79,7 @@ case object AddVarLengthPredicates extends AddRelationshipPredicates[Relationshi
     maybeUpperBoundValue: Option[Long],
     pos: InputPosition
   ): Seq[Expression] = {
-    def relNameVar = Variable(relName)(pos)
+    def relNameVar = Variable(relName)(pos, Variable.isIsolatedDefault)
     val lowerBound = VarLengthLowerBound(relNameVar, lowerBoundValue)(pos)
     val upperBound = maybeUpperBoundValue.map { max =>
       VarLengthUpperBound(relNameVar, max)(pos)

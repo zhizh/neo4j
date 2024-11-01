@@ -679,6 +679,12 @@ public interface Cypher5ParserListener extends ParseTreeListener {
 
     void exitMap(Cypher5Parser.MapContext ctx);
 
+    void exitSymbolicVariableNameString(Cypher5Parser.SymbolicVariableNameStringContext ctx);
+
+    void exitEscapedSymbolicVariableNameString(Cypher5Parser.EscapedSymbolicVariableNameStringContext ctx);
+
+    void exitUnescapedSymbolicVariableNameString(Cypher5Parser.UnescapedSymbolicVariableNameStringContext ctx);
+
     void exitSymbolicNameString(Cypher5Parser.SymbolicNameStringContext ctx);
 
     void exitEscapedSymbolicNameString(Cypher5Parser.EscapedSymbolicNameStringContext ctx);

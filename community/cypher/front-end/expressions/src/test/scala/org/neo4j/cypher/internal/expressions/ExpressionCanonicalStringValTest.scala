@@ -25,7 +25,7 @@ import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 class ExpressionCanonicalStringValTest extends CypherFunSuite {
 
   protected val pos: InputPosition = InputPosition.NONE
-  def varFor(name: String): Variable = Variable(name)(pos)
+  def varFor(name: String): Variable = Variable(name)(pos, Variable.isIsolatedDefault)
   def relTypeName(s: String): RelTypeName = RelTypeName(s)(pos)
   def literalInt(value: Long): SignedDecimalIntegerLiteral = SignedDecimalIntegerLiteral(value.toString)(pos)
 

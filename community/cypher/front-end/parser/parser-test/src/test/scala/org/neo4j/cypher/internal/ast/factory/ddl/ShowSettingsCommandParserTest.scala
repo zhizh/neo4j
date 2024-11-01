@@ -19,7 +19,9 @@ package org.neo4j.cypher.internal.ast.factory.ddl
 import org.neo4j.cypher.internal.ast.OrderBy
 import org.neo4j.cypher.internal.ast.ShowSettingsClause
 import org.neo4j.cypher.internal.ast.SingleQuery
+import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.expressions.AllIterablePredicate
 import org.neo4j.cypher.internal.util.symbols.CTAny
@@ -139,17 +141,22 @@ class ShowSettingsCommandParserTest extends AdministrationAndSchemaCommandParser
   }
 
   test("SHOW SETTINGS WHERE (`name`) = ($`s`)") {
-    assertAst(singleQuery(ShowSettingsClause(
-      Left(List.empty),
-      Some(where(
-        equals(
-          varFor("name"),
-          parameter("s", CTAny)
-        )
-      )),
-      List.empty,
-      yieldAll = false
-    )(defaultPos)))
+    def expected(nameIsEscaped: Boolean) =
+      singleQuery(ShowSettingsClause(
+        Left(List.empty),
+        Some(where(
+          equals(
+            varFor("name", nameIsEscaped),
+            parameter("s", CTAny)
+          )
+        )),
+        List.empty,
+        yieldAll = false
+      )(defaultPos))
+    parsesIn[Statement] {
+      case Cypher5 => _.toAst(expected(nameIsEscaped = true))
+      case _       => _.toAst(expected(nameIsEscaped = false))
+    }
   }
 
   test("SHOW SETTING WHERE name IN $list") {

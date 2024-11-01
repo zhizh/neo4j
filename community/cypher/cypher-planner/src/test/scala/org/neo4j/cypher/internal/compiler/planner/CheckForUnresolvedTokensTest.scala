@@ -33,7 +33,6 @@ import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.FunctionName
 import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.ir.PlannerQuery
 import org.neo4j.cypher.internal.parser.AstParserFactory
 import org.neo4j.cypher.internal.planner.spi.IDPPlannerName
@@ -135,7 +134,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
 
   test("warn when missing node property key name") {
     // given
-    val semanticTable = new SemanticTable().addNode(Variable("a")(InputPosition(16, 1, 17)))
+    val semanticTable = new SemanticTable().addNode(varFor("a", InputPosition(16, 1, 17)))
 
     // when
     val ast = parse("MATCH (a) WHERE a.prop = 42 RETURN a")
@@ -150,7 +149,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
     // given
     val semanticTable = new SemanticTable(
       resolvedPropertyKeyNames = Map("prop" -> PropertyKeyId(0))
-    ).addNode(Variable("a")(InputPosition(7, 1, 8)))
+    ).addNode(varFor("a", InputPosition(7, 1, 8)))
 
     // when
     val ast = parse("MATCH (a {prop: 42}) RETURN a")
@@ -161,7 +160,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
 
   test("warn when missing relationship property key name") {
     // given
-    val semanticTable = new SemanticTable().addRelationship(Variable("r")(InputPosition(23, 1, 24)))
+    val semanticTable = new SemanticTable().addRelationship(varFor("r", InputPosition(23, 1, 24)))
 
     // when
     val ast = parse("MATCH ()-[r]->() WHERE r.prop = 42 RETURN r")
@@ -176,7 +175,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
     // given
     val semanticTable = new SemanticTable(
       resolvedPropertyKeyNames = Map("prop" -> PropertyKeyId(0))
-    ).addRelationship(Variable("r")(InputPosition(10, 1, 11)))
+    ).addRelationship(varFor("r", InputPosition(10, 1, 11)))
 
     // when
     val ast = parse("MATCH ()-[r {prop: 42}]->() RETURN r")
@@ -188,7 +187,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
   test("don't warn for map keys") {
     // given
     val emptyTypeMap = ASTAnnotationMap.empty[Expression, ExpressionTypeInfo]
-    val semanticTypes = emptyTypeMap.updated(Variable("map")(InputPosition(32, 1, 33)), ExpressionTypeInfo(CTMap))
+    val semanticTypes = emptyTypeMap.updated(varFor("map", InputPosition(32, 1, 33)), ExpressionTypeInfo(CTMap))
     val semanticTable = new SemanticTable(
       types = semanticTypes,
       resolvedPropertyKeyNames = Map("key" -> PropertyKeyId(0))
@@ -219,7 +218,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
     val semanticTable = new SemanticTable(
       types = semanticTypes,
       resolvedPropertyKeyNames = Map("prop" -> PropertyKeyId(42))
-    ).addNode(Variable("a")(InputPosition(22, 1, 23)))
+    ).addNode(varFor("a", InputPosition(22, 1, 23)))
 
     PointFields.values().foreach { property =>
       // when
@@ -237,7 +236,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
     val semanticTable = new SemanticTable(
       types = semanticTypes,
       resolvedPropertyKeyNames = Map("prop" -> PropertyKeyId(42))
-    ).addNode(Variable("a")(InputPosition(21, 1, 22)))
+    ).addNode(varFor("a", InputPosition(21, 1, 22)))
 
     TemporalFields.allFields().asScala.foreach { property =>
       // when
@@ -255,7 +254,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
     val semanticTable = new SemanticTable(
       types = semanticTypes,
       resolvedPropertyKeyNames = Map("prop" -> PropertyKeyId(42))
-    ).addNode(Variable("a")(InputPosition(25, 1, 26)))
+    ).addNode(varFor("a", InputPosition(25, 1, 26)))
 
     DurationFields.values().foreach { property =>
       // when
@@ -273,7 +272,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
     val semanticTable = new SemanticTable(
       types = semanticTypes,
       resolvedPropertyKeyNames = Map("prop" -> PropertyKeyId(42))
-    ).addNode(Variable("a")(InputPosition(16, 1, 17)))
+    ).addNode(varFor("a", InputPosition(16, 1, 17)))
 
     Seq("X", "yEaRs", "DAY", "epochMillis").foreach { property =>
       // when
@@ -331,7 +330,7 @@ class CheckForUnresolvedTokensTest extends CypherFunSuite with AstConstructionTe
   private def propertyAt(offset: Int): Property = {
     val variablePos = InputPosition(offset, 1, offset + 1)
     val propertyPos = InputPosition(offset + 2, 1, offset + 3)
-    Property(Variable("a")(variablePos), PropertyKeyName("prop")(propertyPos))(propertyPos)
+    Property(varFor("a", variablePos), PropertyKeyName("prop")(propertyPos))(propertyPos)
   }
 
 }

@@ -35,14 +35,16 @@ class NestedPlanExpressionTest extends CypherFunSuite {
   test("nested plan collect should render nicely") {
     val e = NestedPlanExpression.collect(
       Argument(),
-      Variable("foo")(InputPosition.NONE),
-      Variable("foo")(InputPosition.NONE)
+      Variable("foo")(InputPosition.NONE, Variable.isIsolatedDefault),
+      Variable("foo")(InputPosition.NONE, Variable.isIsolatedDefault)
     )(InputPosition.NONE)
     stringifier(e) should equal("foo")
   }
 
   test("nested plan exists should render nicely") {
-    val e = NestedPlanExpression.exists(Argument(), Variable("foo")(InputPosition.NONE))(InputPosition.NONE)
+    val e = NestedPlanExpression.exists(Argument(), Variable("foo")(InputPosition.NONE, Variable.isIsolatedDefault))(
+      InputPosition.NONE
+    )
     stringifier(e) should equal("foo")
   }
 }

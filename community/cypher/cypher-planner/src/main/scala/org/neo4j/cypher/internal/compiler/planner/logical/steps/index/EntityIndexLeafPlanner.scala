@@ -273,7 +273,10 @@ object EntityIndexLeafPlanner {
     private def convertToTextScannablePredicate(expr: Expression): Expression = {
       unwrapPartial(expr) match {
         case AsExplicitlyPropertyScannable(scannable) if cypherType == CTString => scannable.expr
-        case expr => PartialPredicate(IsTyped(property, CTStringNotNull)(predicate.position), expr)
+        case expr => PartialPredicate(
+            IsTyped(property, CTStringNotNull)(predicate.position, IsTyped.withDoubleColonOnlyDefault),
+            expr
+          )
       }
     }
 
@@ -292,7 +295,10 @@ object EntityIndexLeafPlanner {
     private def convertToPointScannablePredicate(expr: Expression): Expression = {
       unwrapPartial(expr) match {
         case AsExplicitlyPropertyScannable(scannable) if cypherType == CTPoint => scannable.expr
-        case expr => PartialPredicate(IsTyped(property, CTPointNotNull)(predicate.position), expr)
+        case expr => PartialPredicate(
+            IsTyped(property, CTPointNotNull)(predicate.position, IsTyped.withDoubleColonOnlyDefault),
+            expr
+          )
       }
     }
 

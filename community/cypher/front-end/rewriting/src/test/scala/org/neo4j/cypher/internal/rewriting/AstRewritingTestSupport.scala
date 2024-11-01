@@ -19,6 +19,7 @@ package org.neo4j.cypher.internal.rewriting
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.CreateConstraint
+import org.neo4j.cypher.internal.ast.IsTyped
 import org.neo4j.cypher.internal.ast.NodeKey
 import org.neo4j.cypher.internal.ast.RelationshipKey
 import org.neo4j.cypher.internal.ast.SetExactPropertiesFromMapItem
@@ -29,6 +30,8 @@ import org.neo4j.cypher.internal.ast.UnionAll
 import org.neo4j.cypher.internal.ast.UnionDistinct
 import org.neo4j.cypher.internal.expressions.LabelName
 import org.neo4j.cypher.internal.expressions.RelTypeName
+import org.neo4j.cypher.internal.expressions.Variable
+import org.neo4j.cypher.internal.label_expressions.LabelExpressionPredicate
 import org.neo4j.cypher.internal.parser.AstParserFactory
 import org.neo4j.cypher.internal.util.CypherExceptionFactory
 import org.neo4j.cypher.internal.util.Rewriter
@@ -119,6 +122,18 @@ trait AstRewritingTestSupport extends AstConstructionTestSupport {
           // let's just update all of them to be version > 5
           returnCypher5Types = false
         )(stc.position)
+      case v: Variable if v.isIsolated =>
+        // An isolated variable e.g. "`a`", "(a)" is tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the tracking.
+        v.copy()(v.position, Variable.isIsolatedDefault)
+      case it: IsTyped if it.withDoubleColonOnly =>
+        // Type predicates with only a double column e.g. "x :: INT" are tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the difference.
+        it.copy()(it.position, IsTyped.withDoubleColonOnlyDefault)
+      case lep: LabelExpressionPredicate if lep.isParenthesized =>
+        // Label expression predicates that are parenthesized e.g. "(n:L)" are tracked in the AST by the Cypher5 parser.
+        // This is rewrite removes the difference.
+        lep.copy()(lep.position, LabelExpressionPredicate.isParenthesizedDefault)
     }))
   }
 }

@@ -2499,7 +2499,9 @@ case class Input(
 object Input {
 
   def apply(variables: Seq[String])(implicit idGen: IdGen): Input =
-    new Input(Seq.empty, Seq.empty, variables.map(Variable(_)(InputPosition.NONE)), true)(idGen)
+    new Input(Seq.empty, Seq.empty, variables.map(Variable(_)(InputPosition.NONE, Variable.isIsolatedDefault)), true)(
+      idGen
+    )
 }
 
 /**

@@ -31,6 +31,8 @@ abstract class RuntimeVariable(override val name: String) extends LogicalVariabl
 
   override def position: InputPosition = InputPosition.NONE
 
+  override def isIsolated: Boolean = fail()
+
   override def copyId = fail()
 
   override def withPosition(position: InputPosition): LogicalVariable = fail()

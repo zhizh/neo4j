@@ -75,7 +75,7 @@ public class CompletionEngine {
         public void exitEveryRule(ParserRuleContext ctx) {
             if (ctx.getRuleIndex() == Cypher5Parser.RULE_variable) {
                 var c = (Cypher5Parser.VariableContext) ctx;
-                var variable = c.symbolicNameString().getText();
+                var variable = c.symbolicVariableNameString().getText();
                 // To avoid suggesting the variable that is currently being typed
                 // For example RETURN a| <- we don't want to suggest "a" as a variable
                 // We check if the variable is in the end of the statement

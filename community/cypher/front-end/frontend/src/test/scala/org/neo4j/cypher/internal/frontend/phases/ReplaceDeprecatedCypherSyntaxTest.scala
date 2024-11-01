@@ -19,13 +19,13 @@ package org.neo4j.cypher.internal.frontend.phases
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.rewriting.Deprecations.SemanticallyDeprecatedFeatures
-import org.neo4j.cypher.internal.rewriting.Deprecations.syntacticallyDeprecatedFeatures
+import org.neo4j.cypher.internal.rewriting.Deprecations.SyntacticallyDeprecatedFeatures
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
 class ReplaceDeprecatedCypherSyntaxTest extends CypherFunSuite with AstConstructionTestSupport with RewritePhaseTest {
 
   override def rewriterPhaseUnderTest: Transformer[BaseContext, BaseState, BaseState] =
-    SyntaxDeprecationWarningsAndReplacements(syntacticallyDeprecatedFeatures) andThen
+    SyntaxDeprecationWarningsAndReplacements(SyntacticallyDeprecatedFeatures(CypherVersion.Default)) andThen
       PreparatoryRewriting andThen
       SemanticAnalysis(warn = true) andThen
       SyntaxDeprecationWarningsAndReplacements(SemanticallyDeprecatedFeatures(CypherVersion.Default))

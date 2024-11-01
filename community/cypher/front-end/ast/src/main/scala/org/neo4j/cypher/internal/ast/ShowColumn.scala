@@ -27,7 +27,7 @@ case class ShowColumn(variable: LogicalVariable, cypherType: CypherType, name: S
 object ShowColumn {
 
   def apply(name: String, cypherType: CypherType = CTString)(position: InputPosition): ShowColumn =
-    ShowColumn(Variable(name)(position), cypherType, name)
+    ShowColumn(Variable(name)(position, Variable.isIsolatedDefault), cypherType, name)
 }
 
 case class DefaultOrAllShowColumns(useAllColumns: Boolean, columns: List[ShowColumn])

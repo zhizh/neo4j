@@ -19,6 +19,7 @@ package org.neo4j.cypher.internal.ast.factory.expression
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.expression.TypePredicateExpressionParserTest.allCombinations
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5JavaCc
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.expressions.Expression
@@ -397,8 +398,13 @@ class TypePredicateExpressionParserTest extends AstParsingTestBase
       }
 
       // Java CC produces invalid input positions in some cases
-      s"5 :: $typeString" should parse[Expression].toAstIgnorePos {
-        isTyped(literalInt(5L), typeExpr)
+      s"5 :: $typeString" should parseIn[Expression] {
+        case Cypher5 => _.toAstIgnorePos {
+            isTyped(literalInt(5L), typeExpr, withDoubleColonOnly = true)
+          }
+        case _ => _.toAstIgnorePos {
+            isTyped(literalInt(5L), typeExpr)
+          }
       }
 
       // Java CC produces invalid input positions in some cases
@@ -412,6 +418,37 @@ class TypePredicateExpressionParserTest extends AstParsingTestBase
 
       // This should not be supported according to CIP-87
       s"RETURN x NOT :: $typeString" should notParse[Statements]
+    }
+  }
+
+  test("double colon-only variant should be tracked in Cypher5") {
+    val (typeString, typeExpr) = allCombinations.head
+    val notColonOnly = Seq(
+      (s"5 IS :: $typeString", literalInt(5L)),
+      (s"x IS :: $typeString", varFor("x")),
+      (s"is IS :: $typeString", varFor("is"))
+    )
+    notColonOnly.foreach {
+      case (pred, lhs) =>
+        pred should parse[Expression].toAstIgnorePos {
+          isTyped(lhs, typeExpr, withDoubleColonOnly = false)
+        }
+    }
+    val colonOnly = Seq(
+      (s"5 :: $typeString", literalInt(5L)),
+      (s"x :: $typeString", varFor("x")),
+      (s"is :: $typeString", varFor("is"))
+    )
+    colonOnly.foreach {
+      case (pred, lhs) =>
+        pred should parseIn[Expression] {
+          case Cypher5 => _.toAstIgnorePos {
+              isTyped(lhs, typeExpr, withDoubleColonOnly = true)
+            }
+          case _ => _.toAstIgnorePos {
+              isTyped(lhs, typeExpr, withDoubleColonOnly = false)
+            }
+        }
     }
   }
 }

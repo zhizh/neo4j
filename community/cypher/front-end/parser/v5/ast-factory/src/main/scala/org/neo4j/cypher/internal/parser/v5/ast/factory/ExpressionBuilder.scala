@@ -413,7 +413,7 @@ trait ExpressionBuilder extends Cypher5ParserListener {
       case _               => false
     }
     if (not) IsNotTyped(lhs, cypherType)(pos(ctx))
-    else IsTyped(lhs, cypherType)(pos(ctx))
+    else IsTyped(lhs, cypherType)(pos(ctx), withDoubleColonOnly = ctx.children.size() == 2)
   }
 
   private def normalFormComparisonExpression(
@@ -494,7 +494,8 @@ trait ExpressionBuilder extends Cypher5ParserListener {
       case propCtx: Cypher5Parser.PropertyPostfixContext => Property(lhs, ctxChild(propCtx, 0).ast())(p)
       case indexCtx: Cypher5Parser.IndexPostfixContext =>
         ContainerIndex(lhs, ctxChild(indexCtx, 1).ast())(pos(ctxChild(indexCtx, 1)))
-      case labelCtx: Cypher5Parser.LabelPostfixContext => LabelExpressionPredicate(lhs, ctxChild(labelCtx, 0).ast())(p)
+      case labelCtx: Cypher5Parser.LabelPostfixContext =>
+        LabelExpressionPredicate(lhs, ctxChild(labelCtx, 0).ast())(p, isParenthesized = false)
       case rangeCtx: Cypher5Parser.RangePostfixContext =>
         ListSlice(lhs, astOpt(rangeCtx.fromExp), astOpt(rangeCtx.toExp))(pos(rhs))
       case _ => throw new IllegalStateException(s"Unexpected rhs $rhs")
@@ -688,7 +689,11 @@ trait ExpressionBuilder extends Cypher5ParserListener {
   final override def exitParenthesizedExpression(
     ctx: Cypher5Parser.ParenthesizedExpressionContext
   ): Unit = {
-    ctx.ast = ctxChild(ctx, 1).ast
+    ctx.ast = ctxChild(ctx, 1).ast match {
+      case lep: LabelExpressionPredicate => lep.copy()(lep.position, isParenthesized = true)
+      case v: Variable if !v.isIsolated  => v.copy()(v.position, isIsolated = true)
+      case x                             => x
+    }
   }
 
   final override def exitMapProjection(
@@ -842,7 +847,7 @@ trait ExpressionBuilder extends Cypher5ParserListener {
   final override def exitVariable(
     ctx: Cypher5Parser.VariableContext
   ): Unit = {
-    ctx.ast = Variable(name = ctx.symbolicNameString().ast())(pos(ctx))
+    ctx.ast = ctxChild(ctx, 0).ast
   }
 
   final override def exitType(ctx: Cypher5Parser.TypeContext): Unit = {
@@ -967,6 +972,24 @@ trait ExpressionBuilder extends Cypher5ParserListener {
 
   final override def exitMap(ctx: Cypher5Parser.MapContext): Unit =
     ctx.ast = MapExpression(astPairs(ctx.propertyKeyName(), ctx.expression()))(pos(ctx))
+
+  final override def exitSymbolicVariableNameString(
+    ctx: Cypher5Parser.SymbolicVariableNameStringContext
+  ): Unit = {
+    ctx.ast = ctxChild(ctx, 0).ast
+  }
+
+  final override def exitEscapedSymbolicVariableNameString(
+    ctx: Cypher5Parser.EscapedSymbolicVariableNameStringContext
+  ): Unit = {
+    ctx.ast = Variable(name = astChild[String](ctx, 0))(pos(ctx), isIsolated = true)
+  }
+
+  final override def exitUnescapedSymbolicVariableNameString(
+    ctx: Cypher5Parser.UnescapedSymbolicVariableNameStringContext
+  ): Unit = {
+    ctx.ast = Variable(name = astChild[String](ctx, 0))(pos(ctx), isIsolated = false)
+  }
 
   final override def exitSymbolicNameString(
     ctx: Cypher5Parser.SymbolicNameStringContext

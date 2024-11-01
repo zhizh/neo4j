@@ -47,9 +47,9 @@ case object cypherTypeNormalizationRewriter extends StepSequencer.Step with Defa
 
   val instance: Rewriter = topDown(Rewriter.lift {
     case isTyped @ IsTyped(_, cypherType: CypherType) =>
-      isTyped.copy(typeName = CypherType.normalizeTypes(cypherType))(isTyped.position)
+      isTyped.copyAndKeepMeta(typeName = CypherType.normalizeTypes(cypherType))
     case isNotTyped @ IsNotTyped(_, cypherType: CypherType) =>
-      isNotTyped.copy(typeName = CypherType.normalizeTypes(cypherType))(isNotTyped.position)
+      isNotTyped.copyAndKeepMeta(typeName = CypherType.normalizeTypes(cypherType))
   })
 
 }

@@ -17,56 +17,53 @@
 package org.neo4j.cypher.internal.ast.factory.expression
 
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
-import org.neo4j.cypher.internal.expressions
 import org.neo4j.cypher.internal.expressions.Expression
 import org.neo4j.cypher.internal.expressions.ExtractScope
 import org.neo4j.cypher.internal.expressions.GreaterThan
 import org.neo4j.cypher.internal.expressions.ListComprehension
 import org.neo4j.cypher.internal.expressions.Property
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.util.DummyPosition
 
 class ListComprehensionParserTest extends AstParsingTestBase {
-  private val t = DummyPosition(0)
 
   test("tests") {
     "[ a in p WHERE a.foo > 123 ]" should parseTo[Expression] {
       ListComprehension(
         ExtractScope(
-          expressions.Variable("a")(t),
+          varFor("a"),
           Some(GreaterThan(
-            Property(expressions.Variable("a")(t), expressions.PropertyKeyName("foo")(t))(t),
-            SignedDecimalIntegerLiteral("123")(t)
-          )(t)),
+            Property(varFor("a"), propName("foo"))(pos),
+            SignedDecimalIntegerLiteral("123")(pos)
+          )(pos)),
           None
-        )(t),
-        expressions.Variable("p")(t)
-      )(t)
+        )(pos),
+        varFor("p")
+      )(pos)
     }
 
     "[ a in p | a.foo ]" should parseTo[Expression] {
       ListComprehension(
         ExtractScope(
-          expressions.Variable("a")(t),
+          varFor("a"),
           None,
-          Some(Property(expressions.Variable("a")(t), expressions.PropertyKeyName("foo")(t))(t))
-        )(t),
-        expressions.Variable("p")(t)
-      )(t)
+          Some(Property(varFor("a"), propName("foo"))(pos))
+        )(pos),
+        varFor("p")
+      )(pos)
     }
 
     "[ a in p WHERE a.foo > 123 | a.foo ]" should parseTo[Expression] {
       ListComprehension(
         ExtractScope(
-          expressions.Variable("a")(t),
+          varFor("a"),
           Some(GreaterThan(
-            Property(expressions.Variable("a")(t), expressions.PropertyKeyName("foo")(t))(t),
-            SignedDecimalIntegerLiteral("123")(t)
-          )(t)),
-          Some(Property(expressions.Variable("a")(t), expressions.PropertyKeyName("foo")(t))(t))
-        )(t),
-        expressions.Variable("p")(t)
-      )(t)
+            Property(varFor("a"), propName("foo"))(pos),
+            SignedDecimalIntegerLiteral("123")(pos)
+          )(pos)),
+          Some(Property(varFor("a"), propName("foo"))(pos))
+        )(pos),
+        varFor("p")
+      )(pos)
     }
   }
 }

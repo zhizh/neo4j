@@ -39,7 +39,6 @@ import org.neo4j.cypher.internal.expressions.PatternPartWithSelector
 import org.neo4j.cypher.internal.expressions.SemanticDirection.INCOMING
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.Leaf
 import org.neo4j.cypher.internal.util.InputPosition
 
@@ -247,8 +246,8 @@ class CollectExpressionParserTest extends AstParsingTestBase with LegacyAstParsi
 
     parses[Statements].toAstPositioned {
       singleQuery(
-        with_(AliasedReturnItem(collectExpression, Variable("result")(pos))(pos)),
-        return_(UnaliasedReturnItem(Variable("result")(pos), "result")(pos))
+        with_(AliasedReturnItem(collectExpression, varFor("result"))(pos)),
+        return_(UnaliasedReturnItem(varFor("result"), "result")(pos))
       )
     }
   }

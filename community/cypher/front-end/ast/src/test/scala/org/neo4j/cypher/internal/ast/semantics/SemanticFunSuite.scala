@@ -61,7 +61,7 @@ trait SemanticFunSuite extends CypherFunSuite with SemanticAnalysisTooling with 
   def signedOctal(str: String) = SignedOctalIntegerLiteral(str)(pos)
   def signedHex(str: String) = SignedHexIntegerLiteral(str)(pos)
 
-  def variable(name: String): Variable = Variable(name)(pos)
-  def propertyKeyName(name: String) = PropertyKeyName("prop")(pos)
+  def variable(name: String): Variable = varFor(name)
+  def propertyKeyName(name: String) = propName("prop")
   def property(variable: Variable, keyName: PropertyKeyName) = Property(variable, keyName)(pos)
 }

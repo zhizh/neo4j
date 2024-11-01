@@ -44,9 +44,9 @@ class ReduceExpressionTest extends SemanticFunSuite {
     )
 
     val filter = ReduceExpression(
-      accumulator = Variable("x")(DummyPosition(2)),
+      accumulator = Variable("x")(DummyPosition(2), Variable.isIsolatedDefault),
       init = DummyExpression(CTString),
-      variable = Variable("y")(DummyPosition(6)),
+      variable = Variable("y")(DummyPosition(6), Variable.isIsolatedDefault),
       list = DummyExpression(CTList(CTInteger)),
       expression = reduceExpression
     )(DummyPosition(0))
@@ -70,9 +70,9 @@ class ReduceExpressionTest extends SemanticFunSuite {
     )
 
     val filter = ReduceExpression(
-      accumulator = Variable("x")(DummyPosition(2)),
+      accumulator = Variable("x")(DummyPosition(2), Variable.isIsolatedDefault),
       init = DummyExpression(initType),
-      variable = Variable("y")(DummyPosition(6)),
+      variable = Variable("y")(DummyPosition(6), Variable.isIsolatedDefault),
       list = DummyExpression(listType),
       expression = reduceExpression
     )(DummyPosition(0))
@@ -89,9 +89,9 @@ class ReduceExpressionTest extends SemanticFunSuite {
     val reduceExpression = Add(variable("x"), variable("y"))(DummyPosition(1))
 
     val filter = ReduceExpression(
-      accumulator = Variable("x")(DummyPosition(2)),
+      accumulator = Variable("x")(DummyPosition(2), Variable.isIsolatedDefault),
       init = DummyExpression(initType),
-      variable = Variable("y")(DummyPosition(6)),
+      variable = Variable("y")(DummyPosition(6), Variable.isIsolatedDefault),
       list = DummyExpression(listType),
       expression = reduceExpression
     )(DummyPosition(0))
@@ -114,9 +114,9 @@ class ReduceExpressionTest extends SemanticFunSuite {
     )
 
     val filter = ReduceExpression(
-      accumulator = Variable("x")(DummyPosition(2)),
+      accumulator = Variable("x")(DummyPosition(2), Variable.isIsolatedDefault),
       init = DummyExpression(accumulatorType),
-      variable = Variable("y")(DummyPosition(6)),
+      variable = Variable("y")(DummyPosition(6), Variable.isIsolatedDefault),
       list = DummyExpression(listType),
       expression = reduceExpression
     )(DummyPosition(0))

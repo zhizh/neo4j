@@ -371,7 +371,7 @@ object ReadFinder {
         ))(PlanReads())
 
       case NodeCountFromCountStore(_, labelNames, _) =>
-        val variable = Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE)
+        val variable = Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE, Variable.isIsolatedDefault)
         val acc = PlanReads()
           .withIntroducedNodeVariable(variable)
         labelNames.flatten.foldLeft(acc) { (acc, labelName) =>
@@ -381,8 +381,10 @@ object ReadFinder {
         }
 
       case RelationshipCountFromCountStore(_, startLabel, typeNames, endLabel, _) =>
-        val relVariable = Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE)
-        val nodeVariable = Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE)
+        val relVariable =
+          Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE, Variable.isIsolatedDefault)
+        val nodeVariable =
+          Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE, Variable.isIsolatedDefault)
         val acc = PlanReads()
           .withIntroducedRelationshipVariable(relVariable)
           .withIntroducedNodeVariable(nodeVariable)
@@ -651,7 +653,7 @@ object ReadFinder {
         processExpand(
           relTypes,
           to,
-          Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE),
+          Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE, Variable.isIsolatedDefault),
           Expand.ExpandAll
         )
 
@@ -662,7 +664,7 @@ object ReadFinder {
         processExpand(
           relTypes,
           to,
-          Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE),
+          Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE, Variable.isIsolatedDefault),
           mode
         )
 
@@ -1104,7 +1106,8 @@ object ReadFinder {
     planReads: PlanReads,
     anonymousVariableNameGenerator: AnonymousVariableNameGenerator
   ): PlanReads = {
-    val newRelVariable = Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE)
+    val newRelVariable =
+      Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE, Variable.isIsolatedDefault)
     val varRead = planReads.withIntroducedRelationshipVariable(newRelVariable)
     relTypeNames match {
       case Some(relTypeName) => varRead.withAddedRelationshipFilterExpression(

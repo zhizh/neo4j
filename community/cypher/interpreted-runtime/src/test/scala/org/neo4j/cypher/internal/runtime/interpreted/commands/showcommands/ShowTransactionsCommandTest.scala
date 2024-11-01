@@ -25,7 +25,6 @@ import org.neo4j.configuration.Config
 import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.CommandResultItem
 import org.neo4j.cypher.internal.ast.ShowTransactionsClause
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.dbms.database.DatabaseContext
 import org.neo4j.dbms.database.DatabaseContextProvider
@@ -939,19 +938,19 @@ class ShowTransactionsCommandTest extends ShowCommandTestBase {
     val yieldColumns: List[CommandResultItem] = List(
       CommandResultItem(
         ShowTransactionsClause.transactionIdColumn,
-        Variable("txId")(InputPosition.NONE)
+        varFor("txId")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowTransactionsClause.usernameColumn,
-        Variable("user")(InputPosition.NONE)
+        varFor("user")
       )(InputPosition.NONE),
       CommandResultItem(
         ShowTransactionsClause.currentQueryColumn,
-        Variable(ShowTransactionsClause.currentQueryColumn)(InputPosition.NONE)
+        varFor(ShowTransactionsClause.currentQueryColumn)
       )(InputPosition.NONE),
       CommandResultItem(
         ShowTransactionsClause.statusColumn,
-        Variable(ShowTransactionsClause.statusColumn)(InputPosition.NONE)
+        varFor(ShowTransactionsClause.statusColumn)
       )(InputPosition.NONE)
     )
 

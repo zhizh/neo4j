@@ -489,6 +489,12 @@ public abstract class AbstractCypher5AstBuilder implements Cypher5ParserListener
                     (Cypher5Parser.UIntOrIntParameterContext) ctx);
             case Cypher5Parser.RULE_mapOrParameter -> exitMapOrParameter((Cypher5Parser.MapOrParameterContext) ctx);
             case Cypher5Parser.RULE_map -> exitMap((Cypher5Parser.MapContext) ctx);
+            case Cypher5Parser.RULE_symbolicVariableNameString -> exitSymbolicVariableNameString(
+                    (Cypher5Parser.SymbolicVariableNameStringContext) ctx);
+            case Cypher5Parser.RULE_escapedSymbolicVariableNameString -> exitEscapedSymbolicVariableNameString(
+                    (Cypher5Parser.EscapedSymbolicVariableNameStringContext) ctx);
+            case Cypher5Parser.RULE_unescapedSymbolicVariableNameString -> exitUnescapedSymbolicVariableNameString(
+                    (Cypher5Parser.UnescapedSymbolicVariableNameStringContext) ctx);
             case Cypher5Parser.RULE_symbolicNameString -> exitSymbolicNameString(
                     (Cypher5Parser.SymbolicNameStringContext) ctx);
             case Cypher5Parser.RULE_escapedSymbolicNameString -> exitEscapedSymbolicNameString(

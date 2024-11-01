@@ -18,7 +18,6 @@ package org.neo4j.cypher.internal.rewriting.rewriters
 
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.expressions.RelTypeName
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.label_expressions.BinaryLabelExpression
 import org.neo4j.cypher.internal.label_expressions.LabelExpression
 import org.neo4j.cypher.internal.label_expressions.LabelExpression.ColonConjunction
@@ -449,7 +448,7 @@ class AddUniquenessPredicatesTest extends CypherFunSuite with RewriteTest with A
 }
 
 class AddUniquenessPredicatesPropertyTest extends CypherFunSuite with CypherScalaCheckDrivenPropertyChecks
-    with RelationshipTypeExpressionGenerators {
+    with RelationshipTypeExpressionGenerators with AstConstructionTestSupport {
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(
@@ -529,8 +528,8 @@ class AddUniquenessPredicatesPropertyTest extends CypherFunSuite with CypherScal
       (exp1, exp2) <- exps
     } {
       val actualSizes = s"{${size(exp1)},${size(exp2)}} / {${exp1.flatten.size},${exp2.flatten.size}}"
-      val sr1 = SingleRelationship(Variable("v1")(position), Some(exp1))
-      val sr2 = SingleRelationship(Variable("v2")(position), Some(exp2))
+      val sr1 = SingleRelationship(varFor("v1", position), Some(exp1))
+      val sr2 = SingleRelationship(varFor("v2", position), Some(exp2))
 
       {
         val t0 = System.nanoTime()

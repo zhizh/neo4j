@@ -19,6 +19,7 @@
  */
 package org.neo4j.cypher.internal.compiler.planner.logical.plans
 
+import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.AstConstructionTestSupport.VariableStringInterpolator
 import org.neo4j.cypher.internal.ast.prettifier.ExpressionStringifier
 import org.neo4j.cypher.internal.compiler.helpers.LogicalPlanBuilder
@@ -59,7 +60,6 @@ import org.neo4j.cypher.internal.expressions.SemanticDirection.BOTH
 import org.neo4j.cypher.internal.expressions.SemanticDirection.OUTGOING
 import org.neo4j.cypher.internal.expressions.SignedDecimalIntegerLiteral
 import org.neo4j.cypher.internal.expressions.True
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.ir.PatternRelationship
 import org.neo4j.cypher.internal.ir.Predicate
 import org.neo4j.cypher.internal.ir.QueryGraph
@@ -69,7 +69,6 @@ import org.neo4j.cypher.internal.ir.helpers.ExpressionConverters.PredicateConver
 import org.neo4j.cypher.internal.logical.plans.IndexOrderAscending
 import org.neo4j.cypher.internal.logical.plans.NodeByLabelScan
 import org.neo4j.cypher.internal.logical.plans.Selection
-import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.collection.immutable.ListSet
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.storageengine.api.AllRelationshipsScan
@@ -149,23 +148,23 @@ class OrLeafPlannerTest extends CypherFunSuite with LogicalPlanningTestSupport2 
         var_r,
         (var_a, var_b),
         BOTH,
-        Seq(RelTypeName("R")(InputPosition.NONE)),
+        Seq(RelTypeName("R")(pos)),
         SimplePatternLength
       )),
       selections = Selections(Set(
-        Predicate(Set(var_a), HasLabels(var_a, List(A))(InputPosition.NONE)),
+        Predicate(Set(var_a), HasLabels(var_a, List(A))(pos)),
         Predicate(
           Set(var_a),
-          Not(Not(Equals(Property(var_a, foo)(InputPosition.NONE), fortyTwo)(InputPosition.NONE))(InputPosition.NONE))(
-            InputPosition.NONE
+          Not(Not(Equals(Property(var_a, foo)(pos), fortyTwo)(pos))(pos))(
+            pos
           )
         ),
         Predicate(
           Set(var_a),
           Ors(ListSet(
-            IsNotNull(Property(var_a, foo)(InputPosition.NONE))(InputPosition.NONE),
-            HasLabels(var_a, List(A))(InputPosition.NONE)
-          ))(InputPosition.NONE)
+            IsNotNull(Property(var_a, foo)(pos))(pos),
+            HasLabels(var_a, List(A))(pos)
+          ))(pos)
         )
       ))
     )
@@ -258,7 +257,7 @@ class OrLeafPlannerTest extends CypherFunSuite with LogicalPlanningTestSupport2 
   }
 }
 
-object OrLeafPlannerTest {
+object OrLeafPlannerTest extends AstConstructionTestSupport {
 
   implicit val arbitraryQueryGraph: Arbitrary[QueryGraph] =
     Arbitrary(genQueryGraph)
@@ -297,17 +296,17 @@ object OrLeafPlannerTest {
       case _ => Stream.empty
     }
 
-  private val var_a = Variable("a")(InputPosition.NONE)
-  private val var_b = Variable("b")(InputPosition.NONE)
-  private val var_r = Variable("r")(InputPosition.NONE)
-  private val A = LabelName("A")(InputPosition.NONE)
-  private val B = LabelName("B")(InputPosition.NONE)
-  private val C = LabelName("C")(InputPosition.NONE)
-  private val R = RelTypeName("R")(InputPosition.NONE)
-  private val S = RelTypeName("R")(InputPosition.NONE)
-  private val T = RelTypeName("R")(InputPosition.NONE)
-  private val bar = PropertyKeyName("bar")(InputPosition.NONE)
-  private val foo = PropertyKeyName("foo")(InputPosition.NONE)
+  private val var_a = varFor("a")
+  private val var_b = varFor("b")
+  private val var_r = varFor("r")
+  private val A = LabelName("A")(pos)
+  private val B = LabelName("B")(pos)
+  private val C = LabelName("C")(pos)
+  private val R = RelTypeName("R")(pos)
+  private val S = RelTypeName("R")(pos)
+  private val T = RelTypeName("R")(pos)
+  private val bar = PropertyKeyName("bar")(pos)
+  private val foo = PropertyKeyName("foo")(pos)
 
   private def genPredicate: Gen[Expression] =
     Gen.recursive[Expression] { recursively =>
@@ -328,16 +327,16 @@ object OrLeafPlannerTest {
     for {
       size <- Gen.size
       predicate <- Gen.resize(size - 1, gen)
-    } yield Not(predicate)(InputPosition.NONE)
+    } yield Not(predicate)(pos)
 
   private def conjunction(gen: Gen[Expression]): Gen[Expression] =
     expressions(gen) {
-      exprs => Ands(exprs)(InputPosition.NONE)
+      exprs => Ands(exprs)(pos)
     }
 
   private def disjunction(gen: Gen[Expression]): Gen[Expression] =
     expressions(gen) {
-      exprs => Ors(exprs)(InputPosition.NONE)
+      exprs => Ors(exprs)(pos)
     }
 
   private def expressions(gen: Gen[Expression])(f: List[Expression] => Expression): Gen[Expression] =
@@ -358,7 +357,7 @@ object OrLeafPlannerTest {
   private def genHasTypes: Gen[HasTypes] =
     for {
       relationshipTypes <- RelationshipTypes.genNonEmptyRelationshipTypes
-    } yield HasTypes(var_r, relationshipTypes.toList)(InputPosition.NONE)
+    } yield HasTypes(var_r, relationshipTypes.toList)(pos)
 
   private object RelationshipTypes {
     private val all = Set(R, S, T)
@@ -373,7 +372,7 @@ object OrLeafPlannerTest {
     for {
       node <- Gen.oneOf(var_a, var_b)
       labelNames <- LabelNames.genLabelNames
-    } yield HasLabels(node, labelNames.toList)(InputPosition.NONE)
+    } yield HasLabels(node, labelNames.toList)(pos)
 
   private object LabelNames {
     private val all = Set(A, B, C)
@@ -386,18 +385,18 @@ object OrLeafPlannerTest {
     for {
       variable <- Gen.oneOf(var_a, var_b, var_r)
       propertyKey <- Gen.oneOf(foo, bar)
-      property = Property(variable, propertyKey)(InputPosition.NONE)
+      property = Property(variable, propertyKey)(pos)
       propertyPredicate <- Gen.oneOf(
-        Equals(property, fortyTwo)(InputPosition.NONE),
-        IsNotNull(property)(InputPosition.NONE)
+        Equals(property, fortyTwo)(pos),
+        IsNotNull(property)(pos)
       )
     } yield propertyPredicate
 
-  final private val fortyTwo = SignedDecimalIntegerLiteral("42")(InputPosition.NONE)
+  final private val fortyTwo = SignedDecimalIntegerLiteral("42")(pos)
 
   private def genBooleanLiteral: Gen[BooleanLiteral] =
     Gen.oneOf(
-      True()(InputPosition.NONE),
-      False()(InputPosition.NONE)
+      True()(pos),
+      False()(pos)
     )
 }

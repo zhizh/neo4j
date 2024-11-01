@@ -25,7 +25,7 @@ trait DeprecatedFeature {
 
 object DeprecatedFeature {
 
-  trait DeprecatedIn5ErrorIn6 extends DeprecatedFeature {
+  trait DeprecatedIn5ErrorIn25 extends DeprecatedFeature {
 
     override def deprecatedIn(cypherVersion: CypherVersion): Boolean = {
       cypherVersion == CypherVersion.Cypher5

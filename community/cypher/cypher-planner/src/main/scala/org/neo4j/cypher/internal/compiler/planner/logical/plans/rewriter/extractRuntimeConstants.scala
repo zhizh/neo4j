@@ -67,7 +67,10 @@ case class extractRuntimeConstants(anonymousVariableNameGenerator: AnonymousVari
   }
 
   private def constant(e: Expression) =
-    RuntimeConstant(Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE), e)
+    RuntimeConstant(
+      Variable(anonymousVariableNameGenerator.nextName)(InputPosition.NONE, Variable.isIsolatedDefault),
+      e
+    )
 
   private def isConstant(arg: Expression): Boolean = arg match {
     // this is not supported semantically, but here just in case

@@ -62,7 +62,7 @@ case class anonymizeQuery(anonymizer: Anonymizer) extends Rewriter {
   private val instance: Rewriter = bottomUp(Rewriter.lift {
     case x: UnaliasedReturnItem =>
       UnaliasedReturnItem(x.expression, anonymizer.unaliasedReturnItemName(x.expression, x.inputText))(x.position)
-    case v: Variable             => Variable(anonymizer.variable(v.name))(v.position)
+    case v: Variable             => Variable(anonymizer.variable(v.name))(v.position, Variable.isIsolatedDefault)
     case x: LabelName            => LabelName(anonymizer.label(x.name))(x.position)
     case x: RelTypeName          => RelTypeName(anonymizer.relationshipType(x.name))(x.position)
     case x: LabelOrRelTypeName   => LabelOrRelTypeName(anonymizer.labelOrRelationshipType(x.name))(x.position)

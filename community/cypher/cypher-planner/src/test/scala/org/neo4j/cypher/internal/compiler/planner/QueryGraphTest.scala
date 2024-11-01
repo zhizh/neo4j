@@ -19,16 +19,15 @@
  */
 package org.neo4j.cypher.internal.compiler.planner
 
+import org.neo4j.cypher.internal.ast.AstConstructionTestSupport
 import org.neo4j.cypher.internal.ast.UsingIndexHint
 import org.neo4j.cypher.internal.ast.semantics.SemanticTable
 import org.neo4j.cypher.internal.expressions.LabelOrRelTypeName
 import org.neo4j.cypher.internal.expressions.PropertyKeyName
-import org.neo4j.cypher.internal.expressions.Variable
 import org.neo4j.cypher.internal.ir.QueryGraph
-import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 
-class QueryGraphTest extends CypherFunSuite {
+class QueryGraphTest extends CypherFunSuite with AstConstructionTestSupport {
   val x = "x"
   val n = "n"
   val m = "m"
@@ -37,13 +36,11 @@ class QueryGraphTest extends CypherFunSuite {
   val r2 = "r2"
   val r3 = "r3"
 
-  private val pos = InputPosition.NONE
-
   private val hint1 =
-    UsingIndexHint(Variable("n")(pos), LabelOrRelTypeName("Label")(pos), Seq(PropertyKeyName("prop1")(pos)))(pos)
+    UsingIndexHint(varFor("n"), LabelOrRelTypeName("Label")(pos), Seq(PropertyKeyName("prop1")(pos)))(pos)
 
   private val hint2 =
-    UsingIndexHint(Variable("m")(pos), LabelOrRelTypeName("Label")(pos), Seq(PropertyKeyName("prop2")(pos)))(pos)
+    UsingIndexHint(varFor("m"), LabelOrRelTypeName("Label")(pos), Seq(PropertyKeyName("prop2")(pos)))(pos)
 
   test("addHints should add new hints") {
     val qg1 = QueryGraph(hints = Set(hint1))
@@ -68,7 +65,7 @@ class QueryGraphTest extends CypherFunSuite {
 
   test("should not get duplicate hints when combining query graphs") {
     val hint3 =
-      UsingIndexHint(Variable("o")(pos), LabelOrRelTypeName("Label")(pos), Seq(PropertyKeyName("prop3")(pos)))(pos)
+      UsingIndexHint(varFor("o"), LabelOrRelTypeName("Label")(pos), Seq(PropertyKeyName("prop3")(pos)))(pos)
     val qg1 = QueryGraph(hints = Set(hint1, hint2))
     val qg2 = QueryGraph(hints = Set(hint1, hint3))
     val qg3 = QueryGraph(hints = Set(hint1, hint2, hint3))

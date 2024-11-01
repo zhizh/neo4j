@@ -29,6 +29,11 @@ abstract class LogicalVariable extends Expression {
 
   def position: InputPosition
 
+  /* Note that isIsolated may be false, even if the variable was isolated (escaped or parenthesized).
+   * Currently, isIsolated is only set to true for isolated variables in the Cypher5 parser.
+   */
+  def isIsolated: Boolean
+
   override def asCanonicalStringVal: String = name
 
   override def isConstantForQuery: Boolean = false

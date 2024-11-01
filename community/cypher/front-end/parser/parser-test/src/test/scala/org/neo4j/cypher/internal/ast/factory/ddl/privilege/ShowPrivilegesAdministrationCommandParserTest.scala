@@ -16,6 +16,7 @@
  */
 package org.neo4j.cypher.internal.ast.factory.ddl.privilege
 
+import org.neo4j.cypher.internal.ast.ReadAdministrationCommand
 import org.neo4j.cypher.internal.ast.ShowAllPrivileges
 import org.neo4j.cypher.internal.ast.ShowPrivilegeCommands
 import org.neo4j.cypher.internal.ast.ShowPrivilegeScope
@@ -24,6 +25,7 @@ import org.neo4j.cypher.internal.ast.ShowRolesPrivileges
 import org.neo4j.cypher.internal.ast.ShowSupportedPrivilegeCommand
 import org.neo4j.cypher.internal.ast.ShowUserPrivileges
 import org.neo4j.cypher.internal.ast.ShowUsersPrivileges
+import org.neo4j.cypher.internal.ast.Statement
 import org.neo4j.cypher.internal.ast.Statements
 import org.neo4j.cypher.internal.ast.factory.ddl.AdministrationAndSchemaCommandParserTestBase
 import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
@@ -521,17 +523,22 @@ class ShowPrivilegesAdministrationCommandParserTest extends AdministrationAndSch
         }
 
         test(s"SHOW $privType $privilegeOrPrivileges$optionalAsRev YIELD `access`") {
-          if (optionalAsRev.isEmpty) {
-            parsesTo[Statements](ShowPrivileges(
-              privilege,
-              Some(Left((yieldClause(returnItems(returnItem(varFor("access"), "`access`"))), None)))
-            )(pos))
-          } else {
-            parsesTo[Statements](ShowPrivilegeCommands(
-              privilege,
-              asRev,
-              Some(Left((yieldClause(returnItems(returnItem(varFor("access"), "`access`"))), None)))
-            )(pos))
+          def expected(accessIsEscaped: Boolean, optionalAsRevIsEmpty: Boolean): ReadAdministrationCommand =
+            if (optionalAsRevIsEmpty) {
+              ShowPrivileges(
+                privilege,
+                Some(Left((yieldClause(returnItems(returnItem(varFor("access", accessIsEscaped), "`access`"))), None)))
+              )(pos)
+            } else {
+              ShowPrivilegeCommands(
+                privilege,
+                asRev,
+                Some(Left((yieldClause(returnItems(returnItem(varFor("access", accessIsEscaped), "`access`"))), None)))
+              )(pos)
+            }
+          parsesIn[Statement] {
+            case Cypher5 => _.toAst(expected(accessIsEscaped = true, optionalAsRev.isEmpty))
+            case _       => _.toAst(expected(accessIsEscaped = false, optionalAsRev.isEmpty))
           }
         }
       }

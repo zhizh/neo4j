@@ -40,11 +40,15 @@ case class nameAllPatternElements(anonymousVariableNameGenerator: AnonymousVaria
     Rewriter.lift {
       case pattern: NodePattern if pattern.variable.isEmpty =>
         val syntheticName = anonymousVariableNameGenerator.nextName
-        pattern.copy(variable = Some(Variable(syntheticName)(pattern.position)))(pattern.position)
+        pattern.copy(variable = Some(Variable(syntheticName)(pattern.position, Variable.isIsolatedDefault)))(
+          pattern.position
+        )
 
       case pattern: RelationshipPattern if pattern.variable.isEmpty =>
         val syntheticName = anonymousVariableNameGenerator.nextName
-        pattern.copy(variable = Some(Variable(syntheticName)(pattern.position)))(pattern.position)
+        pattern.copy(variable = Some(Variable(syntheticName)(pattern.position, Variable.isIsolatedDefault)))(
+          pattern.position
+        )
     },
     stopper = {
       case _: ShortestPathExpression => true

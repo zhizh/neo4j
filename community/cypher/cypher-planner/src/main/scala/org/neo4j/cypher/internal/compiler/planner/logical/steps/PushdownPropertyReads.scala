@@ -496,7 +496,7 @@ case object PushdownPropertyReads {
     if (p.variable.name == idName) {
       p
     } else {
-      val variable = Variable(idName)(InputPosition.NONE)
+      val variable = Variable(idName)(InputPosition.NONE, Variable.isIsolatedDefault)
       PushDownProperty(Property(variable, p.property.propertyKey)(InputPosition.NONE), variable)
     }
   }

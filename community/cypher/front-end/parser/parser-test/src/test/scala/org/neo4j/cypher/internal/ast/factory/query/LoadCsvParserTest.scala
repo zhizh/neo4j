@@ -19,6 +19,7 @@ package org.neo4j.cypher.internal.ast.factory.query
 import org.neo4j.cypher.internal.ast.Clause
 import org.neo4j.cypher.internal.ast.LoadCSV
 import org.neo4j.cypher.internal.ast.Statements
+import org.neo4j.cypher.internal.ast.test.util.AstParsing.Cypher5
 import org.neo4j.cypher.internal.ast.test.util.AstParsingTestBase
 import org.neo4j.cypher.internal.ast.test.util.LegacyAstParsingTestSupport
 
@@ -33,7 +34,12 @@ class LoadCsvParserTest extends AstParsingTestBase with LegacyAstParsingTestSupp
   }
 
   test("LOAD CSV WITH HEADERS FROM `var` AS l") {
-    parsesTo[Clause](LoadCSV(withHeaders = true, varFor("var"), varFor("l"), None)(pos))
+    def expected(varIsEscaped: Boolean) =
+      LoadCSV(withHeaders = true, varFor("var", varIsEscaped), varFor("l"), None)(pos)
+    parsesIn[Clause] {
+      case Cypher5 => _.toAst(expected(varIsEscaped = true))
+      case _       => _.toAst(expected(varIsEscaped = false))
+    }
   }
 
   test("LOAD CSV WITH HEADERS FROM '1' + '2' AS l") {
