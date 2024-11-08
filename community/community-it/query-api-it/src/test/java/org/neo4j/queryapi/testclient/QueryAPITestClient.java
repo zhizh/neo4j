@@ -20,6 +20,7 @@
 package org.neo4j.queryapi.testclient;
 
 import static org.neo4j.queryapi.QueryApiTestUtil.encodedCredentials;
+import static org.neo4j.test.assertion.Assert.assertEventually;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +30,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class QueryAPITestClient {
@@ -60,6 +62,7 @@ public class QueryAPITestClient {
         }
         this.client = HttpClient.newHttpClient();
         this.requiresTypedFormat = requiresTypedFormat;
+        ensureServerIsAvailable();
     }
 
     public HttpResponse<QueryResponse> autoCommit(QueryRequest request) throws IOException, InterruptedException {
@@ -123,6 +126,16 @@ public class QueryAPITestClient {
 
     public HttpResponse<QueryResponse> rollbackTx(String txId) throws IOException, InterruptedException {
         return rollbackTx(txId, "neo4j");
+    }
+
+    public void ensureServerIsAvailable() {
+        assertEventually(
+                () -> autoCommit(QueryRequest.newBuilder().statement("RETURN 1").build())
+                                .statusCode()
+                        == 202,
+                available -> true,
+                1,
+                TimeUnit.MINUTES);
     }
 
     private HttpResponse<QueryResponse> sendRequest(QueryRequest request, String endpoint)
