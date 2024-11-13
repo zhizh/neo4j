@@ -41,6 +41,7 @@ import org.neo4j.cypher.internal.util.StepSequencer
 import org.neo4j.cypher.internal.util.bottomUp
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
 import org.neo4j.kernel.database.DatabaseReference
+import org.neo4j.kernel.database.NormalizedCatalogEntry
 import org.neo4j.kernel.database.NormalizedDatabaseName
 
 import java.util.Optional
@@ -200,6 +201,8 @@ trait RewritePhaseTest {
       override def compareTo(o: DatabaseReference): Int = ???
 
       override def owningDatabaseName: String = ???
+
+      override def catalogEntry(): NormalizedCatalogEntry = ???
     }
 
     val fromInState = {
