@@ -16,7 +16,6 @@
  */
 package org.neo4j.cypher.internal.frontend
 
-import org.neo4j.cypher.internal.CypherVersion
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
 import org.neo4j.cypher.internal.util.InputPosition
 import org.neo4j.cypher.internal.util.test_helpers.CypherFunSuite
@@ -606,45 +605,7 @@ class CollectExpressionSemanticAnalysisTest
       |RETURN person.name
      """.stripMargin
   ) {
-    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher25), testName).errors.toSet shouldEqual Set(
-      SemanticError(
-        getGql42001_42N39(5, 5, 69),
-        "All sub queries in an UNION must have the same return column names",
-        InputPosition(69, 5, 5)
-      ),
-      SemanticError(
-        getGql42001_42N39(8, 5, 106),
-        "All sub queries in an UNION must have the same return column names",
-        InputPosition(106, 8, 5)
-      ),
-      SemanticError(
-        getGql42001_42N22(2, 7, 28),
-        "A Collect Expression must end with a single return column.",
-        InputPosition(28, 2, 7)
-      ),
-      SemanticError(
-        "All subqueries in a UNION [ALL] must have the same ordering for the return columns.",
-        InputPosition(42, 3, 5)
-      )
-    )
-  }
-
-  test(
-    """MATCH (person:Person)
-      |WHERE COLLECT {
-      |    MATCH (a)
-      |    RETURN a
-      |    UNION
-      |    MATCH (m)
-      |    RETURN m
-      |    UNION
-      |    MATCH (l)
-      |    RETURN l
-      |} = [1, 2, 3]
-      |RETURN person.name
-     """.stripMargin
-  ) {
-    runSemanticAnalysisWithCypherVersion(Seq(CypherVersion.Cypher5), testName).errors.toSet shouldEqual Set(
+    runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
         getGql42001_42N39(5, 5, 69),
         "All sub queries in an UNION must have the same return column names",

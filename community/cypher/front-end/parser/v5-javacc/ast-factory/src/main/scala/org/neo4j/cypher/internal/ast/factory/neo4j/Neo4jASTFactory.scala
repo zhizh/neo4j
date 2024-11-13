@@ -631,8 +631,8 @@ class Neo4jASTFactory(query: String, astExceptionFactory: ASTExceptionFactory, l
           )
       }
 
-    if (all) UnionAll(lhs, rhsQuery, differentReturnOrderAllowed = true)(p)
-    else UnionDistinct(lhs, rhsQuery, differentReturnOrderAllowed = true)(p)
+    if (all) UnionAll(lhs, rhsQuery)(p)
+    else UnionDistinct(lhs, rhsQuery)(p)
   }
 
   override def directUseClause(p: InputPosition, name: DatabaseName): UseGraph = {

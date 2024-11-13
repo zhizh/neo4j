@@ -71,7 +71,6 @@ import org.neo4j.cypher.internal.util.ServerAlreadyCordoned
 import org.neo4j.cypher.internal.util.ServerAlreadyEnabled
 import org.neo4j.cypher.internal.util.SubqueryVariableShadowing
 import org.neo4j.cypher.internal.util.UnboundedShortestPathNotification
-import org.neo4j.cypher.internal.util.UnionReturnItemsInDifferentOrder
 import org.neo4j.cypher.internal.util.UnsatisfiableRelationshipTypeExpression
 import org.neo4j.exceptions.IndexHintException.IndexHintIndexType
 import org.neo4j.graphdb
@@ -300,10 +299,6 @@ object NotificationWrapping {
         pos.withOffset(offset).asInputPosition,
         variableName,
         remainingExpression
-      )
-    case UnionReturnItemsInDifferentOrder(pos) =>
-      NotificationCodeWithDescription.unionReturnOrder(
-        pos.withOffset(offset).asInputPosition
       )
     case HomeDatabaseNotPresent(name) => NotificationCodeWithDescription.homeDatabaseNotPresent(
         InputPosition.NONE.asInputPosition,
