@@ -78,7 +78,7 @@ case object addDependenciesToProjectionsInSubqueryExpressions extends StepSequen
       s.copy(innerQuery = newQuery)(s.position)
   }
 
-  val subqueryExpressionRewrtier: Rewriter = bottomUp(Rewriter.lift(subqueryExpressionMatcher))
+  val subqueryExpressionRewriter: Rewriter = bottomUp(Rewriter.lift(subqueryExpressionMatcher))
 
   val subqueryExpressionAndCallClauseRewriter: Rewriter =
     bottomUp(Rewriter.lift(subqueryExpressionMatcher orElse scopeClauseSubqueryCallMatcher))
@@ -156,7 +156,7 @@ case object addDependenciesToProjectionsInSubqueryExpressions extends StepSequen
     if (semanticState.features.contains(SemanticFeature.UseAsMultipleGraphsSelector)) {
       subqueryExpressionAndCallClauseRewriter
     } else {
-      subqueryExpressionRewrtier
+      subqueryExpressionRewriter
     }
   }
 }
