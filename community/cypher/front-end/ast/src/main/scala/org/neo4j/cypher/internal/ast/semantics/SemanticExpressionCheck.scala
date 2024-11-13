@@ -51,6 +51,8 @@ import org.neo4j.cypher.internal.expressions.DesugaredMapProjection
 import org.neo4j.cypher.internal.expressions.DifferentRelationships
 import org.neo4j.cypher.internal.expressions.Disjoint
 import org.neo4j.cypher.internal.expressions.Divide
+import org.neo4j.cypher.internal.expressions.DynamicLabelsExpressions
+import org.neo4j.cypher.internal.expressions.DynamicLabelsOrTypeExpressions
 import org.neo4j.cypher.internal.expressions.EndsWith
 import org.neo4j.cypher.internal.expressions.EntityType
 import org.neo4j.cypher.internal.expressions.Equals
@@ -63,6 +65,8 @@ import org.neo4j.cypher.internal.expressions.FunctionInvocation
 import org.neo4j.cypher.internal.expressions.GetDegree
 import org.neo4j.cypher.internal.expressions.GreaterThan
 import org.neo4j.cypher.internal.expressions.GreaterThanOrEqual
+import org.neo4j.cypher.internal.expressions.HasAnyDynamicType
+import org.neo4j.cypher.internal.expressions.HasDynamicType
 import org.neo4j.cypher.internal.expressions.HasTypes
 import org.neo4j.cypher.internal.expressions.HexIntegerLiteral
 import org.neo4j.cypher.internal.expressions.ImplicitProcedureArgument
@@ -175,6 +179,8 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
     val ACCUMULATOR: TypeMismatchContextVal = TypeMismatchContextVal("accumulator")
     val LIST_INDEX: TypeMismatchContextVal = TypeMismatchContextVal("list index")
     val MAP_KEY: TypeMismatchContextVal = TypeMismatchContextVal("map key")
+    val DYNAMIC_LABEL: TypeMismatchContextVal = TypeMismatchContextVal("dynamic label")
+    val DYNAMIC_TYPE: TypeMismatchContextVal = TypeMismatchContextVal("dynamic type")
 
     val NODE_OR_RELATIONSHIP_PROPERTY_KEY: TypeMismatchContextVal =
       TypeMismatchContextVal("node or relationship property key")
@@ -458,15 +464,33 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
       case x: LabelOrTypeCheckExpression =>
         check(ctx, x.entityExpression) chain
           expectType(CTNode.covariant | CTRelationship.covariant, x.entityExpression) chain
-          specifyType(CTBoolean, x)
+          specifyType(CTBoolean, x) chain
+          when(x.isInstanceOf[DynamicLabelsOrTypeExpressions]) {
+            check(ctx, x.asInstanceOf[DynamicLabelsOrTypeExpressions].labelsOrTypes)
+          }
 
       case x: LabelCheckExpression =>
         check(ctx, x.expression) chain
           expectType(CTNode.covariant, x.expression) chain
-          specifyType(CTBoolean, x)
+          specifyType(CTBoolean, x) chain
+          when(x.isInstanceOf[DynamicLabelsExpressions]) {
+            check(ctx, x.asInstanceOf[DynamicLabelsExpressions].labels)
+          }
 
       case x: HasTypes =>
         check(ctx, x.expression) chain
+          expectType(CTRelationship.covariant, x.expression) chain
+          specifyType(CTBoolean, x)
+
+      case x: HasDynamicType =>
+        check(ctx, x.expression) chain
+          check(ctx, x.types) chain
+          expectType(CTRelationship.covariant, x.expression) chain
+          specifyType(CTBoolean, x)
+
+      case x: HasAnyDynamicType =>
+        check(ctx, x.expression) chain
+          check(ctx, x.types) chain
           expectType(CTRelationship.covariant, x.expression) chain
           specifyType(CTBoolean, x)
 

@@ -67,6 +67,7 @@ import org.neo4j.cypher.internal.util.RepeatedVarLengthRelationshipReference
 import org.neo4j.cypher.internal.util.RequestedTopologyMatchedCurrentTopology
 import org.neo4j.cypher.internal.util.RevokePrivilegeCommandHasNoEffectNotification
 import org.neo4j.cypher.internal.util.RevokeRoleCommandHasNoEffectNotification
+import org.neo4j.cypher.internal.util.RuntimeUnsatisfiableRelationshipTypeExpression
 import org.neo4j.cypher.internal.util.ServerAlreadyCordoned
 import org.neo4j.cypher.internal.util.ServerAlreadyEnabled
 import org.neo4j.cypher.internal.util.SubqueryVariableShadowing
@@ -341,6 +342,14 @@ object NotificationWrapping {
         position.withOffset(offset).asInputPosition,
         NotificationDetail.unsatisfiableRelTypeExpression(relTypeExpression),
         relTypeExpression
+      )
+
+    case RuntimeUnsatisfiableRelationshipTypeExpression(types) =>
+      val stringified = types.mkString("&")
+      NotificationCodeWithDescription.unsatisfiableRelationshipTypeExpression(
+        InputPosition.NONE.asInputPosition,
+        NotificationDetail.unsatisfiableRelTypeExpression(stringified),
+        stringified
       )
 
     case RepeatedRelationshipReference(position, relName, pattern) =>

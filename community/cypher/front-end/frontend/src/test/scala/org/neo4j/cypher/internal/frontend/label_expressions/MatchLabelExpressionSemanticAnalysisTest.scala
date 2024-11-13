@@ -17,7 +17,6 @@
 package org.neo4j.cypher.internal.frontend.label_expressions
 
 import org.neo4j.cypher.internal.ast.semantics.SemanticError
-import org.neo4j.cypher.internal.ast.semantics.SemanticFeature
 import org.neo4j.cypher.internal.frontend.NameBasedSemanticAnalysisTestSuite
 import org.neo4j.cypher.internal.util.InputPosition
 
@@ -653,19 +652,19 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   }
 
   test("MATCH (n)-[r1:$([\"Z\"])]->(m:!Z) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n)-[r1 IS $([\"Z\"])]->(m IS !Z) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n)-[r1 IS $([\"Z\"])]->(m:!Z) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n:A:$([\"B\"]))-[r IS $([\"A\"])|B]->(m) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errorMessages shouldEqual Seq(
+    runSemanticAnalysis().errorMessages shouldEqual Seq(
       "Mixing the IS keyword with colon (':') between labels is not allowed. These expressions could be expressed as :A&$all([\"B\"]), IS $all([\"A\"])|B."
     )
   }
@@ -689,34 +688,23 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
 
   // Dynamic labels and types
   test("MATCH (n:$(\"label\")) RETURN *") {
-    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
-      "Setting labels or types dynamically is not supported."
-    )
-
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n:A&B&$(\"label\")) RETURN *") {
-    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
-      "Setting labels or types dynamically is not supported."
-    )
-
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n)-[:$(\"label\")]->() RETURN *") {
-    runSemanticAnalysis().errorMessages.toSet shouldEqual Set(
-      "Setting labels or types dynamically is not supported."
-    )
-
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n:$(1)) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
-      SemanticError.typeMismatch(
-        List("String", "List<String>"),
+    runSemanticAnalysis().errors.toSet shouldEqual Set(
+      SemanticError.invalidEntityType(
         "Integer",
+        "dynamic label",
+        List("String", "List<String>"),
         "Type mismatch: expected String or List<String> but was Integer",
         InputPosition(11, 1, 12)
       )
@@ -724,7 +712,7 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   }
 
   test("MATCH (n:$(null)) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+    runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
         "Null is not a valid token name. Token names cannot be empty or contain any null-bytes.",
         InputPosition(9, 1, 10)
@@ -733,7 +721,7 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   }
 
   test("MATCH (n:$([\"A\", \"\"])) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+    runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
         "'' is not a valid token name. Token names cannot be empty or contain any null-bytes.",
         InputPosition(9, 1, 10)
@@ -742,10 +730,11 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   }
 
   test("MATCH (n)-[:$(point({x:22, y:44}))]-() RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
-      SemanticError.typeMismatch(
-        List("String", "List<String>"),
+    runSemanticAnalysis().errors.toSet shouldEqual Set(
+      SemanticError.invalidEntityType(
         "Point",
+        "dynamic type",
+        List("String", "List<String>"),
         "Type mismatch: expected String or List<String> but was Point",
         InputPosition(14, 1, 15)
       )
@@ -753,10 +742,11 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   }
 
   test("MATCH (n:$([1])) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
-      SemanticError.typeMismatch(
-        List("String", "List<String>"),
+    runSemanticAnalysis().errors.toSet shouldEqual Set(
+      SemanticError.invalidEntityType(
         "List<Integer>",
+        "dynamic label",
+        List("String", "List<String>"),
         "Type mismatch: expected String or List<String> but was List<Integer>",
         InputPosition(11, 1, 12)
       )
@@ -764,7 +754,7 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   }
 
   test("MATCH (n:$([''])) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldEqual Set(
+    runSemanticAnalysis().errors.toSet shouldEqual Set(
       SemanticError(
         "'' is not a valid token name. Token names cannot be empty or contain any null-bytes.",
         InputPosition(9, 1, 10)
@@ -773,46 +763,46 @@ class MatchLabelExpressionSemanticAnalysisTest extends NameBasedSemanticAnalysis
   }
 
   test("MATCH (n:$all(['Foo', 'Bar'])) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n:$any(['Foo', 'Bar'])) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n:$(['Foo', 'Bar'])) RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n)-[:$all(['Foo', 'Bar'])]-() RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n)-[:$any(['Foo', 'Bar'])]-() RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n)-[:$(['Foo', 'Bar'])]-() RETURN *") {
-    runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes).errors.toSet shouldBe empty
+    runSemanticAnalysis().errors shouldBe empty
   }
 
   test("MATCH (n)-[:!$('R')]-() RETURN *") {
-    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    val result = runSemanticAnalysis()
     result.state.semantics().notifications.map(_.notificationName) shouldBe empty
   }
 
   test("MATCH (n)-[:A&$('R')]-() RETURN *") {
-    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    val result = runSemanticAnalysis()
     result.state.semantics().notifications.map(_.notificationName) shouldBe empty
   }
 
   test("MATCH (n)-[:$('R2')&$('R')]-() RETURN *") {
-    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    val result = runSemanticAnalysis()
     result.state.semantics().notifications.map(_.notificationName) shouldBe empty
   }
 
   test("MATCH (n)-[:A&!%]-() RETURN *") {
-    val result = runSemanticAnalysisWithSemanticFeatures(SemanticFeature.DynamicLabelsAndTypes)
+    val result = runSemanticAnalysis()
     result.state.semantics().notifications.map(_.notificationName) shouldBe Set(
       "UnsatisfiableRelationshipTypeExpression"
     )

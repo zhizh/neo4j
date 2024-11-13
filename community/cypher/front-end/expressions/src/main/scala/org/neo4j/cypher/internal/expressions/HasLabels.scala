@@ -34,6 +34,14 @@ trait LabelCheckExpression extends BooleanExpression {
   override def isConstantForQuery: Boolean = false
 }
 
+trait DynamicLabelsExpressions extends LabelCheckExpression {
+  def labels: Seq[Expression]
+}
+
+trait DynamicLabelsOrTypeExpressions extends LabelOrTypeCheckExpression {
+  def labelsOrTypes: Seq[Expression]
+}
+
 /**
  * Checks if expression has all labels
  */
@@ -48,7 +56,7 @@ case class HasLabels(expression: Expression, labels: Seq[LabelName])(val positio
  * Checks if expression has all the specified dynamic labels
  */
 case class HasDynamicLabels(expression: Expression, labels: Seq[Expression])(val position: InputPosition)
-    extends LabelCheckExpression {
+    extends DynamicLabelsExpressions {
 
   override def asCanonicalStringVal =
     s"${expression.asCanonicalStringVal}${labels.map(_.asCanonicalStringVal).map(e => s":$$all($e)").mkString}"
@@ -68,7 +76,7 @@ case class HasAnyLabel(expression: Expression, labels: Seq[LabelName])(val posit
  * Checks if expression has any of the specified dynamic labels
  */
 case class HasAnyDynamicLabel(expression: Expression, labels: Seq[Expression])(val position: InputPosition)
-    extends LabelCheckExpression {
+    extends DynamicLabelsExpressions {
 
   override def asCanonicalStringVal =
     s"${expression.asCanonicalStringVal}${labels.map(_.asCanonicalStringVal).map(e => s"$$any($e)").mkString(":", "|", "")}"
@@ -136,6 +144,32 @@ case class HasAnyDynamicType(expression: Expression, types: Seq[Expression])(val
 
   override def asCanonicalStringVal =
     s"${expression.asCanonicalStringVal}${types.map(t => s"$$any(${t.asCanonicalStringVal})").mkString(":", "|", "")}"
+
+  override def isConstantForQuery: Boolean = false
+}
+
+/**
+ * Checks if expression has all dynamic labels OR all dynamic types
+ */
+case class HasDynamicLabelsOrTypes(entityExpression: Expression, labelsOrTypes: Seq[Expression])(
+  val position: InputPosition
+) extends DynamicLabelsOrTypeExpressions {
+
+  override def asCanonicalStringVal =
+    s"${entityExpression.asCanonicalStringVal}${labelsOrTypes.map(t => s"$$all(${t.asCanonicalStringVal})").mkString(":", "&", "")}"
+
+  override def isConstantForQuery: Boolean = false
+}
+
+/**
+ * Checks if expression has any dynamic labels OR any dynamic types
+ */
+case class HasAnyDynamicLabelsOrTypes(entityExpression: Expression, labelsOrTypes: Seq[Expression])(
+  val position: InputPosition
+) extends DynamicLabelsOrTypeExpressions {
+
+  override def asCanonicalStringVal =
+    s"${entityExpression.asCanonicalStringVal}${labelsOrTypes.map(t => s"$$any(${t.asCanonicalStringVal})").mkString(":", "|", "")}"
 
   override def isConstantForQuery: Boolean = false
 }
