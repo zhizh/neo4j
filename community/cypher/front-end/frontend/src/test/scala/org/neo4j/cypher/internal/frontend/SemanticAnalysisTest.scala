@@ -2120,6 +2120,25 @@ class SemanticAnalysisTest extends SemanticAnalysisTestSuite {
     )
   }
 
+  test("CALL (*) inside a UNION should include variables imported by an outer CALL ()") {
+    val query =
+      """
+        |WITH 1 AS x
+        |CALL (x) {
+        |  WITH 2 AS y
+        |  CALL (*) {
+        |    RETURN x + y AS z
+        |  }
+        |  RETURN z AS z
+        |  UNION
+        |  RETURN 123 + x AS z
+        |}
+        |RETURN x AS x, z AS z
+        |""".stripMargin
+
+    expectNoErrorsFrom(query)
+  }
+
   override def messageProvider: ErrorMessageProvider = new ErrorMessageProviderAdapter {
     override def createUseClauseUnsupportedError(): String = "A very nice message explaining why USE is not allowed"
 
